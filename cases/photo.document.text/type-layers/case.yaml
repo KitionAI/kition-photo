@@ -1,0 +1,21 @@
+format: 1
+id: photo.document.text/type-layers
+feature: photo.document.text
+intent: >-
+  document.text (KitText 1.0) answers the words of an image's visible type layers in the Layers
+  panel's order (top first, into groups), one part labelled "Layer: <name>" each, paragraph breaks
+  as newlines, hidden layers left out; the words survive saving to PSD and reopening; the limit
+  truncates by Unicode scalar values; every conformance fixture passes kition_kit's check_text
+  (parts inside the text, nothing changes); and an image without type answers no text.
+layer: gate
+source:
+  kind: synthetic
+  from: "bindings/wasm/tests/document_text.rs (type.create), conformance/check-font-substituted.kphoto"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: "kition-photo-kit", test: "document_text" }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

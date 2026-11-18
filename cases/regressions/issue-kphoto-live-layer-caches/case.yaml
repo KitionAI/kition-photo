@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-kphoto-live-layer-caches
+feature: photo.agent.saved
+intent: >-
+  An image opened from a `.kphoto` draws and measures as the one saved did: the replica holds no
+  rendered appearance of type, shape and object layers, and opening one rendered none, so a
+  type or shape layer's bounds read null (and its derived `~bounds` changed) after an agent's save
+  and a reopen, which the premise guard reads as a change by others. The engine now renders them
+  when it opens the snapshot.
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo, bindings/wasm/tests/saved.rs (in memory = saved)"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: saved, filter: a_kphoto_holds_what_the_image_held_after_each_command }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

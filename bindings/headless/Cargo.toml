@@ -1,0 +1,35 @@
+[package]
+name = "kition-photo"
+description = "Kition Photo: the image editing engine as a Kition kit (Kit Protocol v1)"
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+publish = false
+
+[features]
+heif = ["kition-photo-codecs/heif"]
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "kition-photo"
+path = "src/main.rs"
+
+[dependencies]
+kition-headless = { workspace = true }
+kition-photo-automation = { workspace = true }
+kition-photo-codecs = { workspace = true }
+kition-photo-kit = { workspace = true }
+
+[dev-dependencies]
+kition-kit-server = { workspace = true }
+kition-photo-engine = { workspace = true }
+# The saved .kphoto's own manifest (its stored selection), for context.rs.
+kition-photo-format = { workspace = true }
+kition-photo-io = { workspace = true }
+kition-kit = { workspace = true, features = ["session"] }
+serde_json = { workspace = true }
+# outside.rs and receipts.rs drive the kit through the kits' MCP server's tools, as an agent does.
+kition-kits = { workspace = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

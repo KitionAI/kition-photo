@@ -1,0 +1,78 @@
+{
+  "kdm": 1,
+  "kit": "kit.photo",
+  "schemaVersion": 3,
+  "root": "Image",
+  "types": {
+    "Image": {
+      "batchOps": { "*": { "direct": true } },
+      "fields": {
+        "width": { "kind": "integer", "minimum": 1, "maximum": 300000, "multipleOf": 1 },
+        "height": { "kind": "integer", "minimum": 1, "maximum": 300000, "multipleOf": 1 },
+        "dpi": { "kind": "number", "minimum": 1, "maximum": 30000 },
+        "mode": { "kind": "enum", "values": ["Bitmap", "Grayscale", "Indexed", "Rgb", "Cmyk", "Lab", "Multichannel", "Duotone"] },
+        "depth": { "kind": "enum", "values": ["U8", "U16", "F32"] },
+        "icc": { "kind": "blob", "optional": true },
+        "docState": { "kind": "json", "optional": true },
+        "layers": { "kind": "tree", "of": "Layer" },
+        "channels": { "kind": "list", "of": "Channel" },
+        "guides": { "kind": "json", "optional": true }
+      },
+      "derived": {
+        "channelContents": { "premiseOnly": true, "description": "Alpha/spot channel names and surface content fingerprints, in channel order. Holds channel input pixels across external file reloads, including owned surfaces without tool ids." },
+        "canvasCoordinates": { "premiseOnly": true, "description": "Compact private snapshot of canvas size and per-layer pixels for comparing the coordinate frame of a bounded write." },
+        "linkGroups": { "premiseOnly": true, "description": "Layer ids and their link group memberships. A linked move holds membership as well as the content of the layers it moves." },
+        "inheritedLocks": { "premiseOnly": true, "description": "Layer ids whose ancestor locks add to their own locks, with the effective lock values. A pixel write holds this aggregate input to detect locking and reparenting through the Image's owned layer tree." }
+      }
+    },
+    "Layer": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "number": { "kind": "integer", "optional": true, "readOnly": true },
+        "name": { "kind": "string" },
+        "visible": { "kind": "boolean" },
+        "locks": { "kind": "json", "optional": true },
+        "blend": {
+          "kind": "enum",
+          "values": ["PassThrough", "Normal", "Dissolve", "Darken", "Multiply", "ColorBurn", "LinearBurn", "DarkerColor", "Lighten", "Screen", "ColorDodge", "LinearDodge", "LighterColor", "Overlay", "SoftLight", "HardLight", "VividLight", "LinearLight", "PinLight", "HardMix", "Difference", "Exclusion", "Subtract", "Divide", "Hue", "Saturation", "Color", "Luminosity"]
+        },
+        "opacity": { "kind": "number", "minimum": 0, "maximum": 1 },
+        "fillOpacity": { "kind": "number", "minimum": 0, "maximum": 1 },
+        "clipped": { "kind": "boolean", "label": "clipped" },
+        "kind": { "kind": "enum", "values": ["raster", "group", "adjustment", "fill", "text", "shape", "smart"], "sample": false },
+        "props": { "kind": "json", "optional": true },
+        "effects": { "kind": "json", "optional": true },
+        "mask": { "kind": "ref", "of": "Surface", "optional": true, "owns": true },
+        "tiles": { "kind": "map" }
+      },
+      "toolId": { "field": "number" },
+      "label": "name",
+      "derived": {
+        "pickState": { "premiseOnly": true, "description": "Basis-time hit-test inputs: stack path, visibility, effective locks, raster format and immutable tile references, mask and artboard clipping." },
+        "subtreeLabels": { "premiseOnly": true, "description": "Descendant ids and labels sorted by id, held only by recursive writes to this layer." },
+        "bounds": { "description": "The layer's non-transparent extent in image pixels, [x, y, width, height] (its pixels' for a pixel layer, its drawn content's for type, shape and object layers, the canvas for a fill layer); null when it draws nothing. A change says the pixels the layer covers grew, shrank or moved." }
+      }
+    },
+    "Surface": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "tiles": { "kind": "map" },
+        "props": { "kind": "json", "optional": true, "members": {
+          "density": { "minimum": 0, "maximum": 1 },
+          "feather": { "minimum": 0 },
+          "opacity": { "minimum": 0, "maximum": 1 }
+        } }
+      }
+    },
+    "Channel": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "name": { "kind": "string" },
+        "surface": { "kind": "ref", "of": "Surface", "owns": true }
+      }
+    }
+  }
+}

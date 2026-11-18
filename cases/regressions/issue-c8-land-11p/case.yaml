@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-c8-land-11p
+feature: photo.agent.premises
+intent: >-
+  SDK 1935d52 adoption declares name premises, constrains numeric batch fields,
+  settles stored PSD values, and verifies owned surface deletion and child-first
+  group deletion against saved rereads. Single-op group deletion remains an SDK limit.
+layer: gate
+source:
+  kind: probe
+  from: "task card C8-land-11p"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: land11 }
+  - cargo-test: { package: kition-photo-kit, test: name_parameters }
+  - cargo-test: { package: kition-photo, test: land11 }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

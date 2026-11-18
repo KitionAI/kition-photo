@@ -1,0 +1,19 @@
+format: 1
+id: regressions/issue-c8-photo-3-tree
+feature: photo.agent.premises
+intent: >-
+  A nested layer addressed by id retains its observed target after a separate writer rewrites
+  the file. Its 65 matrix cells compare saved merges and require necessary refusals.
+layer: gate
+timeout_s: 60
+source:
+  kind: probe
+  from: "C8-photo-3, bindings/headless/tests/tree_address_matrix.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: tree_address_matrix, filter: tree_address_matrix_nested_id }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

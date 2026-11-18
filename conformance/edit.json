@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "command": "layer.new.layer", "params": { "name": "Badge" } },
+    { "command": "select.rect", "params": { "x": 220, "y": 120, "width": 60, "height": 40 } },
+    { "command": "edit.fill", "params": { "color": "#c0392b" } }
+  ]
+}

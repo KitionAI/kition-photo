@@ -1,0 +1,17 @@
+format: 1
+id: regressions/issue-c8-photo-3-address
+feature: photo.agent.premises
+intent: >-
+  Independent file rewrites preserve the observed active layer and point target. Bounded pixel writes compare historical destination bytes and effective canvas clipping; applying cells compare complete saved merges.
+layer: gate
+source:
+  kind: probe
+  from: "C8-photo-3, bindings/headless/tests/address_matrix.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: address_matrix }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

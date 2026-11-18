@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.preview/explicit-view
+feature: photo.agent.preview
+intent: >-
+  file.render draws the composite or only the given layers framed to a region, answers its mapping to image coordinates and what it drew, reads no editor state and answers the same bytes on any thread pool; image.measure answers bounds, counts, mean color and overlap.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: render }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,14 @@
+format: 1
+id: regressions/issue-c8-photo-pin-layers
+feature: photo.agent.premises
+intent: The layering checker registers the WebAssembly kit under its current crate name.
+dimension: robustness
+layer: gate
+source: { kind: probe, from: C8-photo-pin, license: Apache-2.0 }
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, xtask, "layers::tests::apps_and_xtask_exempt"]
+expected:
+  - { actual: out:exit, compare: exit }
+since: "2026-11-17"

@@ -1,0 +1,23 @@
+format: 1
+id: regressions/issue-selection-after-rollback
+feature: photo.agent.observe
+intent: >-
+  What the headless kit describes as the image is what its file holds (KHP A53): after
+  conformance/edit.json runs and the image is saved, closing and opening it again (what a failed
+  run's rollback does to a clean document) describes the same image apart from layer ids. The
+  selection is the person's own editing state, never in the shared replica or a PSD, so
+  `hasSelection` is not reported as content; before, it flipped from true to false after a
+  rollback, so the image did not look as it was.
+layer: gate
+source:
+  kind: probe
+  from: "agent readiness review (photo, stage 5) and the follow-up conformance run"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: headless, filter: the_image_as_described_is_what_its_file_holds }
+expected:
+  - actual: out:exit
+    compare: exit
+tags: [headless]
+since: "2026-11-17"

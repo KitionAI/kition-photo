@@ -1,0 +1,15 @@
+format: 1
+id: regressions/issue-c8-photo-3-tree-waiting
+feature: photo.agent.premises
+intent: >-
+  Isolated selection-step planning holds recursive recipients and group-owned derived facts.
+  An outside edit of a descendant label refuses the recursive assignment and preserves the file.
+layer: gate
+timeout_s: 60
+source: { kind: probe, from: "C8-photo-3, tree_address_matrix.rs", license: Apache-2.0 }
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: tree_address_matrix, filter: selection_step }
+expected:
+  - { actual: out:exit, compare: exit }
+since: "2026-11-17"

@@ -1,0 +1,20 @@
+format: 1
+id: regressions/issue-4
+feature: photo.type.text
+intent: >-
+  A character that no available font can draw (the requested family and every fallback) is
+  reported by `check` as `photo.font-substituted` on its type layer, naming the character and its
+  code point, so an agent sees why a box was drawn; spaces, line breaks and invisible format
+  characters are never reported. Before, such a character drew a bar with no diagnostic.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: type_missing_glyph }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

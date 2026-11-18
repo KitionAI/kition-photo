@@ -1,0 +1,20 @@
+format: 1
+id: regressions/issue-12
+feature: photo.type.text
+intent: >-
+  Justified text with hyphenation fills every line but a paragraph's last to the box's width: a
+  line that ends at a hyphenation point is justified to the width less its hyphen, so the hyphen
+  ends at the edge rather than past it, and a line narrowed for a hyphen that then breaks at a
+  space is justified to the full width rather than left short.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: owned
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: justify_hyphenate }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

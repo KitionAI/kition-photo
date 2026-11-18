@@ -1,0 +1,18 @@
+format: 1
+id: regressions/issue-c8-photo-3-derived
+feature: photo.agent.premises
+intent: >-
+  Merge Down, Stamp Down and Flatten All Layer Effects hold global light and stored patterns
+  that they bake. A colleague's note remains independent and survives in the saved merge.
+layer: gate
+source:
+  kind: probe
+  from: "C8-photo-3, bindings/headless/tests/derived_matrix.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: derived_matrix }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

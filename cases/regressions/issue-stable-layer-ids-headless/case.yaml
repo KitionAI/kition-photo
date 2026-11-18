@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-stable-layer-ids-headless
+feature: photo.agent.observe
+intent: >-
+  What the headless kit answers as a layer's id is the same after the rollback of a failed run
+  (closing the document and opening its file again), after model.open of a replica and after
+  model.export opened by another kit (KHP A46, A53, A57); and with two documents open in one kit,
+  each numbers its own layers, so what one holds never changes the ids of the other.
+layer: gate
+source:
+  kind: probe
+  from: khp check of kit.photo (A53, photo_inspect answers differently after a run whose last step failed)
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: stable_ids }
+expected:
+  - actual: out:exit
+    compare: exit
+tags: [headless]
+since: "2026-11-17"

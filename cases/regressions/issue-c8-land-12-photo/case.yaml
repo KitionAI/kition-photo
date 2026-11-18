@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-c8-land-12-photo
+feature: photo.agent.premises
+intent: >-
+  Receipts name stored layer ids and defaults, numeric mask members refuse invalid
+  values atomically, and SDK tree deletion limitations remain reproducible.
+layer: gate
+source:
+  kind: probe
+  from: "task card C8-land-12-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-io, test: land12 }
+  - cargo-test: { package: kition-photo-psd, test: land12 }
+  - cargo-test: { package: kition-photo-kit, test: land12 }
+  - cargo-test: { package: kition-photo, test: land12 }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.premises/outside
+feature: photo.agent.premises
+intent: >-
+  The premise guard with a colleague's engine changing the file between the agent's inspect and write: unrelated changes apply, the same property, a delete, paint in the region, a move, a resize and a renamed name are refused; a write by #n (from the top) after an insert above is refused as relocated and after an insert below applies; on a .psd an opacity is held as the file stores it.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: outside }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-export-command-mismatch
+feature: photo.file.export
+intent: >-
+  Every `exports` entry in kit.json names the command `agent.export` names, `file.exportImage`
+  (platform K21), and that command, run as the agent with the entry's extension as `format`,
+  answers the entry's PNG, JPEG, TIFF or WebP. Before, the entries named
+  `file.export.quickExport`, which takes a path and is not offered to agents, so a check that ran
+  it got "command not found".
+layer: gate
+source:
+  kind: probe
+  from: "agent readiness review (photo, X3) and node kition-sdk/tools/check-manifest.mjs kit.json"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: export, filter: every_export_entry_names_the_agents_export_command }
+expected:
+  - actual: out:exit
+    compare: exit
+tags: [headless]
+since: "2026-11-17"

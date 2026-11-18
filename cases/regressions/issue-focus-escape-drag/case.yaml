@@ -1,0 +1,24 @@
+format: 1
+id: regressions/issue-focus-escape-drag
+feature: photo.editor.display-modes
+intent: >-
+  Escape drops the drag under way (a marquee, a move) so its release commits nothing, and drops a proposed crop; in
+  Focus such an Escape stays in Focus, and only an Escape with nothing to drop leaves it. Before, no drag could be
+  dropped by key, so an Escape mid-marquee left Focus and the release still made the selection.
+layer: gate
+source:
+  kind: probe
+  from: kit display modes work (DM-photo, X2)
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/focus.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 60
+since: "2026-11-17"

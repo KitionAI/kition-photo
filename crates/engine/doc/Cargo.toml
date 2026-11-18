@@ -1,0 +1,16 @@
+[package]
+name = "kition-photo-doc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kition-photo-geom = { workspace = true }
+kition-photo-color = { workspace = true }
+kition-photo-raster = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+getrandom = { version = "0.2", features = ["js"] }

@@ -1,0 +1,20 @@
+format: 1
+id: regressions/issue-14
+feature: photo.type.styles
+intent: >-
+  document.inspect gives a type layer's weight, and a weight no font here has (Inter Bold: the
+  built-in Inter is Regular, Medium and SemiBold) is reported by the check with the weight it is
+  drawn at, until the host adds a font that has it (kition-fonts' variable Inter); a host that
+  serves the family is asked for it.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: owned
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: type_weight }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

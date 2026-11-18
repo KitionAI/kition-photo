@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-5
+feature: photo.path.shapes
+intent: >-
+  shape.create adds to an existing shape layer through `addTo` in both forms its notation names
+  (an id with `op`, or `{layer, op}`) instead of making a new layer; an even-odd fill rule cuts
+  holes where subpaths overlap, set at creation or by shape.edit; a shape's bounds are its drawn
+  pixels, without the subtracted parts. Before, the object form was ignored and made a new layer
+  (whose bounds then held the "subtracted" shape), and `fillRule: evenodd` was stored but drew
+  like non-zero.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: shape_paths }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

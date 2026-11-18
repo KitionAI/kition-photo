@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.saved/in-memory-saved
+feature: photo.agent.saved
+intent: >-
+  After each representative agent command the image equals its saved .kphoto reopened (object model and inspect), the fixture files reopen as they were, and the kinds of difference a PSD shows are pinned.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: saved }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

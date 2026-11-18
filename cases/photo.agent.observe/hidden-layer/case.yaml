@@ -1,0 +1,38 @@
+format: 1
+id: photo.agent.observe/hidden-layer
+feature: photo.agent.observe
+intent: >-
+  The agent reads the layer stack to find the one hidden layer, without being told its name, and
+  renames it; it stays hidden and nothing else changes.
+layer: eval
+source:
+  kind: synthetic
+  from: repo:conformance/check-hidden-layer.psd
+  license: Apache-2.0
+  note: A copy of the conformance fixture for photo.hidden-layer (a hidden Badge layer over a Background), written by the photo engine.
+input: [input/poster.psd]
+steps:
+  - task:
+      prompt: >-
+        One layer in poster.psd is hidden. Find it and rename it to "Hidden Badge". Keep it hidden
+        and change nothing else.
+      max_turns: 20
+  - inspect: { path: poster.psd, as: after }
+expected:
+  - actual: out:after
+    compare: values
+    value:
+      details.layers: { any: { name: Hidden Badge, visible: false } }
+  - actual: out:after
+    compare: values
+    collateral: true
+    value:
+      details.layers: { count: 2 }
+      details.layers.1.name: Background
+      details.layers.1.visible: true
+      details.layers.1.opacity: 1
+solution:
+  - tool: photo_run
+    args: { path: poster.psd, steps: [{ command: layer.renameLayer, params: { layer: 2, name: Hidden Badge } }] }
+since: "2026-11-17"
+timeout_s: 600

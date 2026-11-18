@@ -1,0 +1,20 @@
+format: 1
+id: photo.agent.context/reads-declared
+feature: photo.agent.context
+intent: >-
+  Commands run in editor states that differ in one member (active layer, selected layers,
+  pixel selection, colors). The tables must agree with observed dependencies. Shared filter
+  reads are also checked against their implementation; remaining unobserved commands use
+  notation and description as a fallback, with explicit exclusions for inspected implementations.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: acts }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

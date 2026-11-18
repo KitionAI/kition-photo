@@ -1,0 +1,19 @@
+format: 1
+id: regressions/issue-psd-opacity-stored
+feature: photo.agent.saved
+intent: >-
+  An image saved as PSD holds a layer's opacity as the file stores it (one byte): an agent's 0.37
+  is 94/255 in memory and in its receipt, so after a colleague edits the .psd the agent's own
+  opacity does not read as a change by others and its next write on that layer applies.
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo-2, bindings/headless/tests/outside.rs (scenario 11)"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: outside, filter: s11_a_psd_holds_an_opacity_as_the_file_stores_it }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,1272 @@
+/* The Photo editor's own layout; colors and shapes come from @kition/kit-editor's tokens. */
+
+.photo-options {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: max-content;
+  font-size: 13px;
+}
+
+.photo-options-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.photo-option {
+  display: contents;
+}
+
+.photo-options-label {
+  color: var(--kit-text-muted);
+  white-space: nowrap;
+}
+
+.photo-options-end {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* A number field is as wide as its label and room for six digits. */
+.photo-options .kui-number-field-input {
+  flex: none;
+  width: 7ch;
+}
+
+.photo-note-author {
+  width: 120px;
+  height: 28px;
+}
+
+.photo-brush-tip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--kit-text);
+  font-size: 10px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.photo-brush-tip span {
+  color: var(--kit-text-muted);
+}
+
+.photo-gradient-swatch {
+  flex: none;
+  width: 96px;
+  height: 20px;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+}
+
+.photo-swatch {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 18px;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.photo-swatch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.photo-swatch-static {
+  width: 22px;
+  height: 16px;
+}
+
+.photo-menu-heading {
+  padding: 4px 10px 2px;
+  color: var(--kit-text-muted);
+  font-size: 11px;
+}
+
+.photo-rail {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  min-height: 0;
+  border-right: 1px solid var(--kit-border);
+  background: var(--kit-surface-muted);
+}
+
+/* The chips and mode buttons follow the tools, as upstream lays them out, not the rail's foot. */
+.photo-rail .kui-tool-rail {
+  flex: 0 1 auto;
+  min-height: 0;
+  border-right: 0;
+}
+
+.photo-rail .photo-colors {
+  margin-top: 6px;
+}
+
+.photo-colors {
+  position: relative;
+  width: 44px;
+  height: 74px;
+  flex: none;
+}
+
+/* Upstream's chips: a hairline (its field border) round each, so a white chip shows on a light rail,
+ * and a ring of the rail's own colour parting the foreground from the background under it. */
+.photo-color {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--kit-text-muted);
+  border-radius: 3px;
+}
+
+.photo-color-foreground {
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+  box-shadow: 0 0 0 1.5px var(--kit-surface-muted);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.photo-color-foreground input {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.photo-color-background {
+  top: 16px;
+  left: 16px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.photo-color-background input {
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* Upstream's mode buttons under the chips (Quick Mask). */
+.photo-rail-modes {
+  display: flex;
+  flex: none;
+  width: 44px;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.photo-color-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  transform: scale(0.75);
+  transform-origin: left bottom;
+}
+
+/* The dock beside the canvas (upstream's right dock, 290 px in its Photoshop theme). */
+.photo-dock {
+  width: 290px;
+}
+
+.photo-props {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 8px 8px;
+  /* Its padding inside the dock body's height, or the last row hides under the body's edge. */
+  box-sizing: border-box;
+  font-size: 12px;
+}
+
+/* The header: the kind's icon, the layer's (or document's) name, and its kind in the muted colour. */
+.photo-props-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.photo-props-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-props-kind,
+.photo-props-label {
+  color: var(--kit-text-muted);
+  white-space: nowrap;
+}
+
+.photo-props-section + .photo-props-section,
+.photo-props-header + .kui-element .photo-props-section {
+  border-top: 1px solid var(--kit-border);
+}
+
+.photo-props-section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kit-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-props-section-head svg {
+  color: var(--kit-text-muted);
+}
+
+/* A panel's editing controls, disabled for a viewer: no box of its own. */
+.photo-editing-controls {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.photo-props-section-body,
+.photo-props-fields,
+.photo-props-adjustment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+
+.photo-props-adjustment {
+  padding-top: 6px;
+}
+
+.photo-props-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.photo-props-row .kui-number-field,
+.photo-props-fields > .kui-number-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.photo-props-row .kui-number-field-input {
+  width: 7ch;
+}
+
+.photo-props-gap {
+  width: 22px;
+  flex: none;
+}
+
+/* A panel's hints wrap (the options bar's stay on one line). */
+.photo-props .kui-hint {
+  white-space: normal;
+}
+
+.photo-props-text {
+  margin: 0;
+  color: var(--kit-text);
+}
+
+.photo-props-value[data-warn='true'] {
+  color: var(--kit-danger);
+}
+
+/* A layer's X, Y, W, and H, read only: upstream's two-column grid of dim names and monospaced values. */
+.photo-props-bounds {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 2px 4px;
+}
+
+.photo-props-bound {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: baseline;
+}
+
+.photo-props-bound dt {
+  color: var(--kit-text-muted);
+}
+
+.photo-props-bound dd {
+  margin: 0;
+  font-family: var(--kit-font-mono);
+  font-size: 12px;
+}
+
+.photo-props-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.photo-props-paint {
+  min-width: 28px;
+  padding: 0 4px;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+  color: var(--kit-text-muted);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.photo-gradient-preview {
+  height: 18px;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+}
+
+.photo-swatch[data-disabled='true'] {
+  opacity: 0.4;
+}
+
+/* History: the snapshot row, then the states (those Redo steps through dimmed). */
+.photo-history,
+.photo-adjustments {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-size: 12px;
+}
+
+.photo-history-snapshot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  height: 38px;
+  padding-left: 28px;
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.photo-history-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-history-rows {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.photo-history-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 24px;
+  padding: 0 8px 0 34px;
+  border: 0;
+  background: transparent;
+  color: var(--kit-text);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.photo-history-row:hover {
+  background: var(--kit-primary-soft);
+}
+
+.photo-history-row[aria-current='step'] {
+  background: var(--kit-primary-soft);
+  font-weight: 500;
+}
+
+.photo-history-row[data-redo='true'] {
+  color: var(--kit-text-muted);
+}
+
+.photo-history-row:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+
+/* Adjustments: upstream's grid of one-click adjustment layers. */
+.photo-adjustments {
+  padding: 6px 8px;
+}
+
+.photo-adjustments-hint {
+  margin: 0 0 4px;
+}
+
+.photo-adjustments-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.photo-adjustments-grid .kui-icon-button {
+  width: 30px;
+  height: 30px;
+}
+
+/* Layers, Channels, Paths: a head, rows that scroll, and a footer pinned at the bottom. */
+.photo-layers,
+.photo-channels,
+.photo-paths {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-size: 12px;
+}
+
+.photo-layers-head,
+.photo-layers-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 0;
+}
+
+.photo-layers-props {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.photo-layers-line {
+  justify-content: space-between;
+}
+
+.photo-layers-line .kui-choice {
+  flex: 1;
+  min-width: 0;
+}
+
+.photo-layers-line .kui-choice select {
+  width: 100%;
+}
+
+.photo-layers-line .kui-number-field-input {
+  width: 6ch;
+}
+
+.photo-layers-search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-control);
+  background: var(--kit-surface);
+  color: var(--kit-text-muted);
+}
+
+.photo-layers-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kit-text);
+  font: inherit;
+  outline: none;
+}
+
+.photo-layers-filters,
+.photo-layers-locks {
+  display: inline-flex;
+  align-items: center;
+}
+
+.photo-layers-filters .kui-icon-button,
+.photo-layers-locks .kui-icon-button {
+  width: 22px;
+  height: 22px;
+}
+
+.photo-layers-label {
+  margin-right: 2px;
+  color: var(--kit-text-muted);
+  white-space: nowrap;
+}
+
+.photo-layers-rows,
+.photo-effects {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-layers-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.photo-layers-rows[data-disabled='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.photo-layer-name:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: -2px;
+}
+
+/* The row being dragged, following the pointer (upstream's ghost label). */
+.photo-layer-ghost {
+  position: fixed;
+  z-index: 60;
+  max-width: 200px;
+  padding: 2px 8px;
+  overflow: hidden;
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-control);
+  background: var(--kit-surface);
+  box-shadow: var(--kit-shadow-card);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.photo-layer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding-right: 8px;
+  border-bottom: 1px solid var(--kit-border);
+  cursor: default;
+  user-select: none;
+}
+
+/* A Layers row: upstream's default thumbnails (34 px) in rows of 44, the name over its kind. */
+.photo-layer[data-layer-row] {
+  height: 44px;
+}
+
+.photo-layer[data-selected='true'] {
+  background: var(--kit-primary-soft);
+}
+
+.photo-layer[data-hidden='true'] .photo-layer-name {
+  color: var(--kit-text-muted);
+}
+
+.photo-layer[data-drop='above'] {
+  box-shadow: inset 0 2px 0 var(--kit-primary);
+}
+
+.photo-layer[data-drop='below'] {
+  box-shadow: inset 0 -2px 0 var(--kit-primary);
+}
+
+.photo-layer[data-drop='into'] {
+  box-shadow: inset 0 0 0 2px var(--kit-primary);
+}
+
+/* The eye column, divided from the rest of the row as in Photoshop. */
+.photo-layer-eye {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  align-self: stretch;
+  width: 30px;
+  border-right: 1px solid var(--kit-border);
+}
+
+.photo-layer-indent {
+  flex: none;
+}
+
+.photo-disclosure,
+.photo-layer-fx {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kit-text-muted);
+  cursor: pointer;
+}
+
+.photo-layer-fx i {
+  font-weight: 600;
+}
+
+.photo-layer-clip {
+  flex: none;
+  color: var(--kit-text-muted);
+}
+
+.photo-layer-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--kit-text-muted);
+  outline-offset: 0;
+}
+
+/* Upstream frames the targeted thumbnail (pixels or mask) of the active layer. */
+/* A Layers row's thumbnail box, framed by a hairline as upstream frames it. */
+.photo-layer[data-layer-row] .photo-layer-thumb {
+  width: 34px;
+  height: 34px;
+  box-sizing: content-box;
+  border: 1px solid var(--kit-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* An adjustment's or a group's thumbnail: its glyph on a field-coloured tile. */
+.photo-layer-thumb[data-tile='icon'] {
+  background: var(--kit-surface);
+  color: var(--kit-text);
+}
+
+.photo-layer-thumb[data-target='true'] {
+  outline: 1px solid var(--kit-text);
+}
+
+.photo-layer-thumb[data-disabled='true'] {
+  opacity: 0.4;
+}
+
+.photo-channel-thumb {
+  width: 30px;
+  height: 30px;
+  margin-left: 4px;
+}
+
+.photo-type-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+  background: #dedede;
+  color: #282828;
+  font-weight: 600;
+}
+
+.photo-layer-chain {
+  flex: none;
+  width: 10px;
+  color: var(--kit-text-muted);
+}
+
+.photo-layer-name {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 2px;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* The name over its kind (upstream's sub-label, 11 px in the faint text colour). */
+.photo-layer-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+
+.photo-layer-text .photo-layer-name {
+  flex: none;
+  height: auto;
+  line-height: 16px;
+}
+
+.photo-layer-kind {
+  padding: 0 2px;
+  overflow: hidden;
+  color: var(--kit-text-muted);
+  font-size: 11px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-layer-name[data-italic='true'] {
+  font-style: italic;
+}
+
+.photo-layer-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  color: var(--kit-text-muted);
+}
+
+.photo-layer-lease {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 88px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: var(--kit-primary-soft);
+  color: var(--kit-primary);
+  font-size: 10.5px;
+}
+
+.photo-layer-lease-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-layer-blend {
+  max-width: 64px;
+  overflow: hidden;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-effect {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  border-bottom: 1px solid var(--kit-border);
+  color: var(--kit-text-muted);
+  font-size: 11.5px;
+}
+
+.photo-effect[data-off='true'] {
+  opacity: 0.6;
+}
+
+/* An effect row's eye sits in the eye column, left of the row's indentation. */
+.photo-effects {
+  position: relative;
+}
+
+.photo-effect-eye {
+  position: absolute;
+  left: 0;
+  height: 22px;
+}
+
+.photo-channel-key {
+  flex: none;
+  color: var(--kit-text-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.photo-path-thumb svg {
+  width: 28px;
+  height: 28px;
+}
+
+.photo-path-canvas {
+  fill: var(--kit-surface);
+  stroke: var(--kit-border);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.photo-path-shape {
+  fill: var(--kit-text-muted);
+  fill-opacity: 0.35;
+  stroke: var(--kit-text);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.photo-layers .kui-panel-footer [data-layer-drop] {
+  display: inline-flex;
+  border-radius: var(--kit-radius-control);
+}
+
+.photo-layers .kui-panel-footer [data-over='true'] {
+  box-shadow: inset 0 0 0 2px var(--kit-primary);
+}
+
+.photo-fx-button i {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.photo-empty {
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.photo-text-field {
+  position: absolute;
+  min-width: 160px;
+  padding: 0 2px;
+  border: 1px dashed var(--kit-primary);
+  border-radius: 2px;
+  background: transparent;
+  line-height: 1;
+  outline: none;
+}
+
+.photo-shortcuts {
+  max-height: 60vh;
+  overflow: auto;
+  font-size: 13px;
+}
+
+.photo-shortcuts h3 {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.photo-shortcuts dl {
+  margin: 0;
+}
+
+.photo-shortcuts dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--kit-border);
+}
+
+.photo-shortcuts dt {
+  color: var(--kit-text);
+}
+
+.photo-shortcuts dd {
+  margin: 0;
+  color: var(--kit-text-muted);
+  white-space: nowrap;
+}
+
+/* Color, Swatches, Navigator, Histogram, Info, Character, and Paragraph share a padded, scrolling body. */
+.photo-color-panel,
+.photo-swatches,
+.photo-navigator,
+.photo-histogram,
+.photo-info,
+.photo-type-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 8px 8px;
+  /* Its padding inside the dock body's height, or the last row hides under the body's edge. */
+  box-sizing: border-box;
+  font-size: 12px;
+}
+
+/* Color: the foreground and background chips beside the picker; the one the field edits is framed (upstream's `field_chips`). */
+.photo-color-panel {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.photo-color-panel .kui-color-picker {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Upstream's field and hue strip are 120 px tall. */
+.photo-color-panel .kui-color-picker-square,
+.photo-color-panel .kui-color-picker-hue {
+  height: 120px;
+}
+
+.photo-color-chips {
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 38px;
+}
+
+.photo-color-chip {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--kit-border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.photo-color-chip-foreground {
+  top: 3px;
+  left: 3px;
+  z-index: 1;
+}
+
+.photo-color-chip-background {
+  top: 13px;
+  left: 13px;
+}
+
+.photo-color-chip[aria-pressed='true'] {
+  outline: 1px solid var(--kit-text-muted);
+  outline-offset: 2px;
+}
+
+.photo-color-chip:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+/* Swatches: upstream's grid, ten to a row. */
+.photo-swatches-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.photo-swatches-name {
+  margin: 0 0 3px;
+  color: var(--kit-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.photo-swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.photo-swatches-cell {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.photo-swatches-cell:hover,
+.photo-swatches-cell[aria-pressed='true'] {
+  outline: 1.5px solid var(--kit-text);
+  outline-offset: 1px;
+}
+
+.photo-swatches-cell:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 1px;
+}
+
+.photo-swatches-hint,
+.photo-type-hint {
+  margin: 0;
+  color: var(--kit-text-muted);
+  font-size: 11px;
+}
+
+.photo-swatches .kui-panel-footer {
+  margin: 0 -8px -8px;
+}
+
+/* Navigator: the image fitted in its frame over a checkerboard, the canvas's view outlined. */
+.photo-navigator-frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--kit-canvas);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.photo-navigator-image {
+  position: absolute;
+  background-color: #ffffff;
+  background-image: linear-gradient(45deg, #cccccc 25%, transparent 25%, transparent 75%, #cccccc 75%), linear-gradient(45deg, #cccccc 25%, transparent 25%, transparent 75%, #cccccc 75%);
+  background-position:
+    0 0,
+    6px 6px;
+  background-size: 12px 12px;
+}
+
+.photo-navigator-view {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid var(--kit-danger);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.photo-navigator-zoom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.photo-navigator-label {
+  color: var(--kit-text-muted);
+}
+
+.photo-navigator-presets {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.photo-navigator-presets .kui-button {
+  min-width: 0;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.photo-navigator-presets .kui-button[aria-pressed='true'] {
+  border-color: var(--kit-primary);
+  background: var(--kit-primary-soft);
+}
+
+.photo-navigator-slider {
+  width: 100%;
+  accent-color: var(--kit-primary);
+}
+
+/* Histogram: the graph in the channel's colour (upstream's `channel_color`), then its statistics. */
+.photo-histogram-graph {
+  position: relative;
+  color: var(--kit-text-muted);
+  background: var(--kit-surface-muted);
+}
+
+.photo-histogram-graph[data-channel='red'] {
+  color: rgb(235 80 80);
+}
+
+.photo-histogram-graph[data-channel='green'] {
+  color: rgb(80 205 95);
+}
+
+.photo-histogram-graph[data-channel='blue'] {
+  color: rgb(90 140 255);
+}
+
+.photo-histogram-graph .kui-histogram {
+  display: block;
+  width: 100%;
+}
+
+.photo-histogram-stale {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: var(--kit-danger);
+}
+
+/* A readout: dim labels, values in the monospace face (upstream's Info and Histogram rows). */
+.photo-readout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.photo-readout > div {
+  display: contents;
+}
+
+.photo-readout dt {
+  color: var(--kit-text-muted);
+}
+
+.photo-readout dd {
+  margin: 0;
+  font-family: var(--kit-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.photo-info-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.photo-info-rule {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--kit-border);
+}
+
+.photo-info-doc {
+  margin: 0;
+  color: var(--kit-text-muted);
+}
+
+/* Character and Paragraph: two fields to a row, each a glyph and its value (upstream's `num_field`). */
+.photo-type-panel .kui-choice,
+.photo-type-panel .kui-choice select {
+  width: 100%;
+}
+
+.photo-type-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.photo-type-row .kui-number-field {
+  min-width: 0;
+}
+
+.photo-type-row .kui-number-field-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.photo-kerning,
+.photo-type-color {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.photo-kerning-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.photo-kerning-presets {
+  flex: none;
+  width: 22px;
+  padding: 0 2px;
+}
+
+/* Only kit-editor's chevron shows on the presets drop-down (it has no value of its own). */
+select.kui-field.photo-kerning-presets {
+  padding: 0;
+  background-position: center;
+}
+
+.photo-type-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-type-color .photo-swatch {
+  flex: 1;
+  height: 22px;
+}
+
+.photo-type-toggles {
+  display: flex;
+  gap: 2px;
+}
+
+.photo-type-toggles .kui-icon-button {
+  flex: 1;
+}
+
+/* Type Options: the vertical orientation's glyph is the horizontal one turned. */
+.photo-type-vertical svg {
+  transform: rotate(90deg);
+}
+
+/* Upstream's status bar: the zoom field, then the document's mode, size, and layers between short
+   hairlines, then the active tool's hint, cut short when the bar is narrow. */
+.photo-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.photo-status .kui-bar-separator {
+  height: 16px;
+}
+
+.photo-status-zoom .kui-number-field {
+  height: 22px;
+}
+
+.photo-status-zoom .kui-number-field-label {
+  display: none;
+}
+
+.photo-status .kui-hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The "Rasterize?" prompt: Photoshop's question beside a warning mark (upstream's `rasterize_prompt::body`). */
+.photo-rasterize {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 420px;
+}
+
+.photo-rasterize p {
+  margin: 0;
+}
+
+.photo-rasterize-mark {
+  flex: none;
+  color: var(--kit-danger);
+}

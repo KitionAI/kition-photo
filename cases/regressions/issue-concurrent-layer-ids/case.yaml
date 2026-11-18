@@ -1,0 +1,23 @@
+format: 1
+id: regressions/issue-concurrent-layer-ids
+feature: photo.agent.observe
+dimension: collab
+intent: >-
+  Every layer stores its id in the replica (Layer.number), so a reopen, a replica-only open and an
+  exported replica give the ids the session had, an undone delete brings a layer back under its id,
+  and a layer made through the object model gets the next free id, stored by the repair. Two
+  replicas that each add a layer with the same id converge to identical, distinct ids in both merge
+  orders (the smaller object id keeps it, the other takes the next free one), the merge writes
+  nothing, and the next edit stores the new number.
+layer: gate
+source:
+  kind: synthetic
+  from: crates/kdm/kdm-model/tests/numbers.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kdm-model, test: numbers }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

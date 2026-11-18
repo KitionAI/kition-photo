@@ -1,0 +1,37 @@
+format: 1
+id: photo.agent.recover/off-canvas
+feature: photo.agent.recover
+intent: >-
+  The agent runs the kit's check, finds a layer that lies wholly outside the canvas (the check
+  offers no fix), and moves it back into view rather than deleting it (KHP Verify).
+layer: eval
+source:
+  kind: synthetic
+  from: repo:conformance/check-off-canvas.psd
+  license: Apache-2.0
+  note: A copy of the conformance fixture for photo.off-canvas (a Stray layer at x 910 on a 320 px canvas), written by the photo engine.
+input: [input/stray.psd]
+steps:
+  - task:
+      prompt: >-
+        Run the kit's check on stray.psd and fix what it reports. Keep every layer.
+      max_turns: 20
+  - inspect: { path: stray.psd, as: after }
+  - check: { path: stray.psd, as: diagnostics }
+expected:
+  - actual: out:diagnostics
+    compare: diagnostics
+    value: { absent: [photo.off-canvas], max_errors: 0 }
+  - actual: out:after
+    compare: values
+    collateral: true
+    value:
+      details.layers: { count: 2 }
+      details.layers.0.name: Stray
+      details.layers.1.name: Background
+      details.layers.1.bounds: [0, 0, 320, 200]
+solution:
+  - tool: photo_run
+    args: { path: stray.psd, steps: [{ command: layer.translate, params: { layer: 2, dx: -800, dy: 0 } }] }
+since: "2026-11-17"
+timeout_s: 600

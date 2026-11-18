@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-1
+feature: photo.type.text
+intent: >-
+  Colour emoji from a COLR font (kition-fonts' Noto Color Emoji, COLRv1) draw in colour, with
+  their gradients and layers, whether the run names the emoji family or an emoji falls back to it
+  from other text, and the text colour still draws the letters around them. Before, the glyphs
+  kept their advance but drew nothing. The test reads Noto-COLRv1.ttf from KITION_FONTS_DIR or
+  the kition-fonts checkout next to this one (fonts are never committed).
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: color_emoji }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

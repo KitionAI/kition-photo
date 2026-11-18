@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-refused-batch-kept
+feature: photo.agent.recover
+intent: >-
+  A refused object-model batch leaves the image as it was (KHP A16, A18): after `photo_batch` sets
+  `root.depth` (or `root.guides`) to a value the image has no meaning for and is refused, a query
+  reads the old value, the next batch runs, and saving and reopening shows only that batch.
+  Before, the replica kept the refused value while the image could not read it, so queries read it
+  back and every later batch failed.
+layer: gate
+source:
+  kind: probe
+  from: "agent readiness review (photo, stage 5) and the follow-up conformance run"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: headless, filter: a_refused_batch_leaves_the_image_as_it_was }
+expected:
+  - actual: out:exit
+    compare: exit
+tags: [headless]
+since: "2026-11-17"

@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-7
+feature: photo.layer.adjustment
+intent: >-
+  Selective Color, as an adjustment layer and on pixels, takes every colour range its description
+  lists (`reds`, `yellows`, `greens`, `cyans`, `blues`, `magentas`, `whites`, `neutrals`,
+  `blacks`, each [c, m, y, k]) and keeps them on the layer; a range it does not know is still
+  refused. Before, the parameter notation named only `reds`, so the unknown-parameter check
+  refused `blues` and the other ranges.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: selective_color_ranges }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

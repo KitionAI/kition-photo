@@ -1,0 +1,17 @@
+format: 1
+id: regressions/issue-c8-expectations-photo-slices
+feature: photo.agent.premises
+intent: >-
+  All thirteen supported slice assignments refuse changed values, even when assigning the
+  colleague's new value, and merge other fields. Hexadecimal backgrounds remain valid writes.
+layer: gate
+source:
+  kind: probe
+  from: "C8-expectations review photo, bindings/headless/tests/expectations_review.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: expectations_review }
+expected:
+  - { actual: out:exit, compare: exit }
+since: "2026-11-17"

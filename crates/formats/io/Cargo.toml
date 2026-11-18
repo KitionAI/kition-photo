@@ -1,0 +1,53 @@
+[package]
+name = "kition-photo-io"
+description = "Import/export between kition-photo documents and PSD/PSB and flat raster formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when the corpus is missing.
+corpus = []
+# HEIC/HEIF decode (forwarded to kition-photo-codecs; see its `heif` feature).
+heif = ["kition-photo-codecs/heif"]
+
+[dependencies]
+kition-photo-geom = { workspace = true }
+kition-photo-color = { workspace = true }
+kition-photo-cms = { workspace = true }
+kition-photo-raster = { workspace = true }
+kition-photo-doc = { workspace = true }
+kition-photo-compose = { workspace = true }
+kition-photo-algo = { workspace = true }
+kition-photo-psd = { workspace = true }
+kition-photo-codecs = { workspace = true }
+kition-photo-raw = { workspace = true }
+kition-photo-affinity = { workspace = true }
+kition-photo-text = { workspace = true }
+kition-photo-paint = { workspace = true }
+kition-photo-vector = { workspace = true }
+kition-photo-format = { path = "../format" }
+thiserror = { workspace = true }
+serde_json = { workspace = true }
+blake3 = { version = "1.8", default-features = false, features = ["pure"] }
+# svg.rs inflates `.svgz` itself (with a size cap) so the XML can be checked before it is parsed.
+flate2 = { workspace = true }
+# SVG import (svg.rs): usvg parses, resvg rasterises what the shape model can't hold. Both are
+# already in the tree through the UI's icon loader; text shaping needs the fonts feature set.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+resvg = { version = "0.45", default-features = false, features = ["text", "system-fonts", "raster-images"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+resvg = { version = "0.45", default-features = false, features = ["text", "raster-images"] }
+
+[dev-dependencies]
+crc32fast = "1.5"
+kition-photo-affinity = { workspace = true, features = ["synth"] }
+flate2 = { workspace = true }
+kition-photo-psd = { workspace = true, features = ["testgen"] }
+kition-photo-raw = { workspace = true, features = ["testgen"] }
+proptest = { workspace = true }

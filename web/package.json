@@ -1,0 +1,42 @@
+{
+  "name": "kition-photo-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Photo kit's own editor (Kition platform `docs/platform/kits/ui.md`), embedded by hosts over the Kit UI protocol.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "engine": "sh scripts/build-engine.sh",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test:flow": "node tests/flow.mjs chromium && node tests/flow.mjs webkit",
+    "test:modes": "node tests/modes.mjs chromium && node tests/modes.mjs webkit",
+    "test:focus": "node tests/focus.mjs chromium && node tests/focus.mjs webkit",
+    "test:auto-select": "node tests/auto-select.mjs chromium && node tests/auto-select.mjs webkit",
+    "test:parity": "node --test parity/check.test.mjs src/menus/menus.test.mjs src/tools/catalog.test.mjs src/tools/options.test.mjs src/options/controls.test.mjs src/panels/thumbnails.test.mjs src/panels/maskTarget.test.mjs src/panels/properties.test.mjs src/panels/readouts.test.mjs src/tools/rasterize.test.mjs src/layerLeases.test.mjs",
+    "test:scenarios:engine": "node --test tests/scenarios/engine.test.mjs",
+    "test:scenarios:ui": "playwright test",
+    "test:scenarios": "pnpm test:scenarios:engine && pnpm test:scenarios:ui",
+    "test:ci": "node scripts/test-ci.mjs",
+    "test:ci:full": "node scripts/test-ci.mjs --full"
+  },
+  "dependencies": {
+    "@kition/kit-dev-host": "^0.1.0",
+    "@kition/kit-host": "^0.1.0",
+    "@kition/kit-ui-protocol": "^0.1.0",
+    "@kition/kit-editor": "^0.1.0",
+    "@kition/tessera-icons": "^0.1.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "playwright": "1.59.1",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}

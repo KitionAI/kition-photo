@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-enum-fields-as-strings
+feature: photo.agent.recover
+intent: >-
+  A field that takes fixed values says which (KHP A48): `model.describe` lists the values of the
+  image's mode and depth and of a layer's blend mode, and a batch that sets another value is
+  refused at that operation (`invalid-value`, naming the field) before the image sees it, while a
+  listed value is taken. Before, the three were declared as plain strings, so agents and tools
+  could not know the legal values and an illegal one reached the image.
+layer: gate
+source:
+  kind: probe
+  from: "agent readiness review (photo, X6) and the follow-up conformance run"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: headless, filter: the_object_model_lists_the_values_a_field_takes }
+expected:
+  - actual: out:exit
+    compare: exit
+tags: [headless]
+since: "2026-11-17"

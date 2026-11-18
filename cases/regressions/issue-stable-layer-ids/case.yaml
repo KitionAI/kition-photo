@@ -1,0 +1,23 @@
+format: 1
+id: regressions/issue-stable-layer-ids
+feature: photo.agent.observe
+intent: >-
+  Layer ids came from one process-wide counter, so every open of a file renumbered its layers (5
+  became 9, 2 became 8): after the reopen with which Kition rolls back a failed run, an id an agent
+  had noted named another layer (KHP A46, A53, A57). A PSD now gives each layer the id its record
+  stores (lyid) and writes the id back, a .kphoto keeps the ids its manifest or replica stores, and
+  a document numbers its own layers: every kind of layer keeps its id through PSD and .kphoto save
+  and reopen, a replica-only open and a rolled-back run, whatever else is open; a layer copied,
+  pasted or unpacked from an object layer into a document takes a fresh id there.
+layer: gate
+source:
+  kind: probe
+  from: khp check of kit.photo (A53, photo_inspect answers differently after a run whose last step failed)
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-engine, test: stable_ids }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

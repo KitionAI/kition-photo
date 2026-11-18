@@ -1,0 +1,19 @@
+format: 1
+id: regressions/issue-layer-delete-mask
+feature: photo.agent.saved
+intent: >-
+  Deleting a layer deletes its mask with it: the mask's Surface is the layer's own, and one left
+  behind in the replica made the image in memory differ from the same image read from its PSD,
+  which the agents' premise guard reads as a change by others.
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo, bindings/wasm/tests/saved.rs (in memory = saved)"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kdm-model, test: session, filter: deleting_a_layer_deletes_its_mask }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

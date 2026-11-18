@@ -1,0 +1,649 @@
+format: 1
+kit: photo
+updated: "2026-11-17"
+gate_budget_s: 600
+protected: []
+features:
+  - id: photo.agent.observe
+    title: An agent reads the layer stack and acts on what it finds
+    dimension: [ai]
+    priority: P0
+    status: has
+    requirements: [AX13]
+    cases: [photo.agent.observe/hidden-layer, regressions/issue-9, regressions/issue-selection-after-rollback, regressions/issue-stable-layer-ids, regressions/issue-stable-layer-ids-headless, regressions/issue-concurrent-layer-ids]
+    since: "2026-11-17"
+  - id: photo.agent.act
+    title: An agent changes layer properties
+    dimension: [ai]
+    priority: P0
+    status: has
+    requirements: [AX13]
+    cases: [photo.agent.act/badge-opacity]
+    since: "2026-11-17"
+  - id: photo.agent.recover
+    title: An agent fixes what the check reports
+    dimension: [ai]
+    priority: P0
+    status: has
+    requirements: [AX13]
+    cases: [photo.agent.recover/off-canvas, regressions/issue-10, regressions/issue-enum-fields-as-strings, regressions/issue-refused-batch-kept, regressions/issue-unknown-params]
+    since: "2026-11-17"
+  - id: photo.agent.draft
+    title: An agent works in a draft over a conversation
+    dimension: [ai]
+    priority: P1
+    status: has
+    requirements: [AX13]
+    cases: [photo.agent.draft/title-layer]
+    since: "2026-11-17"
+  - id: photo.agent.context
+    title: "An agent's call says what it acts on: editor-state hooks, on, layer / region / colors; observed reads supplemented by implementation checks"
+    dimension: [ai]
+    priority: P0
+    status: has
+    paths: [bindings/wasm/src/context.rs, bindings/wasm/src/acts.rs, bindings/wasm/src/acts_tables.rs]
+    cases: [photo.agent.context/hooks, photo.agent.context/reads-declared, photo.agent.context/selection-not-saved]
+    since: "2026-11-17"
+  - id: photo.agent.ids
+    title: "One id space: layers by the ids inspect lists in queries, batches, receipts and conflicts"
+    dimension: [ai]
+    priority: P0
+    status: has
+    paths: [crates/kdm/kdm-model/model/schema.json]
+    cases: [photo.agent.ids/tool-ids, photo.agent.ids/object-params]
+    since: "2026-11-17"
+  - id: photo.agent.preview
+    title: "A preview by explicit view (file.render) and measurements beside it (image.measure)"
+    dimension: [ai]
+    priority: P1
+    status: has
+    commands: [file.render, image.measure]
+    paths: [bindings/wasm/src/render.rs]
+    cases: [photo.agent.preview/explicit-view]
+    since: "2026-11-17"
+  - id: photo.agent.premises
+    title: "Guard premises for properties, pixel/filter inputs, the layer a command acts on, selected layers, the canvas, mode and stored members, stored presets, channels, linked moves, names, stack indices and points"
+    dimension: [ai, data-safety]
+    priority: P0
+    status: has
+    paths: [bindings/wasm/src/place.rs, bindings/wasm/src/rests.rs, bindings/wasm/src/names.rs, bindings/wasm/src/resource_rests.rs, bindings/wasm/src/content.rs, bindings/wasm/src/point.rs]
+    cases: [photo.agent.premises/under, photo.agent.premises/outside, photo.agent.premises/rounds, photo.agent.premises/independent-reading, regressions/issue-index-in-layer-tree, regressions/issue-photo-guard-review, regressions/issue-c8-land-11p, regressions/issue-c8-land-12-photo, regressions/issue-c8-photo-3-address, regressions/issue-c8-photo-3-engine, regressions/issue-c8-photo-3-derived, regressions/issue-c8-photo-3-late, regressions/issue-c8-photo-3-resources, regressions/issue-c8-photo-3-data, regressions/issue-c8-photo-3-tree, regressions/issue-c8-photo-3-tree-name, regressions/issue-c8-photo-3-tree-selected, regressions/issue-c8-photo-3-tree-group-id, regressions/issue-c8-photo-3-tree-group-name, regressions/issue-c8-photo-3-tree-waiting, regressions/issue-c8-expectations-photo-slices, regressions/issue-c8-photo-pin, regressions/issue-c8-photo-pin-hosted-preview, regressions/issue-c8-photo-pin-layers, regressions/issue-c8-photo-pin-raw-surfaces]
+    since: "2026-11-17"
+  - id: photo.agent.saved
+    title: "In memory = saved: what the kit holds after an agent's command is what its saved file opens as"
+    dimension: [ai, data-safety]
+    priority: P0
+    status: has
+    cases: [photo.agent.saved/in-memory-saved, regressions/issue-kphoto-live-layer-caches, regressions/issue-layer-delete-mask, regressions/issue-group-delete-children, regressions/issue-psd-opacity-stored]
+    since: "2026-11-17"
+  - id: photo.document.text
+    title: "The image's words as plain text for search (document.text): visible type layers top to bottom, a part per layer"
+    dimension: [ai, data-safety]
+    priority: P1
+    status: has
+    paths: [bindings/wasm/src/document_text.rs, bindings/wasm/src/lib.rs, kit.json]
+    cases: [photo.document.text/type-layers]
+    since: "2026-11-17"
+  - id: photo.layer.new-layer
+    title: "A new layer survives saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.new.layer]
+    paths: [bindings/wasm/examples/checks.rs, bindings/wasm/src/collab.rs, bindings/wasm/src/lib.rs, bindings/wasm/src/panels.rs]
+    target: "Photoshop 2026"
+    cases: [photo.layer.new-layer/psd-roundtrip]
+    since: "2026-11-17"
+  - id: photo.layer.basics
+    title: "Layer opacity, fill, blend mode, visibility, name, label colour, duplicates and groups survive saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.setProps, layer.setLabelColor, layer.duplicate, layer.new.group]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    gap: "PSD stores opacity and fill in one byte each; a reopened file numbers its layers afresh."
+    cases: [photo.layer.basics/save-reopen]
+    since: "2026-11-17"
+  - id: photo.paint.stroke
+    title: "A brush stroke survives saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [paint.stroke]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    cases: [photo.paint.stroke/save-reopen]
+    since: "2026-11-17"
+  - id: photo.layer.adjustment-basics
+    title: "Levels and Hue/Saturation adjustment layers survive saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.newAdjustmentLayer.levels, layer.newAdjustmentLayer.hueSaturation]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    cases: [photo.layer.adjustment-basics/save-reopen]
+    since: "2026-11-17"
+  - id: photo.layer.mask-basics
+    title: "A layer mask from a selection and a clipping mask survive saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.layerMask.revealSelection, layer.createClippingMask]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    cases: [photo.layer.mask-basics/save-reopen]
+    since: "2026-11-17"
+  - id: photo.type.point-text
+    title: "Point text with CJK and symbols survives saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [type.create, type.info]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    gap: "EngineData stores numbers with five decimals; a run without a PostScript name gets the one its family and weight give."
+    cases: [photo.type.point-text/save-reopen]
+    since: "2026-11-17"
+  - id: photo.layer.style-basics
+    title: "Drop Shadow and Stroke layer styles survive saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.layerStyle.dropShadow, layer.layerStyle.stroke]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    cases: [photo.layer.style-basics/save-reopen]
+    since: "2026-11-17"
+  - id: photo.layer.object-layer-basics
+    title: "An object layer and its contents survive saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.objectLayers.convertToObjectLayer, layer.objectLayers.convertToLayers]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    gap: "A reopened placed layer is linked to the uuid of the file the PSD carries for it, embedded or not; Photoshop shows it as embedded."
+    cases: [photo.layer.object-layer-basics/save-reopen]
+    since: "2026-11-17"
+  - id: photo.layer.solid-fill
+    title: "A solid colour fill layer survives saving to PSD and reopening"
+    dimension: [function, conversion, data-safety]
+    priority: P0
+    status: has
+    commands: [layer.newFillLayer.solidColor]
+    paths: [bindings/wasm/tests/round_trip.rs, crates/formats/io/src/psd_export.rs, crates/formats/io/src/psd_import.rs]
+    target: "Photoshop 2026"
+    cases: [photo.layer.solid-fill/save-reopen]
+    since: "2026-11-17"
+  - id: photo.file.documents
+    title: "Create, open as, close, revert and save a copy of documents"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [file.new, file.close, session.inspect, document.inspect, document.activate, document.move, document.pixel, file.newFromClipboard, file.closeAll, file.closeOthers, file.revealInFinder, file.revert, file.saveACopy, file.openAs, document.sampleColor]
+    paths: [crates/engine/automation/src/workspace.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/file_cmds.rs, bindings/wasm/src/mutates.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-11]
+    since: "2026-11-17"
+  - id: photo.file.place
+    title: "Place embedded and linked files; import notes, video frames and data sets"
+    dimension: [conversion, function]
+    priority: P1
+    status: partial
+    commands: [file.placeEmbedded, file.placeLinked, file.import.notes, file.import.videoFramesToLayers, file.import.wiaSupport, file.import.variableDataSets]
+    paths: [bindings/wasm/src/files.rs, crates/engine/engine/src/file_cmds.rs, bindings/wasm/examples/checks.rs, crates/engine/engine/src/notes_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.file.export
+    title: "Export layers, artboards, comps, paths and images; Quick Export and image assets"
+    dimension: [conversion, function]
+    priority: P1
+    status: partial
+    commands: [file.export.layersToFiles, file.export.colorLookupTables, layer.quickExportAsPng, layer.exportAs, file.export.layerCompsToFiles, file.export.artboardsToFiles, file.export.artboardsToPdf, file.export.saveForWebLegacy, file.export.exportPreferences, file.export.quickExport, file.generate.imageAssets, file.package, file.export.pathsToIllustrator, file.export.renderVideo, file.export.dataSetsAsFiles, file.exportImage]
+    paths: [bindings/wasm/src/files.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/web_cmds.rs, crates/engine/engine/src/artboard_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-export-command-mismatch]
+    since: "2026-11-17"
+  - id: photo.file.print
+    title: "Print, print one copy and file info"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [file.fileInfo, file.print, file.printOneCopy]
+    paths: [bindings/wasm/src/mutates.rs, crates/engine/engine/src/print_cmds.rs, bindings/wasm/src/lib.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.file.automate
+    title: "Automate, scripts, actions and background jobs"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [file.scripts.deleteAllEmptyLayers, file.automate.fitImage, file.automate.conditionalModeChange, file.automate.batch, file.scripts.imageProcessor, file.scripts.loadFilesIntoStack, file.scripts.flattenAllLayerEffects, file.scripts.flattenAllMasks, file.automate.photomerge, file.automate.mergeToHdrPro, file.automate.cropAndStraightenPhotos, file.automate.lensCorrection, file.automate.contactSheetII, file.automate.createDroplet, file.automate.runDroplet, file.scripts.statistics, file.scripts.browse, file.scripts.scriptEventsManager, jobs.list, jobs.cancel, actions.move, actions.list, actions.get, actions.record, actions.stop, actions.play, actions.delete]
+    paths: [crates/engine/engine/src/automate_cmds.rs, crates/engine/engine/src/actions_cmds.rs, crates/engine/engine/src/file_cmds.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.edit.history
+    title: "Undo, redo, history states, purge, cut, copy, paste and clear"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [edit.undo, edit.redo, edit.clear, edit.cut, edit.copy, edit.copyMerged, edit.paste, edit.pasteSpecial.pasteInPlace, edit.toggleLastState, edit.pasteSpecial.pasteInto, edit.pasteSpecial.pasteOutside, edit.purge.undo, edit.purge.clipboard, edit.purge.histories, edit.purge.videoCache, edit.purge.all, history.goTo, history.deleteState, history.newDocument]
+    paths: [crates/engine/engine/src/edit_cmds.rs, crates/engine/engine/src/edit_menu_cmds.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/history_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.edit.fill-stroke
+    title: "Fill, stroke, fade, Smart Fill and Smart Scale"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [edit.fill, edit.stroke, edit.fade, edit.smartFill, edit.deleteAndFillSelection, edit.smartScale, edit.fillForeground, edit.fillBackground, edit.fillForegroundPreserve, edit.fillBackgroundPreserve]
+    paths: [crates/engine/engine/src/edit_menu_cmds.rs, crates/engine/engine/src/fill_key_cmds.rs, crates/engine/engine/src/extra_cmds.rs, web/src/HomeTab.tsx]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.edit.transform
+    title: "Free Transform, warps, Pin Warp and Perspective Warp, auto-align and auto-blend"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [edit.transform, edit.transform.again, edit.transform.againCopy, edit.transform.rotate180, edit.transform.rotate90Cw, edit.transform.rotate90Ccw, edit.transform.flipHorizontal, edit.transform.flipVertical, edit.autoAlignLayers, edit.autoBlendLayers, edit.transform.warp, edit.transform.splitWarpCrosswise, edit.transform.splitWarpHorizontally, edit.transform.splitWarpVertically, edit.transform.removeWarpSplit, edit.transform.warpGrid, edit.pinWarp, edit.perspectiveWarp]
+    paths: [crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/warp_cmds.rs, crates/engine/engine/src/edit_cmds.rs, crates/engine/engine/src/layer_multi_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.color.management
+    title: "Colour settings, profiles, image modes and proofing"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [edit.assignProfile, edit.convertToProfile, edit.colorSettings, color.profileMismatch, edit.profileInfo, view.proofSetup, view.proofColors, view.gamutWarning, image.mode.rgb, image.mode.grayscale, image.mode.cmyk, image.mode.lab, image.mode.bits8, image.mode.bits16, image.mode.bits32, image.mode.indexedColor, image.mode.colorTable, image.mode.bitmap, image.mode.duotone, image.mode.multichannel, view.proofSetup.workingCyanPlate, view.proofSetup.workingMagentaPlate, view.proofSetup.workingYellowPlate, view.proofSetup.workingBlackPlate, view.proofSetup.workingCmyPlate, view.proofSetup.legacyMacintoshRgb, view.proofSetup.colorBlindnessProtanopia, view.proofSetup.colorBlindnessDeuteranopia, view.thirtyTwoBitPreviewOptions]
+    paths: [crates/engine/engine/src/color_cmds.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/proof_sim.rs, crates/engine/engine/src/image_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.edit.define
+    title: "Define brush presets, custom shapes and patterns"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [edit.defineBrushPreset, edit.defineCustomShape, edit.definePattern]
+    paths: [crates/engine/engine/src/edit_menu_cmds.rs, bindings/wasm/src/files.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/pattern_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.app.preferences
+    title: "Preferences, keyboard shortcuts, menus, toolbar, preset migration and plug-ins"
+    dimension: [function]
+    priority: P2
+    status: partial
+    commands: [command.list, prefs.get, prefs.set, prefs.reset, edit.preferences.general, edit.preferences.interface, edit.preferences.workspace, edit.preferences.tools, edit.preferences.fileHandling, edit.preferences.export, edit.preferences.performance, edit.preferences.scratchDisks, edit.preferences.cursors, edit.preferences.transparencyAndGamut, edit.preferences.unitsAndRulers, edit.preferences.guidesGridAndSlices, edit.preferences.plugIns, edit.preferences.type, edit.preferences.enhancedControls, edit.preferences.rawDefaults, edit.preferences.integrations, edit.keyboardShortcuts, edit.menus, edit.toolbar, edit.presets.presetManager, edit.presets.exportImportPresets, edit.presets.migratePresets, plugin.list, plugin.install, plugin.remove, plugin.reload, plugin.run]
+    paths: [crates/engine/engine/src/prefs.rs, bindings/wasm/src/files.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/plugin_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-pref-scan-strings]
+    since: "2026-11-17"
+  - id: photo.type.styles
+    title: "Character and paragraph styles"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [type.characterStyle.new, type.characterStyle.duplicate, type.characterStyle.delete, type.characterStyle.rename, type.characterStyle.set, type.characterStyle.apply, type.characterStyle.redefine, type.characterStyle.clearOverride, type.characterStyle.list, type.paragraphStyle.new, type.paragraphStyle.duplicate, type.paragraphStyle.delete, type.paragraphStyle.rename, type.paragraphStyle.set, type.paragraphStyle.apply, type.paragraphStyle.redefine, type.paragraphStyle.clearOverride, type.paragraphStyle.list]
+    paths: [crates/engine/engine/src/type_styles_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-14]
+    since: "2026-11-17"
+  - id: photo.type.features
+    title: "OpenType features, anti-aliasing and orientation"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [type.antiAlias.none, type.antiAlias.sharp, type.antiAlias.crisp, type.antiAlias.strong, type.antiAlias.smooth, type.antiAlias.windowsLcd, type.antiAlias.windows, type.orientation.horizontal, type.orientation.vertical, type.openType.standardLigatures, type.openType.contextualAlternates, type.openType.discretionaryLigatures, type.openType.swash, type.openType.oldstyle, type.openType.stylisticAlternates, type.openType.titlingAlternates, type.openType.ornaments, type.openType.ordinals, type.openType.fractions]
+    paths: [crates/engine/engine/src/type_extra_cmds.rs, crates/engine/engine/src/type_caret_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-2]
+    since: "2026-11-17"
+  - id: photo.type.text
+    title: "Create and edit point and paragraph type; warp, convert, fonts, spelling and find and replace"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [type.edit, type.setStyle, type.rasterize, type.fonts, type.createWorkPath, type.convertToShape, type.rasterizeTypeLayer, type.convertToParagraphText, type.convertToPointText, type.warpText, type.updateAllTextLayers, type.replaceAllMissingFonts, type.resolveMissingFonts, type.pasteLoremIpsum, type.saveDefaultTypeStyles, type.loadDefaultTypeStyles, edit.checkSpelling, type.insertText, type.hitTest, type.caret, type.navigate, edit.findAndReplaceText]
+    paths: [crates/engine/engine/src/type_extra_cmds.rs, crates/engine/engine/src/type_caret_cmds.rs, crates/engine/engine/src/type_cmds.rs, crates/engine/engine/src/type_spell_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-1, regressions/issue-3, regressions/issue-4, regressions/issue-12]
+    since: "2026-11-17"
+  - id: photo.image.adjustments
+    title: "Image adjustments and auto tone, contrast and colour"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [image.adjustments.desaturate, image.adjustments.brightnessContrast, image.adjustments.levels, image.adjustments.curves, image.adjustments.exposure, image.adjustments.vibrance, image.adjustments.hueSaturation, image.adjustments.colorBalance, image.adjustments.blackWhite, image.adjustments.photoFilter, image.adjustments.channelMixer, image.adjustments.invert, image.adjustments.posterize, image.adjustments.threshold, image.adjustments.gradientMap, image.adjustments.selectiveColor, image.adjustments.colorLookup, image.autoTone, image.autoContrast, image.autoColor, image.adjustments.equalize, image.adjustments.shadowsHighlights, image.adjustments.replaceColor, image.adjustments.matchColor, image.adjustments.hdrToning, image.adjustments.colorLookup.list]
+    paths: [crates/engine/engine/src/adjust_cmds.rs, web/src/HomeTab.tsx, crates/engine/engine/src/edit_cmds.rs, crates/engine/engine/src/edit_menu_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.image.size
+    title: "Image and canvas size, crop, trim, rotate, duplicate and reveal all"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [image.imageRotation.flipCanvasHorizontal, image.imageRotation.flipCanvasVertical, image.imageRotation.180, image.imageRotation.90cw, image.imageRotation.90ccw, image.imageSize, image.canvasSize, image.crop, image.trim, image.duplicate, image.revealAll, image.rotation.arbitrary]
+    paths: [crates/engine/engine/src/image_cmds.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/analysis_cmds.rs, crates/engine/engine/src/automate_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.image.calculations
+    title: "Apply Image, Calculations and Trap"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [image.applyImage, image.calculations, image.trap]
+    paths: [crates/engine/engine/src/channel_cmds.rs, crates/engine/engine/src/trap_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.image.analysis
+    title: "Measurement, count and the measurement log"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [image.analysis.setMeasurementScale, image.analysis.selectDataPoints, image.analysis.recordMeasurements, image.analysis.rulerTool, image.analysis.countTool, image.analysis.placeScaleMarker, image.analysis.straightenLayer, image.analysis.info, count.add, count.remove, count.move, count.clear, count.newGroup, count.deleteGroup, count.setGroup, measurementLog.list, measurementLog.delete, measurementLog.export]
+    paths: [crates/engine/engine/src/analysis_cmds.rs, bindings/wasm/src/files.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.image.variables
+    title: "Variables and data sets"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [image.variables.define, image.variables.dataSets, image.applyDataSet, variables.list]
+    paths: [crates/engine/engine/src/variables_cmds.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.select.make
+    title: "Make, modify, save and load selections"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [select.all, select.deselect, select.inverse, select.rect, select.float, select.drop, select.toWorkPath, select.convertToShape, select.quick, select.object, select.subject, select.edgeRefine, select.focusArea, select.magicWand, select.colorRange, select.modify.border, select.modify.smooth, select.modify.expand, select.modify.contract, select.modify.feather, select.grow, select.similar, select.lasso, select.magneticLasso, select.sky, select.isolateLayers, select.transformSelection, select.reselect, select.allLayers, select.deselectLayers, select.findLayers, select.saveSelection, select.loadSelection, select.editInQuickMaskMode]
+    paths: [crates/engine/engine/src/selection_cmds.rs, crates/engine/engine/src/smartselect_cmds.rs, web/src/HomeTab.tsx, bindings/wasm/src/mutates.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.channel.edit
+    title: "Channels, spot channels and channel targets"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [channel.new, channel.newSpot, channel.duplicate, channel.delete, channel.rename, channel.move, channel.target, channel.setVisible, channel.options, channel.mergeSpot, channel.split, channel.merge, channel.list, channel.target.composite, channel.target.slot3, channel.target.slot4, channel.target.slot5, channel.target.slot6, channel.target.slot7, channel.target.slot8, channel.target.slot9]
+    paths: [crates/engine/engine/src/channel_cmds.rs, crates/engine/engine/src/extra_cmds.rs, bindings/wasm/src/lib.rs, bindings/wasm/src/mutates.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.paint.tools
+    title: "Painting, retouching and clone tools, brushes and tool colours"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [tools.setColors, tools.swapColors, tools.defaultColors, paint.setSymmetry, paint.symmetryFromPath, paint.symmetryDisable, paint.pencil, paint.mixerBrush, paint.colorReplacement, brush.defineFromSelection, brush.get, tools.setBrush, paint.magicEraser, paint.backgroundEraser, paint.cloneStamp, paint.patternStamp, paint.healingBrush, paint.spotHealing, paint.patch, paint.smartMove, paint.dodge, paint.burn, paint.sponge, paint.blur, paint.sharpen, paint.smudge, paint.historyBrush, paint.redEye, paint.bucket, paint.gradient, tools.decreaseBrushSize, tools.increaseBrushSize, tools.decreaseBrushHardness, tools.increaseBrushHardness, brush.texturePattern, cloneSource.list, cloneSource.select, cloneSource.set, cloneSource.resetTransform, cloneSource.overlay]
+    paths: [crates/engine/engine/src/hidden_target.rs, crates/engine/engine/src/channel_cmds.rs, crates/engine/engine/src/retouch_cmds.rs, crates/engine/engine/src/brush_cmds.rs, web/src/tools/catalog.ts]
+    cases: [regressions/issue-parity-node-imports]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.assets.presets
+    title: "Brush, gradient, pattern, style, shape, tool and document presets"
+    dimension: [function]
+    priority: P2
+    status: partial
+    commands: [brush.presets.list, brush.presets.save, brush.presets.update, brush.presets.delete, brush.presets.setCurrent, brush.presets.rename, brush.presets.move, brush.presets.moveGroup, brush.presets.renameGroup, brush.presets.deleteGroup, brush.presets.importAbr, gradient.presets.importGrd, gradient.presets.list, gradient.presets.select, gradient.presets.stop, gradient.presets.apply, gradient.presets.new, gradient.presets.edit, gradient.presets.reset, pattern.presets.list, pattern.presets.select, pattern.presets.apply, pattern.presets.new, pattern.presets.edit, style.presets.list, style.presets.apply, style.presets.new, style.presets.edit, style.presets.reset, shape.presets.list, shape.presets.place, shape.presets.new, shape.presets.edit, shape.presets.reset, tool.presets.list, tool.presets.new, tool.presets.select, tool.presets.edit, tool.presets.reset, document.presets.list, document.presets.get, document.presets.save, document.presets.delete]
+    paths: [bindings/wasm/src/files.rs, crates/engine/engine/src/presets/gradients.rs, crates/engine/engine/src/brush_cmds.rs, crates/engine/engine/src/brush_preset_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.color.swatches
+    title: "Swatches and patterns"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [swatches.list, swatches.add, swatches.delete, swatches.rename, swatches.move, swatches.newGroup, swatches.renameGroup, swatches.deleteGroup, swatches.use, swatches.reset, swatches.import, swatches.export, pattern.list, pattern.rename, pattern.delete, pattern.import, pattern.export]
+    paths: [crates/engine/engine/src/swatch_cmds.rs, crates/engine/engine/src/pattern_cmds.rs, bindings/wasm/src/files.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.paint.gradients
+    title: "Gradient fills and stops"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [gradient.fill.create, gradient.fill.set, gradient.fill.stop, gradient.fill.get]
+    paths: [crates/engine/engine/src/gradient_fill_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.blur
+    title: "Blur filters and the Blur Gallery"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.blur.gaussianBlur, filter.blur.blur, filter.blur.blurMore, filter.blur.boxBlur, filter.blur.motionBlur, filter.blur.radialBlur, filter.blur.surfaceBlur, filter.blur.smartBlur, filter.blur.lensBlur, filter.blur.shapeBlur, filter.blurGallery.tiltShift, filter.blurGallery.irisBlur, filter.blurGallery.fieldBlur, filter.blurGallery.spinBlur, filter.blurGallery.pathBlur, filter.blur.average]
+    paths: [crates/engine/engine/src/filters_ext.rs, crates/engine/engine/src/filters.rs, crates/formats/io/src/object_layer_map.rs, bindings/wasm/src/files.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.gallery
+    title: "Filter Gallery artistic, brush stroke, sketch and texture filters"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.filterGallery, filter.gallery.coloredPencil, filter.gallery.cutout, filter.gallery.dryBrush, filter.gallery.filmGrain, filter.gallery.fresco, filter.gallery.neonGlow, filter.gallery.paintDaubs, filter.gallery.paletteKnife, filter.gallery.plasticWrap, filter.gallery.posterEdges, filter.gallery.roughPastels, filter.gallery.smudgeStick, filter.gallery.sponge, filter.gallery.underpainting, filter.gallery.watercolor, filter.gallery.accentedEdges, filter.gallery.angledStrokes, filter.gallery.crosshatch, filter.gallery.darkStrokes, filter.gallery.inkOutlines, filter.gallery.spatter, filter.gallery.sprayedStrokes, filter.gallery.sumiE, filter.gallery.diffuseGlow, filter.gallery.glass, filter.gallery.oceanRipple, filter.gallery.basRelief, filter.gallery.chalkCharcoal, filter.gallery.charcoal, filter.gallery.chrome, filter.gallery.conteCrayon, filter.gallery.graphicPen, filter.gallery.halftonePattern, filter.gallery.notePaper, filter.gallery.photocopy, filter.gallery.plaster, filter.gallery.reticulation, filter.gallery.stamp, filter.gallery.tornEdges, filter.gallery.waterPaper, filter.gallery.glowingEdges, filter.gallery.craquelure, filter.gallery.grain, filter.gallery.mosaicTiles, filter.gallery.patchwork, filter.gallery.stainedGlass, filter.gallery.texturizer]
+    paths: [crates/engine/engine/src/gallery_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.distort
+    title: "Distort filters, Liquify, Vanishing Point, Adaptive Wide Angle and Lens Correction"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.distort.twirl, filter.distort.pinch, filter.distort.spherize, filter.distort.wave, filter.distort.ripple, filter.distort.polarCoordinates, filter.distort.displace, filter.distort.shear, filter.distort.zigZag, filter.lensCorrection, filter.adaptiveWideAngle, filter.vanishingPoint, filter.liquify]
+    paths: [crates/engine/engine/src/filters.rs, crates/engine/engine/src/filters_ext.rs, crates/engine/engine/src/lens_cmds.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.noise-sharpen
+    title: "Noise and sharpen filters"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.sharpen.sharpen, filter.sharpen.sharpenMore, filter.sharpen.sharpenEdges, filter.noise.despeckle, filter.sharpen.unsharpMask, filter.sharpen.smartSharpen, filter.noise.addNoise, filter.noise.median, filter.noise.dustAndScratches, filter.noise.reduceNoise]
+    paths: [crates/engine/engine/src/filters.rs, crates/formats/io/src/object_layer_map.rs, crates/engine/automation/src/rpc.rs, crates/engine/engine/src/filters_ext.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.stylize
+    title: "Stylize, pixelate, render, video and other filters"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.pixelate.mosaic, filter.stylize.emboss, filter.stylize.findEdges, filter.stylize.solarize, filter.other.highPass, filter.other.minimum, filter.other.maximum, filter.other.offset, filter.pixelate.colorHalftone, filter.pixelate.crystallize, filter.pixelate.facet, filter.pixelate.fragment, filter.pixelate.mezzotint, filter.pixelate.pointillize, filter.stylize.diffuse, filter.stylize.extrude, filter.stylize.oilPaint, filter.stylize.tiles, filter.stylize.traceContour, filter.stylize.wind, filter.render.fibers, filter.render.lensFlare, filter.render.lightingEffects, filter.render.relight, filter.other.custom, filter.other.hsbHsl, filter.video.deInterlace, filter.video.ntscColors, filter.other.colorToAlpha, filter.render.clouds, filter.render.differenceClouds, filter.render.flame, filter.render.pictureFrame, filter.render.tree]
+    paths: [crates/engine/engine/src/filters_ext.rs, crates/engine/engine/src/filters.rs, crates/formats/io/src/object_layer_map.rs, crates/engine/engine/src/render_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-6]
+    since: "2026-11-17"
+  - id: photo.filter.raw-develop
+    title: "Raw Develop filter"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.rawDevelop]
+    paths: [crates/engine/engine/src/lens_cmds.rs, crates/formats/io/src/raw_develop_map.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.filter.editable
+    title: "Editable filters and Last Filter"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [filter.lastFilter, filter.convertForEditableFilters, layer.editableFilter.disableEditableFilters, layer.editableFilter.deleteFilterMask, layer.editableFilter.disableFilterMask, layer.editableFilter.blendingOptions, layer.editableFilter.clearEditableFilters, layer.editableFilter.setVisible, layer.editableFilter.setParams, layer.editableFilter.delete, layer.editableFilter.move]
+    paths: [crates/engine/engine/src/object_layer_cmds.rs, crates/engine/engine/src/color_to_alpha_cmds.rs, crates/engine/engine/src/filters.rs, web/src/HomeTab.tsx]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.styles
+    title: "Layer styles and blending options"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.layerStyle.innerShadow, layer.layerStyle.outerGlow, layer.layerStyle.innerGlow, layer.layerStyle.colorOverlay, layer.layerStyle.gradientOverlay, layer.layerStyle.patternOverlay, layer.layerStyle.bevelEmboss, layer.layerStyle.satin, layer.layerStyle.replace, layer.layerStyle.makeDefault, layer.layerStyle.defaultFor, layer.layerStyle.clear, layer.layerStyle.copyLayerStyle, layer.layerStyle.pasteLayerStyle, layer.layerStyle.hideAllEffects, layer.layerStyle.showAllEffects, layer.layerStyle.blendingOptions, layer.layerStyle.globalLight, layer.layerStyle.createLayer, layer.layerStyle.scaleEffects, layer.layerStyle.transferEffects]
+    paths: [crates/engine/engine/src/layer_style.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/layer_menu_cmds.rs, crates/engine/engine/examples/designer_psd.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.masks
+    title: "Layer masks, vector masks and clipping masks"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.releaseClippingMask, layer.layerMask.revealAll, layer.layerMask.hideAll, layer.layerMask.delete, layer.vectorMask.add, layer.vectorMask.fromPath, layer.vectorMask.edit, layer.vectorMask.delete, layer.vectorMask.revealAll, layer.vectorMask.hideAll, layer.vectorMask.currentPath, layer.vectorMask.enabled, layer.vectorMask.linked, layer.vectorMask.info, layer.layerMask.enabled, layer.layerMask.linked, layer.layerMask.apply, layer.layerMask.fromTransparency, layer.layerMask.hideSelection, layer.maskAllObjects, view.layerMask, layer.toggleMaskOverlay]
+    paths: [crates/engine/engine/src/vector_cmds.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/layer_menu_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.adjustment
+    title: "Adjustment and fill layers"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.newFillLayer.gradient, layer.setAdjustment, layer.newAdjustmentLayer.brightnessContrast, layer.newAdjustmentLayer.curves, layer.newAdjustmentLayer.exposure, layer.newAdjustmentLayer.vibrance, layer.newAdjustmentLayer.colorBalance, layer.newAdjustmentLayer.blackWhite, layer.newAdjustmentLayer.photoFilter, layer.newAdjustmentLayer.channelMixer, layer.newAdjustmentLayer.invert, layer.newAdjustmentLayer.posterize, layer.newAdjustmentLayer.threshold, layer.newAdjustmentLayer.gradientMap, layer.newAdjustmentLayer.selectiveColor, layer.newAdjustmentLayer.colorLookup, layer.fill.solidColor.set, layer.layerContentOptions, layer.newFillLayer.pattern]
+    paths: [bindings/wasm/src/panels.rs, bindings/wasm/src/files.rs, crates/engine/engine/src/adjust_params.rs, crates/engine/engine/src/commands.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-7]
+    since: "2026-11-17"
+  - id: photo.layer.object-layers
+    title: "Object layers and stack modes"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.objectLayers.newObjectLayerViaCopy, layer.objectLayers.rasterize, layer.objectLayers.editContents, layer.objectLayers.saveContents, layer.objectLayers.replaceContents, layer.objectLayers.exportContents, layer.objectLayers.relinkToFile, layer.objectLayers.updateModifiedContent, layer.objectLayers.updateAllModifiedContent, layer.objectLayers.convertToEmbedded, layer.objectLayers.convertToLinked, layer.objectLayers.stackMode.entropy, layer.objectLayers.stackMode.kurtosis, layer.objectLayers.stackMode.maximum, layer.objectLayers.stackMode.mean, layer.objectLayers.stackMode.median, layer.objectLayers.stackMode.minimum, layer.objectLayers.stackMode.range, layer.objectLayers.stackMode.skewness, layer.objectLayers.stackMode.standardDeviation, layer.objectLayers.stackMode.summation, layer.objectLayers.stackMode.variance, layer.objectLayers.stackMode.none, layer.objectLayers.revealInFinder, layer.objectLayers.warp, layer.objectLayers.pinWarp, layer.objectLayers.perspectiveWarp]
+    paths: [crates/engine/engine/src/object_layer_cmds.rs, crates/engine/automation/src/workspace.rs, bindings/wasm/src/files.rs, crates/engine/engine/src/distort_cmds.rs, crates/formats/format/src/host_files.rs, bindings/headless/tests/workspace_only.rs]
+    cases: [regressions/issue-workspace-escape]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.video
+    title: "Video layers and the timeline"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [timeline.create, timeline.delete, timeline.setFrame, timeline.nextFrame, timeline.previousFrame, timeline.setProps, timeline.info, layer.videoLayers.newBlankVideoLayer, layer.videoLayers.insertBlankFrame, layer.videoLayers.duplicateFrame, layer.videoLayers.deleteFrame, layer.videoLayers.restoreFrame, layer.videoLayers.restoreAllFrames, layer.videoLayers.showAlteredVideo, layer.videoLayers.rasterize, layer.videoLayers.newVideoLayerFromFile, layer.videoLayers.replaceFootage, layer.videoLayers.interpretFootage, layer.videoLayers.reloadFrame]
+    paths: [crates/engine/engine/src/video_cmds.rs, crates/engine/engine/src/timeline_cmds.rs, bindings/wasm/src/mutates.rs, crates/engine/automation/src/workspace.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.arrange
+    title: "Align, distribute and arrange layers"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.arrange.bringForward, layer.arrange.sendBackward, layer.arrange.bringToFront, layer.arrange.sendToBack, layer.align.topEdges, layer.align.verticalCenters, layer.align.bottomEdges, layer.align.leftEdges, layer.align.horizontalCenters, layer.align.rightEdges, layer.distribute.topEdges, layer.distribute.verticalCenters, layer.distribute.bottomEdges, layer.distribute.leftEdges, layer.distribute.horizontalCenters, layer.distribute.rightEdges, layer.distribute.horizontally, layer.distribute.vertically, layer.arrange.reverse]
+    paths: [crates/engine/engine/src/layer_multi_cmds.rs, crates/engine/engine/src/commands.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.artboards
+    title: "Artboards and frames"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.new.artboard, layer.new.artboardFromGroup, layer.new.artboardFromLayers, layer.artboard.set, layer.new.frameFromLayers]
+    paths: [crates/engine/engine/src/artboard_cmds.rs, crates/engine/engine/src/pick_cmds.rs, crates/engine/engine/src/frame_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.rasterize
+    title: "Rasterize, matting and combine shapes"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.rasterize.vectorMask, layer.rasterize.shape, layer.combineShapes.unite, layer.combineShapes.subtractFrontShape, layer.combineShapes.intersectShapeAreas, layer.combineShapes.excludeOverlappingShapes, layer.combineShapes.mergeShapeComponents, layer.rasterize.layer, layer.rasterize.allLayers, layer.rasterize.type, layer.rasterize.fillContent, layer.rasterize.objectLayer, layer.matting.defringe, layer.matting.removeBlackMatte, layer.matting.removeWhiteMatte, layer.matting.colorDecontaminate, layer.rasterize.video]
+    paths: [crates/engine/engine/src/vector_cmds.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/layer_menu_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.comps
+    title: "Layer comps"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layerComp.new, layerComp.update, layerComp.apply, layerComp.previous, layerComp.next, layerComp.delete, layerComp.duplicate, layerComp.rename, layerComp.setComment, layerComp.setOptions, layerComp.restoreLastDocumentState, layerComp.updateWarnings, layerComp.list]
+    paths: [crates/engine/engine/src/comps_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.layer.manage
+    title: "Group, duplicate, merge, link, lock, select, rename and delete layers"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [layer.groupLayers, layer.delete, layer.select, layer.mergeDown, layer.flattenImage, layer.moveTo, layer.translate, layer.removeBackground, layer.new.layerViaCopy, layer.new.layerViaCut, layer.mergeVisible, layer.new.layerFromBackground, layer.delete.hiddenLayers, layer.ungroupLayers, layer.hideLayers, layer.showLayers, layer.showOnly, layer.selectLinkedLayers, layer.linkLayers, layer.mergeLayers, layer.new.groupFromLayers, layer.lockLayers, layer.renameLayer, layer.copyToDocument, layer.stampVisible, layer.stampDown, layer.newLayerBasedSlice, layer.pickAt, layer.selectAbove, layer.selectBelow, layer.selectTop, layer.selectBottom, layer.addAboveToSelection, layer.addBelowToSelection, layer.setExpanded, layer.setEffectsExpanded, layer.setEffectsVisible]
+    paths: [crates/engine/engine/src/layer_multi_cmds.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/stamp_cmds.rs, web/src/tools/canvas/transformLike.ts, web/tests/auto-select.mjs]
+    cases: [regressions/issue-8, regressions/issue-move-auto-select-drag]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.path.shapes
+    title: "Paths, shapes and clipping paths"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [shape.create, shape.edit, shape.info, shape.rasterize, path.list, path.info, path.set, path.delete, path.transform, path.clippingPath.set, path.clippingPath.clear, path.style.copyFill, path.style.copyStroke, path.style.pasteFill, path.style.pasteStroke, path.rename, path.toSelection, path.fill, path.stroke, path.moveAnchors, path.moveHandle, path.bendSegment, path.convertPoint]
+    paths: [crates/engine/engine/src/vector_cmds.rs, crates/engine/automation/src/workspace.rs, crates/engine/engine/src/path_edit_cmds.rs, bindings/wasm/src/files.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    cases: [regressions/issue-5, regressions/issue-13]
+    since: "2026-11-17"
+  - id: photo.view.guides
+    title: "Guides, guide layouts and slices"
+    dimension: [function]
+    priority: P1
+    status: partial
+    commands: [view.newGuide, view.moveGuide, view.deleteGuide, view.clearGuides, view.newGuideLayout, view.newGuidesFromShape, view.clearCanvasGuides, view.clearSelectedArtboardGuides, slice.new, slice.fromGuides, slice.set, slice.promote, slice.delete, slice.divide, slice.list, view.lockSlices, view.clearSlices]
+    paths: [crates/engine/engine/src/slice_cmds.rs, crates/engine/engine/src/edit_cmds.rs, crates/engine/engine/src/file_cmds.rs, bindings/wasm/src/lib.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.notes.annotate
+    title: "Notes"
+    dimension: [function]
+    priority: P2
+    status: partial
+    commands: [notes.add, notes.set, notes.delete, notes.list]
+    paths: [crates/engine/engine/src/notes_cmds.rs]
+    target: "Photoshop 2026"
+    gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
+    since: "2026-11-17"
+  - id: photo.editor.display-modes
+    title: "The editor in each display mode: Classic gives way before stepping down, Single line does not repeat the rail's tools, and Escape drops a drag or a crop first in Focus"
+    dimension: [function]
+    priority: P1
+    status: has
+    paths: [web/src/App.tsx, web/src/HomeTab.tsx, web/src/tools/canvas/common.ts, web/src/tools/canvas/index.ts, web/tests/modes.mjs, web/tests/focus.mjs]
+    cases: [photo.editor.display-modes/mode-smoke, regressions/issue-focus-escape-drag]
+    since: "2026-11-17"

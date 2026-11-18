@@ -1,0 +1,4330 @@
+{
+  "dock:character/character": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Character section (type_sections), the one implementation shared with the Properties panel and the Type options bar (useTypeStyle): font, style, size and leading (as the layer's transform shows them), kerning (Metrics, Optical, or a value, typed or picked) and tracking, vertical and horizontal scale, baseline shift and colour, and the faux styles (Faux Bold, Faux Italic, All Caps, Small Caps, Underline, Strikethrough), each type.setStyle on the active type layer, a field's drag one history step. Without a type layer, upstream's hint shows; the Type tool's own options (font, style, size) and the foreground stay editable for new type, the rest disabled. New type takes the tool's font, style, size, and alignment and the foreground, as upstream's Type tool sends them, and everything else from Type › Save Default Type Styles.",
+    "followUps": [
+      {
+        "wave": 2,
+        "item": "Edit the next type's character and paragraph settings from the Character and Paragraph panels while no type layer is active, backed by the engine's default type styles (Session::type_defaults, which no query exposes yet)"
+      },
+      {
+        "wave": 2,
+        "item": "Kerning at the caret and the style of a selected range while type is edited in place (upstream's kerning_at and range targets), once the web editor edits type layers in place"
+      },
+      {
+        "wave": 2,
+        "item": "Recolour the selected characters when the foreground changes while type is edited in place (upstream's type_tool::foreground_changed)"
+      }
+    ]
+  },
+  "dock:character/paragraph": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Paragraph section (type_sections), shared with the Properties panel: the seven alignments with upstream's glyphs, left, right, and first-line indents, space before and after, and Hyphenate, each type.setStyle on the active type layer's paragraphs. Without a type layer, upstream's hint shows and only the Type tool's alignment (left, center, right) can change, for new type."
+  },
+  "dock:color/color": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Photoshop-theme Color panel (color_field): the foreground and background chips (a click picks which colour the field edits, framed) and Kit UI's colour picker (saturation and brightness field and hue strip, 120 px as upstream's, with hex and R, G, B fields). The colours live in the engine's session (session.inspect, tools.setColors), shared with the rail's chips, X and D, the Eyedropper, Swatches, and new type, and, as upstream's one session keeps them, shared by every Photo tab and kept between documents (Kit UI's kit store, kit:kit.photo:colors, followed through storage events; a tab stores only what it set or its own engine changed, so it never writes an older colour back); no change is a history step.",
+    "followUps": [
+      {
+        "wave": 2,
+        "item": "Upstream's Color Picker dialog, opened by double-clicking a chip in the Color panel or clicking one in the toolbar (the rail's chips open the browser's picker until then)"
+      },
+      {
+        "wave": 2,
+        "item": "Upstream's dock icon column left of the panel groups (a group collapsed to its icon, its icon click expanding or collapsing it, dock::rail_click): Kit UI's DockArea collapses a group to its tab strip only, and an icon strip needs it to lay groups out in two columns with per-group icons, a shared DockArea change"
+      }
+    ]
+  },
+  "dock:color/gradients": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "A library panel (gradient and pattern presets, actions, layer comps) with its own dialogs (Gradient Editor, New Action, New Layer Comp): the engine has its commands; the panel comes with wave 2's dialogs. The tab says it comes later."
+  },
+  "dock:color/patterns": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "A library panel (gradient and pattern presets, actions, layer comps) with its own dialogs (Gradient Editor, New Action, New Layer Comp): the engine has its commands; the panel comes with wave 2's dialogs. The tab says it comes later."
+  },
+  "dock:color/swatches": {
+    "status": "done",
+    "wave": 1,
+    "note": "The engine's swatch library (swatches.list) in upstream's ten-column grid, by group: a click sets the foreground, a right-click the background (swatches.use), and the footer adds the foreground as a swatch (swatches.add) or deletes the swatch last clicked (swatches.delete). The library is shared by every Photo tab and kept between documents, as upstream saves it: its Adobe Swatch Exchange bytes (swatches.export, swatches.import replace) in Kit UI's kit store (kit:kit.photo:swatches), up to 256 KB; a larger library stays with its tab, which says so once. No history step.",
+    "followUps": [
+      {
+        "wave": 2,
+        "item": "The Swatches panel menu: new group, rename, move, reset, import and export (swatches.newGroup, swatches.rename, swatches.move, swatches.reset, swatches.import, swatches.export)"
+      }
+    ]
+  },
+  "dock:history/actions": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "A library panel (gradient and pattern presets, actions, layer comps) with its own dialogs (Gradient Editor, New Action, New Layer Comp): the engine has its commands; the panel comes with wave 2's dialogs. The tab says it comes later."
+  },
+  "dock:history/history": {
+    "status": "done",
+    "wave": 1,
+    "note": "The snapshot row (the bottom layer's thumbnail and the document's name), every state with upstream's icons, those Redo steps through dimmed (`historyRedo` from inspect), a click going to a state in one command (history.goTo), and Delete current state once confirmed (history.deleteState). Create new document from current state is hidden: history.newDocument opens a second document in the engine, which the web editor cannot show (the host opens documents). Create new snapshot is drawn disabled, as upstream's button does nothing.",
+    "followUps": [
+      {
+        "wave": 3,
+        "item": "History snapshots: the engine keeps none yet (history_cmds.rs), so Create new snapshot stays disabled"
+      }
+    ]
+  },
+  "dock:history/layerComps": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "A library panel (gradient and pattern presets, actions, layer comps) with its own dialogs (Gradient Editor, New Action, New Layer Comp): the engine has its commands; the panel comes with wave 2's dialogs. The tab says it comes later."
+  },
+  "dock:layers/channels": {
+    "status": "done",
+    "wave": 1,
+    "note": "Composite, color, layer mask, alpha, and Quick Mask rows with thumbnails and eyes; target, Cmd-click to load, rename, the row menu (overlay color and opacity presets, Split and Merge Channels left out), and the footer."
+  },
+  "dock:layers/layers": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Layers panel: kind filter and name search, blend mode, Opacity, locks, Fill, rows with eyes (Alt: show only), 34 px thumbnails in 44 px rows (an adjustment's glyph tile beside its mask, a type layer's T tile), the name (the Background's in italics) over its kind (an adjustment's name, Type, Shape, a group's layer count), masks (mask target), rename, folding groups, effects rows, multi-select, drag to reorder or onto the footer, the row menu, and the footer. Layer styles open the generic command dialog until wave 2's Layer Style dialog."
+  },
+  "dock:layers/paths": {
+    "status": "done",
+    "wave": 1,
+    "note": "Saved paths, the work path, and the layer's path with outlines; select, rename, save the work path, the row menu, and the footer. A selected saved path is not drawn on the canvas yet."
+  },
+  "dock:navigator/histogram": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Histogram panel (tone.rs histogram_panel): the composite's histogram from the engine's histogram extra (RGB as the mean of the channels, Red, Green, Blue, and Luminosity, which Photoshop's panel lists), drawn as upstream's draw_histogram draws it (raw bins, scaled to the 251st-smallest bin with 10 % headroom), with Mean, Std Dev, Median, Pixels, and Cache Level (the extra's own sampling: the whole factor that brings the image within 1024 pixels); computed at most every 250 ms while the image changes, a new channel at once, one request at a time, only while the tab shows, the warning triangle showing while it lags."
+  },
+  "dock:navigator/info": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Info panel: R, G, B and naive device C, M, Y, K of the composite pixel under the pointer (document.sampleColor, at most once per animation frame, one request at a time, the last answer showing until the next), the pointer's X and Y wherever it moves over the canvas (also while Space or the Hand tool pans, Kit UI's track and leave), the selection's W and H in the ruler unit (prefs unitsAndRulers), and the document's size."
+  },
+  "dock:navigator/navigator": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's Navigator: the whole image from the engine's navigatorImage extra (rendered from a reduced copy, about 46 ms for a 3000 x 2000 image at 640 px where a full composite took 440 ms; at most every 250 ms while it changes, one request at a time, only while the tab shows) over a checkerboard, the canvas's visible area outlined, a press or drag centring the canvas there (as upstream sets the view's centre), and Zoom with Fit, 100 %, 200 %, and the log2 zoom slider from 1 % to 3200 %."
+  },
+  "dock:properties/adjustments": {
+    "status": "done",
+    "wave": 1,
+    "note": "Upstream's sixteen adjustment-layer buttons with their icons and tooltips, each layer.newAdjustmentLayer.<kind> through the mask target's session (the engine masks the new layer with the selection); the Properties tab then shows its settings."
+  },
+  "dock:properties/properties": {
+    "status": "done",
+    "wave": 1,
+    "note": "Document (canvas W and H with link, orientation, resolution, mode, bit depth), layer header, then in upstream's order (properties_body, layer_controls): the layer's X, Y, W, and H read only, Opacity and Fill as slider rows, a type layer's Character, Paragraph, and Type Options sections (upstream's type_properties, the same sections as the Character and Paragraph panels), a shape's Appearance (colour fills and strokes; none, gradient, and pattern paints show by name) and live Shape, then Align and Distribute and Quick Actions (upstream's Photoshop theme's); an adjustment layer's settings as slider rows (upstream's slider_row; Levels' five numbers as plain fields, as upstream's value_field), drop-downs, and check boxes (visible, clip, reset; Levels shows its composite's five numbers). The canvas Fill drop-down is left out: upstream's has one choice and does nothing.",
+    "followUps": [
+      {
+        "wave": 2,
+        "item": "Levels editor in Properties: histogram, input and output sliders, per-channel levels, auto"
+      },
+      {
+        "wave": 2,
+        "item": "Curves editor in Properties: the curve graph, its points, per-channel curves"
+      },
+      {
+        "wave": 2,
+        "item": "Hue/Saturation's hue-range bar (dragging a range's four bounds)"
+      },
+      {
+        "wave": 2,
+        "item": "Gradient Map's gradient stop editing (colour, location, add, remove)"
+      },
+      {
+        "wave": 2,
+        "item": "Live-adjust preview: adjustment fields preview while dragged and commit one step on release (upstream's app.live_adjust); wave 1 writes on every drag tick, coalesced into one step"
+      },
+      {
+        "wave": 2,
+        "item": "Shape fill and stroke type picker (none, solid, gradient, pattern)"
+      },
+      {
+        "wave": 2,
+        "item": "Artboard properties (size, preset, background)"
+      },
+      {
+        "wave": 2,
+        "item": "Gradient fill layer properties"
+      },
+      {
+        "wave": 2,
+        "item": "Rulers & Grids section in the Document view (needs the canvas to draw rulers and grids)"
+      },
+      {
+        "wave": 2,
+        "item": "Guides section in the Document view (needs the canvas to draw guides)"
+      }
+    ]
+  },
+  "menu:Edit/Paste Special/edit.pasteSpecial.pasteInPlace": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Paste Special/edit.pasteSpecial.pasteInto": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Paste Special/edit.pasteSpecial.pasteOutside": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Preferences/edit.preferences.cursors": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.enhancedControls": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.export": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.fileHandling": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.general": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.guidesGridAndSlices": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.historyLog": {
+    "status": "hidden",
+    "wave": 3,
+    "reason": "Writes a history log to a local file; the editor keeps no log."
+  },
+  "menu:Edit/Preferences/edit.preferences.integrations": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.interface": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.performance": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.plugIns": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.rawDefaults": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.scratchDisks": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.tools": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.transparencyAndGamut": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.type": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.unitsAndRulers": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Preferences/edit.preferences.workspace": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/Presets/edit.presets.exportImportPresets": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/Presets/edit.presets.migratePresets": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "Reads presets from a local installation."
+  },
+  "menu:Edit/Presets/edit.presets.presetManager": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/Purge/edit.purge.all": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Purge/edit.purge.clipboard": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Purge/edit.purge.histories": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Purge/edit.purge.undo": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Purge/edit.purge.videoCache": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.again": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.distort": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/Transform/edit.transform.flipHorizontal": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.flipVertical": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.perspective": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/Transform/edit.transform.removeWarpSplit": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.rotate": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/Transform/edit.transform.rotate180": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.rotate90Ccw": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.rotate90Cw": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.scale": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/Transform/edit.transform.skew": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/Transform/edit.transform.splitWarpCrosswise": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.splitWarpHorizontally": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.splitWarpVertically": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/Transform/edit.transform.warp": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/edit.assignProfile": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.autoAlignLayers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.autoBlendLayers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.checkSpelling": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.clear": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.colorSettings": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.smartFill": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.smartScale": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.convertToProfile": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.copy": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.copyMerged": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.cut": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.defineBrushPreset": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.defineCustomShape": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.definePattern": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.fade": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.fill": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.findAndReplaceText": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.freeTransform": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Free Transform and its modes are transforms on the canvas (handles and a live preview), which the design places in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Edit/edit.keyboardShortcuts": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.menus": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.paste": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.perspectiveWarp": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/edit.pinWarp": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Edit/edit.redo": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.search": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.stroke": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Edit/edit.toggleLastState": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Edit/edit.toolbar": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream's Customize Toolbar dialog (rearranging the rail's slots and groups, kept with the workspace), and the rail's '…' Edit Toolbar button under the tools that opens it: the rail draws upstream's fixed groups until then. It comes with wave 3's Preferences and workspace pages."
+  },
+  "menu:Edit/edit.undo": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:File/Automate/file.automate.batch": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Runs over files in local folders."
+  },
+  "menu:File/Automate/file.automate.conditionalModeChange": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Automate/file.automate.contactSheetII": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Runs over files in local folders."
+  },
+  "menu:File/Automate/file.automate.createDroplet": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Runs over files in local folders."
+  },
+  "menu:File/Automate/file.automate.cropAndStraightenPhotos": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "Opens a new document per photo it finds; the host opens documents."
+  },
+  "menu:File/Automate/file.automate.fitImage": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Automate/file.automate.lensCorrection": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Runs over files in local folders."
+  },
+  "menu:File/Automate/file.automate.mergeToHdrPro": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Merges files from local folders, or several open documents, into a new document."
+  },
+  "menu:File/Automate/file.automate.photomerge": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Merges files from local folders, or several open documents, into a new document."
+  },
+  "menu:File/Export/file.export.artboardsToFiles": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes one file per artboard to a local folder."
+  },
+  "menu:File/Export/file.export.artboardsToPdf": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes a PDF to a local folder."
+  },
+  "menu:File/Export/file.export.colorLookupTables": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Export/file.export.dataSetsAsFiles": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes one file per data set to a local folder."
+  },
+  "menu:File/Export/file.export.exportAs": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Export/file.export.exportPreferences": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Export/file.export.layerCompsToFiles": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes one file per layer comp to a local folder."
+  },
+  "menu:File/Export/file.export.layersToFiles": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes one file per layer to a local folder."
+  },
+  "menu:File/Export/file.export.pathsToIllustrator": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Export/file.export.quickExportAsPng": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Writes a PNG through the host (host/write), with Export As, in wave 2; the row is drawn disabled until then."
+  },
+  "menu:File/Export/file.export.renderVideo": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Renders a video file to a local folder."
+  },
+  "menu:File/Export/file.export.saveForWebLegacy": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Generate/file.generate.imageAssets": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:File/Import/file.import.notes": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Imports notes from a local file."
+  },
+  "menu:File/Import/file.import.variableDataSets": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Imports data sets from a local file."
+  },
+  "menu:File/Import/file.import.videoFramesToLayers": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Imports frames from a local video file."
+  },
+  "menu:File/Import/file.import.wiaSupport": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Imports from a scanner or camera through the operating system."
+  },
+  "menu:File/Scripts/file.scripts.browse": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Runs a script from a local file."
+  },
+  "menu:File/Scripts/file.scripts.deleteAllEmptyLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:File/Scripts/file.scripts.flattenAllLayerEffects": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:File/Scripts/file.scripts.flattenAllMasks": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:File/Scripts/file.scripts.imageProcessor": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Converts files from a local folder into another."
+  },
+  "menu:File/Scripts/file.scripts.loadFilesIntoStack": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Stacks files read from a local folder."
+  },
+  "menu:File/Scripts/file.scripts.scriptEventsManager": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/Scripts/file.scripts.statistics": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Stacks files read from a local folder."
+  },
+  "menu:File/file.close": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.closeAll": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.closeOthers": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.exit": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.fileInfo": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/file.new": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.newFromClipboard": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens documents."
+  },
+  "menu:File/file.open": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.openAs": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Opens a local file in a chosen format."
+  },
+  "menu:File/file.package": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Copies the linked files into a local folder."
+  },
+  "menu:File/file.placeEmbedded": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:File/file.placeLinked": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Links a local file that stays on disk."
+  },
+  "menu:File/file.print": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Prints through the operating system."
+  },
+  "menu:File/file.printOneCopy": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "Prints through the operating system."
+  },
+  "menu:File/file.revert": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host reverts a document to its saved copy."
+  },
+  "menu:File/file.save": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:File/file.saveACopy": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes a second file to a local folder."
+  },
+  "menu:File/file.saveAs": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "The host opens, saves, and closes documents."
+  },
+  "menu:Filter/Blur Gallery/filter.blurGallery.fieldBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur Gallery/filter.blurGallery.irisBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur Gallery/filter.blurGallery.pathBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur Gallery/filter.blurGallery.spinBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur Gallery/filter.blurGallery.tiltShift": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.average": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Blur/filter.blur.blur": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Blur/filter.blur.blurMore": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Blur/filter.blur.boxBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.gaussianBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.lensBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.motionBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.radialBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.shapeBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.smartBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Blur/filter.blur.surfaceBlur": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.displace": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.pinch": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.polarCoordinates": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.ripple": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.shear": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.spherize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.twirl": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.wave": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Distort/filter.distort.zigZag": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Noise/filter.noise.addNoise": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Noise/filter.noise.despeckle": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Noise/filter.noise.dustAndScratches": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Noise/filter.noise.median": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Noise/filter.noise.reduceNoise": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Other/filter.other.colorToAlpha": {
+    "status": "todo",
+    "wave": 2,
+    "note": "Upstream's catalog draws its other filters under \"Filter › Other…\", while the engine, which adds Color to Alpha, names that submenu \"Filter › Other\". The editor merges the two on purpose into the engine's \"Other\" (catalog.ts ENGINE_SUBMENUS), because Kit UI enforces a command's hides under the engine's menu path; Color to Alpha closes the merged submenu."
+  },
+  "menu:Filter/Other…/filter.other.custom": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Other…/filter.other.highPass": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Other…/filter.other.hsbHsl": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Other…/filter.other.maximum": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Other…/filter.other.minimum": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Other…/filter.other.offset": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Pixelate/filter.pixelate.colorHalftone": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Pixelate/filter.pixelate.crystallize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Pixelate/filter.pixelate.facet": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Pixelate/filter.pixelate.fragment": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Pixelate/filter.pixelate.mezzotint": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Pixelate/filter.pixelate.mosaic": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Pixelate/filter.pixelate.pointillize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Plug-ins/plugin.install": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Installs a plug-in from a local file."
+  },
+  "menu:Filter/Render/filter.render.clouds": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Render/filter.render.differenceClouds": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Render/filter.render.fibers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.flame": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.lensFlare": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.lightingEffects": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.pictureFrame": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.relight": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Render/filter.render.tree": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Sharpen/filter.sharpen.sharpen": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Sharpen/filter.sharpen.sharpenEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Sharpen/filter.sharpen.sharpenMore": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Sharpen/filter.sharpen.smartSharpen": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Sharpen/filter.sharpen.unsharpMask": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.diffuse": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.emboss": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.extrude": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.findEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Stylize/filter.stylize.oilPaint": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.solarize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/Stylize/filter.stylize.tiles": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.traceContour": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Stylize/filter.stylize.wind": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Video/filter.video.deInterlace": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/Video/filter.video.ntscColors": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/filter.adaptiveWideAngle": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/filter.rawDevelop": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Filter/filter.convertForEditableFilters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/filter.filterGallery": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Filter/filter.lastFilter": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Filter/filter.lensCorrection": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Filter/filter.liquify": {
+    "status": "todo",
+    "wave": 3
+  },
+  "menu:Filter/filter.vanishingPoint": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.blackWhite": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.brightnessContrast": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.channelMixer": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.colorBalance": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.colorLookup": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.curves": {
+    "status": "todo",
+    "wave": 2,
+    "note": "Wave 2's Curves dialog also brings the Properties panel's Curves editor (graph, points, channels) for Curves adjustment layers."
+  },
+  "menu:Image/Adjustments/image.adjustments.desaturate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Adjustments/image.adjustments.equalize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Adjustments/image.adjustments.exposure": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.gradientMap": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.hdrToning": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.hueSaturation": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.invert": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Adjustments/image.adjustments.levels": {
+    "status": "todo",
+    "wave": 2,
+    "note": "Wave 2's Levels dialog also brings the Properties panel's Levels editor (histogram, sliders, channels) for Levels adjustment layers."
+  },
+  "menu:Image/Adjustments/image.adjustments.matchColor": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.photoFilter": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.posterize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.replaceColor": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.selectiveColor": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.shadowsHighlights": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.threshold": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Adjustments/image.adjustments.vibrance": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Analysis/image.analysis.countTool": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Analysis/image.analysis.placeScaleMarker": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Analysis/image.analysis.recordMeasurements": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Analysis/image.analysis.rulerTool": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Analysis/image.analysis.selectDataPoints": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Analysis/image.analysis.setMeasurementScale": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Image Rotation/image.imageRotation.180": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Image Rotation/image.imageRotation.90ccw": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Image Rotation/image.imageRotation.90cw": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Image Rotation/image.imageRotation.flipCanvasHorizontal": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Image Rotation/image.imageRotation.flipCanvasVertical": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Image Rotation/image.rotation.arbitrary": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Mode/image.mode.bitmap": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.bits16": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.bits32": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.bits8": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.cmyk": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.colorTable": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Mode/image.mode.duotone": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.grayscale": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.indexedColor": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.lab": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.multichannel": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Mode/image.mode.rgb": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/Variables/image.variables.dataSets": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/Variables/image.variables.define": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.applyDataSet": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.applyImage": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.autoColor": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/image.autoContrast": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/image.autoTone": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/image.calculations": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.canvasSize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.crop": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/image.duplicate": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.imageSize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.revealAll": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Image/image.trap": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Image/image.trim": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Align/layer.align.bottomEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Align/layer.align.horizontalCenters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Align/layer.align.leftEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Align/layer.align.rightEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Align/layer.align.topEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Align/layer.align.verticalCenters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Arrange/layer.arrange.bringForward": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Arrange/layer.arrange.bringToFront": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Arrange/layer.arrange.reverse": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Arrange/layer.arrange.sendBackward": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Arrange/layer.arrange.sendToBack": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Combine Shapes/layer.combineShapes.excludeOverlappingShapes": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Combine Shapes/layer.combineShapes.intersectShapeAreas": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Combine Shapes/layer.combineShapes.mergeShapeComponents": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Combine Shapes/layer.combineShapes.subtractFrontShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Combine Shapes/layer.combineShapes.unite": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Delete/layer.delete": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Delete/layer.delete.hiddenLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.bottomEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.horizontalCenters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.horizontally": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.leftEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.rightEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.topEdges": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.verticalCenters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Distribute/layer.distribute.vertically": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.apply": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.delete": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.enabled": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.fromTransparency": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.hideAll": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.hideSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.linked": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.revealAll": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Mask/layer.layerMask.revealSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.bevelEmboss": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.blendingOptions": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.clear": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.colorOverlay": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.copyLayerStyle": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.createLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.dropShadow": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.globalLight": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.gradientOverlay": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.hideAllEffects": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.innerGlow": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.innerShadow": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.outerGlow": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.pasteLayerStyle": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.patternOverlay": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.satin": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.scaleEffects": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Layer Style/layer.layerStyle.stroke": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Matting/layer.matting.colorDecontaminate": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Matting/layer.matting.defringe": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Matting/layer.matting.removeBlackMatte": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Matting/layer.matting.removeWhiteMatte": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.blackWhite": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.brightnessContrast": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.channelMixer": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.colorBalance": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.colorLookup": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.curves": {
+    "status": "todo",
+    "wave": 2,
+    "note": "Wave 2's Curves dialog also brings the Properties panel's Curves editor (graph, points, channels) for Curves adjustment layers."
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.exposure": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.gradientMap": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.hueSaturation": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.invert": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.levels": {
+    "status": "todo",
+    "wave": 2,
+    "note": "Wave 2's Levels dialog also brings the Properties panel's Levels editor (histogram, sliders, channels) for Levels adjustment layers."
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.photoFilter": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.posterize": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.selectiveColor": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.threshold": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Adjustment Layer/layer.newAdjustmentLayer.vibrance": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Fill Layer/layer.newFillLayer.gradient": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Fill Layer/layer.newFillLayer.pattern": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New Fill Layer/layer.newFillLayer.solidColor": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.artboard": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.artboardFromGroup": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.artboardFromLayers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.frameFromLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/New/layer.new.group": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.groupFromLayers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.layer": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.layerFromBackground": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/New/layer.new.layerViaCopy": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/New/layer.new.layerViaCut": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/New/shape.create": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/New/type.create": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.allLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.fillContent": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.layer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.shape": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.objectLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.type": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.vectorMask": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/layer.rasterize.video": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/shape.rasterize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Rasterize/type.rasterize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Editable Filter/layer.editableFilter.blendingOptions": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Editable Filter/layer.editableFilter.clearEditableFilters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Editable Filter/layer.editableFilter.deleteFilterMask": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Editable Filter/layer.editableFilter.disableFilterMask": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Editable Filter/layer.editableFilter.disableEditableFilters": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.entropy": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.kurtosis": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.maximum": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.mean": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.median": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.minimum": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.none": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.range": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.skewness": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.standardDeviation": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.summation": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/Stack Mode/layer.objectLayers.stackMode.variance": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.convertToEmbedded": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.convertToLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.convertToLinked": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.convertToObjectLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.editContents": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.exportContents": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.newObjectLayerViaCopy": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.perspectiveWarp": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.pinWarp": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.rasterize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.relinkToFile": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Links an object layer to a local file."
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.replaceContents": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.revealInFinder": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "Shows the linked file in the operating system file manager."
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.updateAllModifiedContent": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.updateModifiedContent": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Object Layers/layer.objectLayers.warp": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.add": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.currentPath": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.delete": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.enabled": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.fromPath": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.hideAll": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.linked": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Vector Mask/layer.vectorMask.revealAll": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.deleteFrame": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.duplicateFrame": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.insertBlankFrame": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.interpretFootage": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.newBlankVideoLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.newVideoLayerFromFile": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Makes a video layer from a local video file."
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.rasterize": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.reloadFrame": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.replaceFootage": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.restoreAllFrames": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.restoreFrame": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/Video Layers/layer.videoLayers.showAlteredVideo": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.createClippingMask": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.duplicate": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/layer.exportAs": {
+    "status": "hidden",
+    "wave": 2,
+    "reason": "Writes a file to a local folder; exporting through the host is not built yet."
+  },
+  "menu:Layer/layer.flattenImage": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.groupLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.hideLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.layerContentOptions": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/layer.linkLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.lockLayers": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Layer/layer.maskAllObjects": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.mergeDown": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.mergeLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.mergeVisible": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.newLayerBasedSlice": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.quickExportAsPng": {
+    "status": "hidden",
+    "wave": 1,
+    "reason": "Writes a PNG to a local folder; exporting through the host is not built yet."
+  },
+  "menu:Layer/layer.releaseClippingMask": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.renameLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.selectLinkedLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Layer/layer.ungroupLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/Modify/select.modify.border": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/Modify/select.modify.contract": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/Modify/select.modify.expand": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/Modify/select.modify.feather": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/Modify/select.modify.smooth": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.all": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.allLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.colorRange": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.convertToShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.deselect": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.deselectLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.editInQuickMaskMode": {
+    "status": "done",
+    "wave": 1,
+    "note": "Also the rail's Quick Mask button under the colour chips (upstream's square-dashed button: pressed while Quick Mask is on, its tooltip Edit in Standard Mode or Edit in Quick Mask Mode, Q)."
+  },
+  "menu:Select/select.findLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.focusArea": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.grow": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.inverse": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.isolateLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.loadSelection": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.reselect": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.saveSelection": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.refineSelection": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Select/select.similar": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.sky": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.subject": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Select/select.transformSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.crisp": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.none": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.sharp": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.smooth": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.strong": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.windows": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Anti-Alias/type.antiAlias.windowsLcd": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Font Preview Size/type.fontPreviewSize.extraLarge": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Font Preview Size/type.fontPreviewSize.huge": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Font Preview Size/type.fontPreviewSize.large": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Font Preview Size/type.fontPreviewSize.medium": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Font Preview Size/type.fontPreviewSize.small": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Language Options/type.languageOptions.defaultFeatures": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Language Options/type.languageOptions.eastAsianFeatures": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Language Options/type.languageOptions.middleEasternAndSouthAsianComposer": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/Language Options/type.languageOptions.middleEasternFeatures": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Type preferences (the font menu's preview size, OpenType language features and composers) the web editor does not have yet; they come with wave 3's Preferences. The row is drawn disabled until then."
+  },
+  "menu:Type/OpenType/type.openType.contextualAlternates": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.discretionaryLigatures": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.fractions": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.oldstyle": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.ordinals": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.ornaments": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.standardLigatures": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.stylisticAlternates": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.swash": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/OpenType/type.openType.titlingAlternates": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Orientation/type.orientation.horizontal": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Orientation/type.orientation.vertical": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/Panels/type.panels.character": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:type.panels.character, as upstream's: shows the Character group with the Character tab forward, expanded (never hides it); checked while it shows."
+  },
+  "menu:Type/Panels/type.panels.characterStyles": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Type/Panels/type.panels.glyphs": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Type/Panels/type.panels.paragraph": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:type.panels.paragraph, as upstream's: shows the Character group with the Paragraph tab forward, expanded (never hides it); checked while it shows."
+  },
+  "menu:Type/Panels/type.panels.paragraphStyles": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Type/type.convertToParagraphText": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.convertToPointText": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.convertToShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.createWorkPath": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.loadDefaultTypeStyles": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.pasteLoremIpsum": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.rasterizeTypeLayer": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.replaceAllMissingFonts": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.resolveMissingFonts": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Type/type.saveDefaultTypeStyles": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.updateAllTextLayers": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:Type/type.warpText": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.anamorphic2To1": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.custom": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.d1DvNtsc": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.d1DvNtscWidescreen": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.d1DvPal": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.d1DvPalWidescreen": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.dvcproHd1080": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.hdv1080": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Pixel Aspect Ratio/view.pixelAspectRatio.square": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Proof Setup/view.proofSetup.colorBlindnessDeuteranopia": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.colorBlindnessProtanopia": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.custom": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/Proof Setup/view.proofSetup.internetStandardRgb": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Proof Setup/view.proofSetup.legacyMacintoshRgb": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.monitorRgb": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingBlackPlate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingCmyPlate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingCmyk": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingCyanPlate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingMagentaPlate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Proof Setup/view.proofSetup.workingYellowPlate": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/Screen Mode/view.screenMode.fullScreen": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Screen modes, and the rail's Change Screen Mode button (F) under Quick Mask: Standard and Full Screen With Menu Bar differ only in the native window's chrome (title bar, document tabs), which an editor embedded in a host's tab does not own, and Full Screen needs the host to let the editor's frame fill the screen and to hide its own chrome. They come in wave 3 with the other canvas view modes, once the Kit UI protocol can ask the host for it; the rows are drawn disabled and the rail leaves the button out until then."
+  },
+  "menu:View/Screen Mode/view.screenMode.fullScreenWithMenuBar": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Screen modes, and the rail's Change Screen Mode button (F) under Quick Mask: Standard and Full Screen With Menu Bar differ only in the native window's chrome (title bar, document tabs), which an editor embedded in a host's tab does not own, and Full Screen needs the host to let the editor's frame fill the screen and to hide its own chrome. They come in wave 3 with the other canvas view modes, once the Kit UI protocol can ask the host for it; the rows are drawn disabled and the rail leaves the button out until then."
+  },
+  "menu:View/Screen Mode/view.screenMode.standard": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Screen modes, and the rail's Change Screen Mode button (F) under Quick Mask: Standard and Full Screen With Menu Bar differ only in the native window's chrome (title bar, document tabs), which an editor embedded in a host's tab does not own, and Full Screen needs the host to let the editor's frame fill the screen and to hide its own chrome. They come in wave 3 with the other canvas view modes, once the Kit UI protocol can ask the host for it; the rows are drawn disabled and the rail leaves the button out until then."
+  },
+  "menu:View/Show/view.show.all": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.artboardGuides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.brushPreview": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.canvasGuides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.count": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.editPins": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.grid": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.guides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.layerEdges": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.mesh": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.notes": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.pixelGrid": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.selectionEdges": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.showExtrasOptions": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/Show/view.show.slices": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.smartGuides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Show/view.show.targetPath": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.all": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.documentBounds": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.grid": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.guides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.layers": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/Snap To/view.snapTo.slices": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.actualPixels": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.actualPixels: zooms to 100%, Cmd+1."
+  },
+  "menu:View/view.clearCanvasGuides": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.clearGuides": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.clearSelectedArtboardGuides": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.clearSlices": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.extras": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.fitArtboardOnScreen": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.fitLayersOnScreen": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.fitLayersOnScreen: fits the active layer's bounds (the whole image without one) in the canvas; the web editor has one active layer where upstream fits the selected layers."
+  },
+  "menu:View/view.fitOnScreen": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.fitOnScreen: fits the image in the canvas (Cmd+0, as the shell binds it)."
+  },
+  "menu:View/view.flipHorizontal": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.gamutWarning": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.lockGuides": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.lockSlices": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.newGuide": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/view.newGuideLayout": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/view.newGuidesFromShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.patternPreview": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.pixelArtPreview": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.pixelAspectRatioCorrection": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "A view mode of the canvas (proofing, pixel aspect ratio, flipping, pattern and pixel-art preview, screen modes, artboard fitting) the web canvas does not have yet; it comes in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.printSize": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.printSize: zooms to the size the image prints at on a 72 ppi screen (72 / the document's resolution), as upstream."
+  },
+  "menu:View/view.proofColors": {
+    "status": "done",
+    "wave": 1
+  },
+  "menu:View/view.rulers": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.snap": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Canvas extras (guides, grid, rulers, slices, notes, counts, pixel grid, smart guides, edges) and snapping: the web canvas draws none of them yet; they come in wave 3. The row is drawn disabled until then."
+  },
+  "menu:View/view.thirtyTwoBitPreviewOptions": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:View/view.twoHundredPercent": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.twoHundredPercent: zooms to 200%."
+  },
+  "menu:View/view.zoomIn": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.zoomIn: zooms in to Photoshop's next step (upstream canvas::zoom_step), Cmd+=."
+  },
+  "menu:View/view.zoomOut": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's row kit:view.zoomOut: zooms out to Photoshop's previous step (upstream canvas::zoom_step), Cmd+-."
+  },
+  "menu:Window/Arrange/window.arrange.cascade": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.consolidateAllToTabs": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.floatAllInWindows": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.floatInWindow": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.fourUp": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.matchAll": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.matchLocation": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.matchRotation": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.matchZoom": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.newWindowForDocument": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.sixUp": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.threeUpHorizontal": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.threeUpStacked": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.threeUpVertical": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.tile": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.tileAllHorizontally": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.tileAllVertically": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.twoUpHorizontal": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Arrange/window.arrange.twoUpVertical": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Arranges several document windows; Photo's editor shows the one document its host tab opened, so this waits for wave 3 (with the host's own layout); the row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/edit.keyboardShortcuts": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Window/Workspace/window.workspace.deleteWorkspace": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Window/Workspace/window.workspace.essentials": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.graphicAndWeb": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.lockWorkspace": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.motion": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.newWorkspace": {
+    "status": "todo",
+    "wave": 2
+  },
+  "menu:Window/Workspace/window.workspace.painting": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.photography": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.pixelArt": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/Workspace/window.workspace.resetWorkspace": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Workspace presets rearrange the dock and bars; they come with Preferences in wave 3. The row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.actions": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.adjustments": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.adjustments, as upstream's (view_cmds panel_tab): shows the dock's Properties group with the Adjustments tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.brushSettings": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.brushes": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.channels": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.channels, as upstream's (view_cmds panel_tab): shows the dock's Layers group with the Channels tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.character": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.character, as upstream's (view_cmds panel_tab): shows the dock's Character group with the Character tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.characterStyles": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.cloneSource": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.color": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.color, as upstream's (view_cmds panel_tab): shows the dock's Color group with the Color tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.glyphs": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.gradients": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.histogram": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.histogram, as upstream's (view_cmds panel_tab): shows the dock's Navigator group with the Histogram tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.history": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.history, as upstream's (view_cmds panel_tab): shows the dock's History group with the History tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.info": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.info, as upstream's (view_cmds panel_tab): shows the dock's Navigator group with the Info tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.layerComps": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.layers": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.layers, as upstream's (view_cmds panel_tab): shows the dock's Layers group with the Layers tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.measurementLog": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Timeline, Measurement Log, Notes, or Modifier Keys panel, which comes in wave 3; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.modifierKeys": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Timeline, Measurement Log, Notes, or Modifier Keys panel, which comes in wave 3; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.navigator": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.navigator, as upstream's (view_cmds panel_tab): shows the dock's Navigator group with the Navigator tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.notes": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Timeline, Measurement Log, Notes, or Modifier Keys panel, which comes in wave 3; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.options": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window toggle kit:window.options."
+  },
+  "menu:Window/window.panel.paragraph": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.paragraph, as upstream's (view_cmds panel_tab): shows the dock's Character group with the Paragraph tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.paragraphStyles": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Glyphs or a type styles panel, which comes with wave 3's advanced type modules; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.paths": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.paths, as upstream's (view_cmds panel_tab): shows the dock's Layers group with the Paths tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.patterns": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.properties": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.properties, as upstream's (view_cmds panel_tab): shows the dock's Properties group with the Properties tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.shapes": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.styles": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.swatches": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window row kit:window.panel.swatches, as upstream's (view_cmds panel_tab): shows the dock's Color group with the Swatches tab forward, expanded, or hides the group when that tab already shows; checked while it shows."
+  },
+  "menu:Window/window.panel.timeline": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Shows the Timeline, Measurement Log, Notes, or Modifier Keys panel, which comes in wave 3; the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.toolPresets": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows a panel that comes in wave 2 (with the library and brush dialogs); the row is drawn disabled until then."
+  },
+  "menu:Window/window.panel.tools": {
+    "status": "done",
+    "wave": 1,
+    "note": "Kition's Window toggle kit:window.toolbar."
+  },
+  "options:BackgroundEraser/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:BackgroundEraser/Limits:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:BackgroundEraser/Protect Foreground Color": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:BackgroundEraser/Sampling: Background Swatch": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:BackgroundEraser/Sampling: Continuous": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:BackgroundEraser/Sampling: Once": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:BackgroundEraser/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:BackgroundEraser/Tolerance:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Blur/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Blur/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Blur/Strength:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Blur/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Brush/Always use pressure for opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Always use pressure for size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Brush/Enable airbrush-style build-up effects": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action."
+  },
+  "options:Brush/Flow": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Hardness": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Pressure for Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Pressure for Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Set additional smoothing options": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action."
+  },
+  "options:Brush/Set painting symmetry options": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action; symmetry is set from the Brush Settings panel."
+  },
+  "options:Brush/Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Smoothing": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Brush/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Burn/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Burn/Exposure:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Burn/Protect Tones": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Burn/Range:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Burn/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:CloneStamp/Aligned": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CloneStamp/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:CloneStamp/Sample:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CloneStamp/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:SmartMove/Color:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SmartMove/Mode:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SmartMove/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SmartMove/Structure:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Count/Clear": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Count/Create a new count group": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/Delete count group": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/Label Size": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/Marker Size": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/Toggle count group visibility": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/color": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Count/dropdown:count-group": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Count groups (read-out, groups, colour, sizes) come with the Count tool’s group editing."
+  },
+  "options:Crop/Cancel current crop operation  (Esc)": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Clear": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Commit current crop operation  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Delete Cropped Pixels": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Height": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Overlay: Rule of Thirds": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Swaps height and width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/Width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Crop/dropdown:crop-ratio": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CustomShape/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CustomShape/Shape:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CustomShape/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:CustomShape/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Dodge/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Dodge/Exposure:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Dodge/Protect Tones": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Dodge/Range:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Dodge/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:EllipseMarquee/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Feather": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Height": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:EllipseMarquee/Style": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Swaps height and width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseMarquee/Width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseShape/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseShape/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:EllipseShape/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Always use pressure for opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Always use pressure for size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Eraser/Enable airbrush-style build-up effects": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action."
+  },
+  "options:Eraser/Flow": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Hardness": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Pressure for Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Pressure for Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Set additional smoothing options": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action."
+  },
+  "options:Eraser/Set painting symmetry options": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Upstream draws it without an action; symmetry is set from the Brush Settings panel."
+  },
+  "options:Eraser/Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Smoothing": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Eraser/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Gradient/Angle Gradient": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Click to edit the gradient": {
+    "status": "done",
+    "wave": 1,
+    "note": "The swatch: foreground to background (Classic) or the current preset (live), with upstream's tooltips; upstream's swatch has no click action."
+  },
+  "options:Gradient/Diamond Gradient": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Dither": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Linear Gradient": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Mode": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Gradient/Radial Gradient": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Reflected Gradient": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/Reverse": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Reaches each new gradient, live or classic; with a live gradient fill layer selected, upstream's bar also edits that layer (gradient_ui::options_changed), not yet."
+  },
+  "options:Gradient/dropdown:gradient-mode": {
+    "status": "done",
+    "wave": 1,
+    "note": "Gradient (a live Gradient Fill layer of the current preset) or Classic gradient (pixels)."
+  },
+  "options:Healing/Aligned": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Healing/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Healing/Sample:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Healing/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:HistoryBrush/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:HistoryBrush/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Lasso/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Lasso/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Lasso/Feather": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Lasso/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Lasso/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Lasso/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:Lasso/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Line/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Line/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Line/Weight:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Line/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicEraser/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicEraser/Contiguous": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicEraser/Opacity:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicEraser/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicEraser/Tolerance:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Contiguous": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Select Subject": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:MagicWand/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagicWand/Tolerance": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Contrast": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Feather": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Frequency": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:MagneticLasso/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MagneticLasso/Use tablet pressure to change pen width": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Magnetic Lasso pressure: narrowing the width by pen pressure needs pen input on the canvas."
+  },
+  "options:MagneticLasso/Width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MixerBrush/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:MixerBrush/Flow": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MixerBrush/Load": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MixerBrush/Mix": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MixerBrush/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:MixerBrush/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:MixerBrush/Wet": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Align and distribute": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Align horizontal centers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Align left edges": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Align right edges": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Auto-Select:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Move/Show Transform Controls": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Draws the active layer's box; its handles start Free Transform, a wave-3 canvas transform."
+  },
+  "options:Move/dropdown:move-target": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Note/Author:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Note/Clear All": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Note/Color:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Note/Show or hide the Notes panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Notes panel is not built yet."
+  },
+  "options:ObjectSelection/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:ObjectSelection/Select Subject": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/Contiguous": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/Fill": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PaintBucket/Tolerance": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Patch/Destination": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Patch/Patch:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Patch/Source": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pen/dropdown:pen-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Auto Erase": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Pencil/Mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Opacity": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Smoothing": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Pencil/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Polygon/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Polygon/Sides:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Polygon/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Polygon/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/Feather": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:PolygonLasso/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:PolygonLasso/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:QuickSelection/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:QuickSelection/Enhance Edge": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:QuickSelection/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:QuickSelection/Select Subject": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:QuickSelection/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:RectMarquee/Add to selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Anti-alias": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Feather": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Height": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Intersect with selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/New selection": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Refine Selection…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Select › Refine Selection is a later wave; the bar draws it disabled."
+  },
+  "options:RectMarquee/Style": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Subtract from selection  ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Swaps height and width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:RectMarquee/Width": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Rectangle/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Rectangle/Radius:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Rectangle/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Rectangle/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Ruler/A:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/Clear": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Ruler/H:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/L1:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/L2:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/Straighten Layer": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Ruler/Use Measurement Scale": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Comes with the measurement scale (Image › Analysis)."
+  },
+  "options:Ruler/W:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/X:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Ruler/Y:": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Ruler read-outs (the measured line) come with the Info panel’s measurements."
+  },
+  "options:Sharpen/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Sharpen/Protect Detail": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Sharpen/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Sharpen/Strength:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Sharpen/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Slice/Slices From Guides": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Slice/Style: Normal": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SliceSelect/Delete": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Slice Select acts on a selected slice, and slice selection is not built yet."
+  },
+  "options:SliceSelect/Divide…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Slice Select acts on a selected slice, and slice selection is not built yet."
+  },
+  "options:SliceSelect/Hide Auto Slices": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Slice Select acts on a selected slice, and slice selection is not built yet."
+  },
+  "options:SliceSelect/Promote": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Slice Select acts on a selected slice, and slice selection is not built yet."
+  },
+  "options:SliceSelect/Slice Options…": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Slice Select acts on a selected slice, and slice selection is not built yet."
+  },
+  "options:Smudge/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Smudge/Finger Painting": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Smudge/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Smudge/Strength:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Smudge/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Sponge/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:Sponge/Mode:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Sponge/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:Sponge/Vibrance": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SpotHealing/Brush Preset picker": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "The Brush Preset picker (the preset library popover) comes with the brush presets; Size and Hardness sit in the bar meanwhile."
+  },
+  "options:SpotHealing/Smart Fill": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SpotHealing/Create Texture": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SpotHealing/Proximity Match": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SpotHealing/Sample All Layers": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:SpotHealing/Toggle the Brush Settings panel": {
+    "status": "todo",
+    "wave": 2,
+    "reason": "Shows the Brush Settings panel (F5), which is not built yet."
+  },
+  "options:SpotHealing/Type:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Triangle/Fill:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Triangle/Stroke:": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Triangle/dropdown:shape-mode": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Cancel any current edits (Esc)": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Center text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Commit any current edits ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Left align text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Right align text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Set the text color": {
+    "status": "done",
+    "wave": 1,
+    "note": "Deviation: with no type layer selected the swatch sets the foreground colour, as Photoshop does; upstream does nothing there."
+  },
+  "options:Type/Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/Toggle text orientation": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/dropdown:type-aa": {
+    "status": "done",
+    "wave": 1,
+    "note": "Deliberate deviation: new type is created with the bar's anti-aliasing (type.create antialias), so it matches what the bar shows. Upstream (type_tool::pointer_up) runs type.edit only when its option is not Sharp, so its default Sharp leaves the engine's Smooth on new type, which looks like an upstream bug."
+  },
+  "options:Type/dropdown:type-font": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Type/dropdown:type-style": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Cancel any current edits (Esc)": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Center text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Commit any current edits ({key})": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Left align text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Right align text": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Set the text color": {
+    "status": "done",
+    "wave": 1,
+    "note": "Deviation: with no type layer selected the swatch sets the foreground colour, as Photoshop does; upstream does nothing there."
+  },
+  "options:VerticalType/Size": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/Toggle text orientation": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/dropdown:type-aa": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/dropdown:type-font": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:VerticalType/dropdown:type-style": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Zoom/100%": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Zoom/Fit Screen": {
+    "status": "done",
+    "wave": 1
+  },
+  "options:Zoom/Scrubby Zoom": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:BackgroundEraser": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Blur": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Brush": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Burn": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:CloneStamp": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:SmartMove": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Count": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Runs count.add, but the canvas does not draw count marks yet; count marks come with the canvas extras (View › Show) in wave 3."
+  },
+  "tool:Crop": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:CustomShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:DirectSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Dodge": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:EllipseMarquee": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:EllipseShape": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Eraser": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Eyedropper": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Gradient": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Hand": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Healing": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:HistoryBrush": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Lasso": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Line": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:MagicEraser": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:MagicWand": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:MagneticLasso": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:MixerBrush": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Move": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Note": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Runs notes.add, but the canvas does not draw notes yet; notes come with the canvas extras (View › Show) in wave 3."
+  },
+  "tool:ObjectSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:PaintBucket": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Patch": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:PathSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Pen": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Pencil": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Polygon": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:PolygonLasso": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:QuickSelection": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:RectMarquee": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Rectangle": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Ruler": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Runs image.analysis.rulerTool, but the canvas does not draw the ruler line yet; the ruler line comes with the canvas extras (View › Show) in wave 3."
+  },
+  "tool:Sharpen": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Slice": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Runs slice.new, but the canvas does not draw slices yet; slices come with the canvas extras (View › Show) in wave 3."
+  },
+  "tool:SliceSelect": {
+    "status": "todo",
+    "wave": 3,
+    "reason": "Runs slice.set, but the canvas does not draw slices yet; slices come with the canvas extras (View › Show) in wave 3."
+  },
+  "tool:Smudge": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Sponge": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:SpotHealing": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Triangle": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Type": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:VerticalType": {
+    "status": "done",
+    "wave": 1
+  },
+  "tool:Zoom": {
+    "status": "done",
+    "wave": 1
+  }
+}

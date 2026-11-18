@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.context/selection-not-saved
+feature: photo.agent.context
+intent: >-
+  An agent's selection and active layer from a run do not reach the saved file: the saved .kphoto's manifest holds no selection the agent made.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: context }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

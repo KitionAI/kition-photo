@@ -1,0 +1,24 @@
+format: 1
+id: regressions/issue-move-auto-select-drag
+feature: photo.layer.manage
+intent: >-
+  With the Move tool and Auto-Select on, a press on another layer's pixels makes that layer active
+  and the same drag moves it, as upstream does. Before, the active-layer change rebuilt the canvas
+  tool and the canvas cancelled the drag under way, so the layer was picked but nothing moved.
+layer: gate
+source:
+  kind: probe
+  from: "photo editor review: Move with Auto-Select picks the layer but the drag moves nothing"
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/auto-select.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 60
+since: "2026-11-17"

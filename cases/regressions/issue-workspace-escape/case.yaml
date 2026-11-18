@@ -1,0 +1,32 @@
+format: 1
+id: regressions/issue-workspace-escape
+feature: photo.layer.object-layers
+intent: >-
+  The headless kit reads and writes only inside its workspace, through its host (KHP A29, A37, A42,
+  A45, section 10.6): whatever an agent runs (directly, inside model.batch with any origin, as an
+  actions.play step, through editable filter parameters or the object model's layer properties) and
+  whatever its document files link to, nothing appears in the process's current, home or
+  temporary folder, no program starts, and nothing outside the workspace is listed, read into an
+  answer, a render, a save or an export, changed or deleted. An object layer linked outside the
+  workspace (absolute path, ../, file: URL) is never read and is reported as
+  photo.missing-object-source; one linked inside the workspace is read through the host and shown.
+  Before, re-rendering read the outside picture into the image, and saving as PSD embedded the
+  outside file's bytes.
+layer: gate
+tags: [headless, security]
+source:
+  kind: probe
+  from: workspace-escape audit (photo section)
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test:
+      package: kition-photo
+      test: workspace_only
+  - cargo-test:
+      package: kition-photo-format
+      filter: "host_files::tests::links_that_leave_the_workspace"
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

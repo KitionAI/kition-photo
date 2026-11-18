@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-10
+feature: photo.agent.recover
+intent: >-
+  The command catalogue an agent reads is right: only the ten commands that set one layer effect
+  are described as "Sets the … layer effect", and Copy/Paste Layer Style, Global Light, Scale
+  Effects and the other layer style commands say what they do; the unknown-parameter error lists
+  only parameters, never an enum's values or defaults. Before, those commands read "Sets the Copy
+  Layer Style layer effect…", and type.create's error listed `horizontal` and `smooth` as
+  parameters.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: catalogue_text }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

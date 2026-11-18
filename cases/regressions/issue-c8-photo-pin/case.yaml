@@ -1,0 +1,18 @@
+format: 1
+id: regressions/issue-c8-photo-pin
+feature: photo.agent.premises
+intent: Outside rereads preserve the observed editor target and session history; isolated premise planning preserves editor state. Shared source holders keep every source premise and native resources retain identity without changing scalar guide coordinates.
+dimension: collab
+layer: gate
+source: { kind: probe, from: C8-photo-pin, license: Apache-2.0 }
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: sdk_adoption }
+  - cargo-test: { package: kition-photo, test: sdk_adoption }
+  - cargo-test: { package: kition-photo, test: outside }
+  - cargo-test: { package: kition-photo, test: precision }
+  - cargo-test: { package: kition-photo-io, test: resource_keys }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,69 @@
+name: Photo scenarios
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: photo-scenarios-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  scenarios:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: kition-photo
+      - uses: actions/checkout@v4
+        with:
+          repository: KitionAI/kition-fonts
+          ref: c536031480b1e6e97c2d5937b861953a0c0e0e67
+          path: kition-fonts
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: kition-photo -> target
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.19.0'
+          cache: pnpm
+          cache-dependency-path: kition-photo/web/pnpm-lock.yaml
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.13.1
+      - name: Install locked dependencies
+        run: pnpm --dir kition-photo/web install --frozen-lockfile
+      - name: Build current WASM and copy test font
+        run: pnpm --dir kition-photo/web engine
+      - name: Install browsers
+        run: pnpm --dir kition-photo/web exec playwright install --with-deps chromium webkit
+      - name: PR gate (build, parity, engine scenarios, Chromium scenarios)
+        if: github.event_name == 'pull_request'
+        run: pnpm --dir kition-photo/web test:ci
+      - name: Full regression (also WebKit and legacy flows)
+        if: github.event_name != 'pull_request'
+        run: pnpm --dir kition-photo/web test:ci:full
+      - name: Upload reports and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: photo-scenarios-${{ github.run_id }}
+          path: |
+            kition-photo/web/test-results/
+            kition-photo/web/playwright-report/
+          retention-days: 14
+          if-no-files-found: warn

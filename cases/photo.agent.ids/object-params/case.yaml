@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.ids/object-params
+feature: photo.agent.ids
+intent: >-
+  Every parameter that takes a layer id besides a command's targets is marked as naming objects, so an agent's write with basis holds it.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: object_params }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

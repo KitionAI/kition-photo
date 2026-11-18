@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-8
+feature: photo.layer.manage
+intent: >-
+  A new layer of any kind (pixel, group, shape, type, fill, adjustment) made while a group is the
+  active layer goes into that group at its top, as the Layers panel does, while a duplicated
+  group still goes above it; a layer mask from the selection keeps the selection whether it
+  reveals or hides it; layer.duplicate takes the copy's `name`. Before, layers made after
+  layer.new.group landed above the group, Hide Selection dropped the selection while Reveal
+  Selection kept it, and the copy could not be named.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: layer_placement }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

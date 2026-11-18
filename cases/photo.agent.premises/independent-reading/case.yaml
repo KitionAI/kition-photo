@@ -1,0 +1,22 @@
+format: 1
+id: photo.agent.premises/independent-reading
+feature: photo.agent.premises
+intent: >-
+  Every write command holds what its handler and engine operation read, as an independent
+  reading of all 672 write commands wrote it down: the layer it acts on (named or the active
+  one), the selected layers, the image's canvas, mode and stored members, the composite, and
+  the editor state it reads; a write rests on a colleague's change of what it reads and not on
+  an unrelated one.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C8-photo-read"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: declarations_independent }
+  - cargo-test: { package: kition-photo, test: independent }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

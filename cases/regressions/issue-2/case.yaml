@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-2
+feature: photo.type.features
+intent: >-
+  With kition-fonts' Inter variable font loaded beside the bundled static Inter faces (Regular,
+  Medium, SemiBold), every weight 100–900 draws heavier than the one before, and a `wght`
+  variation draws that weight: a weight or axis no static face has picks the variable face and
+  sets its axes. Before, CSS matching kept the nearest static face, so 100–300 drew Regular,
+  700–900 drew SemiBold and `variations.wght` was ignored. The test reads Inter-Variable.ttf from
+  KITION_FONTS_DIR or the kition-fonts checkout next to this one (fonts are never committed).
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: variable_font_weights }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

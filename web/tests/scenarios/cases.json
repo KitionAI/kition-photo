@@ -1,0 +1,1460 @@
+[
+  {
+    "id": "SC01",
+    "title": "Poster: shape, editable title, PSD save and reopen",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "shape.create",
+        "params": {
+          "kind": "rect",
+          "rect": [
+            16,
+            16,
+            96,
+            64
+          ],
+          "fill": "#ff0000",
+          "name": "Banner"
+        },
+        "expect": {
+          "activeLayer": {
+            "name": "Banner",
+            "kind": "Shape"
+          },
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "type.create",
+        "params": {
+          "x": 24,
+          "y": 50,
+          "text": "SALE",
+          "size": 18,
+          "color": "#ffffff",
+          "name": "Title"
+        },
+        "expect": {
+          "activeLayer": {
+            "kind": "Type",
+            "name": "Title"
+          },
+          "document": {
+            "layers.length": 3
+          }
+        }
+      },
+      {
+        "command": "type.edit",
+        "params": {
+          "text": "SALE 50%"
+        }
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "SALE 50%"
+          }
+        }
+      },
+      {
+        "checkpoint": "poster"
+      },
+      {
+        "reopen": "psd",
+        "equals": "poster"
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "SALE 50%"
+          }
+        }
+      },
+      {
+        "command": "type.edit",
+        "params": {
+          "text": "SALE 60%"
+        }
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "SALE 60%"
+          }
+        }
+      },
+      {
+        "reopen": "kphoto"
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "SALE 60%"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "SC02",
+    "title": "Photo preparation: crop, resize, invert, PNG export",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Photo"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#204060"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                32,
+                64,
+                96,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "image.crop",
+        "params": {
+          "x": 8,
+          "y": 8,
+          "width": 80,
+          "height": 64
+        },
+        "expect": {
+          "document": {
+            "width": 80,
+            "height": 64
+          }
+        }
+      },
+      {
+        "command": "image.imageSize",
+        "params": {
+          "width": 40,
+          "height": 32,
+          "resample": "nearest"
+        },
+        "expect": {
+          "document": {
+            "width": 40,
+            "height": 32
+          }
+        }
+      },
+      {
+        "command": "image.adjustments.invert",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                223,
+                191,
+                159,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "export",
+        "pixelsOnly": true
+      },
+      {
+        "reopen": "png",
+        "equals": "export",
+        "pixelsOnly": true
+      },
+      {
+        "command": "image.adjustments.invert",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                32,
+                64,
+                96,
+                255
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "SC03",
+    "title": "Local editing: selection, inverse, fill, undo and redo",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Local edits"
+        }
+      },
+      {
+        "command": "select.rect",
+        "params": {
+          "x": 16,
+          "y": 16,
+          "width": 32,
+          "height": 24,
+          "antiAlias": false
+        },
+        "expect": {
+          "document": {
+            "selectionBounds": [
+              16,
+              16,
+              32,
+              24
+            ]
+          }
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#ff0000"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                47,
+                39
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                48,
+                40
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "select.inverse",
+        "params": {}
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#0000ff"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                0,
+                0,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "selected-fill"
+      },
+      {
+        "command": "edit.undo",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "edit.redo",
+        "params": {},
+        "equals": "selected-fill"
+      },
+      {
+        "command": "select.deselect",
+        "params": {},
+        "expect": {
+          "document": {
+            "hasSelection": false
+          }
+        }
+      },
+      {
+        "checkpoint": "local"
+      },
+      {
+        "reopen": "psd",
+        "equals": "local"
+      }
+    ]
+  },
+  {
+    "id": "SC04",
+    "title": "Composite: opacity, blend mode, mask and persisted layers",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Overlay"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#ff0000"
+        }
+      },
+      {
+        "command": "layer.setProps",
+        "params": {
+          "opacity": 0.5,
+          "blend": "Multiply"
+        },
+        "expect": {
+          "activeLayer": {
+            "opacity": 0.5,
+            "blend": "Multiply"
+          },
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                128,
+                128,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "select.rect",
+        "params": {
+          "x": 16,
+          "y": 16,
+          "width": 32,
+          "height": 24,
+          "antiAlias": false
+        }
+      },
+      {
+        "command": "layer.layerMask.revealSelection",
+        "params": {}
+      },
+      {
+        "command": "select.deselect",
+        "params": {},
+        "expect": {
+          "activeLayer": {
+            "hasMask": true
+          },
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                255,
+                128,
+                128,
+                255
+              ]
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "masked"
+      },
+      {
+        "reopen": "psd",
+        "equals": "masked",
+        "tolerance": {
+          "pixels": 1,
+          "opacity": 0.00392156862745098
+        }
+      },
+      {
+        "checkpoint": "persisted-mask"
+      },
+      {
+        "command": "layer.layerMask.enabled",
+        "params": {
+          "enabled": false
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                2,
+                2
+              ],
+              "rgba": [
+                255,
+                128,
+                128,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "edit.undo",
+        "params": {},
+        "equals": "persisted-mask"
+      },
+      {
+        "reopen": "kphoto",
+        "equals": "persisted-mask"
+      }
+    ]
+  },
+  {
+    "id": "SC05",
+    "title": "Brush: paint, erase, undo, redo and branch history",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Ink"
+        }
+      },
+      {
+        "checkpoint": "empty"
+      },
+      {
+        "command": "paint.stroke",
+        "params": {
+          "points": [
+            [
+              24,
+              48
+            ],
+            [
+              100,
+              48
+            ]
+          ],
+          "size": 16,
+          "hardness": 1,
+          "opacity": 1,
+          "color": "#000000",
+          "seed": 7
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                64,
+                48
+              ],
+              "rgba": [
+                0,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                64,
+                16
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "stroke"
+      },
+      {
+        "command": "paint.stroke",
+        "params": {
+          "points": [
+            [
+              64,
+              24
+            ],
+            [
+              64,
+              72
+            ]
+          ],
+          "size": 20,
+          "hardness": 1,
+          "opacity": 1,
+          "erase": true,
+          "seed": 7
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                64,
+                48
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                30,
+                48
+              ],
+              "rgba": [
+                0,
+                0,
+                0,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "erased"
+      },
+      {
+        "command": "edit.undo",
+        "params": {},
+        "equals": "stroke"
+      },
+      {
+        "command": "edit.redo",
+        "params": {},
+        "equals": "erased"
+      },
+      {
+        "command": "edit.undo",
+        "params": {},
+        "equals": "stroke"
+      },
+      {
+        "command": "layer.renameLayer",
+        "params": {
+          "name": "Ink revised"
+        },
+        "expect": {
+          "document": {
+            "canRedo": false
+          },
+          "activeLayer": {
+            "name": "Ink revised"
+          }
+        }
+      },
+      {
+        "checkpoint": "branch"
+      },
+      {
+        "reopen": "psd",
+        "equals": "branch"
+      }
+    ]
+  },
+  {
+    "id": "SC06",
+    "title": "Chinese text: Unicode replacement, styling, editable persistence",
+    "priority": "P1",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "type.create",
+        "params": {
+          "x": 10,
+          "y": 50,
+          "text": "你好世界",
+          "size": 22,
+          "color": "#204060",
+          "name": "中文标题"
+        }
+      },
+      {
+        "command": "type.edit",
+        "params": {
+          "replace": {
+            "start": 2,
+            "end": 4,
+            "text": "极光"
+          }
+        }
+      },
+      {
+        "command": "type.setStyle",
+        "params": {
+          "size": 26,
+          "color": "#ff0000"
+        }
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "你好极光",
+            "runs.0.style.size_pt": 26
+          }
+        }
+      },
+      {
+        "checkpoint": "chinese"
+      },
+      {
+        "command": "type.setStyle",
+        "params": {
+          "font": "Droid Sans Fallback"
+        },
+        "equals": "chinese",
+        "pixelsOnly": true
+      },
+      {
+        "command": "type.setStyle",
+        "params": {
+          "font": "Inter"
+        },
+        "equals": "chinese",
+        "pixelsOnly": true
+      },
+      {
+        "reopen": "psd",
+        "equals": "chinese"
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "你好极光",
+            "runs.0.style.size_pt": 26
+          }
+        }
+      },
+      {
+        "command": "type.edit",
+        "params": {
+          "text": "明天见"
+        }
+      },
+      {
+        "command": "type.info",
+        "params": {},
+        "expect": {
+          "result": {
+            "text": "明天见"
+          }
+        }
+      }
+    ],
+    "font": true
+  },
+  {
+    "id": "SC07",
+    "title": "PSD second edit: preserve original layer, transform and duplicate",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Original"
+        }
+      },
+      {
+        "command": "select.rect",
+        "params": {
+          "x": 16,
+          "y": 16,
+          "width": 24,
+          "height": 24,
+          "antiAlias": false
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#0000ff"
+        }
+      },
+      {
+        "command": "select.deselect",
+        "params": {}
+      },
+      {
+        "checkpoint": "original"
+      },
+      {
+        "reopen": "psd",
+        "equals": "original"
+      },
+      {
+        "command": "layer.duplicate",
+        "params": {}
+      },
+      {
+        "command": "layer.renameLayer",
+        "params": {
+          "name": "Copy"
+        }
+      },
+      {
+        "command": "edit.transform",
+        "params": {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            48,
+            0
+          ],
+          "interpolation": "nearest"
+        },
+        "expect": {
+          "document": {
+            "layers.length": 3
+          },
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                0,
+                0,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                68,
+                20
+              ],
+              "rgba": [
+                0,
+                0,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                50,
+                20
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "layer.setProps",
+        "params": {
+          "visible": false
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                0,
+                0,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                68,
+                20
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "edit.undo",
+        "params": {}
+      },
+      {
+        "checkpoint": "duplicates"
+      },
+      {
+        "reopen": "psd",
+        "equals": "duplicates"
+      },
+      {
+        "command": "layer.delete",
+        "params": {},
+        "expect": {
+          "document": {
+            "layers.length": 2
+          },
+          "pixels": [
+            {
+              "at": [
+                20,
+                20
+              ],
+              "rgba": [
+                0,
+                0,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                68,
+                20
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "SC08",
+    "title": "Failure recovery: rejected command leaves document intact",
+    "priority": "P0",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Keep me"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#204060"
+        }
+      },
+      {
+        "checkpoint": "safe"
+      },
+      {
+        "command": "not.a.command",
+        "params": {},
+        "error": "unknown",
+        "equals": "safe"
+      },
+      {
+        "command": "image.crop",
+        "params": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 8
+        },
+        "error": ".",
+        "equals": "safe"
+      },
+      {
+        "invalidOpen": true,
+        "equals": "safe"
+      },
+      {
+        "command": "layer.renameLayer",
+        "params": {
+          "name": "Still editable"
+        },
+        "expect": {
+          "activeLayer": {
+            "name": "Still editable"
+          }
+        }
+      },
+      {
+        "checkpoint": "recovered"
+      },
+      {
+        "reopen": "psd",
+        "equals": "recovered"
+      }
+    ]
+  },
+  {
+    "id": "SC09",
+    "title": "Mask target: paint mask without destroying source pixels",
+    "priority": "P1",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Masked red"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#ff0000"
+        }
+      },
+      {
+        "command": "layer.layerMask.revealAll",
+        "params": {}
+      },
+      {
+        "command": "paint.stroke",
+        "params": {
+          "points": [
+            [
+              24,
+              48
+            ],
+            [
+              100,
+              48
+            ]
+          ],
+          "size": 20,
+          "hardness": 1,
+          "color": "#000000",
+          "target": "mask",
+          "seed": 7
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                64,
+                48
+              ],
+              "rgba": [
+                255,
+                255,
+                255,
+                255
+              ]
+            },
+            {
+              "at": [
+                64,
+                16
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "mask-stroke"
+      },
+      {
+        "command": "layer.layerMask.enabled",
+        "params": {
+          "enabled": false
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                64,
+                48
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            },
+            {
+              "at": [
+                64,
+                16
+              ],
+              "rgba": [
+                255,
+                0,
+                0,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "edit.undo",
+        "params": {},
+        "equals": "mask-stroke"
+      },
+      {
+        "reopen": "psd",
+        "equals": "mask-stroke"
+      }
+    ]
+  },
+  {
+    "id": "SC10-8",
+    "title": "8-bit editing: fill, invert and native persistence",
+    "priority": "P1",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "file.new",
+        "params": {
+          "width": 32,
+          "height": 24,
+          "depth": 8,
+          "background": "white",
+          "name": "Depth 8"
+        },
+        "expect": {
+          "document": {
+            "depth": 8,
+            "width": 32,
+            "height": 24
+          }
+        }
+      },
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Depth pixels"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#204060"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                32,
+                64,
+                96,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "image.adjustments.invert",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                223,
+                191,
+                159,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "depth"
+      },
+      {
+        "reopen": "kphoto",
+        "equals": "depth",
+        "expect": {
+          "document": {
+            "depth": 8
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "SC10-16",
+    "title": "16-bit editing: fill, invert and native persistence",
+    "priority": "P1",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "file.new",
+        "params": {
+          "width": 32,
+          "height": 24,
+          "depth": 16,
+          "background": "white",
+          "name": "Depth 16"
+        },
+        "expect": {
+          "document": {
+            "depth": 16,
+            "width": 32,
+            "height": 24
+          }
+        }
+      },
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Depth pixels"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#204060"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                32,
+                64,
+                96,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "image.adjustments.invert",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                223,
+                191,
+                159,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "depth"
+      },
+      {
+        "reopen": "kphoto",
+        "equals": "depth",
+        "expect": {
+          "document": {
+            "depth": 16
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "SC10-32",
+    "title": "32-bit editing: fill, invert and native persistence",
+    "priority": "P1",
+    "width": 128,
+    "height": 96,
+    "steps": [
+      {
+        "command": "file.new",
+        "params": {
+          "width": 32,
+          "height": 24,
+          "depth": 32,
+          "background": "white",
+          "name": "Depth 32"
+        },
+        "expect": {
+          "document": {
+            "depth": 32,
+            "width": 32,
+            "height": 24
+          }
+        }
+      },
+      {
+        "command": "layer.new.layer",
+        "params": {
+          "name": "Depth pixels"
+        }
+      },
+      {
+        "command": "edit.fill",
+        "params": {
+          "color": "#204060"
+        },
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                32,
+                64,
+                96,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "command": "image.adjustments.invert",
+        "params": {},
+        "expect": {
+          "pixels": [
+            {
+              "at": [
+                5,
+                5
+              ],
+              "rgba": [
+                223,
+                191,
+                159,
+                255
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "checkpoint": "depth"
+      },
+      {
+        "reopen": "kphoto",
+        "equals": "depth",
+        "expect": {
+          "document": {
+            "depth": 32
+          }
+        }
+      }
+    ]
+  }
+]

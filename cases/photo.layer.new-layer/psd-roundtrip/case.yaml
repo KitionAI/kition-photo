@@ -1,0 +1,19 @@
+format: 1
+id: photo.layer.new-layer/psd-roundtrip
+feature: photo.layer.new-layer
+intent: >-
+  A layer an agent adds with layer.new.layer to a new PSD marks the document dirty, is saved, and
+  after closing and reopening the file the described document is the same apart from the session's
+  layer ids.
+layer: unit
+source:
+  kind: synthetic
+  from: bindings/headless/tests/headless.rs (creates_edits_saves_and_reopens_a_psd)
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: headless, filter: creates_edits_saves_and_reopens_a_psd }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

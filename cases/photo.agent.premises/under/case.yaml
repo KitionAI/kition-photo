@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.premises/under
+feature: photo.agent.premises
+intent: >-
+  under, covered and derived answer what one call depends on: a property write its properties, an area write the tiles it touches and the image's size, an index or a point what it names.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: places }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

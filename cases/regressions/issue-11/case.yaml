@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-11
+feature: photo.file.documents
+intent: >-
+  The Affinity reader (which opens .afphoto previews) passes clippy with warnings denied, so
+  `cargo clippy -p kition-photo-kit` and `cargo xtask ci` can pass. Before, the IEND check in
+  `crates/formats/affinity/src/preview.rs` was an `if` that clippy wants collapsed into its
+  `match` arm, and the whole SDK's clippy run failed there.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - exec:
+      cmd: [cargo, clippy, -p, kition-photo-affinity, --all-targets, --, -D, warnings]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+since: "2026-11-17"

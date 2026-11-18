@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.premises/rounds
+feature: photo.agent.premises
+intent: >-
+  50 unrelated rounds on 20 layers (premise against epoch) and 50 mixed rounds with seed 0x9e3779b97f4a7c15 where nothing applies wrongly, pinned.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: rounds }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

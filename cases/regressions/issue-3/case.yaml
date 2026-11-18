@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-3
+feature: photo.type.text
+intent: >-
+  Paragraph text with Hyphenate on breaks long words at line ends with a hyphen (soft hyphens at
+  Liang hyphenation points; a line that ends at one is narrowed so the hyphen fits the box), a
+  `box` that is not [x, y, width, height] is refused by type.create and type.edit instead of
+  silently making point text, and type.info answers one entry per paragraph even when
+  neighbouring paragraphs share a style. Before, hyphenation never happened (justified columns
+  got wide gaps), `box: [w, h]` was ignored, and same-style paragraphs were merged.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: type_paragraph_text }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

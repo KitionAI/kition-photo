@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-unknown-params
+feature: photo.agent.recover
+intent: >-
+  A command with a parameter schema refuses a key it does not take and says which, with the
+  parameter it resembles and the ones it takes (platform rule E7a), instead of running without it.
+  A command takes the keys its schema or its notation names, `coalesce` (read by the session for
+  every command), `target` where its pixels can go to a mask or channel, and the keys found in its
+  code; layer.setAdjustment and tools.setBrush stay open. Before, 422 of 852 commands ran with an
+  unknown key and the rest refused it without naming it.
+layer: gate
+source:
+  kind: probe
+  from: unknown-parameter sweep
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: unknown_params }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

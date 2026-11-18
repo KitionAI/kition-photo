@@ -1,0 +1,22 @@
+[package]
+name = "kdm-model"
+description = "Bridges the Photo engine's Document to a kit.photo KDM replica (kition-sdk session)."
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+kition-kit = { workspace = true, features = ["session"] }
+kition-photo-geom = { workspace = true }
+kition-photo-color = { workspace = true }
+kition-photo-raster = { workspace = true }
+kition-photo-doc = { workspace = true }
+kition-photo-format = { workspace = true }
+kition-photo-io = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -1,0 +1,22 @@
+format: 1
+id: regressions/issue-9
+feature: photo.agent.observe
+intent: >-
+  document.inspect shows what fill and shape layers draw and where: a fill layer gives its fill
+  (`fillContent`) and bounds (the canvas, cut to its layer mask or vector mask), a shape layer
+  its kind, fill and stroke; and every command that answers bounds (render filters, type.create,
+  type.info, placing) uses the same [x, y, width, height] form as inspect. Before, fill layers
+  had neither content nor bounds (`null`), shapes showed no fill, and the filters and type
+  commands answered [x0, y0, x1, y1].
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: inspect_contents }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

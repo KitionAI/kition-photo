@@ -1,0 +1,45 @@
+[package]
+name = "kition-photo-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when the corpus is missing.
+corpus = []
+
+[dependencies]
+kition-photo-geom = { workspace = true }
+kition-photo-color = { workspace = true }
+kition-photo-cms = { workspace = true }
+kition-photo-raster = { workspace = true }
+kition-photo-doc = { workspace = true }
+kition-photo-ops = { workspace = true }
+kition-photo-compose = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+rayon = { workspace = true }
+kition-photo-paint = { workspace = true }
+kition-photo-algo = { workspace = true }
+kition-photo-text = { workspace = true }
+kition-photo-vector = { workspace = true }
+kition-photo-io = { workspace = true }
+kition-photo-psd = { workspace = true }
+kition-photo-format = { workspace = true }
+kition-photo-plugins = { workspace = true }
+blake3 = { version = "1.8", default-features = false, features = ["pure"] }
+kition-photo-codecs = { workspace = true }
+# The document's KDM replica (Kition phase 3a): commands are diff-bridged into it, undo runs on it.
+kdm-model = { path = "../../kdm/kdm-model" }
+flate2 = { workspace = true }
+
+[dev-dependencies]
+kition-photo-affinity = { workspace = true, features = ["synth"] }
+# Synthetic raw camera files for the open tests.
+kition-photo-raw = { workspace = true, features = ["testgen"] }
+# WebAssembly text -> binary for plug-in test modules (Apache-2.0 WITH LLVM-exception).
+wat = "1.228"

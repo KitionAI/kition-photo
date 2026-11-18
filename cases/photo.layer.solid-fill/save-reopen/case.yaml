@@ -1,0 +1,18 @@
+format: 1
+id: photo.layer.solid-fill/save-reopen
+feature: photo.layer.solid-fill
+intent: >-
+  A solid colour fill layer survives saving to PSD and reopening: a new document edited only with engine commands is saved as PSD, reopened and compared
+  whole (inspected document, type layers, composite pixels), and a second save reopens the same.
+layer: unit
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/round_trip.rs (smart_objects_and_fill_layers_survive_save_and_reopen)
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: round_trip, filter: smart_objects_and_fill_layers_survive_save_and_reopen }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

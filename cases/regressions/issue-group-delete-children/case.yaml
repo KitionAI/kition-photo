@@ -1,0 +1,19 @@
+format: 1
+id: regressions/issue-group-delete-children
+feature: photo.agent.saved
+intent: >-
+  Deleting a layer group deletes what it holds before the group, and moves what it kept out of it
+  first: kition-kdm refuses to delete an object whose tree node has live children (kition-sdk
+  C8-fix-10), so a group deleted before its layers failed the write.
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo-2, crates/kdm/kdm-model/tests/write_changes.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kdm-model, test: write_changes, filter: write_changes_deletes_a_group_with_what_it_holds_and_keeps_what_moved_out }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

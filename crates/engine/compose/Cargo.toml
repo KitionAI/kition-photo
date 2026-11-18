@@ -1,0 +1,27 @@
+[package]
+name = "kition-photo-compose"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kition-photo-geom = { workspace = true }
+kition-photo-color = { workspace = true }
+kition-photo-raster = { workspace = true }
+kition-photo-doc = { workspace = true }
+kition-photo-vector = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+criterion = { workspace = true }
+kition-photo-paint = { workspace = true }
+
+[[bench]]
+name = "compose"
+harness = false

@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.context/hooks
+feature: photo.agent.context
+intent: >-
+  The editor-state hooks take and put back the active and selected layers, the pixel selection, the channel view and the colors without an edit; `on` sets the layers a call acts on; parts and times are refused with their reason; an agent's `layer`, `region`, `foregroundColor` and `backgroundColor` hold for that call only.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: context }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,19 @@
+format: 1
+id: regressions/issue-index-in-layer-tree
+feature: photo.agent.premises
+intent: >-
+  A write by "#n" (the n-th layer of the top level from the top) after a colleague inserted a
+  layer above the target is refused as relocated, with where the target is now; it applied to the
+  layer then at that place before kition-sdk read an index window in a KDM tree (C8-fix-10).
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo-2, bindings/headless/tests/outside.rs (scenario 4c)"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: outside, filter: s4c_a_write_by_index_after_a_layer_inserted_above_is_refused_as_relocated }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,23 @@
+format: 1
+id: regressions/issue-6
+feature: photo.filter.stylize
+intent: >-
+  The Render filters draw what they promise: Fibers fills an empty layer (inside the selection
+  only), as Clouds does; Flame follows SVG path data or a path object as well as a saved path,
+  refuses a path it cannot find, and past its primitive limit counts the flames it left out
+  instead of stopping silently; Picture Frame's scallops join at the corners and bulge outwards;
+  spruce, fir, pine and cedar needles grow on their branches. Before, Fibers drew nothing on an
+  empty layer, Flame stopped at about 65.5k primitives and ignored a path string (`usedPath:
+  false`), scallops broke at the corners and conifer needles floated off the branches.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-engine, test: render_filters }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

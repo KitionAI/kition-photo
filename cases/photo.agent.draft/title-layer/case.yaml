@@ -1,0 +1,41 @@
+format: 1
+id: photo.agent.draft/title-layer
+feature: photo.agent.draft
+intent: >-
+  Over two messages the agent adds a layer in a draft for the person to review and then changes it
+  there; the file itself keeps its one layer (KHP Recover, A12–A14).
+layer: eval
+source:
+  kind: synthetic
+  from: repo:conformance/basic.psd
+  license: Apache-2.0
+  note: A copy of the conformance document the photo engine writes (one Background layer).
+input: [input/cover.psd]
+steps:
+  - task:
+      turns:
+        - >-
+          As a draft for me to review (leave cover.psd itself unchanged), add a new empty layer
+          named Title to cover.psd.
+        - In the same draft, set the Title layer to 50% opacity.
+      max_turns: 25
+  - inspect: { path: cover.psd, args: { draft: true }, as: draft, missing_ok: true }
+  - inspect: { path: cover.psd, as: after }
+expected:
+  - actual: out:draft
+    compare: values
+    value:
+      details.layers: { any: { name: Title, opacity: { approx: 0.5, tol: 0.01 } } }
+  - actual: out:after
+    compare: values
+    collateral: true
+    value:
+      details.layers: { count: 1 }
+      details.layers.0.name: Background
+solution:
+  - tool: photo_run
+    args: { path: cover.psd, draft: true, steps: [{ command: layer.new.layer, params: { name: Title } }] }
+  - tool: photo_run
+    args: { path: cover.psd, draft: true, steps: [{ command: layer.setProps, params: { layer: 2, opacity: 0.5 } }] }
+since: "2026-11-17"
+timeout_s: 600

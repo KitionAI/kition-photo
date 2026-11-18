@@ -1,0 +1,29 @@
+Every UI translation catalog in this folder (cs, de, el, es, fr, id, it, ja, ko, nl, pl, pt-br,
+ru, uk, zh-hans and zh-hant) comes from the upstream project credited in ../../../../NOTICE. The
+catalogs are dual-licensed MIT OR Apache-2.0 by their original authors; this repository uses them
+under the MIT option (the MIT License text is in ../../../../NOTICE).
+
+Spanish translations: contributed upstream by @gorevyoneticisi with OpenAI Codex as an AI
+contributor.
+
+Czech, Greek, French, Indonesian, Japanese, Polish, Russian, Simplified Chinese and Traditional
+Chinese translations: upstream contributors (see NOTICE), original translations of upstream's
+English labels; no proprietary translation resources were used.
+
+Korean translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.
+
+German translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.
+
+Brazilian Portuguese translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.
+
+Italian translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.
+
+Ukrainian translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.
+
+Dutch translations: upstream contributors (see NOTICE), original translations of
+upstream's English labels; no proprietary translation resources were used.

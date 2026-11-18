@@ -1,0 +1,37 @@
+format: 1
+id: photo.agent.act/badge-opacity
+feature: photo.agent.act
+intent: >-
+  The agent shows a hidden layer and sets its opacity to 40%, written as the fraction the kit takes
+  (0.4, not 40), without touching the background.
+layer: eval
+source:
+  kind: synthetic
+  from: repo:conformance/check-hidden-layer.psd
+  license: Apache-2.0
+  note: A copy of the conformance fixture for photo.hidden-layer, written by the photo engine.
+input: [input/poster.psd]
+steps:
+  - task:
+      prompt: >-
+        In poster.psd, make the Badge layer visible and set its opacity to 40%.
+      max_turns: 20
+  - inspect: { path: poster.psd, as: after }
+expected:
+  - actual: out:after
+    compare: values
+    value:
+      details.layers: { any: { name: Badge, visible: true, opacity: { approx: 0.4, tol: 0.01 } } }
+  - actual: out:after
+    compare: values
+    collateral: true
+    value:
+      details.layers: { count: 2 }
+      details.layers.1.name: Background
+      details.layers.1.visible: true
+      details.layers.1.opacity: 1
+solution:
+  - tool: photo_run
+    args: { path: poster.psd, steps: [{ command: layer.setProps, params: { layer: 2, visible: true, opacity: 0.4 } }] }
+since: "2026-11-17"
+timeout_s: 600

@@ -1,0 +1,14 @@
+format: 1
+id: regressions/issue-c8-photo-pin-raw-surfaces
+feature: photo.agent.premises
+intent: Point addresses compare the owning layer's historical mask when outside edits create, change or delete raw surfaces. A changed pick refuses as relocated; an unrelated mask edit merges and preserves the complete saved document.
+dimension: collab
+layer: gate
+source: { kind: probe, from: C8-photo-pin, license: Apache-2.0 }
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: sdk_adoption, filter: point_addresses_compare_masks_with_raw_surface_changes }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

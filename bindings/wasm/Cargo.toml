@@ -1,0 +1,37 @@
+[package]
+name = "kition-photo-kit"
+description = "The Photo engine for Kition's in-page editor: open, render, edit, and save layered images from JavaScript (WebAssembly)."
+version.workspace = true
+edition.workspace = true
+license = "Apache-2.0"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+kition-kit = { workspace = true, features = ["session"] }
+kition-photo-codecs = { workspace = true }
+kition-photo-compose = { workspace = true }
+kition-photo-engine = { workspace = true }
+kition-photo-format = { workspace = true }
+kition-photo-geom = { workspace = true }
+kition-photo-io = { workspace = true }
+kition-photo-raster = { workspace = true }
+kition-photo-text = { workspace = true }
+serde_json = { workspace = true }
+
+
+[dev-dependencies]
+# The conformance fixture writer (examples/checks.rs) saves its previews.
+image = { workspace = true, features = ["png"] }
+kition-photo-color = { workspace = true }
+kition-photo-automation = { path = "../../crates/engine/automation" }
+# The agent's preview: decoding its PNG, and thread pools of other sizes to show its bytes do not depend on them.
+base64 = "0.22"
+rayon = { workspace = true }
+# The object model's schema, for comparing the replica with the saved file's.
+kdm-model = { path = "../../crates/kdm/kdm-model" }

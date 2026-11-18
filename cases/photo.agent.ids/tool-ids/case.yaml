@@ -1,0 +1,17 @@
+format: 1
+id: photo.agent.ids/tool-ids
+feature: photo.agent.ids
+intent: >-
+  The object model names layers by the ids inspect lists (Layer.number is the tool id); masks and channel pixels are owned; ids survive a reorder and a new replica.
+layer: gate
+source:
+  kind: synthetic
+  from: "task card C-photo"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kdm-model, test: tool_ids }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

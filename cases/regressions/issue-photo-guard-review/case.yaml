@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-photo-guard-review
+feature: photo.agent.premises
+intent: >-
+  Guard declarations follow the command's resolved inputs, including nested layer sources,
+  region sources, document presets, channels, the canvas and object layers. Relevant outside
+  changes refuse before writing; unrelated changes apply. Historical null bounds are unknown.
+layer: gate
+source:
+  kind: probe
+  from: "task card C-photo review, bindings/headless/tests/guard_review.rs and bindings/wasm/tests/places.rs"
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: places, filter: review_ }
+  - cargo-test: { package: kition-photo, test: guard_review }
+  - cargo-test: { package: kition-photo, test: rounds, filter: review_needed }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

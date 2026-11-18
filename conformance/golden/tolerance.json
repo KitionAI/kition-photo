@@ -1,0 +1,5 @@
+{
+  "maxChannelDelta": 2,
+  "maxDifferentPixels": 200,
+  "note": "The engine's own compositor draws the preview of basic.psd (a filled rectangle on white); edges may differ by a step between SIMD paths."
+}

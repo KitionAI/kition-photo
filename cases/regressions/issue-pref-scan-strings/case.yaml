@@ -1,0 +1,20 @@
+format: 1
+id: regressions/issue-pref-scan-strings
+feature: photo.app.preferences
+intent: >-
+  The preferences scan counts only code that reads a preference, not prose: a
+  command description that mentions "cursors" and "filter.other.highPass" in string literals is
+  not a read, so cursors.other stays hidden until something really reads it, and a real read of a
+  hidden preference still fails the scan.
+layer: unit
+source:
+  kind: probe
+  from: commercial baseline B9; bindings/wasm/src/described.rs made the scan report cursors.other as read
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-engine, test: prefs_usage }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

@@ -1,0 +1,20 @@
+format: 1
+id: regressions/issue-13
+feature: photo.path.shapes
+intent: >-
+  A shape layer's bounds are its drawn pixels, the width asked for (an ellipse, rect or rounded
+  rect at [200, 300, 600, 600] is 600 wide, not 601), and a subtracted sub-path sticking out of
+  the fill on either side adds no width: a coverage too faint for the alpha channel is left empty,
+  not stored as a colour at zero alpha.
+layer: gate
+source:
+  kind: issue
+  from: Kition Photo regression suite
+  license: owned
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: shape_bounds }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-17"

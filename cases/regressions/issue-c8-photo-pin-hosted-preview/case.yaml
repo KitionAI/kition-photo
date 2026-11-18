@@ -1,0 +1,14 @@
+format: 1
+id: regressions/issue-c8-photo-pin-hosted-preview
+feature: photo.agent.premises
+intent: A hosted native document without a replica rebuilds missing smart previews from lent workspace files while outside links remain unreadable.
+dimension: data-safety
+layer: gate
+timeout_s: 180
+source: { kind: probe, from: C8-photo-pin, license: Apache-2.0 }
+input: []
+steps:
+  - cargo-test: { package: kition-photo, test: workspace_only }
+expected:
+  - { actual: out:exit, compare: exit }
+since: "2026-11-17"

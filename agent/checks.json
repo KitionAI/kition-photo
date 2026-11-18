@@ -1,0 +1,44 @@
+[
+  {
+    "code": "photo.missing-object-source",
+    "severity": "error",
+    "summary": "An object layer's source is neither in the file nor linked to a file that is there, so it shows nothing.",
+    "fixture": "check-missing-object-source.kphoto"
+  },
+  {
+    "code": "photo.off-canvas",
+    "severity": "warning",
+    "summary": "A layer lies entirely outside the canvas, so it never shows.",
+    "fixture": "check-off-canvas.psd"
+  },
+  {
+    "code": "photo.empty-layer",
+    "severity": "info",
+    "summary": "A pixel layer has no pixels.",
+    "fixture": "check-empty-layer.psd"
+  },
+  {
+    "code": "photo.empty-text",
+    "severity": "info",
+    "summary": "A type layer has no text.",
+    "fixture": "check-empty-text.kphoto"
+  },
+  {
+    "code": "photo.hidden-layer",
+    "severity": "info",
+    "summary": "A layer is hidden: its content is saved but does not show.",
+    "fixture": "check-hidden-layer.psd"
+  },
+  {
+    "code": "photo.font-substituted",
+    "severity": "info",
+    "summary": "A type layer's font is not available here and is drawn with a substitute, or some of its characters are in no available font and are drawn as a box.",
+    "fixture": "check-font-substituted.kphoto"
+  },
+  {
+    "code": "photo.truncated",
+    "severity": "info",
+    "summary": "A code was found more than 100 times; the rest are counted, not listed.",
+    "fixture": "check-truncated.psd"
+  }
+]
