@@ -119,15 +119,31 @@ co-editing and an agent working inside the open editor.
 
 ### Give it to your agent
 
-The engine also runs headless as the `kition-photo` executable, and the SDK's `kition-kits-mcp`
-turns it into MCP tools (`photo_inspect`, `photo_run`, `photo_check`, ...) on a folder of images,
-for any MCP client:
+The engine also runs headless, and `kition`, the Kition SDK's command line, serves it as MCP tools
+(`photo_inspect`, `photo_run`, `photo_check`, ...) on a folder of images, for any MCP client.
+Nothing is compiled: you need neither Rust nor the Kition app. Install `kition`, then connect your
+agent in the folder:
 
 ```sh
-cargo build --release -p kition-photo
-cargo install --git https://github.com/KitionAI/kition-sdk kition-kits --bin kition-kits-mcp
-kition-kits-mcp --workspace <folder of images> --kit target/release/kition-photo
+curl -fsSL https://github.com/KitionAI/kition-sdk/releases/latest/download/install.sh | sh
+# Claude Code, in the folder:
+claude mcp add kition -- ~/.kition/bin/kition mcp --workspace "$PWD"
 ```
+
+On Windows, install it with
+`irm https://github.com/KitionAI/kition-sdk/releases/latest/download/install.ps1 | iex`. With
+Node.js 20 or later you can skip the install:
+`claude mcp add kition -- npx -y @kition/kits-mcp --workspace "$PWD"`.
+
+`kition` holds no kit. The first time the agent opens a `.psd` or `.kphoto` file, through the
+`kit_inspect` tool the server offers until Photo is installed, `kition` downloads Photo's headless
+executable into `~/.kition/kits` and the photo tools appear. `kition kit install photo` downloads it
+ahead of time, and `kition kit upgrade` moves it to the newest version. Claude Desktop, Cursor,
+Codex and the other commands are in the SDK's
+[agent guide](https://github.com/KitionAI/kition-sdk/blob/main/docs/sdk/agent.md#connect-your-agent)
+and [`kition` guide](https://github.com/KitionAI/kition-sdk/blob/main/docs/sdk/cli.md). To run a
+build of your own (working on the kit itself), see
+[docs/development.md](docs/development.md#build-and-test).
 
 A real session on a copy of the showcase poster, abridged:
 
@@ -155,10 +171,10 @@ Checked `poster.psd`: no errors, no warnings, 1 note.
   no font here has, so it is drawn at weight 600. […]
 ```
 
-The layer lines and the note are trimmed from the JSON the tools answer. The note comes from a build
-without fonts: build with `KITION_FONTS_DIR` ([docs/development.md](docs/development.md#fonts))
-and the headless program draws every weight of Inter as the editor does. The agent's guide is
-[agent/guide.md](agent/guide.md).
+The layer lines and the note are trimmed from the JSON the tools answer. The note comes from an
+executable without fonts: one built with `KITION_FONTS_DIR`
+([docs/development.md](docs/development.md#fonts)) draws every weight of Inter as the editor does.
+The agent's guide is [agent/guide.md](agent/guide.md).
 
 ## Maturity
 
