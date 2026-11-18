@@ -25,7 +25,7 @@ an options bar and Layers, Properties and Adjustments panels, and save back to `
 works on the same file through the same engine: it reads the layer stack, changes a layer by its
 name, and checks the result before it hands the file back to you.
 
-<img src="assets/readme/hero.png" alt="The Photo editor on an autumn sale poster: a gradient background, a cream card with Chinese and English type, a red star badge, and its type and shape layers in the Layers panel." width="100%" />
+<img src="assets/readme/hero.png" alt="The Photo editor on an autumn sale poster: a gradient background, a cream card with its type, a red star badge, and its type and shape layers in the Layers panel." width="100%" />
 
 ## What it does
 
@@ -53,7 +53,7 @@ name, and checks the result before it hands the file back to you.
 </tr>
 <tr>
 <td width="50%"><img src="assets/readme/see-3.png" alt="An elliptical selection on the star badge made into a layer mask: the badge is cut to a circle and the mask shows beside the layer." /><br /><b>Masks from selections</b>: draw a selection, add a mask, and the hidden pixels stay on the layer.</td>
-<td width="50%"><img src="assets/readme/see-4.png" alt="The Chinese headline with a new drop shadow, its font and size in the Character panel, and Drop Shadow listed under the layer." /><br /><b>Type and layer styles</b>: the headline stays text, with a drop shadow added from the Layers panel.</td>
+<td width="50%"><img src="assets/readme/see-4.png" alt="The Fall Sale headline with a new drop shadow, its font and size in the Character panel, and Drop Shadow listed under the layer." /><br /><b>Type and layer styles</b>: the headline stays text, with a drop shadow added from the Layers panel.</td>
 </tr>
 </table>
 
@@ -151,13 +151,13 @@ Ran 2 commands on `poster.psd` (saved): 1200 x 800 px, Rgb, 8-bit, 9 layers Chan
 
 > photo_check {"path":"poster.psd"}
 Checked `poster.psd`: no errors, no warnings, 1 note.
-  photo.font-substituted (info) layer:6: Type layer "Headline" has characters that no available
-  font can draw: "品" (U+54C1), "季" (U+5B63), "新" (U+65B0), "秋" (U+79CB), so they are drawn as a box. […]
+  photo.font-substituted (info) layer:6: Type layer "Headline" asks for Inter at weight 700, which
+  no font here has, so it is drawn at weight 600. […]
 ```
 
 The layer lines and the note are trimmed from the JSON the tools answer. The note comes from a build
 without fonts: build with `KITION_FONTS_DIR` ([docs/development.md](docs/development.md#fonts))
-and the headless program draws CJK type as the editor does. The agent's guide is
+and the headless program draws every weight of Inter as the editor does. The agent's guide is
 [agent/guide.md](agent/guide.md).
 
 ## Maturity
