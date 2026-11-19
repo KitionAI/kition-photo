@@ -1466,10 +1466,14 @@ for (const latest of ['tool switch', 'new canvas draft']) {
     const field = e.kit.getByTestId('photo-text-field')
     await field.fill('First')
     const surface = e.kit.getByTestId('kit-canvas-surface')
-    // Resolve coordinates before blocking the worker; the usual click helper inspects it.
-    const box = await surface.boundingBox()
+    // Read the document size before blocking the worker; the usual click helper inspects it. The
+    // canvas box is read at the click, so the point follows the canvas wherever the commit and the
+    // tool switch leave it.
     const doc = await e.state()
-    const nextPoint = { x: box.x + box.width / 2 + 90 - doc.width / 2, y: box.y + box.height / 2 + 80 - doc.height / 2 }
+    const clickNext = async () => {
+      const box = await surface.boundingBox()
+      await e.page.mouse.click(box.x + box.width / 2 + 90 - doc.width / 2, box.y + box.height / 2 + 80 - doc.height / 2)
+    }
     await surface.evaluate(() => {
       const post = Worker.prototype.postMessage
       window.textIntentGate = { requests: 0, pending: [], release: null }
@@ -1489,11 +1493,11 @@ for (const latest of ['tool switch', 'new canvas draft']) {
       await e.page.keyboard.press('Enter')
       await expect(field).toHaveCount(0)
       if (latest === 'tool switch') {
-        await e.page.mouse.click(nextPoint.x, nextPoint.y)
+        await clickNext()
         await e.kit.getByTestId('photo-tool-Brush').click()
       } else {
         await e.kit.getByTestId('photo-tool-Brush').click()
-        await e.page.mouse.click(nextPoint.x, nextPoint.y)
+        await clickNext()
       }
       requests = await surface.evaluate(() => window.textIntentGate.requests)
     } finally { await surface.evaluate(() => window.textIntentGate.release()) }
