@@ -20,6 +20,9 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 900 
 await context.tracing.start({ screenshots: true, snapshots: true })
 if (which === 'chromium') await context.grantPermissions(['clipboard-read', 'clipboard-write'])
 const page = await context.newPage()
+// The editor takes Cmd or Ctrl from navigator.platform (kit-editor's isMac); Playwright's
+// ControlOrMeta follows the operating system running the test, and the two can disagree.
+const primaryKey = async () => (await page.evaluate(() => /Mac|iPhone|iPad/i.test(navigator.platform))) ? 'Meta' : 'Control'
 const errors = []
 let failures = 0
 const results = []
@@ -586,7 +589,7 @@ try {
   const pixelColour = JSON.stringify(await sampleCurrent(thick.middle))
   const invertFrom = (await inspect()).revision
   await kit.getByTestId('photo-tool-Brush').click()
-  await page.keyboard.press('ControlOrMeta+KeyI')
+  await page.keyboard.press(`${await primaryKey()}+KeyI`)
   await until(async () => (await inspect()).revision > invertFrom, 40)
   const maskInverted = await until(async () => (await thumbSum(`photo-layer-mask-${thick.layer}`)) !== maskSum, 40)
   step('Cmd+I with the mask targeted inverts only the mask', maskInverted && JSON.stringify(await sampleCurrent(thick.middle)) === pixelColour, `${pixelColour} -> ${JSON.stringify(await sampleCurrent(thick.middle))}`)
@@ -1038,7 +1041,7 @@ try {
   step('F7 shows the Layers panel again', (await count('photo-kit-layers')) === 1)
   // A key of a command hidden on the web does nothing: Close All's (Cmd+Alt+W) would close the only document.
   await kit.getByTestId('photo-tool-Brush').click()
-  await page.keyboard.press('ControlOrMeta+Alt+KeyW')
+  await page.keyboard.press(`${await primaryKey()}+Alt+KeyW`)
   await page.waitForTimeout(300)
   const layerCount = async () => (await details().catch(() => null))?.layers?.length ?? -1
   const kept = await layerCount()

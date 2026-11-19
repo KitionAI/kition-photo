@@ -18,6 +18,15 @@ const test = base.extend({
   },
 })
 
+// The editor takes Cmd or Ctrl from navigator.platform (kit-editor's isMac), while Playwright's
+// ControlOrMeta follows the operating system running the test, and the two can disagree (WebKit
+// on Linux). Shortcuts press the modifier the editor reads.
+const primaryKeys = new WeakMap()
+async function shortcut(page, keys) {
+  if (!primaryKeys.has(page)) primaryKeys.set(page, await page.evaluate(() => /Mac|iPhone|iPad/i.test(navigator.platform)) ? 'Meta' : 'Control')
+  return keys.replace('ControlOrMeta', primaryKeys.get(page))
+}
+
 function makeEditor(page) {
   const kit = page.frameLocator('#kit')
   const state = () => page.evaluate(async () => (await window.devHost.connection().ai.inspect()).details)
@@ -44,6 +53,7 @@ function makeEditor(page) {
     await page.locator('#file').setInputFiles({ name, mimeType: 'image/vnd.adobe.photoshop', buffer: bytes })
     await ready(name)
     await actualSize()
+    await shortcut(page, '')
   }
   const point = async (x, y) => {
     const box = await kit.getByTestId('kit-canvas-surface').boundingBox()
@@ -107,8 +117,8 @@ function makeEditor(page) {
     await actualSize()
     expect(structure(await state())).toEqual(before)
   }
-  const undo = () => page.keyboard.press('ControlOrMeta+z')
-  const redo = () => page.keyboard.press('ControlOrMeta+Shift+z')
+  const undo = async () => page.keyboard.press(await shortcut(page, 'ControlOrMeta+z'))
+  const redo = async () => page.keyboard.press(await shortcut(page, 'ControlOrMeta+Shift+z'))
   return { page, kit, state, run, open, drag, sparseDrag, click, sample, color, saved, reopen, undo, redo }
 }
 
@@ -405,7 +415,7 @@ for (const linked of [false, true]) {
     const blue = doc.layers.find((item) => item.name === 'Blue').id
     const red = doc.layers.find((item) => item.name === 'Red').id
     await e.kit.getByTestId(`photo-layer-${blue}`).click()
-    await e.kit.getByTestId(`photo-layer-${red}`).click({ modifiers: ['ControlOrMeta'] })
+    await e.kit.getByTestId(`photo-layer-${red}`).click({ modifiers: [await shortcut(e.page, 'ControlOrMeta')] })
     if (linked) {
       await e.kit.getByTestId('photo-layers-link').click()
       await e.kit.getByTestId(`photo-layer-${red}`).click()
@@ -1049,11 +1059,11 @@ for (const cancel of ['Escape', 'toolbar']) {
       }
     }, version)
     try {
-      await field.press('ControlOrMeta+s')
+      await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect.poll(() => e.page.evaluate(() => window.cancelSaveGate.held)).toBe(true)
       await e.click(80, 80)
       await field.fill('Cancel this title')
-      await field.press('ControlOrMeta+s')
+      await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect(field).toHaveValue('Cancel this title')
       if (cancel === 'Escape') await field.press('Escape')
       else await e.kit.getByTestId('photo-option-cancel').click()
@@ -1073,7 +1083,7 @@ for (const cancel of ['Escape', 'toolbar']) {
     await checkStored(['Keep this title'])
     await e.click(80, 80)
     await field.fill('Save after cancellation')
-    await field.press('ControlOrMeta+s')
+    await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
     await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 3)
     await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
     await expect.poll(() => e.page.evaluate(async () => (await window.devHost.connection().ai.inspect()).dirty)).toBe(false)
@@ -1133,13 +1143,13 @@ for (const history of ['undo', 'redo']) {
         }
       }, `edit.${history}`)
       try {
-        await e.page.keyboard.press('ControlOrMeta+s')
+        await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
         await expect.poll(() => e.page.evaluate(() => window.historyHostGate.held)).toBe(true)
-        await e.page.keyboard.press(history === 'undo' ? 'ControlOrMeta+z' : 'ControlOrMeta+Shift+z')
+        await e.page.keyboard.press(await shortcut(e.page, history === 'undo' ? 'ControlOrMeta+z' : 'ControlOrMeta+Shift+z'))
         await expect.poll(() => surface.evaluate(() => window.historyCommandGate.requests)).toBe(1)
         // Save is requested before the history command has produced its new revision.
-        await e.page.keyboard.press('ControlOrMeta+s')
-        await e.page.keyboard.press('ControlOrMeta+s')
+        await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
+        await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
         if (releasedFirst === 'host') await e.page.evaluate(() => window.historyHostGate.release())
         expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
         await surface.evaluate(() => window.historyCommandGate.release())
@@ -1192,7 +1202,7 @@ for (const tool of ['Type', 'VerticalType']) {
         return { version: file.version, bytes: [...new Uint8Array(file.bytes)] }
       })
       try {
-        if (entry === 'shortcut') await field.press('ControlOrMeta+s')
+        if (entry === 'shortcut') await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
         else await e.kit.getByTestId('photo-save').click()
         await expect(e.kit.getByRole('alert')).toContainText('Scenario host storage unavailable')
         await expect(field).toHaveCount(0)
@@ -1251,12 +1261,12 @@ for (const next of ['draft save', 'committed save', 'committed without save']) {
       }
     }, version)
     try {
-      await field.press('ControlOrMeta+s')
+      await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect.poll(() => e.page.evaluate(() => window.hostWriteGate.held)).toBe(true)
       await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
       // Requests for the already captured content must not themselves queue another write.
-      await e.page.keyboard.press('ControlOrMeta+s')
-      await e.page.keyboard.press('ControlOrMeta+s')
+      await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
+      await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await e.click(90, 80)
       await field.fill('Second write')
       if (next !== 'draft save') {
@@ -1264,8 +1274,8 @@ for (const next of ['draft save', 'committed save', 'committed without save']) {
         await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(2)
       }
       if (next !== 'committed without save') {
-        await e.page.keyboard.press('ControlOrMeta+s')
-        await e.page.keyboard.press('ControlOrMeta+s')
+        await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
+        await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       }
       expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
     } finally { await e.page.evaluate(() => window.hostWriteGate.release()) }
@@ -1430,8 +1440,8 @@ test('UI34: toolbar Save waits for text and shares repeated save shortcuts', asy
     await expect(save).toBeEnabled()
     await save.click()
     await save.focus()
-    await e.page.keyboard.press('ControlOrMeta+s')
-    await e.page.keyboard.press('ControlOrMeta+s')
+    await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
+    await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     expect(await surface.evaluate(() => window.toolbarSaveGate.requests)).toBe(1)
     expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version)
   } finally { await surface.evaluate(() => window.toolbarSaveGate.release()) }
@@ -1536,7 +1546,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await e.page.evaluate(() => window.devHost.configure({ disable: ['command:type.create'], hide: ['action:redo'] }))
       await expect(e.kit.getByTestId('photo-redo')).toHaveCount(0)
       if (trigger === 'Enter') await e.page.keyboard.press('Enter')
-      else if (trigger === 'save shortcut') await e.page.keyboard.press('ControlOrMeta+s')
+      else if (trigger === 'save shortcut') await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       else if (trigger === 'tool switch') await e.kit.getByTestId('photo-tool-Brush').click()
       else await e.click(90, 80)
       await expect(e.kit.getByRole('alert')).toContainText('type.create')
@@ -1554,7 +1564,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await field.evaluate((input) => input.setSelectionRange(input.value.length, input.value.length))
       await e.page.keyboard.type(' recovered')
       await expect(field).toHaveValue('Preserve this text recovered')
-      await e.page.keyboard.press('ControlOrMeta+s')
+      await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
       await expect(field).toHaveCount(0)
       const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
@@ -1591,7 +1601,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await field.fill(text)
       const version = await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)
       // Save from the actual focused input, without a blur, Enter, or save-button click first.
-      await e.page.keyboard.press('ControlOrMeta+s')
+      await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version), { message: 'The save shortcut must write the file while a text draft is focused' }).toBe(version + 1)
       await expect(field).toHaveCount(0)
       await expect.poll(() => e.page.evaluate(async () => (await window.devHost.connection().ai.inspect()).dirty)).toBe(false)
@@ -1637,7 +1647,7 @@ for (const policy of ['hide', 'disable']) {
     await e.page.evaluate((policy) => window.devHost.configure({ [policy]: ['action:save'] }), policy)
     if (policy === 'hide') await expect(e.kit.getByTestId('photo-save')).toHaveCount(0)
     else await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
-    await e.page.keyboard.press('ControlOrMeta+s')
+    await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     await expect(field).toBeFocused()
     await e.page.keyboard.type(' typing')
     await expect(field).toHaveValue('Keep typing')
@@ -1645,7 +1655,7 @@ for (const policy of ['hide', 'disable']) {
     expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version)
     await e.page.evaluate(() => window.devHost.configure({}))
     await expect(e.kit.getByTestId('photo-save')).toBeEnabled()
-    await e.page.keyboard.press('ControlOrMeta+s')
+    await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
     await expect(field).toHaveCount(0)
     expect(await e.run('type.info')).toMatchObject({ text: 'Keep typing' })
@@ -2090,7 +2100,7 @@ for (const tool of ['Type', 'VerticalType']) {
         : { disable: ['tool:*'], hide: ['action:redo'] }), tool === 'VerticalType')
       await expect(e.kit.getByTestId('photo-redo')).toHaveCount(0)
       if (route === 'Enter') await field.press('Enter')
-      else if (route === 'save shortcut') await field.press('ControlOrMeta+s')
+      else if (route === 'save shortcut') await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
       else if (route === 'toolbar Save') await e.kit.getByTestId('photo-save').click()
       else await e.kit.getByTestId('photo-status-zoom').locator('input').focus()
       await expect(field, 'Denied Type must retain the unsubmitted text').toHaveValue(title)
@@ -2104,7 +2114,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await expect(field).toBeEditable()
       await expect(e.kit.getByTestId('photo-option-commit')).toBeEnabled()
       await field.fill(`${title} restored`)
-      await field.press('ControlOrMeta+s')
+      await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
       await expect(field).toHaveCount(0)
       await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBeGreaterThan(version)
       const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
@@ -2715,7 +2725,7 @@ for (const interruption of ['permission restoration', 'document replacement']) {
     // Explicit retry uses the current document and the latest selected font.
     await e.kit.getByTestId('photo-option-font').selectOption('JetBrains Mono')
     await expect(e.kit.getByTestId('photo-option-font')).toHaveValue('JetBrains Mono')
-    await field.press('ControlOrMeta+s')
+    await field.press(await shortcut(e.page, 'ControlOrMeta+s'))
     await expect(field).toHaveCount(0)
     await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
     const titles = (await e.state()).layers.filter((item) => item.kind === 'Type')
@@ -2752,7 +2762,7 @@ for (const control of ['options', 'properties']) {
       await select.selectOption('JetBrains Mono')
       await expect.poll(() => surface.evaluate(() => window.savedFontGate.held)).toBe(true)
       await e.kit.locator('.kui-row[tabindex="-1"]').focus()
-      await e.page.keyboard.press('ControlOrMeta+s')
+      await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     } finally { await surface.evaluate(() => window.savedFontGate.release()) }
     await expect.poll(async () => (await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('JetBrains Mono')
     await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBeGreaterThan(version)
