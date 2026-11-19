@@ -3,16 +3,17 @@
 //! below and verifies each file against the `tools/xtask/*.sha256` manifests. The CI corpus job's cache
 //! key hashes this file and the manifests, so changing a pin is the only thing that refetches.
 //!
-//! - Our own oracles: https://github.com/KitionAI/kition-photo-corpus (MIT; README, NOTICE).
-//! - Third-party sets come from their upstreams (licences in docs/attribution.md).
+//! - Our own Photoshop-authored oracles: the maintainers' private corpus, not distributed; copied
+//!   from a clone with `--local` only (without it, its tests are skipped).
+//! - Third-party sets come from their public upstreams (licences in docs/attribution.md).
 //!
 //! Moving a pin: change the commit, run `cargo xtask corpus --<name> --update-manifest`, review the
 //! manifest diff, and re-run `cargo xtask test-corpus` (adjust floors only upwards).
 
 use crate::pinned::{PinnedCorpus, Upstream};
 
-/// https://github.com/KitionAI/kition-photo-corpus (MIT): our Photoshop-authored oracle PSDs
-/// (`photoshop/`). Bump through a PR after committing there.
+/// The maintainers' private corpus: our Photoshop-authored oracle PSDs (`photoshop/`). Bump after
+/// committing there.
 pub const PHOTOSHOP_CORPUS_COMMIT: &str = "10bd82a47e1df2b245ffa4b4253fb6fb9cf28694";
 /// https://github.com/psd-tools/psd-tools (MIT): `tests/psd_files` (main).
 pub const PSD_TOOLS_COMMIT: &str = "96eb134c17b2c65edf4c4151c0f00b802ada86c2";
@@ -57,9 +58,9 @@ pub const PHOTOSHOP: PinnedCorpus = PinnedCorpus {
     subset: false,
     sources_md: |c| {
         format!(
-            "# Photoshop oracle corpus\n\n`photoshop/` of https://github.com/KitionAI/kition-photo-corpus at commit {PHOTOSHOP_CORPUS_COMMIT} \
-             (see `README.md`). MIT, see `NOTICE`. Fetched and sha256-verified by \
-             `cargo xtask corpus --photoshop` against `{}`. Gitignored; never commit these files.\n",
+            "# Photoshop oracle corpus\n\n`photoshop/` of the maintainers' private corpus at commit {PHOTOSHOP_CORPUS_COMMIT} \
+             (see `README.md`, `NOTICE`); not distributed. Copied and checked by \
+             `cargo xtask corpus --photoshop --local` against `{}`. Gitignored; never commit these files.\n",
             c.manifest
         )
     },

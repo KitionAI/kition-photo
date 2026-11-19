@@ -10,7 +10,8 @@ rust-version.workspace = true
 workspace = true
 
 [features]
-# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when the corpus is missing.
+# Real-file corpus tests (opt-in; `cargo xtask test-corpus`). Fail when a public corpus is missing;
+# skip the tests of the maintainers' private Photoshop corpus without it.
 corpus = []
 # HEIC/HEIF decode (forwarded to kition-photo-codecs; see its `heif` feature).
 heif = ["kition-photo-codecs/heif"]

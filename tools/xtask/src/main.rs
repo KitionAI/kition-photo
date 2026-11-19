@@ -23,13 +23,14 @@ commands:
   ci              fmt --check, clippy -D warnings, test, layers, wasm (stops at first failure)
   corpus [--all | --pngsuite | --psd | --psd-tools | --pixls | --photoshop] [--local] [--update-manifest]
                   show where test corpora live and their pins (tools/xtask/src/corpus_pins.rs), or fetch
-                  them into corpus/ (pinned commits, sha256-verified; --all = every corpus but pixls,
-                  --photoshop --local copies from ../kition-photo-corpus or $KITION_PHOTO_CORPUS_REPO)
+                  them into corpus/ (pinned commits, sha256-verified; --all = every public corpus but
+                  pixls; the maintainers' private Photoshop corpus is skipped unless --local copies it
+                  from ../kition-photo-corpus or $KITION_PHOTO_CORPUS_REPO)
   test-corpus [-p <crate>]... [--changed] [--pixls] [--local] [-- <test args>]
                   fetch every corpus, then cargo test --release --features corpus on the corpus
                   crates; --changed runs only if psd/io/codecs/compose/text/format/raw changed;
                   --pixls (or -p raw) also fetches corpus/pixls and runs the raw corpus tests;
-                  --local takes corpus/photoshop from the Photoshop corpus authoring clone
+                  --local takes corpus/photoshop from the maintainers' private Photoshop corpus clone
   stats [--exact] count tests and lines per crate (--exact: ask the test harness via `-- --list`)
   version [set X.Y.Z[-pre]]
                   print the workspace version, or set it (Cargo.toml + Cargo.lock)

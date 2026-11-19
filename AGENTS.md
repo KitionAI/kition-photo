@@ -69,7 +69,7 @@ every feature drivable by agents. Read this file first, then `docs/`.
 | `docs/architecture.md` | Crate map, dependency layers, the engine/UI seam, document model |
 | `docs/development.md` | Build, test, run, debug tricks, test corpora, rendering fidelity |
 | `crates/<name>/README.md` (where present) | Public API of that crate |
-| [kition-photo-corpus](https://github.com/KitionAI/kition-photo-corpus) + `docs/development.md` › Test corpora | Real-file test oracles (Photoshop-authored PSDs); with psd-tools, ag-psd and PngSuite fetched into `corpus/` by `cargo xtask corpus --all` at the pins in `tools/xtask/src/corpus_pins.rs` |
+| `docs/development.md` › Test corpora | Real-file test oracles: public psd-tools, ag-psd, PngSuite and other sets fetched into `corpus/` by `cargo xtask corpus --all` at the pins in `tools/xtask/src/corpus_pins.rs`; the Photoshop-authored PSDs are the maintainers' private corpus (not distributed) |
 
 ## 2. Workspace map
 
@@ -135,7 +135,7 @@ cargo test -p kition-photo-engine --test panic_hunt -- --ignored   # if you adde
 cargo xtask test-corpus     # if you touched psd, io, codecs, compose, text or format (or: --changed decides)
 ```
 
-**Test corpora.** Real-file corpora live in `corpus/` (gitignored, never committed), fetched at pinned commits and sha256-verified by `cargo xtask corpus --all`: Photoshop-authored oracles from https://github.com/KitionAI/kition-photo-corpus (MIT) plus psd-tools, ag-psd and PngSuite from their upstreams. Pins: `tools/xtask/src/corpus_pins.rs`. The corpus tests are opt-in (cargo feature `corpus`): plain `cargo test` skips them, and with the feature on a missing corpus fails ("run `cargo xtask corpus --all`"). `cargo xtask test-corpus` fetches and runs them all. Never commit corpus files.
+**Test corpora.** Real-file corpora live in `corpus/` (gitignored, never committed), fetched at pinned commits and sha256-verified by `cargo xtask corpus --all`: psd-tools, ag-psd, PngSuite and the other public sets from their upstreams. The Photoshop-authored oracles (`corpus/photoshop`) are maintained privately by the maintainers and not distributed: `--all` skips them, maintainers copy them from their clone with `--local`, and their tests are skipped without them. Pins: `tools/xtask/src/corpus_pins.rs`. The corpus tests are opt-in (cargo feature `corpus`): plain `cargo test` skips them, and with the feature on a missing public corpus fails ("run `cargo xtask corpus --all`"). `cargo xtask test-corpus` fetches and runs them all. Never commit corpus files.
 
 Commands must **never panic** on bad input (Rule 8): every `run` closure and the code it calls returns `Err`, not a panic, for any params or document state. New commands come with a graceful-failure test (empty/out-of-range/wrong-type params → `Err`, not a crash).
 

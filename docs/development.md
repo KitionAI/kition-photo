@@ -153,9 +153,14 @@ repository. They live in `corpus/` (gitignored) and are fetched at **pinned comm
 against committed **sha256 manifests**. All pins are in one place:
 [`tools/xtask/src/corpus_pins.rs`](../tools/xtask/src/corpus_pins.rs).
 
+Every corpus below is downloaded from a public source, except `corpus/photoshop/`: the
+Photoshop-authored reference files are maintained privately by the maintainers and are not
+distributed. Their tests run in the maintainers' environment; without `corpus/photoshop/` they are
+skipped with a message, and everything else runs as usual.
+
 | Directory | What | Source | Manifest |
 |---|---|---|---|
-| `corpus/photoshop/` | 258 PSDs authored with Photoshop: editable filters, layer-style effect shapes, the text engine, adjustments in every mode and depth | https://github.com/KitionAI/kition-photo-corpus (MIT, see its NOTICE) | `tools/xtask/photoshop-corpus.sha256` |
+| `corpus/photoshop/` | 258 PSDs authored with Photoshop: editable filters, layer-style effect shapes, the text engine, adjustments in every mode and depth | the maintainers' private corpus (not distributed) | `tools/xtask/photoshop-corpus.sha256` |
 | `corpus/psd/` | 170 small psd-tools and ag-psd files, the mix most PSD tests use | psd-tools and ag-psd upstreams (MIT) | `tools/xtask/psd-corpus.sha256` |
 | `corpus/psd-tools/` | the complete psd-tools test set (309 files) | psd-tools upstream (MIT) | `tools/xtask/psd-tools-corpus.sha256` |
 | `corpus/heif/` | 9 small HEIC/HEIF files (checkerboards, RGB strips, a grid-tiled photo with EXIF/XMP, each with Apple's decode as `.ref.png`; a 10-bit RGBA file with its source PNG), for the `heif` feature | heic-rs (MIT OR Apache-2.0) and pillow-heif (BSD-3-Clause) upstreams | `tools/xtask/heif-corpus.sha256` |
@@ -165,7 +170,7 @@ against committed **sha256 manifests**. All pins are in one place:
 
 ```sh
 cargo xtask corpus                 # where each corpus lives, its pin, present or missing
-cargo xtask corpus --all           # fetch everything missing or stale (cold: about 15 s; verified copies are left alone)
+cargo xtask corpus --all           # fetch every public corpus missing or stale (cold: about 15 s; verified copies are left alone); corpus/photoshop is skipped
 cargo xtask test-corpus            # fetch, then cargo test --release --features corpus (+ heif on codecs, io) on psd, codecs, io, engine
 cargo xtask test-corpus -p io      # narrow to one crate (repeat -p for more)
 cargo xtask test-corpus --changed  # only if psd, io, codecs, compose, text, format or affinity changed vs origin/main
@@ -179,32 +184,35 @@ tools/scripts/fetch-corpus.sh      # the same as cargo xtask corpus --all
   `kition-photo-io` and `kition-photo-engine`, so plain `cargo test` neither compiles nor needs them.
   The HEIF ones also need the `heif` feature of `kition-photo-codecs`/`kition-photo-io` (test-corpus
   turns it on).
-- With the feature on, a missing corpus is a failure ("run `cargo xtask corpus --all`"), never a
-  silent skip, and every floor is enforced.
+- With the feature on, a missing public corpus is a failure ("run `cargo xtask corpus --all`"),
+  never a silent skip, and every floor is enforced. The one exception is the private
+  `corpus/photoshop/`: its tests print that it is missing and skip.
 - If you touch psd, io, codecs, compose, text or format, run `cargo xtask test-corpus` before you
   finish.
 
-**The corpus authoring clone: [kition-photo-corpus](https://github.com/KitionAI/kition-photo-corpus).**
+**The Photoshop corpus (maintainers only).** The maintainers keep it in a private repository,
+`kition-photo-corpus`; outside contributors do not have it and do not need it.
 
 - **Authoring clone:** a normal git clone, placed next to this checkout
   (`../kition-photo-corpus`). Its generators write there.
-- **Consuming copy:** `corpus/photoshop/` here. It is a plain directory: the pinned snapshot
-  (downloaded as the GitHub tarball of the pinned commit, then verified; no credentials needed).
-- **Local mode:** `cargo xtask corpus --photoshop --local` copies `photoshop/` from
-  `../kition-photo-corpus` (or `KITION_PHOTO_CORPUS_REPO=<path>`) instead of downloading.
+- **Consuming copy:** `corpus/photoshop/` here, a plain directory checked against the pinned
+  manifest. `cargo xtask corpus --photoshop --local` (or `--all --local`, `test-corpus --local`)
+  copies `photoshop/` from `../kition-photo-corpus` (or `KITION_PHOTO_CORPUS_REPO=<path>`); it is
+  never downloaded, and `--photoshop` without `--local` stops with an error saying so.
 - **Not a submodule or a subtree:** a subtree would put the binaries back into this repository's
   history, and submodules cause init and detached-HEAD friction for every contributor. A pin plus
   a manifest gives the same reproducibility.
-- The third-party sets (psd-tools, ag-psd, PngSuite) are fetched from their upstreams the same
-  way.
+- The third-party sets (psd-tools, ag-psd, heic-rs, pillow-heif, OpenEXR, the Affinity sets and
+  PngSuite) are public: they are downloaded from their upstreams (the GitHub tarball of the pinned
+  commit, or PngSuite's release archive), with no credentials, and verified.
 
 ## Rendering fidelity (PSD oracle)
 
 `cargo xtask test-corpus -p io -- --nocapture` compares our composite of every corpus PSD with
 Photoshop's own merged image (PASS ≤ 2/255) and checks that export → re-import renders the same,
 per source with its own floors: `corpus/psd`, the psd-tools set (also a truncation/corruption
-sweep over every file that must never panic) and the Photoshop set `corpus/photoshop`
-(per-feature-group totals: `smart-filters`, `effects`, `text`, `adjustments/<mode><bits>`). Smart
+sweep over every file that must never panic) and, where the maintainers' private corpus is
+present, the Photoshop set `corpus/photoshop` (per-feature-group totals: `smart-filters`, `effects`, `text`, `adjustments/<mode><bits>`). Smart
 objects and type layers composite Photoshop's cached pixels there; `cargo xtask test-corpus -p
 engine -- --nocapture` (`crates/engine/engine/tests/photoshop_oracles.rs`) re-renders them with our
 editable-filter stack and text engine and is the failure map for both. A panic is reported as `CRASH`

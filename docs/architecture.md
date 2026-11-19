@@ -262,7 +262,7 @@ The compositor consumes this plan. This is the only place that encodes Photoshop
 
 ### 7.4 Oracle
 
-**PSD files contain Photoshop's own merged composite.** Running our compositor on a PSD's layers and diffing against its embedded composite gives a free, large conformance test suite. `crates/formats/io/tests/corpus.rs` runs this over the PSD corpora. The corpora are fetched at pinned commits into `corpus/` (never committed) by `cargo xtask corpus --all`; our own Photoshop-authored oracles live in https://github.com/KitionAI/kition-photo-corpus (see `docs/development.md` › Test corpora).
+**PSD files contain Photoshop's own merged composite.** Running our compositor on a PSD's layers and diffing against its embedded composite gives a free, large conformance test suite. `crates/formats/io/tests/corpus.rs` runs this over the PSD corpora. The corpora are fetched at pinned commits into `corpus/` (never committed) by `cargo xtask corpus --all`; our own Photoshop-authored oracles are the maintainers' private corpus, not distributed (see `docs/development.md` › Test corpora).
 
 ---
 
@@ -309,7 +309,7 @@ psd/src/
   - Composite-oracle diffs (§7.4).
   - `cargo-fuzz` on the parser.
   - A corpus from MIT/BSD-licensed test sets (ag-psd, psd-tools), fetched by `xtask`, not committed.
-  - Our own Photoshop-authored oracle PSDs (editable filters, effect shapes, type, adjustments in every mode and depth) from https://github.com/KitionAI/kition-photo-corpus (MIT), fetched at a pinned commit the same way.
+  - Our own Photoshop-authored oracle PSDs (editable filters, effect shapes, type, adjustments in every mode and depth): the maintainers' private corpus, not distributed, pinned the same way and copied from their clone; its tests are skipped without it.
 - **Existing crates:** `psd` (read-only, limited) and the new `ag-psd` Rust port. We evaluate them in spike week 1, then either depend on one, fork it, or write our own. Given how central PSD is, writing our own behind a stable API is likely.
 
 ---

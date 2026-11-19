@@ -64,11 +64,10 @@ pub fn cmd(args: &[&str]) -> Result<(), String> {
         did = true;
     }
     if args.contains(&"--photoshop") {
-        if args.contains(&"--local") {
-            corpus_pins::PHOTOSHOP.fetch_local(&local_clone()?, update)?;
-        } else {
-            corpus_pins::PHOTOSHOP.fetch(update)?;
+        if !args.contains(&"--local") {
+            return Err(format!("{PRIVATE}; maintainers copy it from their clone with --photoshop --local"));
         }
+        corpus_pins::PHOTOSHOP.fetch_local(&local_clone()?, update)?;
         did = true;
     }
     if !did {
@@ -76,6 +75,9 @@ pub fn cmd(args: &[&str]) -> Result<(), String> {
     }
     Ok(())
 }
+
+/// Why `corpus/photoshop` is not downloaded.
+const PRIVATE: &str = "corpus/photoshop is the maintainers' private Photoshop corpus: it is not distributed and cannot be downloaded";
 
 /// The authoring clone of the Photoshop corpus: `$KITION_PHOTO_CORPUS_REPO`, else `../kition-photo-corpus`.
 fn local_clone() -> Result<PathBuf, String> {
@@ -94,7 +96,7 @@ fn local_clone() -> Result<PathBuf, String> {
 pub fn fetch_all(local: bool, update: bool) -> Result<(), String> {
     fetch_pngsuite()?;
     fetch_pinned(local, update, fetch_one)?;
-    println!("all corpora present and verified under {}", root().join("corpus").display());
+    println!("public corpora present and verified under {}", root().join("corpus").display());
     Ok(())
 }
 
@@ -102,13 +104,26 @@ pub fn fetch_all(local: bool, update: bool) -> Result<(), String> {
 /// `corpus/photoshop` when `local`.
 fn fetch_pinned(local: bool, update: bool, mut fetch: impl FnMut(&PinnedCorpus, bool, bool) -> Result<(), String>) -> Result<(), String> {
     for c in corpus_pins::ALL {
-        fetch(c, local && std::ptr::eq(*c, &corpus_pins::PHOTOSHOP), update)?;
+        fetch(c, local && c.name == corpus_pins::PHOTOSHOP.name, update)?;
     }
     Ok(())
 }
 
+/// The private Photoshop corpus is only copied from a clone (`--local`); without one it is
+/// skipped, and so are its tests.
 fn fetch_one(c: &PinnedCorpus, from_clone: bool, update: bool) -> Result<(), String> {
-    if from_clone { c.fetch_local(&local_clone()?, update) } else { c.fetch(update) }
+    if from_clone {
+        c.fetch_local(&local_clone()?, update)
+    } else if c.name == corpus_pins::PHOTOSHOP.name {
+        if !update && c.is_current() {
+            println!("{}: {} already matches {}", c.name, c.dest_dir().display(), c.manifest);
+        } else {
+            println!("{}: skipped: {PRIVATE}; its tests are skipped without it (maintainers: --local)", c.name);
+        }
+        Ok(())
+    } else {
+        c.fetch(update)
+    }
 }
 
 fn status(present: bool) -> &'static str {
@@ -121,15 +136,16 @@ fn list() {
     let png_ok = pngsuite_count(&png) > 0;
     println!(
         "Test corpora live under {} (gitignored, never committed). The corpus tests are opt-in
-(cargo feature `corpus`) and fail, not skip, when a corpus is missing. CI always runs them.
+(cargo feature `corpus`) and fail, not skip, when a public corpus is missing; the tests of the
+maintainers' private Photoshop corpus are skipped without it.
 
-  cargo xtask corpus --all      fetch every corpus below that is missing or stale (sha256-verified)
+  cargo xtask corpus --all      fetch every public corpus below that is missing or stale (sha256-verified)
   cargo xtask test-corpus       fetch, then run every corpus test (--release --features corpus)
 
-  corpus/photoshop/  [{}] our Photoshop-authored oracles (MIT), from
-                     https://github.com/KitionAI/kition-photo-corpus at {PHOTOSHOP_CORPUS_COMMIT}
-                     manifest tools/xtask/photoshop-corpus.sha256. Fetch: --photoshop
-                     (--photoshop --local copies from ../kition-photo-corpus or $KITION_PHOTO_CORPUS_REPO)
+  corpus/photoshop/  [{}] our Photoshop-authored oracles: the maintainers' private corpus, not
+                     distributed (pin {PHOTOSHOP_CORPUS_COMMIT}),
+                     manifest tools/xtask/photoshop-corpus.sha256. Maintainers only:
+                     --photoshop --local copies it from ../kition-photo-corpus or $KITION_PHOTO_CORPUS_REPO
   corpus/psd/        [{}] 170 small psd-tools + ag-psd files (MIT), psd-tools@{} and
                      ag-psd@{}, manifest tools/xtask/psd-corpus.sha256. Fetch: --psd
   corpus/psd-tools/  [{}] the full psd-tools test set (MIT) at {PSD_TOOLS_COMMIT}
@@ -279,6 +295,19 @@ mod tests {
             assert_eq!(seen.len(), corpus_pins::ALL.len());
             assert!(seen.iter().all(|(_, u)| *u), "--all --update-manifest dropped the flag: {seen:?}");
         }
+    }
+
+    #[test]
+    fn local_takes_only_the_photoshop_corpus_from_its_clone() {
+        let mut from_clone = Vec::new();
+        let r = fetch_pinned(true, false, |c, clone, _| {
+            if clone {
+                from_clone.push(c.name);
+            }
+            Ok(())
+        });
+        assert_eq!(r, Ok(()));
+        assert_eq!(from_clone, ["photoshop"]);
     }
 
     #[test]

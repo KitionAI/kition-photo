@@ -3,7 +3,8 @@
 //! `corpus_pins.rs`. Corpora land in `corpus/<dest>/` (gitignored, never committed).
 //!
 //! Fetching downloads the GitHub tarball (`codeload`) of each pinned commit with a generic
-//! User-Agent and no credentials (every upstream is a public repository), extracts only the corpus
+//! User-Agent and no credentials (every downloaded upstream is a public repository; the private
+//! Photoshop corpus is only copied from a clone), extracts only the corpus
 //! subdirectory, checks every file against the manifest and swaps the verified files into place. An already complete, verified copy is left alone, so
 //! re-running is cheap (and a CI cache restore is verified the same way).
 //! `--update-manifest` rewrites the manifest from the download (after moving a pin).
