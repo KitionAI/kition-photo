@@ -18,7 +18,9 @@ concurrency:
 jobs:
   scenarios:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # Building the engine takes about 8 minutes, the browser scenarios in both browsers about 35,
+    # and the legacy flows run after them.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,7 +51,15 @@ jobs:
         run: pnpm --dir kition-photo/web install --frozen-lockfile
       - name: Build current WASM and copy test font
         run: pnpm --dir kition-photo/web engine
+      # The runner's default Ubuntu mirror served the browsers' system packages at under 100 kB/s
+      # (126 MB in 25 minutes) while security.ubuntu.com, Canonical's own servers, was fast.
+      - name: Use the Ubuntu archive for system packages
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            printf 'http://archive.ubuntu.com/ubuntu/\tpriority:1\nhttp://azure.archive.ubuntu.com/ubuntu/\tpriority:2\n' | sudo tee /etc/apt/apt-mirrors.txt
+          fi
       - name: Install browsers
+        timeout-minutes: 20
         run: pnpm --dir kition-photo/web exec playwright install --with-deps chromium webkit
       - name: PR gate (build, parity, engine scenarios, Chromium scenarios)
         if: github.event_name == 'pull_request'
