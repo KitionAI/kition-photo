@@ -30,17 +30,22 @@ export function structure(state) {
   return { width: state.width, height: state.height, mode: state.mode, depth: state.depth, layers: state.layers.map(layer) }
 }
 
-function fields(actual, expected, label) {
+// `tolerance.opacity` (as in `same`) bounds numeric `opacity` fields: a document named .psd keeps
+// layer opacity as the file stores it, one byte (round(v * 255) / 255).
+function fields(actual, expected, label, tolerance = {}) {
   for (const [path, value] of Object.entries(expected ?? {})) {
-    assert.deepEqual(path.split('.').reduce((node, key) => node?.[key], actual), value, `${label}.${path}`)
+    const got = path.split('.').reduce((node, key) => node?.[key], actual)
+    if (path.split('.').at(-1) === 'opacity' && tolerance.opacity !== undefined && typeof value === 'number' && typeof got === 'number') {
+      assert.ok(Math.abs(got - value) <= tolerance.opacity, `${label}.${path}: expected ${value} ± ${tolerance.opacity}, got ${got}`)
+    } else assert.deepEqual(got, value, `${label}.${path}`)
   }
 }
 
-export function check(doc, expected = {}, result) {
+export function check(doc, expected = {}, result, tolerance = {}) {
   const state = inspect(doc)
-  fields(state, expected.document, 'document')
-  fields(state.layers.find((layer) => layer.id === state.activeLayer), expected.activeLayer, 'activeLayer')
-  fields(result, expected.result, 'result')
+  fields(state, expected.document, 'document', tolerance)
+  fields(state.layers.find((layer) => layer.id === state.activeLayer), expected.activeLayer, 'activeLayer', tolerance)
+  fields(result, expected.result, 'result', tolerance)
   for (const { at: [x, y], rgba, tolerance = 1 } of expected.pixels ?? []) {
     assert.ok(x >= 0 && x < doc.width && y >= 0 && y < doc.height, 'Pixel assertion must be inside the canvas')
     const actual = [...doc.render(x, y, 1, 1, 1)]
@@ -130,7 +135,7 @@ export async function runScenario(scenario, onStep = () => {}) {
         assert.throws(() => sdk.PhotoDocument.open('broken.psd', new Uint8Array([56, 66, 80, 83])))
         assert.equal(doc.inspect(), before, 'Failed open must leave existing document intact')
       } else throw new Error(`Unknown scenario step: ${JSON.stringify(step)}`)
-      check(doc, step.expect, result)
+      check(doc, step.expect, result, step.tolerance)
       if (step.equals) same(doc, checkpoints.get(step.equals), step.pixelsOnly, step.tolerance)
       await onStep({ index, step, state: inspect(doc), doc })
     }

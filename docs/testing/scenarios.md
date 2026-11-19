@@ -77,8 +77,10 @@ sampling engine output, since an agent sampling command can trigger a repaint an
 | SC12 First CJK font (two variants) | P0 | Fresh WASM → render without CJK → register once → horizontal/vertical Chinese → explicit font → undo → PSD reopen/edit | First registration replaces missing glyphs; default Inter fallback matches explicit Droid Sans Fallback pixels; history and editable PSD preserve text | Engine coverage with a separate WASM instance per variant |
 
 Engine save/reopen comparisons check full RGBA buffers and stable layer properties, not just file
-signatures or “command succeeded.” PSD quantizes opacity to 8 bits: SC04 alone allows one output
-channel level and 1/255 opacity error at that conversion. A new checkpoint after conversion makes
+signatures or “command succeeded.” PSD quantizes opacity to 8 bits, and a document named `.psd`
+keeps layer opacity as the file stores it from the first edit: SC04 alone allows one output
+channel level and 1/255 opacity error (a step's `tolerance.opacity`) when it sets 50% opacity and
+at the PSD conversion. A new checkpoint after conversion makes
 subsequent undo/native saves exact again. PNG checks compare pixels/dimensions, since flat exports
 intentionally discard the layer tree. Scene text uses the pinned font input, never system fonts.
 SC12 uses independent WASM instances so earlier font registrations cannot hide a first-load bug.
