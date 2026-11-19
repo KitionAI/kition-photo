@@ -21,7 +21,11 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
-    { name: 'webkit', use: { browserName: 'webkit' } },
+    // WebKit on the Linux runners occasionally loses its web content process while the dev host
+    // loads the engine and opens the sample (the page stops responding, then "Target crashed"),
+    // before any scenario step runs. CI retries WebKit so such a run is reported as flaky; a
+    // scenario that fails every attempt still fails the run. Local runs never retry.
+    { name: 'webkit', retries: process.env.CI ? 2 : 0, use: { browserName: 'webkit' } },
   ],
   webServer: {
     command: 'pnpm dev --host 127.0.0.1 --port 15187 --strictPort',
