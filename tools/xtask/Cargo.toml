@@ -10,4 +10,3 @@ workspace = true
 
 [dependencies]
 serde_json = { workspace = true }
-serde = { workspace = true }
