@@ -382,7 +382,7 @@ psd/src/
 | Engine | command-level tests: open fixture → dispatch commands → assert snapshot/render; action replays |
 | Editor | Playwright scenarios in `web/tests/` (see [testing/scenarios.md](testing/scenarios.md)) |
 | Perf | criterion benches (`crates/engine/compose/benches/`) and benchmark examples (`crates/engine/algo/examples/`) |
-| Portability | `cargo xtask wasm` checks the wasm32 build; the scenario workflow (`.github/workflows/photo-scenarios.yml`) runs on Linux |
+| Portability | `cargo xtask wasm` checks the wasm32 build; the CI workflow (`.github/workflows/ci.yml`) runs every test on Linux |
 
 **Performance targets for v1:**
 - Stroke-to-pixel within one frame at 120 Hz.

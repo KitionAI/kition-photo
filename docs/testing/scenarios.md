@@ -174,11 +174,11 @@ or selection algorithms. The suite contains 190 editor cases and 17 tool contrac
 
 ## Reports and CI
 
-The workflow is `.github/workflows/photo-scenarios.yml`. PRs run the fast gate; main pushes,
-manual runs and the daily schedule run full regression. The workflow needs no secrets: it installs
+The workflow is `.github/workflows/ci.yml`, which runs Kition's kit CI: every `test:*` script of
+`web/` (flow, modes, focus, auto-select, parity, engine scenarios, UI scenarios) is its own job, on pushes to `ci/**`, pull requests, manual runs
+and a nightly run on `main`. The workflow needs no secrets: it installs
 the published web packages from npm (locked by `web/pnpm-lock.yaml`), Cargo
-fetches the kition-sdk crates at the commit pinned in `Cargo.toml`, and the font checkout of
-`KitionAI/kition-fonts` is pinned by commit. No `pull_request_target` execution is used.
+fetches the kition-sdk crates at the commit pinned in `Cargo.toml`, and `KitionAI/kition-fonts` is checked out at `main`. No `pull_request_target` execution is used.
 
 The scenarios use zero retries, isolated documents, stable test IDs and condition polling.
 Missing fonts/engines and uncaught page errors are failures. Static parity metadata is
@@ -196,8 +196,8 @@ Artifacts under `web/` (gitignored):
 - `test-results/browser/`: failing screenshots, Playwright traces, document-state attachments.
 - `test-results/legacy-<browser>/`: broad-flow JSON results and failure screenshot/trace.
 
-GitHub uploads these even on failure. Set the `Photo scenarios / scenarios` check as required
-in branch protection after configuring the dependency token.
+A failed job uploads its `test-results/` and `playwright-report/` as the `evidence-<script>`
+artifact.
 
 ## Coverage boundaries
 
