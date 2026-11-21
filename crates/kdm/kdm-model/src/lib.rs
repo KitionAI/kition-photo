@@ -54,6 +54,13 @@ type Result<T> = kition_kit::session::Result<T>;
 
 const SCHEMA: &str = include_str!("../model/schema.json");
 
+/// The blobs `replica`'s current state references (tiles, ICC profiles, effects, the document
+/// state), and none that only its history or an undo step does: what a file holding the replica
+/// as a new document keeps (`document.fork`).
+pub fn state_blobs(replica: &Replica) -> BTreeSet<String> {
+    blob_gc::BlobIndex::build(replica).referenced().into_iter().collect()
+}
+
 /// The `Image` object's id: one per document, minted by [`write_document`] with
 /// [`kition_kit::kdm::Tx::create_with_id`], so every reader finds it without an index.
 fn image_id() -> ObjectId {

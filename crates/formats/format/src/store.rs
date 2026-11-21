@@ -282,6 +282,43 @@ pub(crate) fn read_kdm(bytes: &[u8], opts: &LoadOptions) -> Result<Option<KdmBun
     Ok(Some(KdmBundle { snapshot, blobs }))
 }
 
+/// The bundle's KDM replica snapshot alone (`kdm.bin`), without reading its blobs, or `None` for
+/// a bundle saved without one.
+pub(crate) fn read_kdm_snapshot(bytes: &[u8], opts: &LoadOptions) -> Result<Option<Vec<u8>>> {
+    let src = ZipSource::new(bytes)?;
+    let Some(kdm) = read_manifest(&src, opts)?.kdm else { return Ok(None) };
+    src.zip.read_by_name(&kdm.snapshot, opts.max_blob_bytes).map(Some)
+}
+
+/// `bytes` (a bundle with a replica) with `snapshot` as its replica snapshot and only the KDM
+/// blobs `keep` names; every other entry (the manifest, tiles, document blobs, previews, entries
+/// this build does not know) is kept as it was, in the same order.
+pub(crate) fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool, opts: &LoadOptions) -> Result<Vec<u8>> {
+    let src = ZipSource::new(bytes)?;
+    let Some(kdm) = read_manifest(&src, opts)?.kdm else { return Err(FormatError::corrupt("the bundle holds no replica to replace")) };
+    let max = opts.max_blob_bytes.saturating_add(opts.max_blob_bytes / 8).saturating_add(4096);
+    let mut out = ZipWriter::new();
+    let mut total = 0u64;
+    for entry in &src.zip.entries {
+        if entry.name == kdm.snapshot {
+            out.add(&entry.name, snapshot)?;
+            continue;
+        }
+        if let Some(hash) = entry.name.strip_prefix("blobs/kdm/").and_then(|rest| rest.strip_suffix(".zst"))
+            && !keep(hash)
+        {
+            continue;
+        }
+        let data = src.zip.read(entry, max)?;
+        total = total.saturating_add(data.len() as u64);
+        if total > opts.max_total_bytes {
+            return Err(FormatError::LimitExceeded(format!("bundle expands beyond {} bytes", opts.max_total_bytes)));
+        }
+        out.add(&entry.name, &data)?;
+    }
+    out.finish()
+}
+
 pub(crate) fn load(src: &dyn Source, opts: &LoadOptions) -> Result<Document> {
     // Ids the bundle does not keep are not the numbers of whatever document is being edited.
     let _detached = kition_photo_doc::detached();

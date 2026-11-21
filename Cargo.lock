@@ -342,7 +342,7 @@ dependencies = [
  "maybe-owned",
  "rustix",
  "rustix-linux-procfs",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
  "winx",
 ]
 
@@ -764,7 +764,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1445,7 +1445,7 @@ checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1713,7 +1713,7 @@ dependencies = [
 [[package]]
 name = "kition-headless"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "kition-kit",
  "kition-kit-host",
@@ -1726,7 +1726,7 @@ dependencies = [
 [[package]]
 name = "kition-kdm"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "loro",
  "serde",
@@ -1739,7 +1739,7 @@ dependencies = [
 [[package]]
 name = "kition-kit"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "kition-kdm",
  "serde",
@@ -1752,7 +1752,7 @@ dependencies = [
 [[package]]
 name = "kition-kit-host"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "hex",
  "kition-kit-process-protocol",
@@ -1769,7 +1769,7 @@ dependencies = [
 [[package]]
 name = "kition-kit-process-protocol"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "serde",
  "serde_json",
@@ -1780,8 +1780,9 @@ dependencies = [
 [[package]]
 name = "kition-kit-server"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
+ "kition-kdm",
  "kition-kit-process-protocol",
  "serde",
  "serde_json",
@@ -1792,7 +1793,7 @@ dependencies = [
 [[package]]
 name = "kition-kits"
 version = "0.1.0"
-source = "git+https://github.com/KitionAI/kition-sdk?rev=f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57#f5ea478430d1e85069b6c6c9fac1de6b8e5c5d57"
+source = "git+https://github.com/KitionAI/kition-sdk?rev=6b4d471603aebdde1ee23c1a1cc522f8bbd97883#6b4d471603aebdde1ee23c1a1cc522f8bbd97883"
 dependencies = [
  "base64",
  "hex",
@@ -1815,6 +1816,7 @@ version = "0.5.0"
 dependencies = [
  "kition-headless",
  "kition-kit",
+ "kition-kit-host",
  "kition-kit-server",
  "kition-kits",
  "kition-photo-automation",
@@ -2267,7 +2269,7 @@ dependencies = [
 [[package]]
 name = "loro"
 version = "1.16.2"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "enum-as-inner 0.6.1",
  "generic-btree",
@@ -2282,7 +2284,7 @@ dependencies = [
 [[package]]
 name = "loro-common"
 version = "1.16.0"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "arbitrary",
  "enum-as-inner 0.6.1",
@@ -2299,7 +2301,7 @@ dependencies = [
 [[package]]
 name = "loro-delta"
 version = "1.13.0"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "arrayvec",
  "enum-as-inner 0.5.1",
@@ -2310,7 +2312,7 @@ dependencies = [
 [[package]]
 name = "loro-internal"
 version = "1.16.2"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "append-only-bytes",
  "arref",
@@ -2355,7 +2357,7 @@ dependencies = [
 [[package]]
 name = "loro-kv-store"
 version = "1.16.0"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "bytes",
  "ensure-cov",
@@ -2371,7 +2373,7 @@ dependencies = [
 [[package]]
 name = "loro-rle"
 version = "1.6.0"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "append-only-bytes",
  "num",
@@ -2387,7 +2389,7 @@ checksum = "3f3d053a135388e6b1df14e8af1212af5064746e9b87a06a345a7a779ee9695a"
 [[package]]
 name = "loro_fractional_index"
 version = "1.13.0"
-source = "git+https://github.com/KitionPkg/loro?rev=c0f64d39c2125415c6fb21c7fcf344c32e360886#c0f64d39c2125415c6fb21c7fcf344c32e360886"
+source = "git+https://github.com/KitionPkg/loro?rev=b7e6dfea82ac7dc4f5dcce282844911fba6d5c04#b7e6dfea82ac7dc4f5dcce282844911fba6d5c04"
 dependencies = [
  "once_cell",
  "rand 0.8.8",
@@ -2531,7 +2533,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3249,7 +3251,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3518,7 +3520,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3546,7 +3548,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "psm",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3644,7 +3646,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4205,7 +4207,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

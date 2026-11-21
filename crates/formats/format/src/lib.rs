@@ -187,3 +187,17 @@ pub fn read_thumbnail(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
 pub fn read_kdm(bytes: &[u8]) -> Result<Option<KdmBundle>> {
     store::read_kdm(bytes, &LoadOptions::default())
 }
+
+/// The bundle's KDM replica snapshot (`kdm.bin`) without its blobs, or `None` for a bundle saved
+/// without a replica: what a `.kphoto` carries as its document's identity (`document.identity`).
+pub fn read_kdm_snapshot(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
+    store::read_kdm_snapshot(bytes, &LoadOptions::default())
+}
+
+/// `bytes` (a bundle with a replica) holding the replica `snapshot` instead of its own
+/// (`document.fork`): `kdm.bin` is `snapshot`, and of the replica's blobs (`blobs/kdm/<sha256>.zst`)
+/// only those `keep` names stay; the manifest, tiles, document blobs, previews and entries this
+/// build does not know are kept as they were. A bundle without a replica is an error.
+pub fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool) -> Result<Vec<u8>> {
+    store::replace_kdm(bytes, snapshot, keep, &LoadOptions::default())
+}

@@ -21,10 +21,11 @@ kition-headless = { workspace = true }
 kition-photo-automation = { workspace = true }
 kition-photo-codecs = { workspace = true }
 kition-photo-kit = { workspace = true }
+# The .kphoto bundle's replica (`PhotoFiles`, document.identity): its schema, blobs and error type.
+kition-photo-engine = { workspace = true }
+kition-kit-server = { workspace = true }
 
 [dev-dependencies]
-kition-kit-server = { workspace = true }
-kition-photo-engine = { workspace = true }
 # The saved .kphoto's own manifest (its stored selection), for context.rs.
 kition-photo-format = { workspace = true }
 kition-photo-io = { workspace = true }
@@ -32,4 +33,6 @@ kition-kit = { workspace = true, features = ["session"] }
 serde_json = { workspace = true }
 # outside.rs and receipts.rs drive the kit through the kits' MCP server's tools, as an agent does.
 kition-kits = { workspace = true }
+# document.identity and document.fork through the real process (tests/identity.rs).
+kition-kit-host = { workspace = true }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

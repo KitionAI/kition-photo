@@ -19,6 +19,35 @@ pub fn is_kition_photo_name(name: &str) -> bool {
         .is_some_and(|(stem, ext)| !stem.is_empty() && ext.eq_ignore_ascii_case(kition_photo_format::EXTENSION))
 }
 
+/// The replica a file of this kit embeds, as a KDM snapshot (`document.identity`, KitModel M7a):
+/// a `.kphoto` bundle's `kdm.bin`, which [`Session::open_file`] opens the document from, so a byte
+/// copy of the bundle is the same document. `None` for a bundle saved without a replica, a PSD or
+/// PSB (Photoshop's format embeds none: the kit makes a replica under a new id each time it opens
+/// one), and an empty file (one made for the kit before it saved there). Other bytes are not one
+/// of the kit's files and are refused; never writes.
+pub fn embedded_replica(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
+    if bytes.is_empty() || bytes.starts_with(b"8BPS") {
+        return Ok(None);
+    }
+    if !kition_photo_format::is_kphoto(bytes) {
+        return Err(EngineError::Other("not a Kition Photo document (.kphoto) or a Photoshop document (.psd, .psb)".into()));
+    }
+    kition_photo_format::read_kdm_snapshot(bytes).map_err(kdm_error)
+}
+
+/// `bytes` (a `.kphoto` bundle with a replica) holding the document `snapshot` instead of its own
+/// (`document.fork`, KitModel M7a): `kdm.bin` is `snapshot`, and the replica's blobs are only the
+/// ones its current state references, so no earlier identity or history (a deleted layer's tiles,
+/// what an undo step kept) stays in the file. The manifest, tiles, previews and entries this build
+/// does not know are kept: they hold the same image.
+pub fn replace_replica(bytes: &[u8], snapshot: &[u8]) -> Result<Vec<u8>> {
+    use kdm_model::kition_kit::kdm::{ActorId, Replica};
+    use kdm_model::kition_kit::session::KitModel;
+    let replica = Replica::load(kdm_model::PhotoModel::schema(), snapshot, ActorId::random()).map_err(kdm_error)?;
+    let keep = kdm_model::state_blobs(&replica);
+    kition_photo_format::replace_kdm(bytes, snapshot, &|hash| keep.contains(hash)).map_err(kdm_error)
+}
+
 impl Session {
     /// Opens any file `kition_photo_io::import` supports as a new document; a `.kphoto` whose
     /// bundle holds a KDM replica opens it with [`Session::open_snapshot`] instead, keeping its

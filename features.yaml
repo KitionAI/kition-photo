@@ -1,6 +1,6 @@
 format: 1
 kit: photo
-updated: "2026-11-17"
+updated: "2026-11-20"
 gate_budget_s: 600
 protected: []
 features:
@@ -84,6 +84,14 @@ features:
     paths: [bindings/wasm/src/document_text.rs, bindings/wasm/src/lib.rs, kit.json]
     cases: [photo.document.text/type-layers]
     since: "2026-11-17"
+  - id: photo.document.identity
+    title: "A host reads the document id a .kphoto carries and forks a copied picture into a new document with no history; a PSD carries none (document.identity, document.fork; Kit Process Protocol 5.6)"
+    dimension: [platform, data-safety]
+    priority: P1
+    status: has
+    paths: [bindings/headless/src/main.rs, bindings/headless/tests/identity.rs, crates/engine/engine/src/kition_photo_bridge.rs, crates/formats/format/src/store.rs, crates/kdm/kdm-model/src/lib.rs, kit.json]
+    cases: [photo.document.identity/fork, photo.document.identity/no-replica]
+    since: "2026-11-20"
   - id: photo.layer.new-layer
     title: "A new layer survives saving to PSD and reopening"
     dimension: [function, conversion, data-safety]

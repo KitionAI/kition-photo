@@ -3,6 +3,16 @@
 Changes to Kition Photo, newest first. A version is the kit package version in `kit.json`;
 each package is published with a `package-v<version>` tag.
 
+## 0.1.2
+
+- A host tells a picture file's document id (`document.identity`) and makes a copied picture a
+  new document (`document.fork`), Kit Process Protocol section 5.6 (kition-sdk 6b4d471). A
+  `.kphoto` embeds its replica, so two copies of the same bundle were one document until now; a
+  fork keeps the layers, their ids and pixels, and carries a new id and none of the source's
+  history. A PSD or PSB embeds no replica, so it carries no id and forks as the same bytes.
+- The headless program speaks Kit Process Protocol version 1 (`headless.protocol` is
+  `kition-kit/1`), as hosts on kition-sdk from bb1b07b require.
+
 ## 0.1.1
 
 - `kit.json` declares the engine's editor state as `engine.editorState`, the same list as the

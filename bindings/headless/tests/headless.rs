@@ -1,4 +1,4 @@
-//! `kition-photo` as `kition-headless` serves it (`run_manifest_model`, with the automation engine's
+//! `kition-photo` as `kition-headless` serves it (`Headless::with_replica_port`, with the automation engine's
 //! gate): documents in the workspace, the agent's view of the commands, previews, the object model
 //! over the change exchange, and a sync room's replica methods with the blobs their changes need.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
