@@ -1,5 +1,5 @@
-import { TesseraIcons } from '@kition/kit-editor'
-import { useKitEditor } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { useKitEditor } from '@kition/sdk/editor'
 import { BrushTip } from './brushBars'
 import { Act, Check, Choice, FillSampling, Hint, Icon, Icons, Num, Sep, fill, useBar } from './fields'
 

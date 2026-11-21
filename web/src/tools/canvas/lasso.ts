@@ -1,4 +1,4 @@
-import type { KitPointer, KitTool } from '@kition/kit-editor'
+import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoToolId } from '../catalog'
 import { fasteningSpacing, selectionModeFor, toolParams } from '../options'
 import { NO_REPAINT, clickTool, dashed, tracePolyline, type KitGesture, type KitOverlay, type PhotoToolEnv } from './common'

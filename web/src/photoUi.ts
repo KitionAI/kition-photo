@@ -1,4 +1,4 @@
-import { defineKitUi } from '@kition/kit-editor'
+import { defineKitUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS } from './tools/catalog'
 import { PHOTO_MENUS } from './menus/catalog'
 import { isHiddenOnWeb } from './menus/hidden'

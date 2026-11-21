@@ -1,4 +1,4 @@
-import type { MenuRow } from '@kition/kit-editor'
+import type { MenuRow } from '@kition/sdk/editor'
 
 const HOST_FILE = 'The host opens, saves, and closes documents.'
 const HOST_OPENS = 'The host opens documents.'

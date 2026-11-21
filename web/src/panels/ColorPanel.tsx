@@ -1,4 +1,4 @@
-import { ColorPicker, KitElement, parseHex, rgbToHex, useKitEditor, type RGB } from '@kition/kit-editor'
+import { ColorPicker, KitElement, parseHex, rgbToHex, useKitEditor, type RGB } from '@kition/sdk/editor'
 import type { PhotoColorStore } from '../colors'
 import { useRemembered } from './PropsParts'
 

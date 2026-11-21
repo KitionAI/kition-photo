@@ -110,7 +110,7 @@ kition-photo/
 ├─ bindings/
 │  ├─ wasm/                    kition-photo-kit       the engine behind Kition's `KitDocument` contract, compiled to WebAssembly for the editor
 │  └─ headless/                kition-photo           the headless kit executable that agents drive
-├─ web/                        the kit's editor (React, on `@kition/kit-editor`)
+├─ web/                        the kit's editor (React, on `@kition/sdk/editor`)
 ├─ assets/                     bundled fonts and the spelling dictionary
 ├─ cases/                      gate cases (see `docs/quality.md`)
 └─ tools/
@@ -178,7 +178,7 @@ Each command is a `CommandSpec` (`crates/engine/engine/src/commands.rs`) with th
 
 ### 4.3 The editor
 
-- `web/` is a React app on `@kition/kit-editor`. It loads the engine as the WebAssembly module `kition_photo_kit` (class `PhotoDocument`, built from `bindings/wasm`; see `web/src/engine.ts` and `kit.json`).
+- `web/` is a React app on `@kition/sdk/editor`. It loads the engine as the WebAssembly module `kition_photo_kit` (class `PhotoDocument`, built from `bindings/wasm`; see `web/src/engine.ts` and `kit.json`).
 - Menus are in `web/src/menus/`, the options bar in `web/src/options/`, the canvas tools in `web/src/tools/canvas/`, and the panels in `web/src/panels/`.
 - The editor holds only view state. All document edits go through the engine's commands, by id.
 
@@ -350,7 +350,7 @@ psd/src/
 
 ## 11. Engine runtime model
 
-- **In the editor** the engine is the WebAssembly module built from `bindings/wasm`; the editor calls it through `@kition/kit-editor`.
+- **In the editor** the engine is the WebAssembly module built from `bindings/wasm`; the editor calls it through `@kition/sdk/editor`.
 - **In the headless program** (`bindings/headless`) the engine runs in-process behind the `automation` session.
 - `Session::execute` runs a command synchronously, including job-capable commands; `Session::start` runs those in the background (`crates/engine/engine/src/jobs.rs`).
 - **Cancellation:** `Session::cancel_job` sets a job's flag; the algorithms check it per tile, row band or iteration, and the result is discarded.
@@ -411,7 +411,7 @@ Open work is listed in [roadmap.md](roadmap.md), from the feature catalogue (`fe
 
 ## 16. Open decisions
 
-1. **Editor.** Decided: the React editor in `web/`, on `@kition/kit-editor`.
+1. **Editor.** Decided: the React editor in `web/`, on `@kition/sdk/editor`.
 2. **License.** Decided: Apache-2.0.
 3. **Project name.** Decided: `kition-photo`.
 4. **PSD crate.** Decided: our own, `kition-photo-psd` (section 8).

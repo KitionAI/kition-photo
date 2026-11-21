@@ -1,4 +1,4 @@
-import type { KitEngineInfo, RasterRect } from '@kition/kit-editor'
+import type { KitEngineInfo, RasterRect } from '@kition/sdk/editor'
 
 /** A layer's locks (Layers panel Lock buttons). */
 export type PhotoLocks = { transparency: boolean; pixels: boolean; position: boolean; artboard: boolean; all: boolean }

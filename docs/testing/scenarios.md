@@ -7,7 +7,7 @@ are written in the cases. No test regenerates an expected image from the current
 ## Run locally
 
 Required sibling checkout: `kition-fonts` (the CJK test face; or set `KITION_FONTS_DIR`).
-The web packages (`@kition/kit-*`, `@kition/tessera-icons`) come from npm, locked by
+The web packages (`@kition/sdk`, `@kition/tessera`) come from npm, locked by
 `web/pnpm-lock.yaml`; with `KITION_LINK=1`, `web/.pnpmfile.cjs` links `kition-sdk` and
 `kition-tessera` checkouts instead (next to this repository, or `KITION_SDK` and `KITION_TESSERA`).
 

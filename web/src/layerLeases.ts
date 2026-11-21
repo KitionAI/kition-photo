@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { KitEngine, KitLease, KitLeases, KitTool } from '@kition/kit-editor'
+import type { KitEngine, KitLease, KitLeases, KitTool } from '@kition/sdk/editor'
 
 /**
  * Painting a layer's pixels while someone else paints the same layer does not merge into anything

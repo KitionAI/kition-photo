@@ -4,7 +4,7 @@
  * command the layers mark); these name what each command does instead. Registered once, when the
  * editor loads (`main.tsx`); the menu ribbon draws them.
  */
-import { TesseraIcons, registerCommandIcons } from '@kition/kit-editor'
+import { TesseraIcons, registerCommandIcons } from '@kition/sdk/editor'
 
 registerCommandIcons({
   "edit.assignProfile": TesseraIcons.PaletteIcon,

@@ -1,4 +1,4 @@
-import type { KitTool } from '@kition/kit-editor'
+import type { KitTool } from '@kition/sdk/editor'
 import { shapeStyle } from '../options'
 import { HIT_RADIUS, NO_REPAINT, SOFT_EDGE, clickTool, dashed, ellipseOutline, lineDrag, rectArea, rectDrag, tracePath, tracePolyline, type PathData, type PathKnot, type PhotoToolEnv } from './common'
 

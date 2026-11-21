@@ -1,5 +1,5 @@
-import { TesseraIcons } from '@kition/kit-editor'
-import { useKitEditor } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { useKitEditor } from '@kition/sdk/editor'
 import { controlOf } from './controls'
 import { BlendMode, Check, Choice, FillSampling, Hint, Icons, Num, Opt, Sep, Toggle, fill, useBar } from './fields'
 

@@ -1,4 +1,4 @@
-import { useKitEditor } from '@kition/kit-editor'
+import { useKitEditor } from '@kition/sdk/editor'
 import { CharacterSection } from './TypeSections'
 import { useTypeStyle, type TypeTarget } from './useTypeStyle'
 

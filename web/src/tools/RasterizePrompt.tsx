@@ -1,5 +1,5 @@
-import { TesseraIcons } from '@kition/kit-editor'
-import { Button, Dialog, useKitEditor } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { Button, Dialog, useKitEditor } from '@kition/sdk/editor'
 
 const TriangleAlert = TesseraIcons.TriangleAlertIcon
 

@@ -3,7 +3,7 @@ id: regressions/issue-parity-node-imports
 feature: photo.paint.tools
 intent: >-
   The tool catalog loads under plain Node, so the parity and tool-options unit tests (`test:parity`)
-  run: it takes its icons from @kition/tessera-icons, not from kit-editor's entry, which imports
+  run: it takes its icons from @kition/tessera/icons, not from kit-editor's entry, which imports
   its own files without extensions and does not load under plain Node. Before, three of those
   test files stopped at ERR_MODULE_NOT_FOUND for kit-editor's `src/host` and checked nothing.
 layer: gate

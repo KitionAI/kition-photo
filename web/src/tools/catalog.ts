@@ -47,7 +47,7 @@ import {
   WandSparklesIcon as WandSparkles,
   ZoomInIcon as ZoomIn,
   type IconComponent,
-} from '@kition/tessera-icons/react'
+} from '@kition/tessera/icons/react'
 
 /** The `command` of a tool that only moves the view (Hand, Zoom) and runs no engine command. */
 export const VIEW = 'view'

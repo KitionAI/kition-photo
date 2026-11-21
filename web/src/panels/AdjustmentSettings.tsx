@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Checkbox, Choice, Hint, NumberField, toast, useEngineQuery, useHostPick, useKitEditor } from '@kition/kit-editor'
+import { Button, Checkbox, Choice, Hint, NumberField, toast, useEngineQuery, useHostPick, useKitEditor } from '@kition/sdk/editor'
 import type { PhotoLayer } from '../photo'
 import { useGestures } from './gesture'
 import { ColorSwatch, Row } from './PropsParts'

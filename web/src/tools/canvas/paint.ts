@@ -1,4 +1,4 @@
-import type { KitPointer, KitTool } from '@kition/kit-editor'
+import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoToolId } from '../catalog'
 import { selectionModeFor, toolParams } from '../options'
 import { NO_REPAINT, accentTint, clipToDocument, lineDrag, strokeArea, tracePolyline, type PhotoToolEnv } from './common'

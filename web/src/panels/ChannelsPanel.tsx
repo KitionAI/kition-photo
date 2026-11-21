@@ -1,6 +1,6 @@
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { ContextMenu, EyeButton, IconButton, KitElement, MenuItem, MenuSeparator, PanelFooter, RenameField, Thumbnail, deviceScale, useKitEditor, useUi, type ContextMenuPoint } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { ContextMenu, EyeButton, IconButton, KitElement, MenuItem, MenuSeparator, PanelFooter, RenameField, Thumbnail, deviceScale, useKitEditor, useUi, type ContextMenuPoint } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { loadOperation } from './LayersPanel'
 import { useChannelThumbnails, useThumbnails } from './thumbnails'

@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode, type RefObject } from 'react'
-import { DockArea, useKitEditor, type DockAreaHandle, type DockGroup, type KitCanvasHandle, type KitCanvasView, type KitUiItem } from '@kition/kit-editor'
+import { DockArea, useKitEditor, type DockAreaHandle, type DockGroup, type KitCanvasHandle, type KitCanvasView, type KitUiItem } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import type { PhotoColorStore } from '../colors'
 import type { ToolOptions } from '../tools/options'

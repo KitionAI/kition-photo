@@ -1,4 +1,4 @@
-import { Button, Dialog, useKitEditor, useUi } from '@kition/kit-editor'
+import { Button, Dialog, useKitEditor, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS } from '../tools/catalog'
 import { PHOTO_MENUS } from './catalog'
 import { isHiddenOnWeb } from './hidden'

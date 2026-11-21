@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import { BarSeparator, KitElement, useKitEditor } from '@kition/kit-editor'
+import { BarSeparator, KitElement, useKitEditor } from '@kition/sdk/editor'
 import { toolFor, type PhotoToolId } from '../tools/catalog'
 import type { BarProps } from './bar'
 import { BackgroundEraserBar, BrushBar, MagicEraserBar, MixerBar, PencilBar, RetouchBar } from './brushBars'

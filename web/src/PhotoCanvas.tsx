@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, type ComponentProps } from 'react'
-import { HAND_TOOL, KitDocumentCanvas, useKitEditor, useUi, type KitTool } from '@kition/kit-editor'
+import { HAND_TOOL, KitDocumentCanvas, useKitEditor, useUi, type KitTool } from '@kition/sdk/editor'
 import type { PhotoToolId } from './tools/catalog'
 
 type CanvasProps = ComponentProps<typeof KitDocumentCanvas> & { activeTool: PhotoToolId; tool: KitTool; onDenied: () => void }

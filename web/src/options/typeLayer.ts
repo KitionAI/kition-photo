@@ -1,4 +1,4 @@
-import { rgbToHex, useEngineQuery } from '@kition/kit-editor'
+import { rgbToHex, useEngineQuery } from '@kition/sdk/editor'
 import { typeLayerOf, type TypeInfo, type TypeLayer } from './typeStyle'
 
 /**

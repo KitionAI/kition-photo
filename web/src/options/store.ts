@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useKitStore } from '@kition/kit-editor'
+import { useKitStore } from '@kition/sdk/editor'
 import type { PhotoToolId } from '../tools/catalog'
 import { defaultOptions, mergeOptions, withOptions, type ToolOptions } from '../tools/options'
 

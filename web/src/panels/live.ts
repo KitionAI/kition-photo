@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { KitTool } from '@kition/kit-editor'
+import type { KitTool } from '@kition/sdk/editor'
 
 /**
  * Values that change with every pointer move or scroll (where the pointer is over the document,

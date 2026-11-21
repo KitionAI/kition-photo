@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
-import { ToolRail, useEngineQuery, useKitEditor, useKitStore, useUi } from '@kition/kit-editor'
+import { ToolRail, useEngineQuery, useKitEditor, useKitStore, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS, isToolKey, toolFor, toolForKey, type PhotoToolId } from './catalog'
 
 /** A key handler the editor calls before the shell's own: true when it took the key. */

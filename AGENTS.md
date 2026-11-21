@@ -34,7 +34,7 @@
 This repository is Kition's `kit.photo` kit. These rules come first; the guide below still
 applies to the engine.
 
-- The kit draws **its own editor**: `web/` is a React app on `@kition/kit-editor` (kition-sdk's
+- The kit draws **its own editor**: `web/` is a React app on `@kition/sdk/editor` (kition-sdk's
   shared kit UI library) with Kition Photo's menu bar, options bar, toolbox, canvas tools, and
   Properties and Layers panels; a host (Kition, or `web/dev.html` for development) shows it in an
   iframe and talks to it over the Kit UI protocol (`kition-kit-ui/1`, kition-sdk `docs/platform/reference/ui-protocol.md`). Style it only with the host's theme tokens and kit-editor components;
@@ -58,7 +58,7 @@ applies to the engine.
 # AGENTS.md: guide for AI agents and contributors
 
 Kition Photo's engine is written in **Rust only** (no JavaScript or TypeScript); it is compiled to
-WebAssembly for the kit's editor (`web/`, React on `@kition/kit-editor`) and to a native binary for the
+WebAssembly for the kit's editor (`web/`, React on `@kition/sdk/editor`) and to a native binary for the
 headless kit executable (`bindings/headless`). There is no native desktop UI and no browser build of
 its own: Kition draws the editor in the page (see "Kition kit rules" above). The product name is
 always written **Kition Photo** in user-facing text: UI, docs prose. Machine names stay lowercase:
@@ -94,7 +94,7 @@ crates/                        engine crates, grouped as crates/<group>/<name>
 bindings/
   wasm      kition-photo-kit                the engine behind Kition's KitDocument contract, compiled to WebAssembly
   headless  kition-photo                    the headless kit executable for Kition's agent (Kit Protocol)
-web/                           the kit's editor (React, on @kition/kit-editor)
+web/                           the kit's editor (React, on @kition/sdk/editor)
 examples/plugins/invert-rs     an example WebAssembly filter plug-in (not a workspace member)
 tools/
   xtask/                       cargo xtask layers | wasm | ci | stats | corpus | test-corpus | version | eval

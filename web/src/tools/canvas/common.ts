@@ -1,4 +1,4 @@
-import { dragRect, type KitPointer, type KitTool, type RasterRect } from '@kition/kit-editor'
+import { dragRect, type KitPointer, type KitTool, type RasterRect } from '@kition/sdk/editor'
 import type { ToolOptions } from '../options'
 
 /** An image area that needs no repaint: the change touched no pixels (selections, paths, notes). */

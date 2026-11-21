@@ -1,6 +1,6 @@
 import { useState, type MouseEvent } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { IconButton, KitElement, PanelFooter, useKitEditor } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { IconButton, KitElement, PanelFooter, useKitEditor } from '@kition/sdk/editor'
 import type { PhotoColorStore } from '../colors'
 
 const Plus = TesseraIcons.PlusIcon

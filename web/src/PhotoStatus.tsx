@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { BarSeparator, Hint, KitElement, NumberField, useKitEditor, type KitCanvasHandle } from '@kition/kit-editor'
+import { BarSeparator, Hint, KitElement, NumberField, useKitEditor, type KitCanvasHandle } from '@kition/sdk/editor'
 import type { PhotoInfo } from './photo'
 import type { PhotoToolId } from './tools/catalog'
 import { TOOL_HINTS } from './tools/hints'

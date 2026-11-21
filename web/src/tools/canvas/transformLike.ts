@@ -1,4 +1,4 @@
-import { dragRect, type KitPointer, type KitTool } from '@kition/kit-editor'
+import { dragRect, type KitPointer, type KitTool } from '@kition/sdk/editor'
 import { cropRatioSize, marqueeEnd, pixelArea, toolParams } from '../options'
 import { NO_REPAINT, dashed, lineDrag, rectDrag, type PhotoToolEnv } from './common'
 import { lassoGesture } from './lasso'

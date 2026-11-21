@@ -1,4 +1,4 @@
-import type { KitTool } from '@kition/kit-editor'
+import type { KitTool } from '@kition/sdk/editor'
 import { marqueeEnd, pixelArea, selectionModeFor, toolParams } from '../options'
 import { NO_REPAINT, ellipseOutline, rectDrag, type PhotoToolEnv } from './common'
 

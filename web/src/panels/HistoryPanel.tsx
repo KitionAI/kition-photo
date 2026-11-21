@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { type IconComponent } from '@kition/kit-editor'
-import { TesseraIcons } from '@kition/kit-editor'
-import { Button, Dialog, IconButton, KitElement, PanelFooter, Thumbnail, deviceScale, useKitEditor, useUi } from '@kition/kit-editor'
+import { type IconComponent } from '@kition/sdk/editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { Button, Dialog, IconButton, KitElement, PanelFooter, Thumbnail, deviceScale, useKitEditor, useUi } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { useThumbnails, type ThumbnailSource } from './thumbnails'
 

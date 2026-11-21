@@ -1,4 +1,4 @@
-import { dragRect, ZOOM_TOOL, type KitTool } from '@kition/kit-editor'
+import { dragRect, ZOOM_TOOL, type KitTool } from '@kition/sdk/editor'
 import { toolParams } from '../options'
 import { NO_REPAINT, dashed, lineDrag, type PhotoToolEnv } from './common'
 

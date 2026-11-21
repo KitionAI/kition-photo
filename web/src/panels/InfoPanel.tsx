@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useEngineQuery, useKitEditor } from '@kition/kit-editor'
+import { useEngineQuery, useKitEditor } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { useLive, type DocPoint, type Live } from './live'
 import { byteOf, cmykOf, formatLength, type RulerUnits } from './readouts'

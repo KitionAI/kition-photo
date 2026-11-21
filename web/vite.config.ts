@@ -11,8 +11,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    exclude: ['@kition/kit-editor', '@kition/kit-host', '@kition/kit-ui-protocol', '@kition/kit-dev-host'],
-    include: ['@kition/kit-editor > @kition/tessera-ui > use-sync-external-store/shim'],
+    exclude: ['@kition/sdk'],
+    include: ['@kition/sdk > use-sync-external-store/shim'],
   },
   worker: { format: 'es' },
   server: {

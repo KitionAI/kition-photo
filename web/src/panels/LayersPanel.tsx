@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { Choice, ContextMenu, IconButton, KitElement, MenuButton, MenuItem, MenuSeparator, NumberField, PanelFooter, deviceScale, useKitEditor, useLeases, useReadOnly, useUi, type ContextMenuPoint } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { Choice, ContextMenu, IconButton, KitElement, MenuButton, MenuItem, MenuSeparator, NumberField, PanelFooter, deviceScale, useKitEditor, useLeases, useReadOnly, useUi, type ContextMenuPoint } from '@kition/sdk/editor'
 import type { PhotoInfo, PhotoLayer, PhotoLocks } from '../photo'
 import { BLEND_MODES } from '../tools/options'
 import { hiddenReason } from '../menus/hidden'

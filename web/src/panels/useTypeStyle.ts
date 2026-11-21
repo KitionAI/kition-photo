@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { useKitEditor } from '@kition/kit-editor'
+import { useKitEditor } from '@kition/sdk/editor'
 import type { ToolOptions } from '../tools/options'
 import { styleForFamily, useTypeLayer } from '../options/typeLayer'
 import { TOOL_FIELDS, shownSize, typeEdit, typeValuesOf, type ToolField, type TypeEdit, type TypeLayer, type TypeValues } from '../options/typeStyle'

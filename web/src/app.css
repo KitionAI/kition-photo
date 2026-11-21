@@ -1,4 +1,4 @@
-/* The Photo editor's own layout; colors and shapes come from @kition/kit-editor's tokens. */
+/* The Photo editor's own layout; colors and shapes come from @kition/sdk/editor's tokens. */
 
 .photo-options {
   display: flex;

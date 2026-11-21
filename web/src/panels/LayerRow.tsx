@@ -1,6 +1,6 @@
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { EyeButton, KitElement, RenameField, Thumbnail } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { EyeButton, KitElement, RenameField, Thumbnail } from '@kition/sdk/editor'
 import type { PhotoLayer } from '../photo'
 import { ADJUSTMENTS } from './AdjustmentsPanel'
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
 import {
   IconButton,
   KitElement,
@@ -21,7 +21,7 @@ import {
   type RasterRect,
   type RasterView,
   type RasterViewportStats,
-} from '@kition/kit-editor'
+} from '@kition/sdk/editor'
 import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
 import { describe } from './photo'

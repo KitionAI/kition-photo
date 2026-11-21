@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { KitElement, useReadOnly } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { KitElement, useReadOnly } from '@kition/sdk/editor'
 
 const ChevronDown = TesseraIcons.ChevronDownIcon
 const ChevronRight = TesseraIcons.ChevronRightIcon

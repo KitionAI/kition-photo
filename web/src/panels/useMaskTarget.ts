@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { KitEngine, RasterRect } from '@kition/kit-editor'
+import type { KitEngine, RasterRect } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { disabledWithMaskTarget, maskTargetApplies, withMaskTarget, type MaskTargetCommands } from './maskTarget'
 

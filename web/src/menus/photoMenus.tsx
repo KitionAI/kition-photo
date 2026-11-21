@@ -1,5 +1,5 @@
 import { useLayoutEffect, type KeyboardEvent, type RefObject } from 'react'
-import { catalogTabs, shortcutMatches, useKitEditor, useUi, type FrameTab, type KitCommand, type MenuRow, type Phrases } from '@kition/kit-editor'
+import { catalogTabs, shortcutMatches, useKitEditor, useUi, type FrameTab, type KitCommand, type MenuRow, type Phrases } from '@kition/sdk/editor'
 import { PHOTO_MENUS } from './catalog'
 import { PhotoMenuRibbon } from './PhotoMenuRibbon'
 import { isHiddenOnWeb } from './hidden'

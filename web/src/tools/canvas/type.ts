@@ -1,4 +1,4 @@
-import type { KitTool } from '@kition/kit-editor'
+import type { KitTool } from '@kition/sdk/editor'
 import type { PhotoToolEnv } from './common'
 
 /** The Horizontal and Vertical Type tools: a click opens a field for the text there. */

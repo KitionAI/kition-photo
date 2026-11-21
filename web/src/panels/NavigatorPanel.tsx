@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from 'react'
-import { Button, KitElement, deviceScale, useKitEditor, type KitCanvasHandle, type KitCanvasView } from '@kition/kit-editor'
+import { Button, KitElement, deviceScale, useKitEditor, type KitCanvasHandle, type KitCanvasView } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { useLive, type Live } from './live'
 import { ZOOM_SLIDER, centredOn, retryDelay, navigatorImage, navigatorViewBox, sliderOfZoom, zoomOfSlider } from './readouts'

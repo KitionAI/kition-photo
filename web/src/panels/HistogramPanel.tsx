@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { Choice, Histogram, KitElement, useKitEditor } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { Choice, Histogram, KitElement, useKitEditor } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import { useRemembered } from './PropsParts'
 import { cacheLevel, histogramStats, retryDelay } from './readouts'

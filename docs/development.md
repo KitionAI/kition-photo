@@ -6,7 +6,7 @@
 | --- | --- |
 | `crates/` | The engine (Rust), grouped as `crates/{support,render,formats,engine,kdm}/<name>` |
 | `bindings/` | The engine's two outlets: `wasm` (the editor's engine) and `headless` (the kit executable `kition-photo` for agents) |
-| `web/` | The kit's editor (React, on kition-sdk's `@kition/kit-editor`) |
+| `web/` | The kit's editor (React, on kition-sdk's `@kition/sdk/editor`) |
 | `kit.json` | The kit manifest (KHP) |
 | `agent/` | The agent guide and checks (KHP) |
 | `conformance/` | KHP conformance fixtures and their expected previews |
@@ -42,14 +42,15 @@ cd web && pnpm install && pnpm engine && pnpm test:flow     # the kit's editor (
 
 Image code is slow at `opt-level 0`, so the workspace profile builds dependencies at `opt-level 2`.
 
-By default `pnpm install` in `web/` installs the published `@kition/*` packages from npm, at the
-versions the committed `web/pnpm-lock.yaml` pins, so the editor needs no other checkout. To work
-against local checkouts instead, run `KITION_LINK=1 pnpm install` in `web/`: `web/.pnpmfile.cjs`
-then links `@kition/kit-editor`, `@kition/kit-host`, `@kition/kit-ui-protocol` and
-`@kition/kit-dev-host` from the kition-sdk checkout and `@kition/tessera-icons` from the
-kition-tessera checkout next to this repository (or the ones `KITION_SDK` and `KITION_TESSERA`
-name), each one whose package is there. The linked install rewrites `web/pnpm-lock.yaml`; do not
-commit that lockfile.
+By default `pnpm install` in `web/` installs the published `@kition/sdk` and `@kition/tessera`
+packages from npm, at the versions the committed `web/pnpm-lock.yaml` pins, so the editor needs no
+other checkout. To work against local checkouts instead, run `KITION_LINK=1 pnpm install` in
+`web/`: `web/.pnpmfile.cjs` then links `@kition/sdk` from the kition-sdk checkout
+(`packages/sdk`) and `@kition/tessera` from the kition-tessera checkout (`packages/tessera`) next
+to this repository (or the ones `KITION_SDK` and `KITION_TESSERA` name), each one whose package is
+there. Both packages' `exports` point at their built `dist/`, so run `pnpm build` in those two
+package folders first. The linked install rewrites `web/pnpm-lock.yaml`; do not commit that
+lockfile.
 
 For independent editing scenarios, failure reports and CI setup, see
 [scenario testing](testing/scenarios.md). The test suite runs against Kition Photo alone.

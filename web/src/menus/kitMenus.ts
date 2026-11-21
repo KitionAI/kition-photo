@@ -1,4 +1,4 @@
-import type { MenuRow } from '@kition/kit-editor'
+import type { MenuRow } from '@kition/sdk/editor'
 
 /**
  * Kition's own menu rows (`kit:` commands, Kit UI ids `control:<name>`): the Window toggles, Type ›

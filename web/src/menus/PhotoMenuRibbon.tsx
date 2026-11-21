@@ -1,4 +1,4 @@
-import { catalogMenuTree, CommandButton, commandIcon, RibbonButton, RibbonGroup, RibbonStack, useKitEditor, useUi, type CatalogNode, type FrameTab, type MenuRow, type MenuTree } from '@kition/kit-editor'
+import { catalogMenuTree, CommandButton, commandIcon, RibbonButton, RibbonGroup, RibbonStack, useKitEditor, useUi, type CatalogNode, type FrameTab, type MenuRow, type MenuTree } from '@kition/sdk/editor'
 
 const rowId = (row: MenuRow) => row.command.startsWith('kit:') ? `control:${row.command.slice(4)}` : `command:${row.command}`
 const rowsIn = (nodes: readonly CatalogNode[]): MenuRow[] => nodes.flatMap((node) => node.kind === 'row' ? [node.row] : node.kind === 'submenu' ? rowsIn(node.children) : [])

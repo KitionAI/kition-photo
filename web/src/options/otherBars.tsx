@@ -1,5 +1,5 @@
-import { TesseraIcons } from '@kition/kit-editor'
-import { Choice as KitChoice, IconButton, MenuButton, MenuItem, MenuSeparator, NumberField, Segmented, parseHex, useEngineQuery, useKitEditor, useUi } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { Choice as KitChoice, IconButton, MenuButton, MenuItem, MenuSeparator, NumberField, Segmented, parseHex, useEngineQuery, useKitEditor, useUi } from '@kition/sdk/editor'
 import { CROP_RATIOS, cropRatioKey, cropRatioSize } from '../tools/options'
 import { useFontChoices } from './typeLayer'
 import { useTypeStyle } from '../panels/useTypeStyle'

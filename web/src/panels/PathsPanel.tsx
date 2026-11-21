@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { TesseraIcons } from '@kition/kit-editor'
-import { ContextMenu, IconButton, KitElement, MenuItem, MenuSeparator, PanelFooter, RenameField, useKitEditor, useUi, type ContextMenuPoint } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { ContextMenu, IconButton, KitElement, MenuItem, MenuSeparator, PanelFooter, RenameField, useKitEditor, useUi, type ContextMenuPoint } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import type { PathData } from '../tools/canvas'
 

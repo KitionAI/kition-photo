@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { chromium, webkit } from 'playwright'
 import { createServer } from 'vite'
-import { checkUiIds } from '@kition/kit-dev-host/check-ui-ids'
+import { checkUiIds } from '@kition/sdk/dev-host/check-ui-ids'
 import { TOOL_FIELDS } from '../src/tools/options.ts'
 
 const which = process.argv[2] ?? 'chromium'

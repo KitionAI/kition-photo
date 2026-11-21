@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { rgbToHex, useKitStore } from '@kition/kit-editor'
+import { rgbToHex, useKitStore } from '@kition/sdk/editor'
 
 /** A query as the editor's `query` runs it: a command answered as JSON, null when refused or failed. */
 type Query = <R>(id: string, params?: Record<string, unknown>) => Promise<R | null>

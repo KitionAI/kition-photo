@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { KitEngine } from '@kition/kit-editor'
+import type { KitEngine } from '@kition/sdk/editor'
 
 /**
  * Thumbnails the engine draws for the panels: a layer's content (`layerThumbnail`), its mask

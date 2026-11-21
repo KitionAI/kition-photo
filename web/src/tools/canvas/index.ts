@@ -1,4 +1,4 @@
-import { HAND_TOOL, type KitTool } from '@kition/kit-editor'
+import { HAND_TOOL, type KitTool } from '@kition/sdk/editor'
 import { toolFor, type PhotoToolId } from '../catalog'
 import { toolParams } from '../options'
 import type { PhotoToolEnv } from './common'

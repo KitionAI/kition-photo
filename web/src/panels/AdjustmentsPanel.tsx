@@ -1,6 +1,6 @@
-import { type IconComponent } from '@kition/kit-editor'
-import { TesseraIcons } from '@kition/kit-editor'
-import { IconButton, KitElement, useKitEditor, type KitUiItem } from '@kition/kit-editor'
+import { type IconComponent } from '@kition/sdk/editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { IconButton, KitElement, useKitEditor, type KitUiItem } from '@kition/sdk/editor'
 
 const Blend = TesseraIcons.BlendIcon
 const CircleDot = TesseraIcons.CircleDotIcon

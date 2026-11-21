@@ -1,5 +1,5 @@
-import { TesseraIcons } from '@kition/kit-editor'
-import { CommandButton, CommandItem, MenuSeparator, RibbonButton, RibbonGroup, RibbonMenu, RibbonStack, useKitEditor, useUi } from '@kition/kit-editor'
+import { TesseraIcons } from '@kition/sdk/editor'
+import { CommandButton, CommandItem, MenuSeparator, RibbonButton, RibbonGroup, RibbonMenu, RibbonStack, useKitEditor, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS, type PhotoToolId } from './tools/catalog'
 
 

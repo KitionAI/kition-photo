@@ -1,4 +1,4 @@
-import type { KitPointer, KitTool } from '@kition/kit-editor'
+import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoInfo, PhotoLayer } from '../photo'
 import type { PhotoToolId } from './catalog'
 

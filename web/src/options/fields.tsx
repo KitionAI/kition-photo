@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react'
-import { type IconComponent } from '@kition/kit-editor'
-import { BarSeparator, Button, Checkbox, Choice as KitChoice, Hint as KitHint, IconButton, KitElement, NumberField, Segmented, useKitEditor } from '@kition/kit-editor'
+import { type IconComponent } from '@kition/sdk/editor'
+import { BarSeparator, Button, Checkbox, Choice as KitChoice, Hint as KitHint, IconButton, KitElement, NumberField, Segmented, useKitEditor } from '@kition/sdk/editor'
 import { BLEND_MODES, RANGES, type OptionKey, type ToolOptions } from '../tools/options'
 import type { BarProps } from './bar'
 import { controlOf, optionId, type OptionControl } from './controls'

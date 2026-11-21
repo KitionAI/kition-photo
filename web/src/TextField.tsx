@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { useKitEditor, useUi, type KitCanvasView } from '@kition/kit-editor'
+import { useKitEditor, useUi, type KitCanvasView } from '@kition/sdk/editor'
 import { useLive, type Live } from './panels/live'
 
 /** What the Type bar's Commit and Cancel buttons do to the text being typed. */

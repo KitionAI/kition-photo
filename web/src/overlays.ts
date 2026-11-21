@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { KitChange, KitEngine, RasterDecoration, RasterRect } from '@kition/kit-editor'
+import type { KitChange, KitEngine, RasterDecoration, RasterRect } from '@kition/sdk/editor'
 import { drawCropProposal, drawPathOutline, drawSelectionAnts, drawTransformBox, type PathData } from './tools/canvas'
 
 export type CropArea = { x: number; y: number; width: number; height: number }
