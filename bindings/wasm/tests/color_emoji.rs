@@ -49,6 +49,10 @@ fn colour_emoji_draw_in_colour() {
         eprintln!("skipping: kition-fonts' fonts/noto-color-emoji/Noto-COLRv1.ttf is not here (set KITION_FONTS_DIR)");
         return;
     };
+    // As in the kit's process, which reads no font of the machine: a runner's installed
+    // "Noto Color Emoji" (Ubuntu's bitmap CBDT build) must not stand in for the font the host
+    // adds.
+    kition_photo_text::no_system_access();
     kition_photo_kit::add_font(&bytes);
     // 😀 🌈 🔥 in the emoji family: yellow faces with radial gradients, a rainbow, a flame.
     let drawn = pixels("\u{1F600}\u{1F308}\u{1F525}", json!({ "font": "Noto Color Emoji" }));

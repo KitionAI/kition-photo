@@ -1456,7 +1456,7 @@ fn document_to_psd_nested(doc: &Document, opts: &PsdExportOptions, depth: u32) -
         layer_mask_trailing: Vec::new(),
         image_data,
     };
-    crate::resource_keys::write(&mut file, doc);
+    crate::resource_keys::write(&mut file, doc, crate::resource_keys::Container::Psd);
     (file, ex.warnings)
 }
 

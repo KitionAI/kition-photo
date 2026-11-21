@@ -20,6 +20,7 @@ use kition_photo_psd::{ColorMode as PsdMode, Compression, Header, ImageData, Ima
 use crate::flat::{csample, encode_image, image_to_document, layout_for, single_layer, try_buffer};
 use crate::psd_export::{PsdExportOptions, document_to_psd_with};
 use crate::psd_import::psd_to_document;
+use crate::resource_keys::{self, Container};
 use crate::{ExportOptions, ExportResult, ImportResult, IoError};
 
 /// `true` when saving `doc` as TIFF writes layer data: anything beyond a single Background
@@ -107,6 +108,9 @@ pub(crate) fn import_layered(name: &str, img: &Image, layers: &[u8]) -> Result<I
     let file = isd.into_psd(header, resources, image_data);
     let (mut doc, w) = psd_to_document(&file);
     warnings.extend(w);
+    // The PSD importer checked the resource keys against a PSD's fingerprint, which this
+    // rebuilt model cannot match; the TIFF's own fingerprint decides.
+    resource_keys::read(&file, &mut doc, Container::Tiff);
     doc.name = name.to_string();
     if doc.icc_profile.is_none() {
         doc.icc_profile = img.icc.clone().map(Arc::new);
@@ -192,8 +196,9 @@ pub(crate) fn export_layered(doc: &Document, opts: &ExportOptions) -> Result<Exp
     // The PSD exporter renders the composite we need for the TIFF itself: unmatted (the TIFF
     // keeps straight alpha) and uncompressed (its planes are interleaved below).
     let psd_opts = PsdExportOptions { force_psb: opts.force_psb || big, merged_matte: false, merged_compression: Compression::Raw };
-    let (file, w) = document_to_psd_with(doc, &psd_opts);
+    let (mut file, w) = document_to_psd_with(doc, &psd_opts);
     warnings.extend(w);
+    resource_keys::write(&mut file, doc, Container::Tiff);
     let order = if codecs::tiff_writes_little_endian() { ByteOrder::Little } else { ByteOrder::Big };
     let (layers, w) = ImageSourceData::from_psd(&file).to_bytes(order)?;
     warnings.extend(w.into_iter().map(|w| format!("layer data: {w}")));

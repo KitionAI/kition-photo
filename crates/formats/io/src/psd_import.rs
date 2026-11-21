@@ -869,7 +869,7 @@ pub fn psd_to_document_with(file: &PsdFile, ctl: &kition_photo_raster::Interrupt
     if ctl.cancelled() {
         return None;
     }
-    crate::resource_keys::read(file, &mut doc);
+    crate::resource_keys::read(file, &mut doc, crate::resource_keys::Container::Psd);
     ctl.progress(1.0);
     Some((doc, cx.warnings))
 }

@@ -780,8 +780,9 @@ pub mod transcode {
                 b"lyid" | b"lspf" | b"lyvr" | b"sn2P" | b"vowv" => {
                     self.u32()?;
                 }
-                // Text-engine global data: a textual structure, no byte order.
-                b"Txt2" => self.rest()?,
+                // Text-engine global data: a textual structure, no byte order. `kRId` (Kition
+                // Photo's resource keys, kition-photo-io's `resource_keys`) is JSON text.
+                b"Txt2" | b"kRId" => self.rest()?,
                 b"lnsr" => {
                     self.key()?;
                 }
