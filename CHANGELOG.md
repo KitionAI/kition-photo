@@ -3,6 +3,10 @@
 Changes to Kition Photo, newest first. A version is the kit package version in `kit.json`;
 each package is published with a `package-v<version>` tag.
 
+## 0.1.3
+
+- The same kit as 0.1.2, built on kition-sdk 6672663 (the replica's undo passes over an undo group whose changes came to nothing): the 0.1.2 package was built on kition-sdk 6b4d471.
+
 ## 0.1.2
 
 - A host tells a picture file's document id (`document.identity`) and makes a copied picture a
