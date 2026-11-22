@@ -103,7 +103,7 @@ tools/
 
 **Layering is enforced** by `cargo xtask layers`. A crate may depend only on lower layers. `psd`, `codecs` and `cms` depend on nothing in the workspace. A new crate must be registered in `tools/xtask/src/layers.rs`.
 
-## 3. Golden rules
+## 3. Core rules
 
 ### Never crash (outranks feature work)
 

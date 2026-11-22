@@ -112,7 +112,7 @@ kition-photo/
 │  └─ headless/                kition-photo           the headless kit executable that agents drive
 ├─ web/                        the kit's editor (React, on `@kition/sdk/editor`)
 ├─ assets/                     bundled fonts and the spelling dictionary
-├─ cases/                      gate cases (see `docs/quality.md`)
+├─ cases/                      gating tests (see `docs/quality.md`)
 └─ tools/
    ├─ xtask/                   build tasks: layers, wasm, ci, stats, corpus, test-corpus, version, eval
    └─ scripts/                 corpus fetch wrapper, layered-TIFF fixture writer
@@ -377,7 +377,7 @@ psd/src/
 | Layer | What |
 |---|---|
 | Unit | per crate; algorithms against small hand-computed fixtures |
-| Gate cases | `cases/` (see [quality.md](quality.md)) |
+| Gating tests | `cases/` (see [quality.md](quality.md)) |
 | PSD | round-trip, composite oracle, fuzzing |
 | Engine | command-level tests: open fixture → dispatch commands → assert snapshot/render; action replays |
 | Editor | Playwright scenarios in `web/tests/` (see [testing/scenarios.md](testing/scenarios.md)) |
