@@ -265,12 +265,12 @@ fn raster_coverage_scales_and_depths_agree() {
     // Deterministic.
     let (_, again) = e.render(&t(12.0), 72.0, PixelFormat::RGBA8);
     assert_eq!(again.surface, r12.surface);
-    // Golden-ish total ink for "Ink" in Inter 12 px (±3%).
-    assert!((s12 - GOLDEN_INK_12).abs() / GOLDEN_INK_12 < 0.03, "ink sum {s12}");
+    // Expected total ink for "Ink" in Inter 12 px (±3%).
+    assert!((s12 - EXPECTED_INK_12).abs() / EXPECTED_INK_12 < 0.03, "ink sum {s12}");
 }
 
 /// Sum of alpha for "Ink", Inter Regular 12 px (measured once; guards rasterizer regressions).
-const GOLDEN_INK_12: f64 = 44.4;
+const EXPECTED_INK_12: f64 = 44.4;
 
 #[test]
 fn styles_change_pixels() {

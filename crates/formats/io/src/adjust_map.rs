@@ -963,7 +963,7 @@ mod tests {
 
     /// Hand-built blocks laid out per the Adobe spec (no file written by Photoshop involved).
     #[test]
-    fn color_balance_golden_block() {
+    fn color_balance_expected_block() {
         let mut d = i16s(&[-30, 20, 0, 10, -5, 100, 0, 0, -100]);
         d.extend([1, 0]);
         let a = parse(b"blnc", &d, None, Channels::Rgb);
@@ -977,7 +977,7 @@ mod tests {
     }
 
     #[test]
-    fn photo_filter_golden_blocks() {
+    fn photo_filter_expected_blocks() {
         // Version 2, RGB colour structure (65535, 32768, 0), density 40 %, preserve luminosity.
         let mut v2 = i16s(&[2, 0]);
         v2.extend([0xff, 0xff, 0x80, 0x00, 0, 0, 0, 0]);
@@ -1040,7 +1040,7 @@ mod tests {
     }
 
     #[test]
-    fn channel_mixer_golden_blocks() {
+    fn channel_mixer_expected_blocks() {
         // RGB: red = 100 % R + 20 % const; green = 50 % R + 50 % G; blue = -50 % G + 150 % B - 10 % const.
         let mut d = i16s(&[1, 0]);
         d.extend(i16s(&[100, 0, 0, 0, 20, 50, 50, 0, 0, 0, 0, -50, 150, 0, -10]));
@@ -1062,7 +1062,7 @@ mod tests {
     }
 
     #[test]
-    fn vibrance_golden_block() {
+    fn vibrance_expected_block() {
         let d = vdesc(Descriptor::new("null").with("vibrance", Value::Integer(-40)).with("Strt", Value::Integer(25)));
         assert_eq!(&d[..4], &[0, 0, 0, 16], "descriptor version 16");
         assert_eq!(parse(b"vibA", &d, None, Channels::Rgb), Adjustment::Vibrance { vibrance: -40.0, saturation: 25.0 });
@@ -1076,7 +1076,7 @@ mod tests {
     }
 
     #[test]
-    fn black_white_golden_block() {
+    fn black_white_expected_block() {
         let tint = Descriptor::new("RGBC").with("Rd  ", Value::Double(255.0)).with("Grn ", Value::Double(127.5)).with("Bl  ", Value::Double(0.0));
         let mut desc = Descriptor::new("null");
         for (k, w) in BW_KEYS.iter().zip([10, 20, 30, 40, 50, 60]) {
