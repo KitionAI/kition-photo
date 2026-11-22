@@ -429,7 +429,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "file.export.dataSetsAsFiles",
             "Data Sets as Files…",
             &["File", "Export"],
-            "{dir, format?:png, dataSets?[names], naming?:\"{name}|{index}|{document}\"} → {files,count}: apply each data set and export the flattened document",
+            "{dir, format?:png, dataSets?: [names], naming?:\"{name}|{index}|{document}\"} → {files,count}: apply each data set and export the flattened document",
             |s, p| export_as_files(s, p)
         ),
         CommandSpec {

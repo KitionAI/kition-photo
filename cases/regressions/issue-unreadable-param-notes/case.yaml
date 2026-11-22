@@ -1,0 +1,25 @@
+format: 1
+id: regressions/issue-unreadable-param-notes
+feature: photo.agent.recover
+intent: >-
+  Every entry of a command's parameter notation names a key the kit-schema reader reads, so the
+  command takes that parameter. Before, nine notations had entries it could not read (keys joined
+  by `|` without types, `;`-separated notes, a default with commas in it, a key without `:` before
+  its type), so the schema lacked the parameter and a call that passed it was refused as unknown:
+  select.transformSelection (the warp keys), file.export.dataSetsAsFiles (`dataSets`),
+  brush.presets.move, file.export.saveForWebLegacy (`width`, `height`), edit.checkSpelling
+  (`replace`), slice.new (the slice options), swatches.export, image.applyImage (the flat source
+  and mask keys) and type.setStyle (`align`).
+layer: gate
+source:
+  kind: issue
+  from: kition-sdk check_commands reports notation entries with no key (e1c9598)
+  license: owned
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: commands, filter: every_notation_entry_names_a_key }
+  - cargo-test: { package: kition-photo-kit, test: commands, filter: keys_of_once_unreadable_entries_are_parameters }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-22"

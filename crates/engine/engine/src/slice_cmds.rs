@@ -504,7 +504,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "slice.new",
             "Slice Tool",
             &[],
-            r##"{"rect":[x,y,w,h] | "x","y","width","height", plus Slice Options ("name","kind":"image|noImage|table","url","target","message","alt","cellText","cellTextIsHtml","background":"none|#rrggbb")?} → {slice, number}"##,
+            r##"{"rect":[x,y,w,h]? | "x":px? (with y, width, height instead of rect),"y":px?,"width":px?,"height":px?,"name"?,"kind":"image|noImage|table"?,"url"?,"target"?,"message"?,"alt"?,"cellText"?,"cellTextIsHtml"?,"horizontalAlign":0..4?,"verticalAlign":0..4?,"background":str? (none or #rrggbb),"outsets":[t,l,b,r]?} → {slice, number}"##,
             unlocked,
             new_slice
         ),

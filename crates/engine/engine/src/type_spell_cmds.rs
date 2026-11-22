@@ -238,7 +238,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Check Spelling…",
             menu: &["Edit"],
             shortcut: None,
-            params: r#"{"action":"list|change|changeAll|addToDictionary|removeFromDictionary|suggest"="list","allLayers":bool=true,"layer":id? (check one layer),"ignore":[word]? (Ignore All for this check),"suggestions":n=5; change: "layer","start","end" (chars),"word"? (verified),"replace"; changeAll: "word","replace"; addToDictionary/removeFromDictionary/suggest: "word"} → list: {"misspellings":[{"layer","start","end","word","suggestions"}],"count"}"#,
+            params: r#"{"action":"list|change|changeAll|addToDictionary|removeFromDictionary|suggest"="list","allLayers":bool=true,"layer":id? (check one layer),"ignore":[word]? (Ignore All for this check),"suggestions":n=5,"start":n? (change: first char),"end":n? (change: the char after the last),"word":str? (change: verified; changeAll, addToDictionary, removeFromDictionary, suggest: the word),"replace":str? (change, changeAll: the new text)} → list: {"misspellings":[{"layer","start","end","word","suggestions"}],"count"}"#,
             enabled: has_type,
             journal: true,
             run: check_spelling,

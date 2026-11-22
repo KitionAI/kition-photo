@@ -32,7 +32,6 @@ const READS: &[(&str, &[Read])] = &[
     ("edit.transform.splitWarpCrosswise", &[("style", "string", "The warp style to split.")]),
     ("edit.transform.warpGrid", &[("grid", "json", "The warp grid size or its points.")]),
     ("file.export.renderVideo", &[("format", "string", "The frames' image format; \"png\" by default.")]),
-    ("file.export.saveForWebLegacy", &[("percent", "number", "Scale, in percent of the image size.")]),
     ("file.printOneCopy", &[("dryRun", "boolean", "Lay the page out without printing.")]),
     ("filter.other.offset", &[("layer", "integer", "The layer to offset; the active layer by default.")]),
     ("image.analysis.recordMeasurements", &[("dateTime", "string", "The measurement's time (ISO 8601); now by default.")]),
