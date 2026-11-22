@@ -130,11 +130,25 @@ People trust Kition Photo with their work, and a crash loses it. A malformed fil
 
 ## 4. Before you finish a task
 
+On this machine run only the fast checks:
+
 ```sh
-cargo test -p <crates you touched>
-cargo clippy -p <crates> --all-targets -- -D warnings
-cargo xtask layers
+cargo fmt --all -- --check
+cargo check -p <crates you touched> --all-targets
 cargo xtask wasm            # if you touched L0–L5 or kition-photo-kit
+cd web && pnpm typecheck    # if you touched web/
+```
+
+The full checks run in the kit's CI run on GitHub (`.github/workflows/ci.yml`, which calls
+Kition's reusable kit CI): clippy, `cargo test --workspace`, `cargo xtask ci` (fmt + clippy +
+tests + layers + wasm) and every `test:*` script of `web/`. A task is done when the CI run of
+HEAD passes and HEAD is on `origin/main` (Kition's `scripts/kit-ci.sh` `push`, `wait`, `land`).
+Add no other workflows, and do not start the Package workflow (`.github/workflows/package.yml`):
+releasing is the owner's step.
+
+Two checks are not part of the CI run; run them yourself when they apply:
+
+```sh
 cargo test -p kition-photo-engine --test panic_hunt -- --ignored   # if you added/changed commands: no panic on adversarial input (Rule 8)
 cargo xtask test-corpus     # if you touched psd, io, codecs, compose, text or format (or: --changed decides)
 ```
