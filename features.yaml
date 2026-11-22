@@ -656,7 +656,7 @@ features:
     cases: [photo.editor.display-modes/mode-smoke, regressions/issue-focus-escape-drag]
     since: "2026-11-17"
   - id: photo.editor.canvas-scroll
-    title: "Scrolling the canvas stops a margin past the picture; a view larger than the picture and its margin keeps the picture centred"
+    title: "Scrolling the canvas stops a margin past the picture; a picture smaller than the view may be moved but stays whole inside it"
     dimension: [function]
     priority: P1
     status: has

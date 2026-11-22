@@ -115,7 +115,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [zoom, setZoom] = useState<number | null>(null)
   const [stats, setStats] = useState<RasterViewportStats | null>(null)
   // Scrolling stops a margin past the picture: the view never leaves it for empty canvas.
-  const panBounds = useMemo(() => picturePanBounds(state?.width ?? 0, state?.height ?? 0, zoom), [state?.width, state?.height, zoom])
+  const [shown, setShown] = useState<{ zoom: number; width: number; height: number } | null>(null)
+  const panBounds = useMemo(() => picturePanBounds(state?.width ?? 0, state?.height ?? 0, shown), [state?.width, state?.height, shown])
   const [windows, setWindows] = useState(DEFAULT_WINDOWS)
   const [help, setHelp] = useState<HelpTopic | null>(null)
   const [moving, setMoving] = useState(false)
@@ -521,6 +522,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             animated={overlays.animated}
             onView={(next, nextStats) => {
               setZoom(next.zoom)
+              setShown((before) => (before && before.zoom === next.zoom && before.width === next.width && before.height === next.height ? before : { zoom: next.zoom, width: next.width, height: next.height }))
               view.set(next)
               // The view, for the scroll test's checks (zoom and the document point at the top left).
               workspace.current?.setAttribute('data-view', `${next.zoom} ${next.x} ${next.y}`)

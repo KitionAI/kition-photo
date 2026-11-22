@@ -200,11 +200,21 @@ export function describe(info: KitEngineInfo): PhotoInfo {
 export const SCROLL_MARGIN = 96
 
 /**
- * Where scrolling stops: the picture and `SCROLL_MARGIN` screen pixels of canvas around it, in
- * document pixels at `zoom`. A view larger than that keeps the picture centred.
+ * Where scrolling stops, in document pixels, for a view `shown` screen pixels large at `zoom`:
+ * along each axis, a picture longer than the view (with `SCROLL_MARGIN` screen pixels of canvas
+ * at each end) keeps the view inside it, and a shorter one stays whole inside the view, where it
+ * may be moved. So the view never shows more empty canvas than it must.
  */
-export function picturePanBounds(width: number, height: number, zoom: number | null): RasterRect | null {
-  if (!zoom || !(width > 0) || !(height > 0)) return null
-  const margin = SCROLL_MARGIN / zoom
-  return { x0: -margin, y0: -margin, x1: width + margin, y1: height + margin }
+export function picturePanBounds(width: number, height: number, shown: { zoom: number; width: number; height: number } | null): RasterRect | null {
+  if (!shown || !(shown.zoom > 0) || !(width > 0) || !(height > 0)) return null
+  const margin = SCROLL_MARGIN / shown.zoom
+  const axis = (length: number, extent: number) => {
+    // Shorter than the view: the view's start runs from where the picture's far margin meets the
+    // view's far edge to where its near margin meets the near edge.
+    if (extent > length + margin * 2) return [length + margin - extent, extent - margin]
+    return [-margin, length + margin]
+  }
+  const [x0, x1] = axis(width, shown.width / shown.zoom)
+  const [y0, y1] = axis(height, shown.height / shown.zoom)
+  return { x0, y0, x1, y1 }
 }

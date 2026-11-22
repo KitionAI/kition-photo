@@ -1,7 +1,7 @@
 // Scrolling stops a margin past the picture: node tests/scroll.mjs [chromium|webkit].
-// The wheel must not move the view more than 96 screen pixels past the picture on any
-// side, at the opening zoom or zoomed in; a view larger than the picture and its margin keeps the
-// picture centred.
+// Zoomed in, the wheel must not move the view more than 96 screen pixels past the picture on any
+// side; a picture smaller than the view (the opening zoom) may be moved, but it and its margin
+// stay whole inside the view.
 import assert from 'node:assert/strict'
 import { chromium, webkit } from 'playwright'
 import { createServer } from 'vite'
@@ -55,7 +55,8 @@ try {
   const range = (shown, length, zoom) => {
     const extent = shown / zoom
     const margin = MARGIN / zoom
-    return extent >= length + margin * 2 ? [(length - extent) / 2, (length - extent) / 2] : [-margin, length + margin - extent]
+    // A picture shorter than the view stays whole inside it, with its margin; a longer one keeps the view inside it.
+    return extent >= length + margin * 2 ? [length + margin - extent, -margin] : [-margin, length + margin - extent]
   }
   const check = async (when) => {
     const edges = [
@@ -68,7 +69,7 @@ try {
       const view = await wheel(dx, dy)
       const want = range(axis === 'x' ? box.width : box.height, axis === 'x' ? picture.width : picture.height, view.zoom)[end]
       // Within two screen pixels.
-      assert(Math.abs(view[axis] - want) * view.zoom <= 2, `${when}, wheel ${name}: the view stops ${MARGIN} px past the picture (${axis} ${view[axis]}, want ${want}; picture ${picture.width} x ${picture.height}, zoom ${view.zoom})`)
+      assert(Math.abs(view[axis] - want) * view.zoom <= 2, `${when}, wheel ${name}: the view stops with ${MARGIN} px of canvas past the picture's edge (${axis} ${view[axis]}, want ${want}; picture ${picture.width} x ${picture.height}, zoom ${view.zoom})`)
     }
   }
 
