@@ -195,3 +195,16 @@ export function describe(info: KitEngineInfo): PhotoInfo {
     historyRedo: inspected.historyRedo ?? [],
   }
 }
+
+/** How far past the picture's edge the view scrolls, in screen pixels. */
+export const SCROLL_MARGIN = 96
+
+/**
+ * Where scrolling stops: the picture and `SCROLL_MARGIN` screen pixels of canvas around it, in
+ * document pixels at `zoom`. A view larger than that keeps the picture centred.
+ */
+export function picturePanBounds(width: number, height: number, zoom: number | null): RasterRect | null {
+  if (!zoom || !(width > 0) || !(height > 0)) return null
+  const margin = SCROLL_MARGIN / zoom
+  return { x0: -margin, y0: -margin, x1: width + margin, y1: height + margin }
+}

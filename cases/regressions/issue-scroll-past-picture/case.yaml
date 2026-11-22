@@ -1,0 +1,25 @@
+format: 1
+id: regressions/issue-scroll-past-picture
+feature: photo.editor.canvas-scroll
+intent: >-
+  The wheel scrolls the canvas only a margin (96 screen pixels) past the picture: on every side the view stops
+  there, at the opening zoom and zoomed in, and a view larger than the picture and its margin keeps the picture
+  centred. Before, the editor gave the canvas no scroll limits, so the view moved any distance past the picture
+  and showed only empty canvas (owner report, 2026-11-22).
+layer: gate
+source:
+  kind: probe
+  from: web/tests/scroll.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/scroll.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 120
+since: "2026-11-22"

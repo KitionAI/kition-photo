@@ -24,7 +24,7 @@ import {
 } from '@kition/sdk/editor'
 import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
-import { describe } from './photo'
+import { describe, picturePanBounds } from './photo'
 import { photoCanvasTool, type PendingClicks } from './tools/canvas'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
@@ -114,6 +114,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [cloneSource, setCloneSource] = useState<{ x: number; y: number } | null>(null)
   const [zoom, setZoom] = useState<number | null>(null)
   const [stats, setStats] = useState<RasterViewportStats | null>(null)
+  // Scrolling stops a margin past the picture: the view never leaves it for empty canvas.
+  const panBounds = useMemo(() => picturePanBounds(state?.width ?? 0, state?.height ?? 0, zoom), [state?.width, state?.height, zoom])
   const [windows, setWindows] = useState(DEFAULT_WINDOWS)
   const [help, setHelp] = useState<HelpTopic | null>(null)
   const [moving, setMoving] = useState(false)
@@ -507,18 +509,21 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         }
       >
         <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} />
-        <div className="kui-row" ref={workspace} tabIndex={-1}>
+        <div className="kui-row" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
           <PhotoCanvas
             activeTool={tool}
             onDenied={cancelToolDrafts}
             canvas={canvas}
             viewMemory={viewMemory}
+            panBounds={panBounds}
             tool={trackedTool}
             decorate={overlays.decorate}
             animated={overlays.animated}
             onView={(next, nextStats) => {
               setZoom(next.zoom)
               view.set(next)
+              // The view, for the scroll test's checks (zoom and the document point at the top left).
+              workspace.current?.setAttribute('data-view', `${next.zoom} ${next.x} ${next.y}`)
               if (nextStats) setStats(nextStats)
             }}
           >
