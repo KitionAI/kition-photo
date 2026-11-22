@@ -656,11 +656,11 @@ features:
     cases: [photo.editor.display-modes/mode-smoke, regressions/issue-focus-escape-drag]
     since: "2026-11-17"
   - id: photo.editor.canvas-scroll
-    title: "Scrolling the canvas stops a margin past the picture; a picture smaller than the view may be moved but stays whole inside it"
+    title: "Scrolling the canvas stops a margin past the picture; a picture smaller than the view may be moved but stays whole inside it; a scrollbar is over the canvas's right or bottom edge only while the picture and its margin are longer than the view there"
     dimension: [function]
     priority: P1
     status: has
-    paths: [web/src/App.tsx, web/src/photo.ts, web/tests/scroll.mjs]
-    gap: "The margin is 96 screen pixels on every side; there are no scrollbars."
+    paths: [web/src/App.tsx, web/src/photo.ts, web/src/CanvasScrollbars.tsx, web/tests/scroll.mjs]
+    gap: "The margin is 96 screen pixels on every side."
     cases: [regressions/issue-scroll-past-picture]
     since: "2026-11-22"

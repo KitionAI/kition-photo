@@ -75,6 +75,8 @@ const enUS: Catalog = {
   "character.kerningPresets": "Kerning presets",
   "character.styles": "Text styles",
   "homeTab": "Home",
+  "verticalScroll": "Vertical scroll",
+  "horizontalScroll": "Horizontal scroll",
   "home.paint": "Paint",
   "home.newLayer": "New Layer",
 }
@@ -153,6 +155,8 @@ const zhCN: Catalog = {
   "character.kerningPresets": "字偶距预设",
   "character.styles": "文字样式",
   "homeTab": "开始",
+  "verticalScroll": "纵向滚动",
+  "horizontalScroll": "横向滚动",
   "home.paint": "绘画",
   "home.newLayer": "新建图层",
 }

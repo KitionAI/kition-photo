@@ -24,7 +24,8 @@ import {
 } from '@kition/sdk/editor'
 import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
-import { describe, picturePanBounds } from './photo'
+import { describe, pictureArea, picturePanBounds } from './photo'
+import { CanvasScrollbars } from './CanvasScrollbars'
 import { photoCanvasTool, type PendingClicks } from './tools/canvas'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
@@ -530,6 +531,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             }}
           >
             {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={options.fontSize} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
+            {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
+            <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} />
           </PhotoCanvas>
         </div>
         {rasterize ? (

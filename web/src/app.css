@@ -1270,3 +1270,34 @@ select.kui-field.photo-kerning-presets {
   flex: none;
   color: var(--kit-danger);
 }
+
+/* The canvas's scrollbars, over its right and bottom edges; there only while the content is longer than the view. */
+.photo-scrollbars {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.photo-scrollbars > .kui-scrollbar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.photo-scrollbars > .kui-scrollbar[aria-orientation='horizontal'] {
+  top: auto;
+  left: 0;
+}
+
+/* Both: each stops short of the corner they share. */
+.photo-scrollbars[data-both] > .kui-scrollbar[aria-orientation='vertical'] {
+  bottom: 14px;
+}
+
+.photo-scrollbars[data-both] > .kui-scrollbar[aria-orientation='horizontal'] {
+  right: 14px;
+}

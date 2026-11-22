@@ -1,7 +1,8 @@
 // Scrolling stops a margin past the picture: node tests/scroll.mjs [chromium|webkit].
 // Zoomed in, the wheel must not move the view more than 96 screen pixels past the picture on any
 // side; a picture smaller than the view (the opening zoom) may be moved, but it and its margin
-// stay whole inside the view.
+// stay whole inside the view. A scrollbar is over the canvas's right or bottom edge only while the
+// picture and its margin are longer than the view there.
 import assert from 'node:assert/strict'
 import { chromium, webkit } from 'playwright'
 import { createServer } from 'vite'
@@ -73,7 +74,29 @@ try {
     }
   }
 
+  // The content the scrollbars measure: the picture and its margin.
+  const content = { start: (zoom) => -MARGIN / zoom, width: (zoom) => picture.width + (MARGIN * 2) / zoom, height: (zoom) => picture.height + (MARGIN * 2) / zoom }
+  /**
+   * The scrollbars: one along an axis only while the content (the picture and its margin) is longer than
+   * the view there, at the view's position in it.
+   */
+  const bars = async (when) => {
+    const view = await settled()
+    for (const [axis, orientation, shown, length] of [['x', 'horizontal', box.width, content.width(view.zoom)], ['y', 'vertical', box.height, content.height(view.zoom)]]) {
+      const bar = kit.getByTestId('photo-scrollbars').locator(`[role="scrollbar"][aria-orientation="${orientation}"]`)
+      const over = (length - shown / view.zoom) * view.zoom
+      // Within two screen pixels of fitting, either is right.
+      if (Math.abs(over) <= 2) continue
+      assert.equal(await bar.count(), over > 0 ? 1 : 0, `${when}: the ${orientation} scrollbar is there only while the content is longer than the view (content ${length}, view ${shown / view.zoom}, zoom ${view.zoom})`)
+      if (over > 0) {
+        const at = Number(await bar.getAttribute('aria-valuenow'))
+        assert(Math.abs(at - (view[axis] - content.start(view.zoom))) * view.zoom <= 2, `${when}: the ${orientation} scrollbar is at the view's position (${at}, view ${axis} ${view[axis]})`)
+      }
+    }
+  }
+
   await check('at the opening zoom')
+  await bars('at the opening zoom')
 
   // Zoomed in until the picture is well larger than the view on both axes: now there is room to scroll.
   const large = (zoom) => picture.width * zoom > box.width * 1.5 && picture.height * zoom > box.height * 1.5
@@ -87,6 +110,20 @@ try {
   const zoomed = await settled()
   assert(large(zoomed.zoom), `zoomed in: ${JSON.stringify(zoomed)}`)
   await check('zoomed in')
+
+  // Zoomed in, both are there, and each moves the view: End goes to the content's far edge, Home to its near one.
+  await bars('zoomed in')
+  for (const [axis, orientation, shown, length] of [['x', 'horizontal', box.width, content.width], ['y', 'vertical', box.height, content.height]]) {
+    const bar = kit.getByTestId('photo-scrollbars').locator(`[role="scrollbar"][aria-orientation="${orientation}"]`)
+    assert.equal(await bar.count(), 1, `zoomed in: the ${orientation} scrollbar is there`)
+    await bar.focus()
+    await page.keyboard.press('End')
+    let view = await settled()
+    assert(Math.abs(view[axis] - (content.start(view.zoom) + length(view.zoom) - shown / view.zoom)) * view.zoom <= 2, `End on the ${orientation} scrollbar shows the content's far edge (${axis} ${view[axis]})`)
+    await page.keyboard.press('Home')
+    view = await settled()
+    assert(Math.abs(view[axis] - content.start(view.zoom)) * view.zoom <= 2, `Home on the ${orientation} scrollbar shows the content's near edge (${axis} ${view[axis]})`)
+  }
 
   assert.deepEqual(errors, [], 'no page errors')
   console.log(`PASS ${which}: scrolling stops ${MARGIN} px past the picture`)

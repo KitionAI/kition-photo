@@ -4,7 +4,8 @@ feature: photo.editor.canvas-scroll
 intent: >-
   The wheel scrolls the canvas only a margin (96 screen pixels) past the picture: zoomed in, the view stops there
   on every side, and a picture smaller than the view may be moved but stays whole inside it, with its margin.
-  Before, the editor gave the canvas no scroll limits, so the view moved any distance past the picture
+  A scrollbar is over the canvas's right or bottom edge only while the picture and its margin are longer than the
+  view there, at the view's position, and moves the view (Home, End). Before, the editor gave the canvas no scroll limits, so the view moved any distance past the picture
   and showed only empty canvas (owner report, 2026-11-22).
 layer: gate
 source:

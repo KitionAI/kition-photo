@@ -218,3 +218,10 @@ export function picturePanBounds(width: number, height: number, shown: { zoom: n
   const [y0, y1] = axis(height, shown.height / shown.zoom)
   return { x0, y0, x1, y1 }
 }
+
+/** The picture and `SCROLL_MARGIN` screen pixels of canvas around it, in document pixels at `zoom`: what the scrollbars measure. */
+export function pictureArea(width: number, height: number, zoom: number): RasterRect | null {
+  if (!(zoom > 0) || !(width > 0) || !(height > 0)) return null
+  const margin = SCROLL_MARGIN / zoom
+  return { x0: -margin, y0: -margin, x1: width + margin, y1: height + margin }
+}
