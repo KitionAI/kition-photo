@@ -13,28 +13,6 @@ fn saved(bytes: &[u8]) -> Value {
     for field in ["id", "selection"] {
         doc.as_object_mut().unwrap().remove(field);
     }
-    // A new link group's id is drawn at random (so concurrent links cannot collide): what is
-    // compared is which layers share one, numbered by first appearance.
-    fn groups(value: &mut Value, seen: &mut Vec<Value>) {
-        match value {
-            Value::Object(map) => {
-                for (key, item) in map.iter_mut() {
-                    if key == "link_group" && !item.is_null() {
-                        let at = seen.iter().position(|g| g == item).unwrap_or_else(|| {
-                            seen.push(item.clone());
-                            seen.len() - 1
-                        });
-                        *item = json!(at);
-                    } else {
-                        groups(item, seen);
-                    }
-                }
-            }
-            Value::Array(items) => items.iter_mut().for_each(|item| groups(item, seen)),
-            _ => {}
-        }
-    }
-    groups(&mut doc, &mut Vec::new());
     doc
 }
 

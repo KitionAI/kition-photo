@@ -419,12 +419,19 @@ impl KitDocument for PhotoDocument {
                 .and_then(|v| v.values.get("channelContents"))
                 .and_then(|now| resource_rests::channel_covered(params.get("channel").unwrap_or(&Value::Null), true, objects, now)));
         }
-        if command == "view.moveGuide" {
+        if matches!(command, "notes.set" | "layerComp.rename" | "path.rename" | "view.moveGuide") {
             let state = self.state()?;
             let Some(kdm) = state.kdm() else { return Ok(None) };
             let id = kition_kit::kdm::ObjectId::from_string(place::IMAGE.to_owned());
             let guides: serde_json::Map<String, Value> = kdm.replica().map_entries(&id, "guides").map_err(|e| e.to_string())?.into_iter().collect();
-            return Ok(resource_rests::indexed_covered(command, params, objects, &json!({ "guides": guides })));
+            let mut contents = self
+                .derived_values(&[json!(place::IMAGE)], &["noteContents".to_owned(), "compContents".to_owned(), "pathContents".to_owned()])?
+                .into_iter()
+                .next()
+                .map(|values| values.values)
+                .unwrap_or_default();
+            contents.insert("guides".to_owned(), Value::Object(guides));
+            return Ok(resource_rests::address_covered(command, params, objects, &Value::Object(contents)));
         }
         let answer = point::covered(self, command, params, objects, history)?;
         resource_rests::sources_covered(self, command, params, objects, answer)

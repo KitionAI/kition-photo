@@ -26,7 +26,11 @@
         "channelContents": { "premiseOnly": true, "description": "Alpha/spot channel names and surface content fingerprints, in channel order. Holds channel input pixels across external file reloads, including owned surfaces without tool ids." },
         "canvasCoordinates": { "premiseOnly": true, "description": "Compact private snapshot of canvas size and per-layer pixels for comparing the coordinate frame of a bounded write." },
         "linkGroups": { "premiseOnly": true, "description": "Layer ids and their link group memberships. A linked move holds membership as well as the content of the layers it moves." },
-        "inheritedLocks": { "premiseOnly": true, "description": "Layer ids whose ancestor locks add to their own locks, with the effective lock values. A pixel write holds this aggregate input to detect locking and reparenting through the Image's owned layer tree." }
+        "inheritedLocks": { "premiseOnly": true, "description": "Layer ids whose ancestor locks add to their own locks, with the effective lock values. A pixel write holds this aggregate input to detect locking and reparenting through the Image's owned layer tree." },
+        "noteContents": { "premiseOnly": true, "description": "The notes in order, each with its key and its author, color, text, position, popup and modification date. A write to the note at an index holds the note that index named at basis." },
+        "compContents": { "premiseOnly": true, "description": "The layer comps in order, each with its id, name and comment. A write to a comp by id or name holds the comp it named at basis." },
+        "pathContents": { "premiseOnly": true, "description": "The saved paths in order, each with its key and name. A write to a path by name holds the path it named at basis." },
+        "patternContents": { "premiseOnly": true, "description": "The patterns in order, each with its key, name, size and a digest of its pixels. A write that uses a stored pattern by id or name holds the pattern it named at basis." }
       }
     },
     "Layer": {

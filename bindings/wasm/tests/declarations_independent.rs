@@ -3910,12 +3910,7 @@ const ROWS: &[Row] = &[
     r("path.style.pasteStroke", r##"{"layer": "$SH"}"##, "active", &[("$SH", "*", true)]),
     // path.rename: layer none; editor -; reads image.paths
     // was held less: image: docState.clipping_path not held
-    r(
-        "path.rename",
-        r##"{"name": "Path 1", "to": "Outline"}"##,
-        "",
-        &[("$PATH", "name", false), ("image", "docState.clipping_path,paths[name=\"Outline\"].name", false)],
-    ),
+    r("path.rename", r##"{"name": "Path 1", "to": "Outline"}"##, "", &[("image", "docState.clipping_path,~pathContents[name=\"Path 1\"].name", false)]),
     // was held less: image: docState.clipping_path not held
     r("path.rename", r##"{"name": "work", "to": "Saved"}"##, "", &[("image", "docState.clipping_path,paths,docState.work_path", false)]),
     // path.toSelection: layer ignored; editor active,area; reads image.paths,image.size
@@ -4931,7 +4926,7 @@ const ROWS: &[Row] = &[
     // layerComp.duplicate: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
     r("layerComp.duplicate", r##"{"comp": 1}"##, "", &[("image", "comps", false)]),
     // layerComp.rename: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.rename", r##"{"comp": 1, "name": "Renamed"}"##, "", &[("comp:1", "name", false)]),
+    r("layerComp.rename", r##"{"comp": 1, "name": "Renamed"}"##, "", &[("image", "~compContents[id=1].name", false)]),
     // layerComp.setComment: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
     r("layerComp.setComment", r##"{"comp": 1, "comment": "note"}"##, "", &[("image", "comps", false)]),
     // layerComp.setOptions: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
@@ -4981,7 +4976,12 @@ const ROWS: &[Row] = &[
     r("notes.add", r##"{"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}"##, "", &[("image", "notes", false)]),
     // notes.set: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.set", r##"{"index": 0, "text": "fixed", "x": 20}"##, "", &[("$NOTE", "modified,popup,position,text", true)]),
+    r(
+        "notes.set",
+        r##"{"index": 0, "text": "fixed", "x": 20}"##,
+        "",
+        &[("image", "~noteContents.0.popup,~noteContents.0.position,~noteContents.0.text", false)],
+    ),
     // notes.delete: layer none; editor -; reads docState.notes
     // was held less: image not held
     r("notes.delete", r##"{"index": 1}"##, "", &[("image", "notes", false)]),

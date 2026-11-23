@@ -1067,28 +1067,30 @@ impl Document {
         self.layer_at_mut(&path)
     }
 
-    /// A new [`Layer::link_group`] id no layer uses yet. It is drawn at random below 2^53 (an id
-    /// every replica stores exactly), not taken as "the highest id + 1", so two people linking
-    /// layers at once on two replicas of the document mint different groups and their links stay
-    /// apart after the merge. Without entropy, the smallest free id from 1. `None` only if every
-    /// id is taken.
-    pub fn unused_link_group(&self) -> Option<u64> {
-        self.new_link_group(&[])
-    }
-
-    /// [`Self::unused_link_group`], also unlike every id in `taken` (ids minted for layers not in
-    /// the document yet).
-    pub fn new_link_group(&self, taken: &[u64]) -> Option<u64> {
+    /// A new [`Layer::link_group`] id no layer uses yet, for linking the layers `members` (their
+    /// ids). It is minted from the members, not taken as "the highest id + 1": two people linking
+    /// different layers at once on two replicas of the document mint different groups, so their
+    /// links stay apart after the merge (linking the same layers mints the same group, which is
+    /// what both meant). Below 2^53, an id every replica stores exactly; never one in use or in
+    /// `taken` (ids minted for layers not in the document yet). `None` only if every id is taken.
+    pub fn new_link_group(&self, members: &[u64], taken: &[u64]) -> Option<u64> {
         let mut used: Vec<u64> = self.walk().iter().filter_map(|(_, _, l)| l.link_group).collect();
         used.extend_from_slice(taken);
         used.sort_unstable();
         used.dedup();
-        for _ in 0..16 {
-            let mut bytes = [0u8; 8];
-            if getrandom::getrandom(&mut bytes).is_err() {
-                break;
+        let mut members = members.to_vec();
+        members.sort_unstable();
+        // 64-bit FNV-1a of the members, then of an attempt counter.
+        let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+        for byte in members.iter().flat_map(|id| id.to_le_bytes()) {
+            hash = (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3);
+        }
+        for attempt in 0u64..64 {
+            let mut h = hash;
+            for byte in attempt.to_le_bytes() {
+                h = (h ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3);
             }
-            let id = (u64::from_le_bytes(bytes) & ((1u64 << 53) - 1)).max(1);
+            let id = (h & ((1u64 << 53) - 1)).max(1);
             if used.binary_search(&id).is_err() {
                 return Some(id);
             }
@@ -1299,17 +1301,19 @@ mod tests {
         };
         // A stored maximal id (#961) or any other stored id is never handed out again.
         with(&mut d, &[0, 1, 2, 4, u64::MAX]);
-        for _ in 0..64 {
-            let g = d.unused_link_group().unwrap();
+        for members in 0..64u64 {
+            let g = d.new_link_group(&[members, members + 1], &[]).unwrap();
             assert!(![0, 1, 2, 4, u64::MAX].contains(&g), "{g} is in use");
             assert!(g <= 1 << 53, "{g} is held exactly by every replica");
         }
-        // Two documents linking at once (two replicas of one) mint different groups.
-        let minted: std::collections::HashSet<u64> = (0..64).map(|_| doc().unused_link_group().unwrap()).collect();
-        assert!(minted.len() > 60, "concurrent links collide: {minted:?}");
+        // Two replicas linking different layers at once mint different groups; the same layers,
+        // the same group.
+        let minted: std::collections::HashSet<u64> = (0..64u64).map(|n| doc().new_link_group(&[n, n + 100], &[]).unwrap()).collect();
+        assert_eq!(minted.len(), 64, "concurrent links collide: {minted:?}");
+        assert_eq!(doc().new_link_group(&[7, 3], &[]), doc().new_link_group(&[3, 7], &[]));
         // Ids minted for layers not placed yet are not handed out either.
-        let first = d.unused_link_group().unwrap();
-        assert_ne!(d.new_link_group(&[first]), Some(first));
+        let first = d.new_link_group(&[1, 2], &[]).unwrap();
+        assert_ne!(d.new_link_group(&[1, 2], &[first]), Some(first));
     }
 
     #[test]

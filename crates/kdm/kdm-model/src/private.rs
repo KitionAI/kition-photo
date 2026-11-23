@@ -55,9 +55,11 @@ pub(crate) fn carry(previous: &Document, document: &mut Document) {
     document.last_document_state.clone_from(&previous.last_document_state);
 }
 
-/// `document` with no view state of its own: what two views of one replica must agree on.
+/// `document` with no view state of its own (nor its file title): what two views of one replica
+/// must agree on.
 pub(crate) fn shared(document: &Document) -> Document {
     let mut document = document.clone();
+    document.name = String::new();
     set_groups(&mut document.layers, &|_| Some(true), 0);
     for note in &mut document.notes {
         note.open = false;

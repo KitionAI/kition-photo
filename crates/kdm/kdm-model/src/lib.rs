@@ -72,7 +72,13 @@ pub const MAX_CANVAS_SIDE: u32 = 25_600;
 /// kept): a `.kphoto` holding one opens from its manifest instead, as a new replica.
 pub fn same_schema(replica: &Replica) -> bool {
     let version = replica.schema().schema_version;
-    replica.min_schema_version() == version && replica.author_schema_version().is_none_or(|author| author == version)
+    let image = image_id();
+    // An older shape can carry this version too (a schema numbered again from 1): its
+    // containers are not the ones this schema declares.
+    let shaped = replica.map_entries(&image, "guides").is_ok()
+        && ["notes", "comps", "paths", "patterns"].iter().all(|field| replica.list(&image, field).is_ok())
+        && replica.objects_of_type("Layer").iter().all(|layer| ["styles", "frames"].iter().all(|field| replica.list(layer, field).is_ok()));
+    replica.min_schema_version() == version && replica.author_schema_version().is_none_or(|author| author == version) && shaped
 }
 
 /// [`same_schema`] for a snapshot's bytes; `false` for bytes that do not load.

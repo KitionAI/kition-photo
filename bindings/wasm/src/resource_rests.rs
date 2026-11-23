@@ -12,64 +12,31 @@ pub fn under(doc: &Document, command: &str, p: &Value) -> Option<Under> {
     const NONE: [&str; 0] = [];
     let one = |premise: Premise| Some(Under { premises: vec![premise], ..Default::default() });
     match command {
-        // A comp, a saved path and a note are objects of their own (`comp:<id>`, `path:<key>`,
-        // `note:<key>`): the premise holds the one addressed, as it was at basis.
+        // A comp, a saved path and a note are items of the image's lists, addressed by id, name
+        // or index: the premise is the item the address named at basis, followed through the
+        // image's `~compContents`, `~pathContents` and `~noteContents` ([`resource_covered`]).
         "layerComp.rename" => {
-            let comp = p.get("comp")?;
-            let found = match comp {
-                Value::Number(id) => doc.layer_comps.iter().find(|c| Some(u64::from(c.id)) == id.as_u64()),
-                Value::String(name) => doc.layer_comps.iter().find(|c| c.name == *name),
-                _ => None,
-            }?;
-            one(Premise::on(format!("comp:{}", found.id)).fields(["name"]).positions(NONE))
+            p.get("comp")?;
+            Some(contents_under(&["~compContents"], NONE.to_vec()))
         }
         "path.rename" => {
             let name = p.get("name")?.as_str()?;
             if name.is_empty() || name.eq_ignore_ascii_case("work") || name == "Work Path" || name == "layer" {
                 return None;
             }
-            let key = doc.paths.iter().find(|path| path.name == name)?.key.clone()?;
-            // The new name must still be free, and the clipping path follows the rename.
-            let taken = selector("paths", "name", p.get("to")?)?;
-            Some(Under {
-                premises: vec![
-                    Premise::on(format!("path:{key}")).fields(["name"]).positions(NONE),
-                    Premise::on(crate::place::IMAGE)
-                        .fields([format!("{taken}.name"), "docState.clipping_path".to_owned()])
-                        .positions(NONE)
-                        .identity(format!("{taken}.name"), "key"),
-                ],
-                ..Default::default()
-            })
+            // The clipping path follows the rename.
+            Some(contents_under(&["~pathContents"], vec!["docState.clipping_path"]))
         }
         "notes.set" => {
-            let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
-            let key = doc.notes.get(index)?.key.clone()?;
-            // Whether the note is open is each person's own view, not the note's.
-            let mut fields: Vec<&str> = ["text", "author", "color"].into_iter().filter(|key| p.get(*key).is_some()).collect();
-            if p.get("text").is_some() || p.get("author").is_some() {
-                fields.push("modified");
-            }
-            if p.get("x").is_some() || p.get("y").is_some() {
-                fields.extend(["position", "popup"]);
-            }
-            // Addressed by its index: where it is in the list matters.
-            one(Premise::on(format!("note:{key}")).fields(fields).positions(["notes"]))
+            p.get("index")?.as_u64()?;
+            Some(contents_under(&["~noteContents"], NONE.to_vec()))
         }
         "view.moveGuide" => {
-            let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
-            let guides = match p.get("orientation")?.as_str()? {
-                "vertical" => &doc.guides.vertical,
-                "horizontal" => &doc.guides.horizontal,
-                _ => return None,
-            };
-            let key = guides.get(index)?.key.clone()?;
-            Some(Under {
-                premises: vec![Premise::on(crate::place::IMAGE).fields([format!("guides.{key}")]).positions(NONE)],
-                objects: vec![json!(crate::place::IMAGE)],
-                covers: Some(Covers { fields: vec!["guides".to_owned()] }),
-                ..Default::default()
-            })
+            p.get("index")?.as_u64()?;
+            if !matches!(p.get("orientation")?.as_str()?, "vertical" | "horizontal") {
+                return None;
+            }
+            Some(contents_under(&["guides"], NONE.to_vec()))
         }
         "slice.set" => {
             let id = p.get("slice")?.as_u64()?;
@@ -110,6 +77,112 @@ pub fn under(doc: &Document, command: &str, p: &Value) -> Option<Under> {
             covers: Some(Covers { fields: vec!["~channelContents".to_owned()] }),
             ..Default::default()
         }),
+        _ => None,
+    }
+}
+
+/// A premise on the image's `fields` (none: only that it exists) whose place the kit tells by
+/// being asked about the `covers` fields ([`PhotoDocument::covered_at`]).
+fn contents_under(covers: &[&str], fields: Vec<&str>) -> Under {
+    Under {
+        objects: vec![json!(crate::place::IMAGE)],
+        premises: vec![Premise::on(crate::place::IMAGE).fields(fields).positions([] as [&str; 0])],
+        covers: Some(Covers { fields: covers.iter().map(|field| (*field).to_owned()).collect() }),
+        ..Default::default()
+    }
+}
+
+/// How a call addresses one item of a stored list: by its place or by a member's value.
+pub(crate) enum Address<'a> {
+    Index(usize),
+    Member(&'a str, &'a Value),
+}
+
+impl Address<'_> {
+    fn choose<'v>(&self, items: &'v [Value]) -> Option<&'v Value> {
+        match self {
+            Address::Index(index) => items.get(*index),
+            Address::Member(member, value) => items.iter().find(|item| item.get(*member) == Some(*value)),
+        }
+    }
+}
+
+/// Whether the item `address` named at basis (in `before`, else `now`) is still there and what
+/// of it changed since: deleted, changed in one of `assigned`, or now at another address (then
+/// the place no longer holds it). `None` when it cannot be told (no identity, or a duplicate).
+pub(crate) fn resource_covered(address: &Address<'_>, key: &str, assigned: &[&str], derived: &str, asks: &[CoveredAsk], now: &Value) -> Option<CoveredAt> {
+    let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
+    // Only what the contents were at basis matters (the image's other fields may be unknown).
+    if ask.unknown.iter().any(|field| field == derived) {
+        return None;
+    }
+    let before = ask.before.get(derived).unwrap_or(now).as_array()?;
+    let now = now.as_array()?;
+    let old = address.choose(before)?;
+    let identity = old.get(key).filter(|value| value.is_string() || value.is_number())?;
+    let count = |items: &[Value]| items.iter().filter(|item| item.get(key) == Some(identity)).count();
+    if count(before) != 1 || count(now) > 1 {
+        return None;
+    }
+    let same = now.iter().find(|item| item.get(key) == Some(identity));
+    let content = match same {
+        None => CoveredContent::Deleted,
+        Some(item) if assigned.iter().any(|field| item.get(*field) != old.get(*field)) => CoveredContent::Changed,
+        Some(_) => CoveredContent::Same,
+    };
+    let moved = same.is_some() && address.choose(now).is_none_or(|item| item.get(key) != Some(identity));
+    Some(CoveredAt {
+        under: if moved && content != CoveredContent::Changed { vec![] } else { vec![json!(crate::place::IMAGE)] },
+        covered: asks
+            .iter()
+            .map(|a| Covered {
+                id: a.id.clone(),
+                covered: Some(a.id == crate::place::IMAGE),
+                content: (a.id == crate::place::IMAGE).then_some(content),
+                ..Default::default()
+            })
+            .collect(),
+    })
+}
+
+/// The place an address command (`notes.set`, `layerComp.rename`, `path.rename`,
+/// `view.moveGuide`) names, told from the image's stored lists now (`contents`: the derived
+/// contents by name, and `guides`, the guides as a list per axis).
+pub(crate) fn address_covered(command: &str, p: &Value, asks: &[CoveredAsk], contents: &Value) -> Option<CoveredAt> {
+    let index = || p.get("index").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok());
+    match command {
+        "notes.set" => {
+            let mut assigned: Vec<&str> = ["text", "author", "color"].into_iter().filter(|field| p.get(*field).is_some()).collect();
+            if p.get("x").is_some() || p.get("y").is_some() {
+                assigned.extend(["position", "popup"]);
+            }
+            resource_covered(&Address::Index(index()?), "key", &assigned, "~noteContents", asks, contents.get("noteContents")?)
+        }
+        "layerComp.rename" => {
+            let comp = p.get("comp")?;
+            let address = if comp.is_u64() { Address::Member("id", comp) } else { Address::Member("name", comp) };
+            resource_covered(&address, "id", &["name"], "~compContents", asks, contents.get("compContents")?)
+        }
+        "path.rename" => resource_covered(&Address::Member("name", p.get("name")?), "key", &["name"], "~pathContents", asks, contents.get("pathContents")?),
+        "view.moveGuide" => {
+            let axis = p.get("orientation")?.as_str()?;
+            let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
+            if ask.unknown.iter().any(|field| field == "guides") {
+                return None;
+            }
+            let now_map = contents.get("guides")?;
+            let before_map = ask.before.get("guides").unwrap_or(now_map);
+            // As lists of `{key, position}`, in order.
+            let listed = |map: &Value| -> Option<Value> {
+                Some(Value::Array(guide_keys(map, axis)?.into_iter().map(|key| json!({ "key": key, "position": map[key.as_str()]["position"] })).collect()))
+            };
+            let before = listed(before_map)?;
+            let mut asks = asks.to_vec();
+            if let Some(ask) = asks.iter_mut().find(|ask| ask.id == crate::place::IMAGE) {
+                ask.before.insert("~guides".to_owned(), before);
+            }
+            resource_covered(&Address::Index(index()?), "key", &["position"], "~guides", &asks, &listed(now_map)?)
+        }
         _ => None,
     }
 }
@@ -186,7 +259,8 @@ pub(crate) fn sources_covered(
 ) -> Result<Option<CoveredAt>, String> {
     let channels = source_channels(command, p);
     let source = crate::acts::reads_of(command).region.then(|| p.get("region").and_then(|r| r.get("layer"))).flatten();
-    if channels.is_empty() && source.is_none() {
+    let pattern = stored_pattern(command, p);
+    if channels.is_empty() && source.is_none() && pattern.is_none() {
         return Ok(answer);
     }
     let mut answer = answer.unwrap_or_else(|| CoveredAt {
@@ -237,6 +311,32 @@ pub(crate) fn sources_covered(
             }
         }
     }
+    // A stored pattern, by its id or its name: the one it named at basis, its name and pixels.
+    if let Some(pattern) = pattern {
+        let now = doc.derived_values(&[json!(crate::place::IMAGE)], &["patternContents".to_owned()])?;
+        let Some(now) = now.first().and_then(|v| v.values.get("patternContents")).cloned() else { return Ok(None) };
+        let value = json!(pattern);
+        let before = asks.iter().find(|a| a.id == crate::place::IMAGE).and_then(|a| a.before.get("~patternContents")).unwrap_or(&now);
+        let by_key = before.as_array().is_some_and(|items| items.iter().any(|item| item.get("key") == Some(&value)));
+        let address = if by_key { Address::Member("key", &value) } else { Address::Member("name", &value) };
+        let Some(covered) = resource_covered(&address, "key", &["width", "height", "pixels"], "~patternContents", asks, &now) else { return Ok(None) };
+        for entry in covered.covered.into_iter().filter(|a| a.id == crate::place::IMAGE) {
+            if let Some(existing) = answer.covered.iter_mut().find(|a| a.id == entry.id) {
+                existing.covered = match (existing.covered, entry.covered) {
+                    (Some(a), Some(b)) => Some(a || b),
+                    _ => None,
+                };
+                existing.content = merge_content(existing.content, entry.content);
+            } else {
+                answer.covered.push(entry);
+            }
+        }
+        if covered.under.is_empty()
+            && !answer.covered.iter().any(|a| a.id == crate::place::IMAGE && matches!(a.content, Some(CoveredContent::Changed | CoveredContent::Deleted)))
+        {
+            answer.under.retain(|id| id != crate::place::IMAGE);
+        }
+    }
     Ok(Some(answer))
 }
 
@@ -264,41 +364,10 @@ fn guide_keys(map: &Value, axis: &str) -> Option<Vec<String>> {
     Some(entries.into_iter().map(|(_, key)| key.clone()).collect())
 }
 
-/// `view.moveGuide`'s place: the guide at `index` of its axis at basis, and whether it is still
-/// there (or deleted, or moved to another index).
-pub(crate) fn indexed_covered(command: &str, p: &Value, asks: &[CoveredAsk], state: &Value) -> Option<CoveredAt> {
-    if command != "view.moveGuide" {
-        return None;
-    }
-    let axis = p.get("orientation")?.as_str()?;
-    let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
-    let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
-    if !ask.unknown.is_empty() {
-        return None;
-    }
-    let now_map = state.get("guides")?;
-    let before_map = ask.before.get("guides").unwrap_or(now_map);
-    let (before, now) = (guide_keys(before_map, axis)?, guide_keys(now_map, axis)?);
-    let key = before.get(index)?;
-    let deleted = !now.contains(key);
-    let moved = !deleted && now.get(index) != Some(key);
-    Some(CoveredAt {
-        under: if moved { vec![] } else { vec![json!(crate::place::IMAGE)] },
-        covered: asks
-            .iter()
-            .map(|a| Covered {
-                id: a.id.clone(),
-                covered: Some(a.id == crate::place::IMAGE),
-                content: (a.id == crate::place::IMAGE).then_some(if deleted { CoveredContent::Deleted } else { CoveredContent::Same }),
-                ..Default::default()
-            })
-            .collect(),
-    })
-}
-
 pub(crate) fn channel_covered(address: &Value, assigning: bool, asks: &[CoveredAsk], now: &Value) -> Option<CoveredAt> {
     let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
-    if !ask.unknown.is_empty() {
+    // Only the channels at basis matter (the image's other fields may be unknown).
+    if ask.unknown.iter().any(|field| field == "~channelContents") {
         return None;
     }
     let before = ask.before.get("~channelContents").unwrap_or(now).as_array()?;

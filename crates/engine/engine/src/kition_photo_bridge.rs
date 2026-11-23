@@ -175,6 +175,43 @@ mod tests {
         assert_eq!(a.active().unwrap().doc.layers.len(), b.active().unwrap().doc.layers.len());
     }
 
+    /// A `.kphoto` whose `kdm.bin` was written with another schema version (an older build's)
+    /// is not read as a replica: the document opens from the bundle's manifest, as a new
+    /// replica, and the old one is not its identity.
+    #[test]
+    fn a_kition_photo_with_a_replica_of_another_schema_version_opens_from_its_manifest() {
+        use kdm_model::kition_kit::kdm::{ActorId, DocId, Origin as KdmOrigin, Replica};
+        use kdm_model::kition_kit::session::{IdMap, KitModel};
+
+        let mut a = Session::new();
+        a.execute("file.new", json!({"width": 64, "height": 40, "background": "white"})).unwrap();
+        painted(&mut a);
+        let doc = a.active().unwrap().doc.clone();
+        let mut schema = (*kdm_model::PhotoModel::schema()).clone();
+        schema.schema_version = 3;
+        let mut blobs = MemoryBlobs::default();
+        let (old, ()) = Replica::create_with(Arc::new(schema), DocId::new(), ActorId::random(), &KdmOrigin::system("create"), |tx| {
+            kdm_model::write_document(tx, &doc, &mut IdMap::default(), &mut kdm_model::Nodes::default(), &mut blobs).map(|_| ())
+        })
+        .unwrap();
+        let kdm = kition_photo_format::KdmSave {
+            snapshot: old.snapshot().unwrap(),
+            blobs: blobs.0.iter().map(|(hash, data)| (hash.clone(), data.clone())).collect(),
+        };
+        let bytes = kition_photo_format::save_to_bytes(&doc, &kition_photo_format::SaveOptions { kdm: Some(kdm), ..Default::default() }).unwrap();
+        assert!(kition_photo_format::read_kdm(&bytes).unwrap().is_some(), "the bundle holds the old replica");
+        assert_eq!(embedded_replica(&bytes).unwrap(), None, "a replica of another schema version is not the document's identity");
+
+        let mut b = Session::new();
+        let index = b.open_file("old.kphoto", &bytes).unwrap();
+        assert!(b.set_active(index));
+        assert_eq!(b.active().unwrap().doc.size, doc.size);
+        assert_eq!(b.active().unwrap().doc.layers.len(), doc.layers.len());
+        assert_ne!(b.doc_id(), Some(old.doc_id().to_string()), "a new replica");
+        b.execute("layer.new.layer", json!({"name": "After"})).unwrap();
+        assert!(b.state_hash().is_ok(), "the new replica takes edits");
+    }
+
     #[test]
     fn is_kition_photo_name_checks_the_extension() {
         assert!(is_kition_photo_name("doc.kphoto"));

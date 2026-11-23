@@ -183,6 +183,22 @@ fn channel_fields(p: &Value, objects: &BTreeMap<String, Value>) -> Vec<String> {
         .collect()
 }
 
+/// The key of the image's first vertical guide (its `guides` map's entry of least order).
+fn first_vertical_guide(objects: &BTreeMap<String, Value>) -> String {
+    objects
+        .get("image")
+        .and_then(|image| image.get("guides"))
+        .and_then(Value::as_object)
+        .and_then(|guides| {
+            guides
+                .iter()
+                .filter(|(_, guide)| guide["axis"] == "vertical")
+                .min_by(|a, b| a.1["order"].as_f64().unwrap_or(0.0).total_cmp(&b.1["order"].as_f64().unwrap_or(0.0)))
+                .map(|(key, _)| key.clone())
+        })
+        .unwrap()
+}
+
 fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
     let mut out: Holds = row.holds.iter().map(|(id, f, at)| (id.to_string(), (f.to_string(), *at))).collect();
     // Source refinements of the frozen coarse rows:
@@ -228,19 +244,7 @@ fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
         // edit_cmds.rs::guide_cmd replaces the addressed guide: the `guides` map's entry of the
         // first vertical guide, by its key.
         "view.moveGuide" => {
-            let first = objects
-                .get("image")
-                .and_then(|image| image.get("guides"))
-                .and_then(Value::as_object)
-                .and_then(|guides| {
-                    guides
-                        .iter()
-                        .filter(|(_, guide)| guide["axis"] == "vertical")
-                        .min_by(|a, b| a.1["order"].as_f64().unwrap_or(0.0).total_cmp(&b.1["order"].as_f64().unwrap_or(0.0)))
-                        .map(|(key, _)| key.clone())
-                })
-                .unwrap();
-            replace(&mut out, "image", "guides.vertical.0", &format!("guides.{first}"));
+            replace(&mut out, "image", "guides.vertical.0", &format!("guides.{}.position", first_vertical_guide(objects)));
         }
         "layer.setLabelColor" => {
             replace(&mut out, "image", "~subtreeLabels[id=\"$G\"].labels", "-");
@@ -256,7 +260,7 @@ fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
         "edit.fill" | "paint.bucket" | "paint.patternStamp" | "layer.newFillLayer.pattern" | "layer.layerStyle.patternOverlay" | "brush.texturePattern"
     ) && let Some(pattern) = p.get("pattern").and_then(Value::as_str).filter(|s| !s.is_empty())
     {
-        replace(&mut out, "image", "patterns", &format!("patterns[name={}]", json!(pattern)));
+        replace(&mut out, "image", "patterns", &format!("~patternContents[name={}]", json!(pattern)));
     }
     if matches!(row.command, "image.applyImage" | "image.calculations") {
         let channels = channel_fields(p, objects);
@@ -328,6 +332,35 @@ pub(super) fn compare(doc: &mut PhotoDocument, roles: &[(&str, u64)], rows: &[Ro
             }
             if row.command == "channel.rename" {
                 add(&mut holds, "image", &format!("~channelContents[name={}].name", params["channel"]));
+            }
+            // The address commands' items, told through the image's derived contents.
+            match row.command {
+                "layerComp.rename" => {
+                    let member = if params["comp"].is_u64() { "id" } else { "name" };
+                    add(&mut holds, "image", &format!("~compContents[{member}={}].name", params["comp"]));
+                }
+                "path.rename" if under.covers.as_ref().is_some_and(|c| c.fields.iter().any(|f| f == "~pathContents")) => {
+                    add(&mut holds, "image", &format!("~pathContents[name={}].name", params["name"]));
+                }
+                "notes.set" => {
+                    let index = &params["index"];
+                    for (param, fields) in
+                        [("text", &["text"][..]), ("author", &["author"]), ("color", &["color"]), ("x", &["position", "popup"]), ("y", &["position", "popup"])]
+                    {
+                        if params.get(param).is_some() {
+                            for field in fields {
+                                add(&mut holds, "image", &format!("~noteContents.{index}.{field}"));
+                            }
+                        }
+                    }
+                }
+                "view.moveGuide" => add(&mut holds, "image", &format!("guides.{}.position", first_vertical_guide(&objects))),
+                _ => {}
+            }
+            if under.covers.as_ref().is_some_and(|c| c.fields.iter().any(|f| f == "~patternContents"))
+                && let Some(pattern) = params.get("pattern").and_then(Value::as_str)
+            {
+                add(&mut holds, "image", &format!("~patternContents[name={}]", json!(pattern)));
             }
             if matches!(row.command, "image.applyImage" | "image.calculations")
                 && under.covers.as_ref().is_some_and(|c| c.fields.iter().any(|f| f == "~channelContents"))

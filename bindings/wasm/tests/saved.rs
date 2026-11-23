@@ -131,15 +131,15 @@ fn kind(line: &str) -> String {
 /// told (kition-sdk C8-fix-10).
 const PSD_KNOWN: &[(&str, &str)] = &[
     (
-        r#"model changed "Layer" ["props.data.color.c.0","props.data.color.c.1","props.data.color.c.2","props.data.paragraphs.0.len","props.data.psd_raw","props.data.runs.0.style.color.c.0","props.data.runs.0.style.color.c.1","props.data.runs.0.style.color.c.2","props.data.runs.0.style.postscript_name","props.extra.psd_blocks"]"#,
-        "a type layer read from PSD: its colors through the text engine's floats, its paragraph length with the closing return, the font's PostScript name filled in, and the TySh block kept verbatim",
+        r#"model changed "Layer" ["data.color.c.0","data.color.c.1","data.color.c.2","data.psd_raw","extra.psd_blocks","text.content"]"#,
+        "a type layer read from PSD: its colors through the text engine's floats, its paragraph length with the closing return and its runs' colors and the font's PostScript name filled in (the marks of its text body, `text.content`), and the TySh block kept verbatim",
     ),
     (
-        r#"model changed "Layer" ["props"]"#,
-        "a shape layer read from PSD: its path's anchors go through PSD's fixed-point coordinates (a fraction of the canvas in 8.24, read back through f32), and its SoCo and vmsk blocks are kept verbatim (`props.extra.psd_blocks`, `props.data.psd_raw`)",
+        r#"model changed "Layer" ["data","extra.psd_blocks"]"#,
+        "a shape layer read from PSD: its path's anchors go through PSD's fixed-point coordinates (a fraction of the canvas in 8.24, read back through f32), and its SoCo and vmsk blocks are kept verbatim (`extra.psd_blocks`, `data.psd_raw`)",
     ),
     (
-        r#"model changed "Layer" ["effects.psd_raw"]"#,
+        r#"model changed "Layer" ["styleSettings.psd_raw"]"#,
         "a layer style's lfx2 block kept verbatim when read (crates/formats/io/tests/flat.rs `effects_are_written_to_psd_and_read_back` requires it kept)",
     ),
     (r#"model changed "Image" ["docState.psd_global_blocks"]"#, "the global Txt2 block a PSD with type writes, kept verbatim when read"),

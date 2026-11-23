@@ -392,10 +392,14 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
         _ => false,
     };
     if pattern {
-        if let Some(key) = crate::resource_rests::stored_pattern(command, params) {
-            let name = kition_photo_doc_pattern(&st.doc, key).map_or(key, |pattern| pattern.name.as_str());
-            let field = format!("patterns[name={}]", json!(name));
-            hold(under, Premise::on(IMAGE).fields([field.clone()]).positions([] as [&str; 0]).identity(field, "key"));
+        if crate::resource_rests::stored_pattern(command, params).is_some() {
+            // The pattern it names at basis, told through the image's `~patternContents`
+            // ([`crate::resource_rests::sources_covered`]).
+            hold(under, Premise::on(IMAGE).fields([] as [&str; 0]).positions([] as [&str; 0]));
+            if !under.objects.contains(&json!(IMAGE)) {
+                under.objects.push(json!(IMAGE));
+            }
+            under.covers.get_or_insert_with(Covers::default).fields.push("~patternContents".to_owned());
         } else {
             image_fields(under, ["patterns"]);
         }
@@ -448,10 +452,6 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
         image_fields(under, ["docState.exif"]);
     }
     Ok(())
-}
-
-fn kition_photo_doc_pattern<'a>(doc: &'a Document, key: &str) -> Option<&'a kition_photo_engine::doc::pattern::Pattern> {
-    kition_photo_engine::doc::pattern::find(&doc.patterns, key, key)
 }
 
 /// What `command` reads or replaces of layer `id` ([`Family`]), and of the image.
@@ -740,6 +740,44 @@ impl PhotoDocument {
                 .collect();
             values.insert("channelContents".to_owned(), json!(channels));
             out.push(DerivedValues { id: json!(IMAGE), values });
+        }
+        // The image's stored lists as their items' identities and the members a call addressing
+        // one assigns or reads (a pattern's pixels by digest).
+        for name in ["noteContents", "compContents", "pathContents", "patternContents"] {
+            if !((ids.is_empty() || ids.iter().any(|id| id == IMAGE)) && (names.is_empty() || names.iter().any(|wanted| wanted == name))) {
+                continue;
+            }
+            let value = match name {
+                "noteContents" => json!(
+                    st.doc
+                        .notes
+                        .iter()
+                        .map(|n| json!({ "key": n.key, "author": n.author, "color": n.color, "text": n.text, "position": n.position, "popup": n.popup, "modified": n.modified }))
+                        .collect::<Vec<_>>()
+                ),
+                "compContents" => json!(st.doc.layer_comps.iter().map(|c| json!({ "id": c.id, "name": c.name, "comment": c.comment })).collect::<Vec<_>>()),
+                "pathContents" => json!(st.doc.paths.iter().map(|p| json!({ "key": p.key, "name": p.name })).collect::<Vec<_>>()),
+                _ => json!(
+                    st.doc
+                        .patterns
+                        .iter()
+                        .map(|p| {
+                            let mut bytes = Vec::new();
+                            for (coord, tile) in p.surface.tiles() {
+                                bytes.extend_from_slice(&coord.tx.to_le_bytes());
+                                bytes.extend_from_slice(&coord.ty.to_le_bytes());
+                                bytes.extend_from_slice(tile.bytes());
+                            }
+                            json!({ "key": p.id, "name": p.name, "width": p.width, "height": p.height, "pixels": kition_kit::session::sha256_hex(&bytes) })
+                        })
+                        .collect::<Vec<_>>()
+                ),
+            };
+            if let Some(image) = out.iter_mut().find(|object| object.id == IMAGE) {
+                image.values.insert(name.to_owned(), value);
+            } else {
+                out.push(DerivedValues { id: json!(IMAGE), values: serde_json::Map::from_iter([(name.to_owned(), value)]) });
+            }
         }
         if (ids.is_empty() || ids.iter().any(|id| id == IMAGE)) && (names.is_empty() || names.iter().any(|name| name == "linkGroups")) {
             let mut groups: Vec<(u64, String)> =
