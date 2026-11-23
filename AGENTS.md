@@ -174,3 +174,9 @@ Then append a terse entry to `log/devlog.md` (what landed, numbers, what's still
 nothing is silently dropped from `.kphoto` saves. When you add a doc field, add it to
 `crates/formats/format/src/manifest.rs` and `convert.rs` with `#[serde(default)]` so older files still load.
 If the field has a PSD equivalent, map it in `crates/formats/io` too, and keep unknown PSD blocks verbatim.
+
+A `.kphoto` holds content, never history (kition-sdk data model 7.3, rule M16b): its `kdm.bin` is
+the replica's content snapshot (`PhotoSession::content`), sealed by `prepare_save` before every
+save, with only the replica blobs its state references. Do not write a full snapshot, a change log,
+undo steps or blobs only history needs into the file; tests call `prepare_save` before `save` where
+a host would (`bindings/wasm/tests/content_file.rs`).

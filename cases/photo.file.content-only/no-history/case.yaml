@@ -1,0 +1,25 @@
+format: 1
+id: photo.file.content-only/no-history
+feature: photo.file.content-only
+intent: >-
+  A .kphoto holds the image's content, not its history (kition-sdk data model 7.3, rule M16b): after
+  a host seals the document (prepareSave) and saves, the file's replica entry (kdm.bin) holds one
+  change, the seal; text typed then deleted, a deleted layer and an overwritten layer name are in
+  the session's history and in neither the replica entry nor the manifest; an unchanged image saves
+  to the same bytes; the one fallback (a save nobody sealed for) writes a sealed copy's content and
+  mark_saved takes its seal in; an agent's batches through the headless kit save sealed content.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/content_file.rs, bindings/headless/tests/content_file.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: the_file_holds_the_content_and_of_the_history_only_the_seal }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: an_unchanged_image_saves_to_the_same_bytes }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_save_nobody_sealed_for_seals_a_copy_and_mark_saved_takes_the_seal_in }
+  - cargo-test: { package: kition-photo, test: content_file, filter: an_agents_batches_save_sealed_content }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-22"

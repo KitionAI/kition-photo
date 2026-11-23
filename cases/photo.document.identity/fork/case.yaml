@@ -7,8 +7,9 @@ intent: >-
   document to a new file: a new docId, the same objects, ids and values (model.batch), a draft of
   it opens, only the replica blobs its state references, every other bundle entry (manifest,
   tiles, previews, an unknown entry) as it was; the name of a layer deleted before the fork is in
-  the source's bytes and not the fork's; an edit of the fork keeps its id; a fork of the fork is a
-  third document; a fork never replaces an existing file.
+  the source session's history and in neither file (a .kphoto holds its content, not its
+  history); an edit of the fork keeps its id; a fork of the fork is a third document; a fork never
+  replaces an existing file.
 layer: gate
 tags: [headless]
 source:

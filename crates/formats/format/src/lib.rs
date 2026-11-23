@@ -8,7 +8,13 @@
 //! blobs/<blake3>.zst       content-addressed binary data (ICC, EXIF, PSD blocks, object layers)
 //! thumb.png                optional thumbnail (caller-rendered)
 //! composite/preview.png    optional flattened preview (caller-rendered)
+//! kdm.bin                  optional: the document's KDM replica as its content snapshot
+//! blobs/kdm/<sha256>.zst   the blobs that replica's state references
 //! ```
+//!
+//! `kdm.bin` holds the document's content, not its history (kition-sdk data model 7.3, rule
+//! M16b): the replica's state and, of its history, only the seal; the engine writes it
+//! (`DocState::save_kphoto`). The undo history stays in the session and the host's store.
 //!
 //! A bundle is either a ZIP archive (STORE entries) or a directory with the
 //! same layout. Saving is incremental: [`KitionPhotoWriter`] remembers what it

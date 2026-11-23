@@ -36,23 +36,39 @@ pub fn embedded_replica(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
     Ok(kition_photo_format::read_kdm_snapshot(bytes).map_err(kdm_error)?.filter(|snapshot| kdm_model::replica_matches(snapshot)))
 }
 
+/// A `.kphoto` bundle's replica entry (its content snapshot) and the blobs it references, when it
+/// has one of this schema version; `None` for any other bytes.
+pub fn embedded_bundle(bytes: &[u8]) -> Result<Option<(Vec<u8>, MemoryBlobs)>> {
+    if !kition_photo_format::is_kphoto(bytes) {
+        return Ok(None);
+    }
+    let Some(bundle) = kition_photo_format::read_kdm(bytes).map_err(kdm_error)? else { return Ok(None) };
+    if !kdm_model::replica_matches(&bundle.snapshot) {
+        return Ok(None);
+    }
+    let blobs = MemoryBlobs(bundle.blobs.into_iter().map(|(hash, data)| (hash, Arc::<[u8]>::from(data))).collect());
+    Ok(Some((bundle.snapshot, blobs)))
+}
+
 /// `bytes` (a `.kphoto` bundle with a replica) holding the document `snapshot` instead of its own
-/// (`document.fork`, KitModel M7a): `kdm.bin` is `snapshot`, and the replica's blobs are only the
-/// ones its current state references, so no earlier identity or history (a deleted layer's tiles,
-/// what an undo step kept) stays in the file. The manifest, tiles, previews and entries this build
-/// does not know are kept: they hold the same image.
+/// (`document.fork`, KitModel M7a): `kdm.bin` is that document's content snapshot (no history),
+/// and the replica's blobs are only the ones its current state references, so no earlier identity
+/// or history (a deleted layer's tiles, what an undo step kept) stays in the file. The manifest,
+/// tiles, previews and entries this build does not know are kept: they hold the same image.
 pub fn replace_replica(bytes: &[u8], snapshot: &[u8]) -> Result<Vec<u8>> {
     use kdm_model::kition_kit::kdm::{ActorId, Replica};
     use kdm_model::kition_kit::session::KitModel;
-    let replica = Replica::load(kdm_model::PhotoModel::schema(), snapshot, ActorId::random()).map_err(kdm_error)?;
+    let mut replica = Replica::load(kdm_model::PhotoModel::schema(), snapshot, ActorId::random()).map_err(kdm_error)?;
+    let content = replica.content_snapshot().map_err(kdm_error)?;
     let keep = kdm_model::state_blobs(&replica);
-    kition_photo_format::replace_kdm(bytes, snapshot, &|hash| keep.contains(hash)).map_err(kdm_error)
+    kition_photo_format::replace_kdm(bytes, &content, &|hash| keep.contains(hash)).map_err(kdm_error)
 }
 
 impl Session {
     /// Opens any file `kition_photo_io::import` supports as a new document; a `.kphoto` whose
     /// bundle holds a KDM replica of this schema version opens it with [`Session::open_snapshot`]
-    /// instead, keeping its identity and undo history across saves. A replica of another schema
+    /// instead (the file's content snapshot: the document's identity and object ids, no history).
+    /// A replica of another schema
     /// version is not read: the document is rebuilt from the bundle's manifest, as one saved
     /// without a replica. Answers the new document's index (made active).
     pub fn open_file(&mut self, name: &str, bytes: &[u8]) -> Result<usize> {
@@ -75,25 +91,48 @@ impl Session {
 
 impl DocState {
     /// Saves this document as a `.kphoto` bundle, with its KDM replica if it has made one yet
-    /// (see [`DocState::kdm`]); one that hasn't saves without it, as before (and gets one lazily
-    /// on its first shared edit).
+    /// (see [`DocState::kdm`]); one that hasn't saves without it (and gets one lazily on its first
+    /// shared edit). The bundle holds the replica's content, not its history (kition-sdk data
+    /// model 7.3, rule M16b): `kdm.bin` is its content snapshot, of the history only the seal, and
+    /// of its blobs only those the current state references. The history (undo steps, deleted
+    /// layers' tiles) stays in the session and with the host.
     pub fn save_kphoto(&self) -> Result<Vec<u8>> {
+        self.save_kphoto_sealed().map(|(bytes, _)| bytes)
+    }
+
+    /// [`DocState::save_kphoto`], with the seal it made on a copy when the replica was not sealed
+    /// ([`kdm_model::Content::seal`], the fallback), for [`DocState::take_seal`] once the host
+    /// stored the bytes.
+    pub fn save_kphoto_sealed(&self) -> Result<(Vec<u8>, Option<Vec<u8>>)> {
         let doc = &self.doc;
-        let kdm = self
-            .kdm()
-            .map(|kdm| -> Result<kition_photo_format::KdmSave> {
-                Ok(kition_photo_format::KdmSave {
-                    snapshot: kdm.snapshot().map_err(kdm_error)?,
-                    blobs: kdm.blobs().0.iter().map(|(hash, data)| (hash.clone(), data.clone())).collect(),
-                })
-            })
-            .transpose()?;
+        let content = self.kdm().map(|kdm| kdm.content().map_err(kdm_error)).transpose()?;
+        let (kdm, seal) = match content {
+            Some(content) => (Some(kition_photo_format::KdmSave { snapshot: content.snapshot, blobs: content.blobs }), content.seal),
+            None => (None, None),
+        };
         let opts = kition_photo_format::SaveOptions {
             thumbnail: Some(kition_photo_compose::thumbnail(doc, 256)),
             composite: Some(kition_photo_compose::thumbnail(doc, 1024)),
             kdm,
         };
-        kition_photo_format::save_to_bytes(doc, &opts).map_err(|error| EngineError::Other(error.to_string()))
+        let bytes = kition_photo_format::save_to_bytes(doc, &opts).map_err(|error| EngineError::Other(error.to_string()))?;
+        Ok((bytes, seal))
+    }
+
+    /// Seals the document's replica before a save (`KitDocument::prepare_save`), so the file holds
+    /// its own content snapshot: no edit, no undo step.
+    pub fn seal(&mut self) -> Result<()> {
+        if let Some(kdm) = self.kdm.as_mut() {
+            kdm.seal().map_err(kdm_error)?;
+        }
+        Ok(())
+    }
+
+    /// Takes in the seal a save made on a copy ([`DocState::save_kphoto_sealed`]).
+    pub fn take_seal(&mut self, seal: &[u8]) {
+        if let Some(kdm) = self.kdm.as_mut() {
+            kdm.take_seal(seal);
+        }
     }
 }
 
@@ -121,8 +160,8 @@ mod tests {
         assert_eq!(b.active().unwrap().doc.size, a.active().unwrap().doc.size);
     }
 
-    /// Edit, save, load: the reopened document keeps the replica's identity (same version and
-    /// `state_hash`). Undo is this person's own editing session (`DocState::history`'s
+    /// Edit, seal, save, load: the reopened document keeps the replica's identity (same version
+    /// and `state_hash`), though the file holds its content and not its history. Undo is this person's own editing session (`DocState::history`'s
     /// snapshots, which steps the replica back as collaborators' edits arrive); it is not part
     /// of the replica bytes (KDM's own undo manager, loro's, is rebuilt fresh from a loaded
     /// snapshot too), so a freshly reopened document starts with none of its own, cleanly: it is
@@ -133,6 +172,8 @@ mod tests {
         let mut a = Session::new();
         a.execute("file.new", json!({"width": 64, "height": 40, "background": "white"})).unwrap();
         painted(&mut a);
+        // As a host saves: sealed first (`prepare_save`).
+        a.active_mut().unwrap().seal().unwrap();
         let version_before = a.version().unwrap();
         let hash_before = a.state_hash().unwrap();
         let bytes = a.active().unwrap().save_kphoto().unwrap();
@@ -158,6 +199,7 @@ mod tests {
         let mut a = Session::new();
         a.execute("file.new", json!({"width": 64, "height": 40, "background": "white"})).unwrap();
         painted(&mut a);
+        a.active_mut().unwrap().seal().unwrap();
         let bytes = a.active().unwrap().save_kphoto().unwrap();
 
         let mut b = Session::new();

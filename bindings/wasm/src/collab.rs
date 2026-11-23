@@ -21,16 +21,31 @@ use serde_json::Value;
 use crate::PhotoDocument;
 
 impl PhotoDocument {
-    /// Opens a file with the replica a host stored for it (a format that cannot carry one, such
-    /// as PSD; the Kit UI protocol's `replica` capability): the document is the replica's, so it
-    /// keeps its KDM identity across saves. The host vouches that the replica was saved with
-    /// these bytes (their stamps match). A replica that does not open (damaged, a newer schema)
-    /// is ignored and the file opens as [`KitDocument::open`] opens it.
+    /// Opens a file with the replica a host stored for it (its history; the Kit UI protocol's
+    /// `replica` capability): the document is the replica's, so it keeps its KDM identity across
+    /// saves. For a format that cannot carry a replica (PSD) the host vouches that the replica
+    /// was saved with these bytes (their stamps match). A `.kphoto` holds the document's content
+    /// (its content snapshot, no history): when it is the same document, the file is taken into
+    /// the stored replica (`kition_kit::session::take_file`: nothing, the changes it holds beyond
+    /// the replica, or its state by object id when it was saved elsewhere). A replica that does
+    /// not open (damaged, another schema) is ignored and the file opens as [`KitDocument::open`]
+    /// opens it.
     pub fn open_with_replica(name: &str, bytes: &[u8], snapshot: &[u8], blobs: &[u8]) -> Result<Self, String> {
-        let restored = decode_blobs(blobs).and_then(|blobs| {
+        let restored = decode_blobs(blobs).and_then(|mut blobs| {
             let mut session = crate::new_session();
             // The new document is the active one, as after `open`, and is saved to `name`.
-            session.open_snapshot(snapshot, blobs, name).map_err(|error| error.to_string())?;
+            let file = kition_photo_engine::kition_photo_bridge::embedded_bundle(bytes).ok().flatten();
+            match file {
+                Some((content, file_blobs)) => {
+                    for (hash, data) in file_blobs.0 {
+                        blobs.0.entry(hash).or_insert(data);
+                    }
+                    session.open_stored_with_file(snapshot, &content, blobs, name).map_err(|error| error.to_string())?;
+                }
+                None => {
+                    session.open_snapshot(snapshot, blobs, name).map_err(|error| error.to_string())?;
+                }
+            }
             if let Some(state) = session.active_mut() {
                 state.path = Some(name.to_owned());
             }

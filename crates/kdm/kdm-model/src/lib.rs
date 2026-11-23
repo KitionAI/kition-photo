@@ -54,7 +54,7 @@ use kition_photo_raster::Surface;
 
 pub use kition_kit;
 pub use read::{Read, Reuse, read_document, read_document_reusing};
-pub use session::{ImportError, PhotoSession};
+pub use session::{Content, ImportError, PhotoSession};
 pub use settle::settle as settle_batch;
 pub use tiles::{Sink, TileCache};
 pub use write::{Nodes, write_changes, write_changes_with, write_document, write_document_with};

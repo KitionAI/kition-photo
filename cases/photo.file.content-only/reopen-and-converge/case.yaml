@@ -1,0 +1,25 @@
+format: 1
+id: photo.file.content-only/reopen-and-converge
+feature: photo.file.content-only
+intent: >-
+  A .kphoto that holds only content is still the same document: opened without a store it keeps its
+  document id, object ids and version and takes edits; a replica opened from the file and one with
+  the whole history converge after both edit; undo after a save takes back the last edit; a file
+  opens on the host's stored replica that holds its version, keeping the history, and a file saved
+  elsewhere opens on it by its state, keyed by object id.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/content_file.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_file_opened_without_a_store_is_the_same_document_and_edits }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_replica_from_the_file_and_one_with_the_whole_history_converge }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: undo_after_a_save_takes_back_the_last_edit }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_file_opens_on_the_stored_replica }
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-22"

@@ -522,10 +522,22 @@ impl Session {
         Some(self.active()?.kdm()?.replica().doc_id().to_string())
     }
 
+    /// Opens the replica a host stored for a `.kphoto` (`stored`, its history) with the file's
+    /// content snapshot (`file`) taken into it (`kdm_model::PhotoSession::open_stored_with_file`),
+    /// as a new document made active.
+    pub fn open_stored_with_file(&mut self, stored: &[u8], file: &[u8], blobs: MemoryBlobs, name: &str) -> Result<usize> {
+        let kdm = PhotoSession::open_stored_with_file(stored, file, blobs).map_err(kdm_error)?;
+        Ok(self.open_session(kdm, name))
+    }
+
     /// Opens another replica's snapshot as a new document (a new replica of the same KDM
     /// document, so the two exchange changes) and makes it active.
     pub fn open_snapshot(&mut self, bytes: &[u8], blobs: MemoryBlobs, name: &str) -> Result<usize> {
-        let mut kdm = PhotoSession::open_snapshot(bytes, blobs).map_err(kdm_error)?;
+        let kdm = PhotoSession::open_snapshot(bytes, blobs).map_err(kdm_error)?;
+        Ok(self.open_session(kdm, name))
+    }
+
+    fn open_session(&mut self, mut kdm: PhotoSession, name: &str) -> usize {
         let mut doc = kdm.document().clone();
         // The replica holds no rendered appearance of type, shape and object layers: render
         // it, so the image opened from a `.kphoto` draws and measures as the one saved did.
@@ -533,8 +545,7 @@ impl Session {
             kdm.set_view(doc.clone());
         }
         doc.name = name.to_string();
-        let index = self.add_document_with(doc, None, Some(kdm));
-        Ok(index)
+        self.add_document_with(doc, None, Some(kdm))
     }
 }
 

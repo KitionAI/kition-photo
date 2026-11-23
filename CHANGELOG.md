@@ -3,6 +3,19 @@
 Changes to Kition Photo, newest first. A version is the kit package version in `kit.json`;
 each package is published with a `package-v<version>` tag.
 
+## Unreleased
+
+- A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.3, rule M16b):
+  `kdm.bin` is the replica's content snapshot (of the history, only the seal; no deleted layers,
+  no overwritten values, no authors) and the replica blobs are only those its state references.
+  Hosts seal the document before saving (`prepareSave`); the undo history stays in the session and
+  the host's store. A file opens on a stored replica by its changes or, when saved elsewhere, by
+  its state. kition-sdk 82a3224.
+- The replica's schema is frozen at version 1: notes, layer comps, saved paths, patterns, layer
+  styles and video frames are object lists, a type layer's text is a text with its style runs as
+  marks, the guides a map. A `.kphoto` saved by an earlier build opens from its manifest as a new
+  document.
+
 ## 0.1.3
 
 - The same kit as 0.1.2, built on kition-sdk 6672663 (the replica's undo passes over an undo group whose changes came to nothing): the 0.1.2 package was built on kition-sdk 6b4d471.

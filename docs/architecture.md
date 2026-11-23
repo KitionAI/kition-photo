@@ -316,7 +316,10 @@ psd/src/
 
 ## 9. Native file format (`kition-photo-format`)
 
-- **Format:** a `.kphoto` file is a zip (store mode) or directory bundle.
+- **Format:** a `.kphoto` file is a zip (store mode) or directory bundle. Its `kdm.bin` is the
+  document's KDM replica as a content snapshot: the state and, of the history, only the seal (no
+  deleted or overwritten content, no authors), with only the replica blobs that state references.
+  The history (undo steps) stays in the session and the host's store, never in the file.
   - `manifest.json`: a versioned document tree with serde, including `format_version` and migrations.
   - `tiles/<blake3>.zst`: content-addressed tiles, zstd-compressed.
   - `thumb.png` and `composite/` mips for quick look and previews.

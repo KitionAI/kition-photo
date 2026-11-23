@@ -111,6 +111,68 @@ impl PhotoSession {
         Ok(session)
     }
 
+    /// Opens the replica a host stored for a document (`stored`, its history) with the document's
+    /// file (`file`, the content snapshot a `.kphoto` holds) taken into it
+    /// (`kition_kit::session::take_file`): nothing when the stored replica has the file's version;
+    /// the changes the file holds beyond it when the file's history reaches it; otherwise (the file
+    /// was saved elsewhere) the file's state, written by object id as one `system` transaction.
+    /// Refuses a file of another document. `blobs` must hold what both reference.
+    pub fn open_stored_with_file(stored: &[u8], file: &[u8], blobs: MemoryBlobs) -> Result<Self> {
+        let mut replica = Replica::load(PhotoModel::schema(), stored, ActorId::random()).map_err(kit_err)?;
+        let from_file = Replica::load(PhotoModel::schema(), file, ActorId::random()).map_err(kit_err)?;
+        if !crate::same_schema(&replica) || !crate::same_schema(&from_file) {
+            return Err(KitError::new("the replica was written with another schema version"));
+        }
+        kition_kit::session::take_file(&mut replica, &from_file)?;
+        store_missing_numbers(&mut replica)?;
+        replica.take_changed();
+        let model = PhotoModel::load(&replica, &blobs)?;
+        let index = BlobIndex::build(&replica);
+        let mut session = Self { replica, model, blobs, group: None, tiles: TileCache::default(), index, blob_log: Vec::new() };
+        session.index.collect_garbage(&mut session.blobs);
+        Ok(session)
+    }
+
+    /// Seals the replica (`Replica::seal`, kition-sdk data model 7.3) so [`PhotoSession::content`]
+    /// writes its own content snapshot: one `system` change, no edit, no undo step. Answers whether
+    /// it committed one (none when nothing changed since the last seal).
+    pub fn seal(&mut self) -> Result<bool> {
+        let sealed = self.replica.seal().map_err(kit_err)?;
+        self.replica.take_changed();
+        Ok(sealed)
+    }
+
+    /// What a `.kphoto` holds of the replica: its content snapshot (the state and, of the history,
+    /// one seal: no deleted or overwritten content, no author), and the blobs that state
+    /// references. A sealed replica (the host called `prepareSave`) writes its own; see
+    /// [`Content::seal`] for one nobody sealed.
+    pub fn content(&self) -> Result<Content> {
+        let version = self.replica.version();
+        let blobs = |replica: &Replica| -> Vec<(String, Arc<[u8]>)> {
+            crate::state_blobs(replica).into_iter().filter_map(|hash| self.blobs.0.get(&hash).cloned().map(|bytes| (hash, bytes))).collect()
+        };
+        if self.replica.is_sealed() {
+            return Ok(Content { snapshot: self.replica.sealed_content_snapshot().map_err(kit_err)?, blobs: blobs(&self.replica), seal: None });
+        }
+        // FALLBACK, delete once a kit-editor release that calls prepareSave is in
+        // web/pnpm-lock.yaml: until then the editor saves a replica nobody sealed, and the save
+        // sees it read-only. The content of a copy sealed under an actor derived from the version
+        // (the same version gives the same bytes); the caller takes the seal in once the host
+        // stored the file ([`PhotoSession::take_seal`]).
+        let mut sealed = self.replica.fork(seal_actor(&version)).map_err(kit_err)?;
+        sealed.seal().map_err(kit_err)?;
+        let seal = sealed.export_changes(&version).map_err(kit_err)?;
+        Ok(Content { snapshot: sealed.sealed_content_snapshot().map_err(kit_err)?, blobs: blobs(&sealed), seal: Some(seal) })
+    }
+
+    /// Takes in the seal [`PhotoSession::content`] made on a copy (the fallback): no edit, no
+    /// undo step. A seal that does not import leaves the session as it was.
+    pub fn take_seal(&mut self, seal: &[u8]) {
+        if self.replica.import_changes(seal).is_ok() {
+            self.replica.take_changed();
+        }
+    }
+
     /// The view: the document as of the last record, undo, redo or import.
     pub fn document(&self) -> &Document {
         &self.model.document
@@ -407,6 +469,26 @@ impl PhotoSession {
             }
         }
     }
+}
+
+/// What a save writes of the replica ([`PhotoSession::content`]).
+pub struct Content {
+    /// The content snapshot (`kdm.bin`).
+    pub snapshot: Vec<u8>,
+    /// The blobs its state references.
+    pub blobs: Vec<(String, Arc<[u8]>)>,
+    /// The seal made on a copy when the replica was not sealed (the fallback), to take in with
+    /// [`PhotoSession::take_seal`] once the file is stored.
+    pub seal: Option<Vec<u8>>,
+}
+
+/// The actor that seals a copy of a replica at `version` (the fallback of
+/// [`PhotoSession::content`]): one per version, so saving one version twice writes the same seal,
+/// and two versions never share a seal's change id.
+fn seal_actor(version: &Version) -> ActorId {
+    let hash = kition_kit::session::sha256_hex(&version.encode());
+    let value = hash.get(..16).and_then(|hex| u64::from_str_radix(hex, 16).ok()).unwrap_or(0) >> 1;
+    ActorId::from_u64(value).unwrap_or_else(|_| ActorId::random())
 }
 
 /// Stores, in a `system` transaction labelled `repair` (no undo step), the number every read gives
