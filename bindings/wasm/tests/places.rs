@@ -190,8 +190,9 @@ fn review_smart_fill_holds_its_surroundings_for_every_accepted_spelling() {
 fn review_bucket_pattern_source_holds_the_document_pattern() {
     let (doc, _, a, _) = image();
     let under = doc.under("paint.bucket", &json!({ "layer": a, "source": "pattern", "pattern": "Checkerboard" })).unwrap().unwrap();
-    assert!(premise_of(&under, "image").fields.unwrap().contains(&"patterns[name=\"Checkerboard\"]".to_owned()));
-    assert_eq!(premise_of(&under, "image").identities.get("patterns[name=\"Checkerboard\"]").map(String::as_str), Some("key"));
+    // The pattern the name named at basis, told through the image's `~patternContents`.
+    assert!(under.objects.contains(&json!("image")), "{under:?}");
+    assert!(under.covers.as_ref().is_some_and(|covers| covers.fields.contains(&"~patternContents".to_owned())), "{under:?}");
 }
 
 #[test]
@@ -260,14 +261,16 @@ fn review_an_unnarrowed_command_by_name_keeps_all_target_fields() {
 fn review_doc_state_inputs_have_member_premises_even_without_an_active_target() {
     let (doc, _, a, _) = image();
     for (command, params, field) in [
-        ("edit.fill", json!({ "layer": a, "contents": "pattern", "pattern": "Bubbles" }), "patterns[name=\"Bubbles\"]"),
-        ("layer.newFillLayer.pattern", json!({ "pattern": "Bubbles" }), "patterns[name=\"Bubbles\"]"),
+        ("edit.fill", json!({ "layer": a, "contents": "pattern", "pattern": "Bubbles" }), "~patternContents"),
+        ("layer.newFillLayer.pattern", json!({ "pattern": "Bubbles" }), "~patternContents"),
         ("layerComp.apply", json!({ "comp": 1 }), "comps"),
         ("type.characterStyle.apply", json!({ "layer": a, "id": 1 }), "docState.text_styles"),
         ("type.paragraphStyle.set", json!({ "id": 1, "attrs": { "size": 12 } }), "docState.text_styles"),
     ] {
         let under = doc.under(command, &params).unwrap().unwrap_or_else(|| panic!("{command}: no premises"));
-        assert!(premise_of(&under, "image").fields.unwrap().contains(&field.to_owned()), "{command}: {under:?}");
+        // A stored pattern is held through the covers, the rest as fields of the image.
+        let covered = under.covers.as_ref().is_some_and(|covers| covers.fields.contains(&field.to_owned()));
+        assert!(covered || premise_of(&under, "image").fields.unwrap().contains(&field.to_owned()), "{command}: {under:?}");
     }
 }
 

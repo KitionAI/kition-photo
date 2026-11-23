@@ -34,7 +34,7 @@ fn top(session: &mut Session) -> Result<&mut Layer, String> {
     doc(session)?.layers.last_mut().ok_or_else(|| "no layer".to_owned())
 }
 
-fn fixtures() -> Result<Vec<(&'static str, Session)>, String> {
+pub(crate) fn fixtures() -> Result<Vec<(&'static str, Session)>, String> {
     let mut out = vec![("basic.psd", image()?)];
 
     let mut empty_layer = image()?;

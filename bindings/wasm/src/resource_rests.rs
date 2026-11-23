@@ -111,7 +111,7 @@ impl Address<'_> {
 /// of it changed since: deleted, changed in one of `assigned`, or now at another address (then
 /// the place no longer holds it). `None` when it cannot be told (no identity, or a duplicate).
 pub(crate) fn resource_covered(address: &Address<'_>, key: &str, assigned: &[&str], derived: &str, asks: &[CoveredAsk], now: &Value) -> Option<CoveredAt> {
-    let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
+    let Some(ask) = asks.iter().find(|ask| ask.id == crate::place::IMAGE) else { return Some(image_untouched(asks)) };
     // Only what the contents were at basis matters (the image's other fields may be unknown).
     if ask.unknown.iter().any(|field| field == derived) {
         return None;
@@ -166,7 +166,7 @@ pub(crate) fn address_covered(command: &str, p: &Value, asks: &[CoveredAsk], con
         "path.rename" => resource_covered(&Address::Member("name", p.get("name")?), "key", &["name"], "~pathContents", asks, contents.get("pathContents")?),
         "view.moveGuide" => {
             let axis = p.get("orientation")?.as_str()?;
-            let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
+            let Some(ask) = asks.iter().find(|ask| ask.id == crate::place::IMAGE) else { return Some(image_untouched(asks)) };
             if ask.unknown.iter().any(|field| field == "guides") {
                 return None;
             }
@@ -184,6 +184,15 @@ pub(crate) fn address_covered(command: &str, p: &Value, asks: &[CoveredAsk], con
             resource_covered(&Address::Index(index()?), "key", &["position"], "~guides", &asks, &listed(now_map)?)
         }
         _ => None,
+    }
+}
+
+/// The answer when others changed nothing of the image (only objects it does not hold, a note
+/// they made): the place is as it was, and none of what was asked is in it.
+fn image_untouched(asks: &[CoveredAsk]) -> CoveredAt {
+    CoveredAt {
+        under: vec![json!(crate::place::IMAGE)],
+        covered: asks.iter().map(|a| Covered { id: a.id.clone(), covered: Some(false), ..Default::default() }).collect(),
     }
 }
 
@@ -365,7 +374,7 @@ fn guide_keys(map: &Value, axis: &str) -> Option<Vec<String>> {
 }
 
 pub(crate) fn channel_covered(address: &Value, assigning: bool, asks: &[CoveredAsk], now: &Value) -> Option<CoveredAt> {
-    let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
+    let Some(ask) = asks.iter().find(|ask| ask.id == crate::place::IMAGE) else { return Some(image_untouched(asks)) };
     // Only the channels at basis matter (the image's other fields may be unknown).
     if ask.unknown.iter().any(|field| field == "~channelContents") {
         return None;
