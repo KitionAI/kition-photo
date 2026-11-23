@@ -409,6 +409,8 @@ mod tests {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
+        // As a host saves: sealed first, so the file holds a's own content snapshot.
+        a.prepare_save().unwrap();
         let bytes = a.save(None).unwrap();
         assert!(!a.version().unwrap().is_empty(), "painting made a replica");
 
@@ -433,6 +435,8 @@ mod tests {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
+        // As a host saves: sealed first, so the file holds a's own content snapshot.
+        a.prepare_save().unwrap();
         let bytes = a.save(None).unwrap();
 
         let mut b = PhotoDocument::open("shared.kphoto", &bytes).unwrap();

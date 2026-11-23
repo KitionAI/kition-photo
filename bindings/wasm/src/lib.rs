@@ -381,7 +381,22 @@ impl KitDocument for PhotoDocument {
     }
 
     fn fork_for_premises(&self) -> Result<Self, String> {
-        let mut fork = Self::open(&self.name, &self.save(None)?)?;
+        // A `.kphoto` holds content, not history: a fork for planning is the live replica's own
+        // (its full snapshot), whose history reaches every version the plan compares with.
+        let state = self.state()?;
+        let mut fork = match state.kdm() {
+            Some(kdm) if kition_photo_engine::kition_photo_bridge::is_kition_photo_name(&self.name) => {
+                let mut session = new_session();
+                session
+                    .open_snapshot(&kdm.snapshot().map_err(|error| error.to_string())?, kdm.blobs().clone(), &self.name)
+                    .map_err(|error| error.to_string())?;
+                if let Some(opened) = session.active_mut() {
+                    opened.path.clone_from(&state.path);
+                }
+                Self::saved_as(session, &self.name)
+            }
+            _ => Self::open(&self.name, &self.save(None)?)?,
+        };
         fork.carry_replica_objects(self)?;
         fork.restore_editor_state(&self.editor_state())?;
         Ok(fork)

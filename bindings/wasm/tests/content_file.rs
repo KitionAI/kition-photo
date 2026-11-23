@@ -213,7 +213,10 @@ fn a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state() {
     let edited = host_save(&mut elsewhere);
     let mut opened = PhotoDocument::open_with_replica(FILE, &edited, &stored, &blobs).unwrap();
     assert_eq!(opened.doc_id(), doc.doc_id());
-    assert_eq!(state(&mut opened), state(&mut elsewhere), "the file's state, by object id");
+    // The file's state, by object id (the stored replica keeps the tree node of the layer it
+    // deleted, which the canonical state lists and no read shows).
+    assert_eq!(opened.layer_object_ids(), elsewhere.layer_object_ids(), "the same layers, by object id");
+    assert_eq!(opened.inspect().unwrap()["layers"], elsewhere.inspect().unwrap()["layers"], "the file's state");
     assert!(contains(&opened.snapshot().unwrap(), DELETED_LAYER), "on top of the stored history, which it keeps");
 }
 
