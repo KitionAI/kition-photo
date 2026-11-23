@@ -21,7 +21,8 @@ pub fn is_kition_photo_name(name: &str) -> bool {
 
 /// The replica a file of this kit embeds, as a KDM snapshot (`document.identity`, KitModel M7a):
 /// a `.kphoto` bundle's `kdm.bin`, which [`Session::open_file`] opens the document from, so a byte
-/// copy of the bundle is the same document. `None` for a bundle saved without a replica, a PSD or
+/// copy of the bundle is the same document. `None` for a bundle saved without a replica or with
+/// a replica of another schema version (opened from its manifest as a new document), a PSD or
 /// PSB (Photoshop's format embeds none: the kit makes a replica under a new id each time it opens
 /// one), and an empty file (one made for the kit before it saved there). Other bytes are not one
 /// of the kit's files and are refused; never writes.
@@ -32,7 +33,7 @@ pub fn embedded_replica(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
     if !kition_photo_format::is_kphoto(bytes) {
         return Err(EngineError::Other("not a Kition Photo document (.kphoto) or a Photoshop document (.psd, .psb)".into()));
     }
-    kition_photo_format::read_kdm_snapshot(bytes).map_err(kdm_error)
+    Ok(kition_photo_format::read_kdm_snapshot(bytes).map_err(kdm_error)?.filter(|snapshot| kdm_model::replica_matches(snapshot)))
 }
 
 /// `bytes` (a `.kphoto` bundle with a replica) holding the document `snapshot` instead of its own
@@ -50,11 +51,14 @@ pub fn replace_replica(bytes: &[u8], snapshot: &[u8]) -> Result<Vec<u8>> {
 
 impl Session {
     /// Opens any file `kition_photo_io::import` supports as a new document; a `.kphoto` whose
-    /// bundle holds a KDM replica opens it with [`Session::open_snapshot`] instead, keeping its
-    /// identity and undo history across saves. Answers the new document's index (made active).
+    /// bundle holds a KDM replica of this schema version opens it with [`Session::open_snapshot`]
+    /// instead, keeping its identity and undo history across saves. A replica of another schema
+    /// version is not read: the document is rebuilt from the bundle's manifest, as one saved
+    /// without a replica. Answers the new document's index (made active).
     pub fn open_file(&mut self, name: &str, bytes: &[u8]) -> Result<usize> {
         if (is_kition_photo_name(name) || kition_photo_format::is_kphoto(bytes))
             && let Some(bundle) = kition_photo_format::read_kdm(bytes).map_err(kdm_error)?
+            && kdm_model::replica_matches(&bundle.snapshot)
         {
             let blobs = MemoryBlobs(bundle.blobs.into_iter().map(|(hash, data)| (hash, Arc::<[u8]>::from(data))).collect());
             return self.open_snapshot(&bundle.snapshot, blobs, name);

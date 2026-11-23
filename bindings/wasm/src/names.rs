@@ -1,6 +1,7 @@
-//! Name resolvers and their model type scopes. An empty scope means the resource lives in
-//! Image.docState or the session library, not in an addressable model object. under() holds
-//! the stored resource and its immutable identity when the format can prove it.
+//! Name resolvers and their model type scopes. An empty scope means the resource is an item of
+//! one of the image's lists (comps, saved paths, patterns), the work path in Image.docState, or
+//! the session library, not a layer or channel. under() holds the stored resource and its
+//! immutable identity when the format can prove it.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -167,7 +168,7 @@ pub fn stored_fields(id: &str, params: &serde_json::Value) -> Vec<&'static str> 
             fields.extend(["channels", "~channelContents"]);
         } else if types.is_empty() {
             let field = match param {
-                "comp" => "docState.layer_comps",
+                "comp" => "comps",
                 "path" | "paths" | "name"
                     if id.starts_with("path.")
                         || id.starts_with("layer.vectorMask.")
@@ -176,10 +177,10 @@ pub fn stored_fields(id: &str, params: &serde_json::Value) -> Vec<&'static str> 
                         || param == "path" =>
                 {
                     fields.push("docState.work_path");
-                    "docState.paths"
+                    "paths"
                 }
                 _ if id.starts_with("style.") => continue,
-                _ => "docState.patterns",
+                _ => "patterns",
             };
             fields.push(field);
         }

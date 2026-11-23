@@ -1,13 +1,15 @@
 //! JSON mirrors of `kition-photo-doc` types the schema does not name as fields of their own.
 //!
-//! `Layer.props` holds two things: `data`, the kind's own parameters (adjustment settings, fill,
-//! text runs, shape outline, object layer source), and `extra`, the rest of [`Layer`] the named
-//! schema fields (`name`, `visible`, `blend`, `opacity`, `fillOpacity`, `clipped`, `kind`,
-//! `effects`, `mask`, `psdId`) do not cover: PSD bookkeeping (vector mask, label, link group,
-//! excluded channels, Blend If, Advanced Blending, and raw additional-layer-info blocks) a
-//! lossless PSD round trip still needs, and a video layer's frame stack (each frame's tiles are
-//! blobs, like a layer's). Rendered-pixel caches (`cache`, `fill_cache`) are not modelled; the
-//! view keeps or rebuilds them.
+//! A layer stores two of them: `Layer.data`, the kind's own parameters (adjustment settings,
+//! fill, a type layer's font and frame, shape outline, object layer source), and `Layer.extra`,
+//! the rest of [`Layer`] the named schema fields do not cover: PSD bookkeeping (vector mask,
+//! label, link group, excluded channels, Blend If, Advanced Blending, and raw
+//! additional-layer-info blocks) a lossless PSD round trip still needs, and a video layer's
+//! frame rate and source (its frames are `Layer.frames`, a list of surfaces). A type layer's
+//! characters and style runs are its `TextBody` ([`crate::text_body`]); its layer style is
+//! `Layer.styles` (one `Style` object per effect) and `Layer.styleSettings`. A group's
+//! expanded state is each person's own view and is not stored. Rendered-pixel caches (`cache`,
+//! `fill_cache`) are not modelled; the view keeps or rebuilds them.
 //!
 //! Large binary data (ICC-sized blobs, raw PSD blocks, embedded object layer files) goes through
 //! the session's [`BlobSink`], like tiles: never inlined as base64 in a register, so the replica
@@ -17,17 +19,18 @@ use std::sync::Arc;
 
 use kition_kit::kdm::KdmError;
 use kition_kit::session::{BlobRef, BlobSink, BlobSource};
-use kition_photo_doc::text::{AntiAlias, Orientation, ParagraphRun, TextRun, TextShape, TextWarp};
+use kition_photo_color::PixelFormat;
+use kition_photo_doc::text::{AntiAlias, Orientation, TextShape, TextWarp};
 use kition_photo_doc::{
     Adjustment, AdvancedBlending, Affine, AlphaChannel, Artboard, BlendIf, Color, ColorIndicates, EditableFilter, Effect, Effects, Fill, Group, LabelColor,
-    Layer, LayerContent, LayerMask, LiveShape, ObjectLayer, Path, ShapeLayer, ShapeStroke, SmartSource, StackMode, TextLayer, VectorMask, VideoData,
-    VideoSource,
+    Layer, LayerContent, LayerMask, LiveShape, ObjectLayer, Path, ShapeLayer, ShapeStroke, SmartSource, StackMode, TextLayer, VectorMask, VideoSource,
 };
 use kition_photo_geom::warp::Warp;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::kdm_err;
+use crate::text_body::Body;
 use crate::tiles::Sink;
 
 type KdmResult<T> = Result<T, KdmError>;
@@ -85,7 +88,7 @@ mod u64_text {
     }
 }
 
-/// PSD bookkeeping the schema's named fields do not carry, folded into `props.extra`.
+/// `Layer.extra`: PSD bookkeeping the schema's named fields do not carry.
 #[derive(Default, Serialize, Deserialize)]
 #[serde(default)]
 pub(crate) struct LayerExtra {
@@ -99,49 +102,22 @@ pub(crate) struct LayerExtra {
     pub advanced: AdvancedBlending,
     /// Preserved PSD additional-layer-info blocks: (hex-encoded 4-byte key, the block's bytes).
     pub psd_blocks: Vec<(String, BlobRef)>,
-    /// A video layer's frame stack (Layer › Video Layers): each frame's tiles are blobs.
-    pub video: Option<VideoExtra>,
+    /// A video layer's (Layer › Video Layers) source and frame rate; its frames are the layer's
+    /// `frames` list.
+    pub video: Option<VideoMeta>,
 }
 
-/// [`VideoData`] as stored: the frames embedded (one blob per tile, like tiles).
-#[derive(Serialize, Deserialize)]
-pub(crate) struct VideoExtra {
-    frames: Vec<crate::doc_state::EmbeddedSurface>,
-    source: VideoSource,
-    fps: f32,
-    show_altered: bool,
-}
-
-/// Whether two layers' video stacks are the same, frame pixels included (by tile identity, then
-/// content): `VideoData`'s own equality compares only their shape.
-pub(crate) fn same_video(a: &Option<VideoData>, b: &Option<VideoData>) -> bool {
-    match (a, b) {
-        (None, None) => true,
-        (Some(a), Some(b)) => {
-            a == b
-                && a.frames.iter().zip(&b.frames).all(|(x, y)| {
-                    x.format() == y.format()
-                        && x.default_pixel() == y.default_pixel()
-                        && x.tile_count() == y.tile_count()
-                        && x.tiles().all(|(coord, tile)| y.tile(*coord).is_some_and(|other| Arc::ptr_eq(tile, other) || tile == other))
-                })
-        }
-        _ => false,
-    }
+/// [`kition_photo_doc::VideoData`] as `Layer.extra` stores it: all but the frames.
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub(crate) struct VideoMeta {
+    pub source: VideoSource,
+    pub fps: f32,
+    pub show_altered: bool,
 }
 
 impl LayerExtra {
     pub fn from_layer(layer: &Layer, width: u32, height: u32, blobs: &mut Sink<'_>) -> KdmResult<Self> {
-        let video = match &layer.video {
-            Some(video) => {
-                let mut frames = Vec::with_capacity(video.frames.len());
-                for frame in &video.frames {
-                    frames.push(crate::doc_state::embed_surface(frame, blobs)?);
-                }
-                Some(VideoExtra { frames, source: video.source.clone(), fps: video.fps, show_altered: video.show_altered })
-            }
-            None => None,
-        };
+        let video = layer.video.as_ref().map(|video| VideoMeta { source: video.source.clone(), fps: video.fps, show_altered: video.show_altered });
         // A newly written vector mask has no source block. Its canonical block adds no
         // information on reread; keep only source bytes the writer cannot regenerate exactly.
         let generated_mask = layer
@@ -166,7 +142,9 @@ impl LayerExtra {
         })
     }
 
-    pub fn apply_to(self, layer: &mut Layer, blobs: &dyn BlobSource) -> KdmResult<()> {
+    /// Applies the stored state to `layer`; a video layer's frames (`frames`, read from the
+    /// layer's `frames` list) go with it.
+    pub fn apply_to(self, layer: &mut Layer, frames: Vec<kition_photo_raster::Surface>, blobs: &dyn BlobSource) -> KdmResult<()> {
         layer.vector_mask = self.vector_mask;
         layer.label = self.label;
         layer.link_group = self.link_group;
@@ -175,16 +153,7 @@ impl LayerExtra {
         layer.advanced = self.advanced;
         layer.psd_blocks =
             self.psd_blocks.into_iter().map(|(key, blob)| Ok((unhex4(&key)?, Arc::new(fetch(blobs, &blob)?.to_vec())))).collect::<KdmResult<Vec<_>>>()?;
-        layer.video = match self.video {
-            Some(video) => {
-                let mut frames = Vec::with_capacity(video.frames.len());
-                for frame in &video.frames {
-                    frames.push(crate::doc_state::extract_surface(frame, blobs)?);
-                }
-                Some(VideoData { frames, source: video.source, fps: video.fps, show_altered: video.show_altered })
-            }
-            None => None,
-        };
+        layer.video = self.video.map(|video| kition_photo_doc::VideoData { frames, source: video.source, fps: video.fps, show_altered: video.show_altered });
         Ok(())
     }
 }
@@ -226,25 +195,13 @@ pub(crate) fn raster_default(data: &Value, channels: usize) -> Vec<f32> {
     }
 }
 
-/// `props.data` plus `props.extra`, as stored for one layer.
-#[derive(Default, Serialize, Deserialize)]
-#[serde(default)]
-pub(crate) struct Props {
-    pub data: Value,
-    pub extra: LayerExtra,
-}
-
+/// A type layer's `Layer.data`: all but its characters and runs (its `TextBody`).
 #[derive(Serialize, Deserialize)]
 struct TextData {
-    text: String,
     font_family: String,
     size_pt: f32,
     color: Color,
     transform: Affine,
-    #[serde(default)]
-    runs: Vec<TextRun>,
-    #[serde(default)]
-    paragraphs: Vec<ParagraphRun>,
     shape: TextShape,
     orientation: Orientation,
     antialias: AntiAlias,
@@ -306,11 +263,18 @@ struct FilterMaskData {
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 struct GroupData {
-    expanded: bool,
     artboard: Option<Artboard>,
 }
 
-/// `kind` (the schema's enum) and `props.data` for one layer's content.
+/// The characters and runs of a type layer's content (its `TextBody`), `None` for other kinds.
+pub(crate) fn text_body(content: &LayerContent) -> Option<Body> {
+    match content {
+        LayerContent::Text(text) => Some(Body { text: text.text.clone(), runs: text.runs.clone(), paragraphs: text.paragraphs.clone() }),
+        _ => None,
+    }
+}
+
+/// `kind` (the schema's enum) and `Layer.data` for one layer's content.
 pub(crate) fn content_data(content: &LayerContent, blobs: &mut Sink<'_>) -> KdmResult<(&'static str, Value)> {
     match content {
         // Pixels are the `tiles` map; only a non-transparent default pixel (an adjusted empty
@@ -319,9 +283,7 @@ pub(crate) fn content_data(content: &LayerContent, blobs: &mut Sink<'_>) -> KdmR
             let default_pixel = surface.default_pixel();
             Ok(("raster", if default_pixel.iter().all(|v| *v == 0.0) { Value::Null } else { serde_json::json!({ "defaultPixel": default_pixel }) }))
         }
-        LayerContent::Group(Group { expanded, artboard, .. }) => {
-            serde_json::to_value(GroupData { expanded: *expanded, artboard: artboard.clone() }).map(|v| ("group", v)).map_err(kdm_err)
-        }
+        LayerContent::Group(Group { artboard, .. }) => serde_json::to_value(GroupData { artboard: artboard.clone() }).map(|v| ("group", v)).map_err(kdm_err),
         LayerContent::Adjustment(adjustment) => serde_json::to_value(adjustment).map(|v| ("adjustment", v)).map_err(kdm_err),
         LayerContent::Fill(fill) => serde_json::to_value(fill).map(|v| ("fill", v)).map_err(kdm_err),
         LayerContent::Text(text) => text_data(text, blobs).and_then(|v| serde_json::to_value(v).map_err(kdm_err)).map(|v| ("text", v)),
@@ -332,13 +294,10 @@ pub(crate) fn content_data(content: &LayerContent, blobs: &mut Sink<'_>) -> KdmR
 
 fn text_data(text: &TextLayer, blobs: &mut dyn BlobSink) -> KdmResult<TextData> {
     Ok(TextData {
-        text: text.text.clone(),
         font_family: text.font_family.clone(),
         size_pt: text.size_pt,
         color: text.color,
         transform: text.transform,
-        runs: text.runs.clone(),
-        paragraphs: text.paragraphs.clone(),
         shape: text.shape,
         orientation: text.orientation,
         antialias: text.antialias,
@@ -384,14 +343,15 @@ fn smart_data(smart: &ObjectLayer, blobs: &mut Sink<'_>) -> KdmResult<SmartData>
     })
 }
 
-/// Rebuilds a layer's [`LayerContent`] from its `kind` string and `props.data`, for every kind
-/// except `raster`: the caller builds that one directly from the layer object's own `tiles` map
-/// (the document's raster pixel format, not anything in `props`, decides how to decode them).
-pub(crate) fn content_from(kind: &str, data: Value, blobs: &dyn BlobSource) -> KdmResult<LayerContent> {
+/// Rebuilds a layer's [`LayerContent`] from its `kind` string, `Layer.data` and (a type layer's)
+/// `TextBody`, for every kind except `raster`: the caller builds that one directly from the layer
+/// object's own `tiles` map (the document's raster pixel format, not anything in `data`, decides
+/// how to decode them). A group reads expanded: whether it is is each person's own view.
+pub(crate) fn content_from(kind: &str, data: Value, body: Option<Body>, blobs: &dyn BlobSource) -> KdmResult<LayerContent> {
     match kind {
         "group" => {
-            let group: GroupData = serde_json::from_value(data).map_err(kdm_err)?;
-            Ok(LayerContent::Group(Group { children: Vec::new(), expanded: group.expanded, artboard: group.artboard }))
+            let group: GroupData = if data.is_null() { GroupData::default() } else { serde_json::from_value(data).map_err(kdm_err)? };
+            Ok(LayerContent::Group(Group { children: Vec::new(), expanded: true, artboard: group.artboard }))
         }
         "adjustment" => {
             let adjustment: Adjustment = serde_json::from_value(data).map_err(kdm_err)?;
@@ -403,16 +363,17 @@ pub(crate) fn content_from(kind: &str, data: Value, blobs: &dyn BlobSource) -> K
         }
         "text" => {
             let text: TextData = serde_json::from_value(data).map_err(kdm_err)?;
+            let body = body.unwrap_or_default();
             Ok(LayerContent::Text(TextLayer {
-                text: text.text,
+                text: body.text,
                 font_family: text.font_family,
                 size_pt: text.size_pt,
                 color: text.color,
                 transform: text.transform,
                 cache: None,
                 psd_raw: text.psd_raw.map(|blob| fetch(blobs, &blob).map(|bytes| Arc::new(bytes.to_vec()))).transpose()?,
-                runs: text.runs,
-                paragraphs: text.paragraphs,
+                runs: body.runs,
+                paragraphs: body.paragraphs,
                 shape: text.shape,
                 orientation: text.orientation,
                 antialias: text.antialias,
@@ -469,6 +430,9 @@ pub(crate) fn content_from(kind: &str, data: Value, blobs: &dyn BlobSource) -> K
 #[serde(default)]
 pub(crate) struct SurfaceMeta {
     pub key: Option<String>,
+    /// A video frame's pixel format (a mask's and a channel's follow from what holds them).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<PixelFormat>,
     pub default_pixel: Vec<f32>,
     pub enabled: bool,
     pub linked: bool,
@@ -504,6 +468,10 @@ impl SurfaceMeta {
         }
     }
 
+    pub fn for_frame(frame: &kition_photo_raster::Surface) -> Self {
+        Self { format: Some(frame.format()), default_pixel: frame.default_pixel(), ..Default::default() }
+    }
+
     /// Applies the mask-relevant fields to a freshly built [`LayerMask`] (its surface is filled
     /// separately, from the same `Surface` object's `tiles`).
     pub fn apply_to_mask(&self, mask: &mut LayerMask) {
@@ -527,7 +495,8 @@ impl SurfaceMeta {
     }
 }
 
-/// `Layer.effects`: [`Effects`] without its PSD-raw-bytes field inlined.
+/// [`Effects`] as one JSON value, its PSD bytes a blob: how a layer comp records a layer's
+/// style. A layer stores its own style as `Layer.styles` and `Layer.styleSettings` instead.
 #[derive(Default, Serialize, Deserialize)]
 #[serde(default)]
 pub(crate) struct EffectsData {
@@ -551,6 +520,31 @@ impl EffectsData {
         Ok(Effects {
             enabled: self.enabled,
             items: self.items,
+            psd_raw: self.psd_raw.map(|blob| fetch(blobs, &blob).map(|bytes| Arc::new(bytes.to_vec()))).transpose()?,
+            reference: self.reference,
+        })
+    }
+}
+
+/// `Layer.styleSettings`: all of a layer's [`Effects`] but the effects themselves (each a
+/// `Style` object of `Layer.styles`).
+#[derive(Default, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub(crate) struct StyleSettings {
+    pub enabled: bool,
+    pub psd_raw: Option<BlobRef>,
+    pub reference: Option<(f64, f64)>,
+}
+
+impl StyleSettings {
+    pub fn of(effects: &Effects, blobs: &mut dyn BlobSink) -> Self {
+        Self { enabled: effects.enabled, psd_raw: effects.psd_raw.as_ref().map(|data| embed(blobs, data)), reference: effects.reference }
+    }
+
+    pub fn into_effects(self, items: Vec<Effect>, blobs: &dyn BlobSource) -> KdmResult<Effects> {
+        Ok(Effects {
+            enabled: self.enabled,
+            items,
             psd_raw: self.psd_raw.map(|blob| fetch(blobs, &blob).map(|bytes| Arc::new(bytes.to_vec()))).transpose()?,
             reference: self.reference,
         })

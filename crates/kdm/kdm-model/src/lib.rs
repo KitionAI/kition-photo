@@ -1,23 +1,27 @@
 //! Bridges the Photo engine's `Document` ([`kition_photo_doc`]) to a `kit.photo` KDM replica.
 //!
 //! [`PhotoModel`] implements [`KitModel`]: it is the engine's materialised view of a replica, the
-//! same `Document` the rest of the engine already knows. Layers, surfaces (masks) and channels
-//! become KDM objects; a layer's or surface's pixels become one content-addressed blob per
-//! 256×256 tile ([`tiles`]), keyed `"x,y"` in its `tiles` map, so concurrent edits to different
-//! tiles both survive and edits to the same tile resolve last-writer-wins (each map key is its
-//! own register). [`write_document`] and [`write_changes`] are the engine command bridge's entry
-//! points (phase 3a Task 3): writing a whole document in one creating transaction, or only what a
-//! command changed.
+//! same `Document` the rest of the engine already knows. Layers, surfaces (masks, video frames)
+//! and channels become KDM objects; a layer's or surface's pixels become one content-addressed
+//! blob per 256×256 tile ([`tiles`]), keyed `"x,y"` in its `tiles` map, so concurrent edits to
+//! different tiles both survive and edits to the same tile resolve last-writer-wins (each map key
+//! is its own register). A type layer's characters are a text ([`text_body`]), its style runs
+//! marks on them; a layer's effects, the image's notes, layer comps, saved paths and patterns are
+//! object lists ([`lists`], [`resources`]); the guides are a map keyed by guide ([`guides`]).
+//! [`write_document`] and [`write_changes`] are the engine command bridge's entry points:
+//! writing a whole document in one creating transaction, or only what a command changed.
 //!
-//! Scope for this phase (the phase 3a design): `Document.selection` and
-//! `Document.quick_mask` (the selection, edited as a channel) are per-person state and are never
-//! written to the replica (D5); nor are `Document::id` and `Document::name` (this view's own
-//! identity and file title). Everything else in `Document` — patterns,
-//! layer comps, measurement, notes, timeline, the quick mask, and the rest — round-trips through
-//! one `Image.docState` register ([`doc_state`]); it is not individually mergeable (the whole
-//! register is last-writer-wins), unlike layers, surfaces and tiles. Rendered-pixel caches
-//! (`Layer::fill_cache`, every kind's `cache`) are dropped; the compositor rebuilds them on
-//! demand. Every layer's own properties, its mask, and its pixels round-trip and merge finely.
+//! `Document.selection` and `Document.quick_mask` (the selection, edited as a channel) are
+//! per-person state and are never written to the replica; nor are `Document::id` and
+//! `Document::name` (this view's own identity and file title), nor each person's view
+//! ([`private`]: a group's expanded state, an open note, the timeline's playhead, the last applied
+//! comp). The rest of the document-level state (metadata, measurement, slices, the timeline, …)
+//! round-trips through one `Image.docState` register ([`doc_state`]), last-writer-wins as a
+//! whole. Rendered-pixel caches (`Layer::fill_cache`, every kind's `cache`) are dropped; the
+//! compositor rebuilds them on demand.
+//!
+//! **Canvas size.** The image is at most 25,600 pixels a side (the schema's `width` and
+//! `height`), so a layer's `tiles` map holds at most 100 × 100 = 10,000 keys over the canvas.
 //!
 //! **Layer ids.** Every layer stores its engine id in its read-only `number` field, so a reopen,
 //! a replica-only open and a peer all give a layer the same id; two layers that store one number
@@ -27,10 +31,15 @@
 
 mod blob_gc;
 mod doc_state;
+mod guides;
+mod lists;
+mod private;
 mod props;
 mod read;
+mod resources;
 mod session;
 mod settle;
+mod text_body;
 mod tiles;
 mod write;
 
@@ -53,6 +62,23 @@ pub use write::{Nodes, write_changes, write_changes_with, write_document, write_
 type Result<T> = kition_kit::session::Result<T>;
 
 const SCHEMA: &str = include_str!("../model/schema.json");
+
+/// The largest canvas side the schema takes, in pixels: a layer's `tiles` map then holds at most
+/// 10,000 keys over the canvas.
+pub const MAX_CANVAS_SIDE: u32 = 25_600;
+
+/// Whether `replica` was written with this schema version: made under it, and no change of it
+/// under another. A replica of another version is not read (no reader for an older shape is
+/// kept): a `.kphoto` holding one opens from its manifest instead, as a new replica.
+pub fn same_schema(replica: &Replica) -> bool {
+    let version = replica.schema().schema_version;
+    replica.min_schema_version() == version && replica.author_schema_version().is_none_or(|author| author == version)
+}
+
+/// [`same_schema`] for a snapshot's bytes; `false` for bytes that do not load.
+pub fn replica_matches(snapshot: &[u8]) -> bool {
+    Replica::load(<PhotoModel as KitModel>::schema(), snapshot, ActorId::random()).is_ok_and(|replica| same_schema(&replica))
+}
 
 /// The blobs `replica`'s current state references (tiles, ICC profiles, effects, the document
 /// state), and none that only its history or an undo step does: what a file holding the replica
@@ -134,6 +160,7 @@ impl PhotoModel {
         let read = read::read_document_reusing(replica, blobs, reuse).map_err(kit_err)?;
         let mut document = read.document;
         let previous = &mut self.document;
+        private::carry(previous, &mut document);
         document.id = previous.id;
         document.name = std::mem::take(&mut previous.name);
         document.selection = previous.selection.take();
@@ -162,8 +189,9 @@ impl PhotoModel {
 
 impl PartialEq for PhotoModel {
     /// Compares documents as content, not as engine session state: `Document::id` is this
-    /// process's own handle, and layer ids are compared apart from the content (two views of
-    /// converged replicas give every layer the same id, see [`read`]).
+    /// process's own handle, each person's view ([`private`]) is their own, and layer ids are
+    /// compared apart from the content (two views of converged replicas give every layer the same
+    /// id, see [`read`]).
     fn eq(&self, other: &Self) -> bool {
         fn zero_layer_ids(layers: &[Layer]) -> Vec<Layer> {
             layers
@@ -178,8 +206,8 @@ impl PartialEq for PhotoModel {
                 })
                 .collect()
         }
-        let mut a = self.document.clone();
-        let mut b = other.document.clone();
+        let mut a = private::shared(&self.document);
+        let mut b = private::shared(&other.document);
         a.id = b.id;
         a.layers = zero_layer_ids(&a.layers);
         b.layers = zero_layer_ids(&b.layers);
@@ -237,6 +265,8 @@ impl KitModel for PhotoModel {
             // fields must keep the children the view already has.
             if let (LayerContent::Group(before_group), LayerContent::Group(patched_group)) = (&before.content, &mut patched.content) {
                 patched_group.children = before_group.children.clone();
+                // Expanded or not is this view's own.
+                patched_group.expanded = before_group.expanded;
             }
             // Rendered-appearance caches are not stored in the replica (`read_layer` always
             // starts them `None`); keep what the view already rendered when only other fields

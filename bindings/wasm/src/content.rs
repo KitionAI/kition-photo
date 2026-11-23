@@ -96,11 +96,6 @@ pub(crate) fn changed(doc: &PhotoDocument, ask: &ContentAsk, history: &dyn Histo
         };
         return Ok(Some(Some(before_canvas) != now.get("canvas") && Some(before_pixels) != now.get("pixels")));
     }
-    if ask.premise.id == "image" && ask.premise.field == "docState" && ask.premise.region.get("resource").is_some() {
-        let Some(kdm) = state.kdm() else { return Ok(None) };
-        let now = kdm.replica().get(&kition_kit::kdm::ObjectId::from_string("image".to_owned()), "docState").map_err(|e| e.to_string())?;
-        return Ok(crate::resource_rests::assigned_changed(&ask.before, &now, &ask.premise.region));
-    }
     let Some(area) = rectangle(&ask.premise.region) else { return Ok(None) };
     if ask.premise.id == "image" {
         let (lo, hi, size) = match ask.premise.field.as_str() {

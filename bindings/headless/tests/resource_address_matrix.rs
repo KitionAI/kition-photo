@@ -76,7 +76,8 @@ fn necessity(form: Form, change: Change, scope: usize) -> Option<&'static str> {
         return Some("deleted");
     }
     // same-field decision: Same (and the five duplicate Rename cases) assigns the
-    // very field the agent assigns. This includes notes.open = true on both sides.
+    // very field the agent assigns. This includes a note's color on both sides (whether a
+    // note is open is each person's own view, not the note's).
     if target
         && (change == Change::Same
             || change == Change::Rename && matches!(form, Form::ChannelName | Form::ChannelIndex | Form::PathName | Form::CompId | Form::CompName))
@@ -152,7 +153,7 @@ fn change(doc: &mut Document, form: Form, edit: Change, scope: usize) {
             new.key = kition_photo_engine::doc::fresh_resource_key();
             new.author = "Inserted".into();
             match edit {
-                Change::Same => doc.notes[i].open = true,
+                Change::Same => doc.notes[i].color = kition_photo_engine::doc::Color::rgb(0.0, 1.0, 0.0),
                 Change::Other | Change::Rename => doc.notes[i].text = "Colleague".into(),
                 _ => structure!(doc.notes, new),
             }
@@ -216,7 +217,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
             Form::PathName => ("path.rename", json!({"name":"C1","to":"Mine"})),
             Form::CompId => ("layerComp.rename", json!({"comp":engine.layer_comps[1].id,"name":"Mine"})),
             Form::CompName => ("layerComp.rename", json!({"comp":"C1","name":"Mine"})),
-            Form::NoteIndex => ("notes.set", json!({"index":1,"open":true})),
+            Form::NoteIndex => ("notes.set", json!({"index":1,"color":"#ff0000"})),
             Form::SliceId => ("slice.set", json!({"slice":engine.slices.list[1].id,"url":"Mine"})),
             Form::GuideIndex => ("view.moveGuide", json!({"orientation":"vertical","index":1,"position":32})),
         };

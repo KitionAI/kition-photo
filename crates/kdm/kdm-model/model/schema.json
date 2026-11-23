@@ -1,14 +1,14 @@
 {
   "kdm": 1,
   "kit": "kit.photo",
-  "schemaVersion": 3,
+  "schemaVersion": 1,
   "root": "Image",
   "types": {
     "Image": {
       "batchOps": { "*": { "direct": true } },
       "fields": {
-        "width": { "kind": "integer", "minimum": 1, "maximum": 300000, "multipleOf": 1 },
-        "height": { "kind": "integer", "minimum": 1, "maximum": 300000, "multipleOf": 1 },
+        "width": { "kind": "integer", "minimum": 1, "maximum": 25600, "multipleOf": 1 },
+        "height": { "kind": "integer", "minimum": 1, "maximum": 25600, "multipleOf": 1 },
         "dpi": { "kind": "number", "minimum": 1, "maximum": 30000 },
         "mode": { "kind": "enum", "values": ["Bitmap", "Grayscale", "Indexed", "Rgb", "Cmyk", "Lab", "Multichannel", "Duotone"] },
         "depth": { "kind": "enum", "values": ["U8", "U16", "F32"] },
@@ -16,7 +16,11 @@
         "docState": { "kind": "json", "optional": true },
         "layers": { "kind": "tree", "of": "Layer" },
         "channels": { "kind": "list", "of": "Channel" },
-        "guides": { "kind": "json", "optional": true }
+        "notes": { "kind": "list", "of": "Note" },
+        "comps": { "kind": "list", "of": "Comp" },
+        "paths": { "kind": "list", "of": "Path" },
+        "patterns": { "kind": "list", "of": "Pattern" },
+        "guides": { "kind": "map" }
       },
       "derived": {
         "channelContents": { "premiseOnly": true, "description": "Alpha/spot channel names and surface content fingerprints, in channel order. Holds channel input pixels across external file reloads, including owned surfaces without tool ids." },
@@ -41,10 +45,14 @@
         "fillOpacity": { "kind": "number", "minimum": 0, "maximum": 1 },
         "clipped": { "kind": "boolean", "label": "clipped" },
         "kind": { "kind": "enum", "values": ["raster", "group", "adjustment", "fill", "text", "shape", "smart"], "sample": false },
-        "props": { "kind": "json", "optional": true },
-        "effects": { "kind": "json", "optional": true },
+        "data": { "kind": "json", "optional": true },
+        "extra": { "kind": "json", "optional": true },
+        "text": { "kind": "ref", "of": "TextBody", "optional": true, "owns": true },
+        "styleSettings": { "kind": "json", "optional": true },
+        "styles": { "kind": "list", "of": "Style" },
         "mask": { "kind": "ref", "of": "Surface", "optional": true, "owns": true },
-        "tiles": { "kind": "map" }
+        "tiles": { "kind": "map" },
+        "frames": { "kind": "list", "of": "Surface" }
       },
       "toolId": { "field": "number" },
       "label": "name",
@@ -52,6 +60,28 @@
         "pickState": { "premiseOnly": true, "description": "Basis-time hit-test inputs: stack path, visibility, effective locks, raster format and immutable tile references, mask and artboard clipping." },
         "subtreeLabels": { "premiseOnly": true, "description": "Descendant ids and labels sorted by id, held only by recursive writes to this layer." },
         "bounds": { "description": "The layer's non-transparent extent in image pixels, [x, y, width, height] (its pixels' for a pixel layer, its drawn content's for type, shape and object layers, the canvas for a fill layer); null when it draws nothing. A change says the pixels the layer covers grew, shrank or moved." }
+      }
+    },
+    "TextBody": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "content": {
+          "kind": "text",
+          "marks": {
+            "char": { "expand": "after" },
+            "run": { "expand": "after" },
+            "paragraph": { "expand": "after" },
+            "paragraphRun": { "expand": "after" }
+          }
+        }
+      }
+    },
+    "Style": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "effect": { "kind": "json" }
       }
     },
     "Surface": {
@@ -73,6 +103,61 @@
         "name": { "kind": "string" },
         "surface": { "kind": "ref", "of": "Surface", "owns": true }
       }
+    },
+    "Note": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "key": { "kind": "string", "optional": true, "readOnly": true },
+        "author": { "kind": "string" },
+        "color": { "kind": "json", "optional": true },
+        "text": { "kind": "text" },
+        "position": { "kind": "json", "optional": true },
+        "popup": { "kind": "json", "optional": true },
+        "modified": { "kind": "string", "optional": true }
+      },
+      "toolId": { "field": "key", "prefix": "note:" },
+      "label": "author"
+    },
+    "Comp": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "number": { "kind": "integer", "optional": true, "readOnly": true },
+        "name": { "kind": "string" },
+        "comment": { "kind": "string", "optional": true },
+        "applyVisibility": { "kind": "boolean", "label": "applies visibility" },
+        "applyPosition": { "kind": "boolean", "label": "applies position" },
+        "applyAppearance": { "kind": "boolean", "label": "applies appearance" },
+        "states": { "kind": "json", "optional": true }
+      },
+      "toolId": { "field": "number", "prefix": "comp:" },
+      "label": "name"
+    },
+    "Path": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "key": { "kind": "string", "optional": true, "readOnly": true },
+        "name": { "kind": "string" },
+        "path": { "kind": "json", "optional": true },
+        "psdRaw": { "kind": "blob", "optional": true }
+      },
+      "toolId": { "field": "key", "prefix": "path:" },
+      "label": "name"
+    },
+    "Pattern": {
+      "batchOps": { "*": { "direct": true } },
+      "batchIndependent": true,
+      "fields": {
+        "key": { "kind": "string", "optional": true, "readOnly": true },
+        "name": { "kind": "string" },
+        "width": { "kind": "integer", "minimum": 1, "multipleOf": 1 },
+        "height": { "kind": "integer", "minimum": 1, "multipleOf": 1 },
+        "pixels": { "kind": "json" }
+      },
+      "toolId": { "field": "key", "prefix": "pattern:" },
+      "label": "name"
     }
   }
 }

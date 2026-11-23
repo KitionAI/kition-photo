@@ -330,7 +330,7 @@ fn act(root: &Path) -> Vec<String> {
             let mut props = props.clone();
             props["source"] = json!({ "Linked": { "path": link } });
             for origin in [Value::Null, json!({ "kind": "agent", "principal": "agent:test" })] {
-                let mut request = json!({ "documentId": inside, "ops": [{ "op": "set", "target": object, "field": "props", "value": props }] });
+                let mut request = json!({ "documentId": inside, "ops": [{ "op": "set", "target": object, "field": "data", "value": props }] });
                 if !origin.is_null() {
                     request["origin"] = origin;
                 }
@@ -338,7 +338,7 @@ fn act(root: &Path) -> Vec<String> {
                 let _ = agent.run(&inside, "layer.selectTop", json!({}));
                 let _ = agent.run(&inside, "filter.blur.gaussianBlur", json!({ "radius": 0.5 }));
                 if shows(&agent.picture(&inside), OUTSIDE_RGB) {
-                    wrong.push(format!("model.batch set props: the link {link} was read into the render"));
+                    wrong.push(format!("model.batch set data: the link {link} was read into the render"));
                 }
             }
         }
@@ -460,11 +460,11 @@ fn act(root: &Path) -> Vec<String> {
     wrong
 }
 
-/// The object model's object layers: `(object id, props)`.
+/// The object model's object layers: `(object id, data)`.
 fn find_smart_layers(value: &Value, out: &mut Vec<(String, Value)>) {
     match value {
         Value::Object(fields) => {
-            if let (Some(Value::String(id)), Some(props)) = (fields.get("id"), fields.get("fields").and_then(|f| f.get("props")))
+            if let (Some(Value::String(id)), Some(props)) = (fields.get("id"), fields.get("fields").and_then(|f| f.get("data")))
                 && props.get("source").is_some()
             {
                 out.push((id.clone(), props.clone()));

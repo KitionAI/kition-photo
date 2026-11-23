@@ -45,7 +45,7 @@ fn a_fill_in_a_region_holds_destination_content_and_effective_canvas_clipping() 
     let (doc, _, a, _) = image();
     let under = doc.under("edit.fill", &json!({ "layer": a, "color": "#000000", "region": { "rect": [250, 10, 20, 300] } })).unwrap().unwrap();
     let premise = premise_of(&under, a);
-    assert_eq!(premise.fields, Some(["kind", "locks", "props.data"].map(str::to_owned).to_vec()));
+    assert_eq!(premise.fields, Some(["kind", "locks", "data", "text"].map(str::to_owned).to_vec()));
     assert_eq!(premise_of(&under, "image").fields, Some(["mode", "depth", "~inheritedLocks"].map(str::to_owned).to_vec()));
     assert_eq!(
         under.content,
@@ -58,11 +58,11 @@ fn a_fill_in_a_region_holds_destination_content_and_effective_canvas_clipping() 
     );
     // A stroke: its points widened by the brush.
     let under = doc.under("paint.stroke", &json!({ "layer": a, "points": [[2, 2, 1], [20, 20, 1]], "size": 8 })).unwrap().unwrap();
-    assert_eq!(premise_of(&under, a).fields, Some(["kind", "locks", "props.data"].map(str::to_owned).to_vec()));
+    assert_eq!(premise_of(&under, a).fields, Some(["kind", "locks", "data", "text"].map(str::to_owned).to_vec()));
     assert_eq!(under.content[0], kition_kit::ContentPremise { id: json!(a), field: "tiles".to_owned(), region: json!([-3, -3, 25, 25]) });
     // A filter on the whole layer.
     let under = doc.under("filter.blur.gaussianBlur", &json!({ "layer": a, "radius": 2 })).unwrap().unwrap();
-    assert_eq!(premise_of(&under, a).fields, Some(["kind", "locks", "tiles", "props.data"].map(str::to_owned).to_vec()));
+    assert_eq!(premise_of(&under, a).fields, Some(["kind", "locks", "tiles", "data", "text"].map(str::to_owned).to_vec()));
     // A command that reads all of its layer (C8-photo-read: rasterizing reads its content, its
     // effects and its masks) holds every field of it.
     let under = doc.under("layer.rasterize.layer", &json!({ "layer": a })).unwrap().unwrap();
@@ -146,7 +146,7 @@ fn a_name_names_one_layer_and_holds_that_it_still_does() {
 fn review_a_region_loaded_from_a_layer_holds_its_source_pixels() {
     let (doc, _, a, b) = image();
     let under = doc.under("edit.fill", &json!({ "layer": a, "region": { "layer": b }, "color": "#000000" })).unwrap().unwrap();
-    assert_eq!(premise_of(&under, b).fields, Some(vec!["kind".to_owned(), "tiles".to_owned(), "props.data".to_owned()]));
+    assert_eq!(premise_of(&under, b).fields, Some(vec!["kind".to_owned(), "tiles".to_owned(), "data".to_owned(), "text".to_owned()]));
 }
 
 #[test]
@@ -162,7 +162,7 @@ fn review_editable_filters_hold_the_source_and_filter_stack() {
     let made = doc.execute("layer.objectLayers.convertToObjectLayer", json!({ "layer": a })).unwrap();
     let smart = made["layer"].as_u64().unwrap();
     let under = doc.under("filter.blur.gaussianBlur", &json!({ "layer": smart, "radius": 2 })).unwrap().unwrap();
-    assert!(premise_of(&under, smart).fields.unwrap().contains(&"props.data".to_owned()));
+    assert!(premise_of(&under, smart).fields.unwrap().contains(&"data".to_owned()));
 }
 
 #[test]
@@ -190,8 +190,8 @@ fn review_smart_fill_holds_its_surroundings_for_every_accepted_spelling() {
 fn review_bucket_pattern_source_holds_the_document_pattern() {
     let (doc, _, a, _) = image();
     let under = doc.under("paint.bucket", &json!({ "layer": a, "source": "pattern", "pattern": "Checkerboard" })).unwrap().unwrap();
-    assert!(premise_of(&under, "image").fields.unwrap().contains(&"docState.patterns[name=\"Checkerboard\"]".to_owned()));
-    assert_eq!(premise_of(&under, "image").identities.get("docState.patterns[name=\"Checkerboard\"]").map(String::as_str), Some("id"));
+    assert!(premise_of(&under, "image").fields.unwrap().contains(&"patterns[name=\"Checkerboard\"]".to_owned()));
+    assert_eq!(premise_of(&under, "image").identities.get("patterns[name=\"Checkerboard\"]").map(String::as_str), Some("key"));
 }
 
 #[test]
@@ -260,9 +260,9 @@ fn review_an_unnarrowed_command_by_name_keeps_all_target_fields() {
 fn review_doc_state_inputs_have_member_premises_even_without_an_active_target() {
     let (doc, _, a, _) = image();
     for (command, params, field) in [
-        ("edit.fill", json!({ "layer": a, "contents": "pattern", "pattern": "Bubbles" }), "docState.patterns[name=\"Bubbles\"]"),
-        ("layer.newFillLayer.pattern", json!({ "pattern": "Bubbles" }), "docState.patterns[name=\"Bubbles\"]"),
-        ("layerComp.apply", json!({ "comp": 1 }), "docState.layer_comps"),
+        ("edit.fill", json!({ "layer": a, "contents": "pattern", "pattern": "Bubbles" }), "patterns[name=\"Bubbles\"]"),
+        ("layer.newFillLayer.pattern", json!({ "pattern": "Bubbles" }), "patterns[name=\"Bubbles\"]"),
+        ("layerComp.apply", json!({ "comp": 1 }), "comps"),
         ("type.characterStyle.apply", json!({ "layer": a, "id": 1 }), "docState.text_styles"),
         ("type.paragraphStyle.set", json!({ "id": 1, "attrs": { "size": 12 } }), "docState.text_styles"),
     ] {

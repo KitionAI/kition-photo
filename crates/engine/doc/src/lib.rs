@@ -1067,15 +1067,31 @@ impl Document {
         self.layer_at_mut(&path)
     }
 
-    /// A [`Layer::link_group`] id no layer uses yet: one above the highest stored id, or, when a
-    /// loaded file already holds `u64::MAX` (#961), the smallest free id from 1. Never wraps, so a
-    /// new link can't join an unrelated group. `None` only if every id is taken.
+    /// A new [`Layer::link_group`] id no layer uses yet. It is drawn at random below 2^53 (an id
+    /// every replica stores exactly), not taken as "the highest id + 1", so two people linking
+    /// layers at once on two replicas of the document mint different groups and their links stay
+    /// apart after the merge. Without entropy, the smallest free id from 1. `None` only if every
+    /// id is taken.
     pub fn unused_link_group(&self) -> Option<u64> {
+        self.new_link_group(&[])
+    }
+
+    /// [`Self::unused_link_group`], also unlike every id in `taken` (ids minted for layers not in
+    /// the document yet).
+    pub fn new_link_group(&self, taken: &[u64]) -> Option<u64> {
         let mut used: Vec<u64> = self.walk().iter().filter_map(|(_, _, l)| l.link_group).collect();
+        used.extend_from_slice(taken);
         used.sort_unstable();
         used.dedup();
-        if let Some(next) = used.last().map_or(Some(1), |g| g.checked_add(1)) {
-            return Some(next);
+        for _ in 0..16 {
+            let mut bytes = [0u8; 8];
+            if getrandom::getrandom(&mut bytes).is_err() {
+                break;
+            }
+            let id = (u64::from_le_bytes(bytes) & ((1u64 << 53) - 1)).max(1);
+            if used.binary_search(&id).is_err() {
+                return Some(id);
+            }
         }
         let mut free = 1u64;
         for g in used {
@@ -1271,9 +1287,8 @@ mod tests {
     }
 
     #[test]
-    fn unused_link_group_never_wraps() {
+    fn a_new_link_group_is_unused_and_held_exactly() {
         let mut d = doc();
-        assert_eq!(d.unused_link_group(), Some(1));
         let with = |d: &mut Document, groups: &[u64]| {
             d.layers.truncate(1);
             for g in groups {
@@ -1282,15 +1297,19 @@ mod tests {
                 d.layers.push(l);
             }
         };
-        with(&mut d, &[3, 7]);
-        assert_eq!(d.unused_link_group(), Some(8));
-        with(&mut d, &[u64::MAX - 1]);
-        assert_eq!(d.unused_link_group(), Some(u64::MAX));
-        // A stored maximal id would wrap to 0 (#961): take the smallest free id instead.
-        with(&mut d, &[u64::MAX]);
-        assert_eq!(d.unused_link_group(), Some(1));
+        // A stored maximal id (#961) or any other stored id is never handed out again.
         with(&mut d, &[0, 1, 2, 4, u64::MAX]);
-        assert_eq!(d.unused_link_group(), Some(3));
+        for _ in 0..64 {
+            let g = d.unused_link_group().unwrap();
+            assert!(![0, 1, 2, 4, u64::MAX].contains(&g), "{g} is in use");
+            assert!(g <= 1 << 53, "{g} is held exactly by every replica");
+        }
+        // Two documents linking at once (two replicas of one) mint different groups.
+        let minted: std::collections::HashSet<u64> = (0..64).map(|_| doc().unused_link_group().unwrap()).collect();
+        assert!(minted.len() > 60, "concurrent links collide: {minted:?}");
+        // Ids minted for layers not placed yet are not handed out either.
+        let first = d.unused_link_group().unwrap();
+        assert_ne!(d.new_link_group(&[first]), Some(first));
     }
 
     #[test]

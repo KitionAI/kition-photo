@@ -11,14 +11,14 @@
 //!
 //! **Premises** ([`premises`]), for the families whose code was read:
 //! - `layer.setProps`: the fields it sets (`name`, `visible`, `opacity`, `fillOpacity`, `blend`,
-//!   `clipped`, `locks`, `props.extra.excluded_channels`), no position.
+//!   `clipped`, `locks`, `extra.excluded_channels`), no position.
 //! - pixel writes in an area of one layer (`edit.fill` and `edit.clear` on the layer's pixels,
 //!   `paint.stroke`, `eraser.stroke`, the per-pixel `image.adjustments.*`): the layer's `kind`,
-//!   effective `locks`, `props.data` and the 256-pixel tiles of its `tiles` map that the area
+//!   effective `locks`, `data`, `text` and the 256-pixel tiles of its `tiles` map that the area
 //!   touches (resolved stroke dabs intersected with the region/selection, else the region or
 //!   selection, else every tile), and the image's size, mode and depth; no position.
 //! - whole-layer pixel commands (`filter.*`, the other `image.adjustments.*`): the layer's
-//!   `kind`, effective `locks`, `tiles`, `props.data` and the image's size, mode and depth.
+//!   `kind`, effective `locks`, `tiles`, `data`, `text` and the image's size, mode and depth.
 //!   A mask is held when targeted or read as Lens Blur depth, not merely displayed.
 //! - [`inputs`]: region sources, stored presets, composite sources and linked move participants.
 //!
@@ -43,7 +43,7 @@ pub const IMAGE: &str = "image";
 
 /// The fields `covers` names for a pick by point: what besides the stack may move a layer into or
 /// out of the point.
-const PICK_FIELDS: [&str; 8] = ["visible", "tiles", "mask", "props", "kind", "locks", "~bounds", "~pickState"];
+const PICK_FIELDS: [&str; 11] = ["visible", "tiles", "mask", "data", "extra", "frames", "text", "kind", "locks", "~bounds", "~pickState"];
 
 /// The per-pixel destructive adjustments: each output pixel depends on that pixel alone.
 const PER_PIXEL: [&str; 16] = [
@@ -246,7 +246,7 @@ fn rested_image(under: &mut Under, command: &str, params: &Value) {
 }
 
 fn composite(under: &mut Under) {
-    image_fields(under, ["layers", "width", "height", "mode", "depth", "icc", "docState.patterns", "docState.global_light"]);
+    image_fields(under, ["layers", "width", "height", "mode", "depth", "icc", "patterns", "docState.global_light"]);
 }
 
 fn active_document(doc: &PhotoDocument, selector: &Value) -> bool {
@@ -339,7 +339,7 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
         named.retain(|field| !matches!(*field, "channels" | "~channelContents"));
     }
     if crate::resource_rests::stored_pattern(command, params).is_some() {
-        named.retain(|field| *field != "docState.patterns");
+        named.retain(|field| *field != "patterns");
     }
     if !named.is_empty() {
         image_fields(under, named);
@@ -363,7 +363,7 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
     }
     if crate::acts::reads_of(command).region {
         if let Some(id) = params.get("region").and_then(|r| r.get("layer")).and_then(layer_of) {
-            hold(under, Premise::on(id.0).fields(["kind", "tiles", "props.data"]).positions([] as [&str; 0]));
+            hold(under, Premise::on(id.0).fields(["kind", "tiles", "data", "text"]).positions([] as [&str; 0]));
             under.objects.push(json!(id.0));
             under.covers.get_or_insert_with(Covers::default).fields.push("~bounds".to_owned());
         }
@@ -394,20 +394,18 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
     if pattern {
         if let Some(key) = crate::resource_rests::stored_pattern(command, params) {
             let name = kition_photo_doc_pattern(&st.doc, key).map_or(key, |pattern| pattern.name.as_str());
-            let field = format!("docState.patterns[name={}]", json!(name));
-            hold(under, Premise::on(IMAGE).fields([field.clone()]).positions([] as [&str; 0]).identity(field, "id"));
+            let field = format!("patterns[name={}]", json!(name));
+            hold(under, Premise::on(IMAGE).fields([field.clone()]).positions([] as [&str; 0]).identity(field, "key"));
         } else {
-            image_fields(under, ["docState.patterns"]);
+            image_fields(under, ["patterns"]);
         }
     }
     if command.starts_with("type.characterStyle.") || command.starts_with("type.paragraphStyle.") {
         image_fields(under, ["docState.text_styles"]);
     }
     if command.starts_with("layerComp.") {
-        image_fields(under, ["docState.layer_comps"]);
-        if params.get("comp").is_none() || matches!(command, "layerComp.next" | "layerComp.previous" | "layerComp.restoreLastDocumentState") {
-            image_fields(under, ["docState.last_applied_comp", "docState.last_document_state"]);
-        }
+        // Which comp was applied last, and the Last Document State, are each person's own.
+        image_fields(under, ["comps"]);
         // Applying captures the previous appearance too; new/update capture the live stack.
         if matches!(
             command,
@@ -485,7 +483,7 @@ fn premises(doc: &PhotoDocument, command: &str, params: &Value, id: LayerId) -> 
                 ("clipped", "clipped"),
                 ("locked", "locks"),
                 ("locks", "locks"),
-                ("channels", "props.extra.excluded_channels"),
+                ("channels", "extra.excluded_channels"),
             ] {
                 if params.get(key).is_some() && !fields.contains(&field) {
                     fields.push(field);
@@ -498,7 +496,7 @@ fn premises(doc: &PhotoDocument, command: &str, params: &Value, id: LayerId) -> 
                 && params.get("target").is_none_or(|target| target == "pixels")
                 && !params.get("contents").and_then(Value::as_str).is_some_and(|s| s.eq_ignore_ascii_case("smart")) =>
         {
-            let mut fields = vec!["kind".to_owned(), "locks".to_owned(), "props.data".to_owned()];
+            let mut fields = vec!["kind".to_owned(), "locks".to_owned(), "data".to_owned(), "text".to_owned()];
             match area(doc, command, params)? {
                 Some(_) => {}
                 None => fields.push("tiles".to_owned()),
@@ -509,7 +507,7 @@ fn premises(doc: &PhotoDocument, command: &str, params: &Value, id: LayerId) -> 
             let fields = if to_mask {
                 vec!["kind", "mask"]
             } else {
-                let mut fields = vec!["kind", "locks", "tiles", "props.data"];
+                let mut fields = vec!["kind", "locks", "tiles", "data", "text"];
                 if command == "filter.blur.lensBlur" && params.get("depthMap").and_then(Value::as_str) == Some("layerMask") {
                     fields.push("mask");
                 }
@@ -676,8 +674,9 @@ impl PhotoDocument {
             // Null is also used for fills, groups and artboards, including deleted ones.
             // It cannot establish that their pixels (or descendants) missed the point.
             let outside_then = !fill && bounds_then.as_ref().is_some_and(|bounds| bounds.is_array() && !holds(bounds, x, y));
-            let pixels_changed =
-                ["tiles", "mask", "props", "kind"].iter().any(|field| ask.before.contains_key(*field) || ask.unknown.iter().any(|u| u == field));
+            let pixels_changed = ["tiles", "mask", "data", "extra", "frames", "text", "kind"]
+                .iter()
+                .any(|field| ask.before.contains_key(*field) || ask.unknown.iter().any(|u| u == field));
             if ask.deleted || pixels_changed || !ask.unknown.is_empty() {
                 if outside_then || ask.before.get("visible") == Some(&json!(false)) {
                     covered.push(Covered { id: ask.id.clone(), covered: Some(false), ..Default::default() });

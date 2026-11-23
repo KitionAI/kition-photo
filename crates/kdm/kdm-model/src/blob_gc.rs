@@ -84,8 +84,12 @@ fn object_blobs(replica: &Replica, id: &ObjectId) -> Vec<String> {
     }
     let (registers, tiles): (&[&str], bool) = match replica.object_type(id).as_deref() {
         Ok("Image") => (&["icc", "docState"], false),
-        Ok("Layer") => (&["props", "effects"], true),
+        Ok("Layer") => (&["data", "extra", "styleSettings"], true),
         Ok("Surface") => (&["props"], true),
+        Ok("Style") => (&["effect"], false),
+        Ok("Comp") => (&["states"], false),
+        Ok("Path") => (&["psdRaw"], false),
+        Ok("Pattern") => (&["pixels"], false),
         _ => (&[], false),
     };
     for field in registers {
@@ -105,7 +109,8 @@ impl BlobIndex {
     /// Indexes every object of a freshly loaded or created replica.
     pub fn build(replica: &Replica) -> Self {
         let mut index = Self::default();
-        let all: BTreeSet<ObjectId> = ["Image", "Layer", "Surface"].iter().flat_map(|ty| replica.objects_of_type(ty)).collect();
+        let all: BTreeSet<ObjectId> =
+            ["Image", "Layer", "Surface", "Style", "Comp", "Path", "Pattern"].iter().flat_map(|ty| replica.objects_of_type(ty)).collect();
         index.update(replica, &all);
         index
     }

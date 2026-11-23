@@ -91,9 +91,17 @@ impl PhotoSession {
     }
 
     /// Opens a snapshot (or a full change export) of another replica as a new replica of a fresh
-    /// actor. `blobs` must hold the blobs it references.
+    /// actor. `blobs` must hold the blobs it references. A replica of another schema version is
+    /// refused ([`crate::same_schema`]).
     pub fn open_snapshot(bytes: &[u8], blobs: MemoryBlobs) -> Result<Self> {
         let mut replica = Replica::load(PhotoModel::schema(), bytes, ActorId::random()).map_err(kit_err)?;
+        if !crate::same_schema(&replica) {
+            return Err(KitError::new(format!(
+                "the replica was written with another schema version ({}); this build reads version {}",
+                replica.min_schema_version(),
+                replica.schema().schema_version
+            )));
+        }
         store_missing_numbers(&mut replica)?;
         replica.take_changed();
         let model = PhotoModel::load(&replica, &blobs)?;

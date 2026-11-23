@@ -245,14 +245,14 @@ fn a_refused_batch_leaves_the_image_as_it_was() {
         let loaded = b.model("model.batch", json!({ "documentId": id, "ops": [], "load": [{ "target": "root", "fields": [name] }] })).unwrap();
         loaded["loaded"][0]["fields"][name].clone()
     };
-    let (depth, guides) = (field(&mut b, &created.id, "depth"), field(&mut b, &created.id, "guides"));
+    let (depth, state_field) = (field(&mut b, &created.id, "depth"), field(&mut b, &created.id, "docState"));
     let state = b.describe(&created.id).unwrap().state;
 
-    for (name, value) in [("depth", json!("khp check")), ("guides", json!("khp check"))] {
+    for (name, value) in [("depth", json!("khp check")), ("docState", json!("khp check"))] {
         let refused = batch(&mut b, &created.id, json!([{ "op": "set", "target": "root", "field": name, "value": value }])).unwrap_err();
         assert!(!refused.message.is_empty(), "{name}: {refused:?}");
         assert_eq!(field(&mut b, &created.id, "depth"), depth, "after the refused {name}");
-        assert_eq!(field(&mut b, &created.id, "guides"), guides, "after the refused {name}");
+        assert_eq!(field(&mut b, &created.id, "docState"), state_field, "after the refused {name}");
         assert_eq!(b.describe(&created.id).unwrap().state, state, "after the refused {name}");
     }
 
@@ -263,7 +263,7 @@ fn a_refused_batch_leaves_the_image_as_it_was() {
     b.close(&created.id, false).unwrap();
     let reopened = b.open(OpenRequest { file: &folder.file("art.kphoto").unwrap(), read_only: false, create: None }).unwrap();
     assert_eq!((field(&mut b, &reopened.id, "depth"), field(&mut b, &reopened.id, "dpi").as_f64()), (depth, Some(144.0)));
-    assert_eq!(field(&mut b, &reopened.id, "guides"), guides);
+    assert_eq!(field(&mut b, &reopened.id, "docState"), state_field);
     let _ = std::fs::remove_dir_all(root);
 }
 

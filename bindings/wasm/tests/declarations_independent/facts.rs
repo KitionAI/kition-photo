@@ -201,12 +201,12 @@ fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
         }
         _ if row.command.starts_with("layer.vectorMask.") => {
             for id in out.clone().keys().filter(|id| id.as_str() != "image") {
-                replace(&mut out, id, "props.extra", "props.extra.vector_mask");
+                replace(&mut out, id, "extra", "extra.vector_mask");
             }
         }
         "layer.linkLayers" => {
             for id in out.clone().keys() {
-                replace(&mut out, id, "props.extra", "props.extra.link_group");
+                replace(&mut out, id, "extra", "extra.link_group");
             }
             add(&mut out, "image", "~linkGroups");
         }
@@ -225,13 +225,22 @@ fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
         }
     }
     match row.command {
-        // edit_cmds.rs::guide_cmd replaces the addressed coordinate. notes_cmds.rs:83
-        // assigns only supplied properties (position also moves the popup).
+        // edit_cmds.rs::guide_cmd replaces the addressed guide: the `guides` map's entry of the
+        // first vertical guide, by its key.
         "view.moveGuide" => {
-            replace(&mut out, "image", "guides.vertical.0", "guides.vertical.0.position");
-        }
-        "notes.set" => {
-            replace(&mut out, "image", "docState.notes.0", "docState.notes.0.text,docState.notes.0.modified,docState.notes.0.position,docState.notes.0.popup");
+            let first = objects
+                .get("image")
+                .and_then(|image| image.get("guides"))
+                .and_then(Value::as_object)
+                .and_then(|guides| {
+                    guides
+                        .iter()
+                        .filter(|(_, guide)| guide["axis"] == "vertical")
+                        .min_by(|a, b| a.1["order"].as_f64().unwrap_or(0.0).total_cmp(&b.1["order"].as_f64().unwrap_or(0.0)))
+                        .map(|(key, _)| key.clone())
+                })
+                .unwrap();
+            replace(&mut out, "image", "guides.vertical.0", &format!("guides.{first}"));
         }
         "layer.setLabelColor" => {
             replace(&mut out, "image", "~subtreeLabels[id=\"$G\"].labels", "-");
@@ -247,7 +256,7 @@ fn reading(row: &Row, p: &Value, objects: &BTreeMap<String, Value>) -> Holds {
         "edit.fill" | "paint.bucket" | "paint.patternStamp" | "layer.newFillLayer.pattern" | "layer.layerStyle.patternOverlay" | "brush.texturePattern"
     ) && let Some(pattern) = p.get("pattern").and_then(Value::as_str).filter(|s| !s.is_empty())
     {
-        replace(&mut out, "image", "docState.patterns", &format!("docState.patterns[name={}]", json!(pattern)));
+        replace(&mut out, "image", "patterns", &format!("patterns[name={}]", json!(pattern)));
     }
     if matches!(row.command, "image.applyImage" | "image.calculations") {
         let channels = channel_fields(p, objects);
@@ -265,7 +274,23 @@ pub(super) fn compare(doc: &mut PhotoDocument, roles: &[(&str, u64)], rows: &[Ro
     let state = replica.state_json().unwrap();
     let names: BTreeMap<u64, &str> = roles.iter().map(|(r, id)| (*id, *r)).collect();
     let mut objects: BTreeMap<String, Value> = state["objects"].as_object().unwrap().iter().map(|(id, v)| (id.clone(), v.clone())).collect();
+    // Layers by their roles; the image's notes, saved paths, comps and patterns by their tool ids
+    // (`comp:1`), the fixture's one note and one saved path as `$NOTE` and `$PATH`.
+    let mut aliases = BTreeMap::<String, String>::new();
     for (id, value) in objects.clone() {
+        let text = |field: &str| value.get(field).map(|v| v.as_str().map_or_else(|| v.to_string(), str::to_owned));
+        let tool = match value.get("$type").and_then(Value::as_str) {
+            Some("Note") => text("key").map(|key| (format!("note:{key}"), "$NOTE".to_owned())),
+            Some("Path") => text("key").map(|key| (format!("path:{key}"), "$PATH".to_owned())),
+            Some("Comp") => text("number").map(|n| (format!("comp:{n}"), format!("comp:{n}"))),
+            Some("Pattern") => text("key").map(|key| (format!("pattern:{key}"), format!("pattern:{key}"))),
+            _ => None,
+        };
+        if let Some((tool, alias)) = tool {
+            objects.insert(alias.clone(), value.clone());
+            aliases.insert(tool, alias);
+            continue;
+        }
         let role = value.get("number").and_then(Value::as_u64).and_then(|n| names.get(&n)).copied().unwrap_or(&id).to_owned();
         objects.insert(role, value);
     }
@@ -284,7 +309,8 @@ pub(super) fn compare(doc: &mut PhotoDocument, roles: &[(&str, u64)], rows: &[Ro
     for row in rows {
         let command = commands.iter().find(|c| c.id == row.command).unwrap();
         let params = with_roles(&serde_json::from_str(row.params).unwrap(), roles);
-        let (editor, mut holds) = held(doc, command, &params, &names);
+        let (editor, holds) = held(doc, command, &params, &names);
+        let mut holds: Holds = holds.into_iter().map(|(id, held)| (aliases.get(&id).cloned().unwrap_or(id), held)).collect();
         let under = doc.under(row.command, &params).unwrap();
         if let Some(under) = under {
             for p in under.content {

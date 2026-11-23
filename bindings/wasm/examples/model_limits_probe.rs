@@ -14,7 +14,7 @@ fn main() -> Result<(), String> {
     let mut doc = PhotoDocument::create("art.kphoto", 32, 24)?;
     doc.execute("layer.vectorMask.revealAll", json!({"layer":1}))?;
     let mut exchange = Exchange::new();
-    let result = exchange.batch(&mut doc, &json!({"ops":[{"op":"set","target":"1","field":"props.extra.vector_mask.density","value":2}]}), false);
+    let result = exchange.batch(&mut doc, &json!({"ops":[{"op":"set","target":"1","field":"extra.vector_mask.density","value":2}]}), false);
     println!(
         "{}",
         json!({"batchApplied":result.is_ok(),"error":result.err().map(|error|error.to_string()),

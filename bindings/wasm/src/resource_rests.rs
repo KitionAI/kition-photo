@@ -1,6 +1,6 @@
 //! Premises of edits to one stored resource, rather than the whole resource library.
 
-use kition_kit::{ContentPremise, Covered, CoveredAsk, CoveredAt, CoveredContent, Covers, Premise, Under};
+use kition_kit::{Covered, CoveredAsk, CoveredAt, CoveredContent, Covers, Premise, Under};
 use kition_photo_engine::doc::Document;
 use serde_json::{Value, json};
 
@@ -9,46 +9,67 @@ fn selector(list: &str, member: &str, value: &Value) -> Option<String> {
 }
 
 pub fn under(doc: &Document, command: &str, p: &Value) -> Option<Under> {
-    let fields = match command {
+    const NONE: [&str; 0] = [];
+    let one = |premise: Premise| Some(Under { premises: vec![premise], ..Default::default() });
+    match command {
+        // A comp, a saved path and a note are objects of their own (`comp:<id>`, `path:<key>`,
+        // `note:<key>`): the premise holds the one addressed, as it was at basis.
         "layerComp.rename" => {
             let comp = p.get("comp")?;
-            let member = if comp.is_u64() { "id" } else { "name" };
-            vec![format!("{}.name", selector("docState.layer_comps", member, comp)?)]
+            let found = match comp {
+                Value::Number(id) => doc.layer_comps.iter().find(|c| Some(u64::from(c.id)) == id.as_u64()),
+                Value::String(name) => doc.layer_comps.iter().find(|c| c.name == *name),
+                _ => None,
+            }?;
+            one(Premise::on(format!("comp:{}", found.id)).fields(["name"]).positions(NONE))
         }
         "path.rename" => {
             let name = p.get("name")?.as_str()?;
             if name.is_empty() || name.eq_ignore_ascii_case("work") || name == "Work Path" || name == "layer" {
                 return None;
             }
-            vec![
-                format!("{}.name", selector("docState.paths", "name", &json!(name))?),
-                format!("{}.name", selector("docState.paths", "name", p.get("to")?)?),
-                "docState.clipping_path".to_owned(),
-            ]
+            let key = doc.paths.iter().find(|path| path.name == name)?.key.clone()?;
+            // The new name must still be free, and the clipping path follows the rename.
+            let taken = selector("paths", "name", p.get("to")?)?;
+            Some(Under {
+                premises: vec![
+                    Premise::on(format!("path:{key}")).fields(["name"]).positions(NONE),
+                    Premise::on(crate::place::IMAGE)
+                        .fields([format!("{taken}.name"), "docState.clipping_path".to_owned()])
+                        .positions(NONE)
+                        .identity(format!("{taken}.name"), "key"),
+                ],
+                ..Default::default()
+            })
         }
         "notes.set" => {
-            let index = p.get("index")?.as_u64()?;
-            let mut fields: Vec<_> = ["text", "author", "color", "open"]
-                .into_iter()
-                .filter(|key| p.get(*key).is_some())
-                .map(|key| format!("docState.notes.{index}.{key}"))
-                .collect();
+            let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
+            let key = doc.notes.get(index)?.key.clone()?;
+            // Whether the note is open is each person's own view, not the note's.
+            let mut fields: Vec<&str> = ["text", "author", "color"].into_iter().filter(|key| p.get(*key).is_some()).collect();
             if p.get("text").is_some() || p.get("author").is_some() {
-                fields.push(format!("docState.notes.{index}.modified"));
+                fields.push("modified");
             }
             if p.get("x").is_some() || p.get("y").is_some() {
-                fields.extend([format!("docState.notes.{index}.position"), format!("docState.notes.{index}.popup")]);
+                fields.extend(["position", "popup"]);
             }
-            fields
+            // Addressed by its index: where it is in the list matters.
+            one(Premise::on(format!("note:{key}")).fields(fields).positions(["notes"]))
         }
         "view.moveGuide" => {
-            let index = p.get("index")?.as_u64()?;
-            let orientation = match p.get("orientation")?.as_str()? {
-                "vertical" => "vertical",
-                "horizontal" => "horizontal",
+            let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
+            let guides = match p.get("orientation")?.as_str()? {
+                "vertical" => &doc.guides.vertical,
+                "horizontal" => &doc.guides.horizontal,
                 _ => return None,
             };
-            vec![format!("guides.{orientation}.{index}.position")]
+            let key = guides.get(index)?.key.clone()?;
+            Some(Under {
+                premises: vec![Premise::on(crate::place::IMAGE).fields([format!("guides.{key}")]).positions(NONE)],
+                objects: vec![json!(crate::place::IMAGE)],
+                covers: Some(Covers { fields: vec!["guides".to_owned()] }),
+                ..Default::default()
+            })
         }
         "slice.set" => {
             let id = p.get("slice")?.as_u64()?;
@@ -77,57 +98,18 @@ pub fn under(doc: &Document, command: &str, p: &Value) -> Option<Under> {
                     fields.push(format!("{root}.{key}"));
                 }
             }
-            fields
+            let mut premise = Premise::on(crate::place::IMAGE).fields(fields.clone()).positions(NONE);
+            for field in fields {
+                premise = premise.identity(field, "id");
+            }
+            one(premise)
         }
-        "channel.rename" => {
-            return Some(Under {
-                objects: vec![json!(crate::place::IMAGE)],
-                premises: vec![Premise::on(crate::place::IMAGE).fields([] as [&str; 0]).positions([] as [&str; 0])],
-                covers: Some(Covers { fields: vec!["~channelContents".to_owned()] }),
-                ..Default::default()
-            });
-        }
-        _ => return None,
-    };
-    let mut premise = Premise::on(crate::place::IMAGE).fields(fields.clone()).positions([] as [&str; 0]);
-    for field in fields {
-        if command == "path.rename" && field == "docState.clipping_path" {
-            continue;
-        }
-        let key = if matches!(command, "layerComp.rename" | "slice.set") { "id" } else { "key" };
-        premise = premise.identity(field, key);
-    }
-    let content = match command {
-        "path.rename" => vec![ContentPremise {
-            id: json!(crate::place::IMAGE),
-            field: "docState".to_owned(),
-            region: json!({"resource":"paths","member":"name","value":p.get("name")?,"key":"key","assigned":["name"]}),
-        }],
-        "layerComp.rename" => vec![ContentPremise {
-            id: json!(crate::place::IMAGE),
-            field: "docState".to_owned(),
-            region: json!({"resource":"layer_comps","member":if p.get("comp")?.is_u64(){"id"}else{"name"},"value":p.get("comp")?,"key":"id","assigned":["name"]}),
-        }],
-        _ => vec![],
-    };
-    let covers = match command {
-        "notes.set" => Some("docState.notes"),
-        "view.moveGuide" => fields_for_guide(p),
-        _ => None,
-    };
-    Some(Under {
-        premises: vec![premise],
-        content,
-        objects: covers.map(|_| vec![json!(crate::place::IMAGE)]).unwrap_or_default(),
-        covers: covers.map(|field| Covers { fields: vec![field.to_owned()] }),
-        ..Default::default()
-    })
-}
-
-fn fields_for_guide(p: &Value) -> Option<&'static str> {
-    match p.get("orientation")?.as_str()? {
-        "vertical" => Some("guides.vertical"),
-        "horizontal" => Some("guides.horizontal"),
+        "channel.rename" => Some(Under {
+            objects: vec![json!(crate::place::IMAGE)],
+            premises: vec![Premise::on(crate::place::IMAGE).fields(NONE).positions(NONE)],
+            covers: Some(Covers { fields: vec!["~channelContents".to_owned()] }),
+            ..Default::default()
+        }),
         _ => None,
     }
 }
@@ -269,25 +251,39 @@ fn merge_content(a: Option<CoveredContent>, b: Option<CoveredContent>) -> Option
     }
 }
 
+/// The keys of `axis`'s guides in order, from the `guides` map's value (`null` entries are
+/// guides made since).
+fn guide_keys(map: &Value, axis: &str) -> Option<Vec<String>> {
+    let mut entries: Vec<(f64, &String)> = map
+        .as_object()?
+        .iter()
+        .filter(|(_, entry)| entry.get("axis").and_then(Value::as_str) == Some(axis))
+        .map(|(key, entry)| (entry.get("order").and_then(Value::as_f64).unwrap_or(0.0), key))
+        .collect();
+    entries.sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.cmp(b.1)));
+    Some(entries.into_iter().map(|(_, key)| key.clone()).collect())
+}
+
+/// `view.moveGuide`'s place: the guide at `index` of its axis at basis, and whether it is still
+/// there (or deleted, or moved to another index).
 pub(crate) fn indexed_covered(command: &str, p: &Value, asks: &[CoveredAsk], state: &Value) -> Option<CoveredAt> {
-    let field = if command == "notes.set" { "docState.notes" } else { fields_for_guide(p)? };
+    if command != "view.moveGuide" {
+        return None;
+    }
+    let axis = p.get("orientation")?.as_str()?;
+    let index = usize::try_from(p.get("index")?.as_u64()?).ok()?;
     let ask = asks.iter().find(|ask| ask.id == crate::place::IMAGE)?;
     if !ask.unknown.is_empty() {
         return None;
     }
-    let now = field.split('.').try_fold(state, |value, key| value.get(key))?.as_array()?;
-    let historical = Value::Object(ask.before.clone());
-    let before = field.split('.').try_fold(&historical, |value, key| value.get(key)).and_then(Value::as_array).unwrap_or(now);
-    let old = before.get(usize::try_from(p.get("index")?.as_u64()?).ok()?)?;
-    let key = old.get("key")?.as_str()?;
-    if before.iter().filter(|item| item.get("key").and_then(Value::as_str) == Some(key)).count() != 1
-        || now.iter().filter(|item| item.get("key").and_then(Value::as_str) == Some(key)).count() > 1
-    {
-        return None;
-    }
-    let deleted = !now.iter().any(|item| item.get("key").and_then(Value::as_str) == Some(key));
+    let now_map = state.get("guides")?;
+    let before_map = ask.before.get("guides").unwrap_or(now_map);
+    let (before, now) = (guide_keys(before_map, axis)?, guide_keys(now_map, axis)?);
+    let key = before.get(index)?;
+    let deleted = !now.contains(key);
+    let moved = !deleted && now.get(index) != Some(key);
     Some(CoveredAt {
-        under: vec![json!(crate::place::IMAGE)],
+        under: if moved { vec![] } else { vec![json!(crate::place::IMAGE)] },
         covered: asks
             .iter()
             .map(|a| Covered {
@@ -298,18 +294,6 @@ pub(crate) fn indexed_covered(command: &str, p: &Value, asks: &[CoveredAsk], sta
             })
             .collect(),
     })
-}
-
-pub(crate) fn assigned_changed(before: &Value, now: &Value, region: &Value) -> Option<bool> {
-    let list = region.get("resource")?.as_str()?;
-    let member = region.get("member")?.as_str()?;
-    let value = region.get("value")?;
-    let key = region.get("key")?.as_str()?;
-    let old = before.get(list)?.as_array()?.iter().find(|item| item.get(member) == Some(value))?;
-    let identity = old.get(key)?.as_str().map(|s| json!(s)).or_else(|| old.get(key).filter(|v| v.is_number()).cloned())?;
-    let current = now.get(list)?.as_array()?.iter().find(|item| item.get(key) == Some(&identity));
-    let Some(current) = current else { return Some(false) };
-    Some(region.get("assigned")?.as_array()?.iter().filter_map(Value::as_str).any(|field| old.get(field) != current.get(field)))
 }
 
 pub(crate) fn channel_covered(address: &Value, assigning: bool, asks: &[CoveredAsk], now: &Value) -> Option<CoveredAt> {

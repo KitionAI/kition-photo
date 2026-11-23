@@ -419,13 +419,12 @@ impl KitDocument for PhotoDocument {
                 .and_then(|v| v.values.get("channelContents"))
                 .and_then(|now| resource_rests::channel_covered(params.get("channel").unwrap_or(&Value::Null), true, objects, now)));
         }
-        if matches!(command, "notes.set" | "view.moveGuide") {
+        if command == "view.moveGuide" {
             let state = self.state()?;
             let Some(kdm) = state.kdm() else { return Ok(None) };
             let id = kition_kit::kdm::ObjectId::from_string(place::IMAGE.to_owned());
-            let fields = json!({"docState":kdm.replica().get(&id,"docState").map_err(|e|e.to_string())?,
-                "guides":kdm.replica().get(&id,"guides").map_err(|e|e.to_string())?});
-            return Ok(resource_rests::indexed_covered(command, params, objects, &fields));
+            let guides: serde_json::Map<String, Value> = kdm.replica().map_entries(&id, "guides").map_err(|e| e.to_string())?.into_iter().collect();
+            return Ok(resource_rests::indexed_covered(command, params, objects, &json!({ "guides": guides })));
         }
         let answer = point::covered(self, command, params, objects, history)?;
         resource_rests::sources_covered(self, command, params, objects, answer)

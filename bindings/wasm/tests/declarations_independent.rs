@@ -230,13 +230,13 @@ const ROWS: &[Row] = &[
         "filter.blur.gaussianBlur",
         r##"{"radius": 2, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.gaussianBlur",
         r##"{"radius": 2, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.gaussianBlur",
@@ -255,13 +255,13 @@ const ROWS: &[Row] = &[
         "filter.blur.blur",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.blur",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r("filter.blur.blur", r##"{"layer": "$C", "target": "mask"}"##, "active,area", &[("$C", "kind,mask", false), ("image", "depth,height,mode,width", false)]),
     r(
@@ -275,13 +275,13 @@ const ROWS: &[Row] = &[
         "filter.blur.blurMore",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.blurMore",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.blurMore",
@@ -300,13 +300,13 @@ const ROWS: &[Row] = &[
         "filter.sharpen.sharpen",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpen",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpen",
@@ -325,13 +325,13 @@ const ROWS: &[Row] = &[
         "filter.sharpen.sharpenMore",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpenMore",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpenMore",
@@ -350,13 +350,13 @@ const ROWS: &[Row] = &[
         "filter.sharpen.sharpenEdges",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpenEdges",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.sharpenEdges",
@@ -375,13 +375,13 @@ const ROWS: &[Row] = &[
         "filter.noise.despeckle",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.despeckle",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.despeckle",
@@ -400,13 +400,13 @@ const ROWS: &[Row] = &[
         "filter.blur.boxBlur",
         r##"{"radius": 3, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.boxBlur",
         r##"{"radius": 3, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.boxBlur",
@@ -425,13 +425,13 @@ const ROWS: &[Row] = &[
         "filter.blur.motionBlur",
         r##"{"angle": 30, "distance": 10, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.motionBlur",
         r##"{"angle": 30, "distance": 10, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.motionBlur",
@@ -450,13 +450,13 @@ const ROWS: &[Row] = &[
         "filter.blur.radialBlur",
         r##"{"amount": 10, "method": "zoom", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.radialBlur",
         r##"{"amount": 10, "method": "zoom", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.radialBlur",
@@ -475,13 +475,13 @@ const ROWS: &[Row] = &[
         "filter.blur.surfaceBlur",
         r##"{"radius": 5, "threshold": 15, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.surfaceBlur",
         r##"{"radius": 5, "threshold": 15, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.blur.surfaceBlur",
@@ -500,13 +500,13 @@ const ROWS: &[Row] = &[
         "filter.sharpen.unsharpMask",
         r##"{"amount": 50, "radius": 1, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.unsharpMask",
         r##"{"amount": 50, "radius": 1, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.unsharpMask",
@@ -525,13 +525,13 @@ const ROWS: &[Row] = &[
         "filter.sharpen.smartSharpen",
         r##"{"amount": 100, "radius": 1, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.smartSharpen",
         r##"{"amount": 100, "radius": 1, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.sharpen.smartSharpen",
@@ -550,13 +550,13 @@ const ROWS: &[Row] = &[
         "filter.noise.addNoise",
         r##"{"amount": 12.5, "seed": 3, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.addNoise",
         r##"{"amount": 12.5, "seed": 3, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.addNoise",
@@ -575,13 +575,13 @@ const ROWS: &[Row] = &[
         "filter.noise.median",
         r##"{"radius": 2, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.median",
         r##"{"radius": 2, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.median",
@@ -600,13 +600,13 @@ const ROWS: &[Row] = &[
         "filter.noise.dustAndScratches",
         r##"{"radius": 2, "threshold": 0, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.dustAndScratches",
         r##"{"radius": 2, "threshold": 0, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.noise.dustAndScratches",
@@ -625,13 +625,13 @@ const ROWS: &[Row] = &[
         "filter.pixelate.mosaic",
         r##"{"cellSize": 10, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.pixelate.mosaic",
         r##"{"cellSize": 10, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.pixelate.mosaic",
@@ -650,13 +650,13 @@ const ROWS: &[Row] = &[
         "filter.stylize.emboss",
         r##"{"angle": 135, "height": 3, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.emboss",
         r##"{"angle": 135, "height": 3, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.emboss",
@@ -675,13 +675,13 @@ const ROWS: &[Row] = &[
         "filter.stylize.findEdges",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.findEdges",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.findEdges",
@@ -700,13 +700,13 @@ const ROWS: &[Row] = &[
         "filter.stylize.solarize",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.solarize",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.stylize.solarize",
@@ -725,13 +725,13 @@ const ROWS: &[Row] = &[
         "filter.distort.twirl",
         r##"{"angle": 50, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.twirl",
         r##"{"angle": 50, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.twirl",
@@ -750,13 +750,13 @@ const ROWS: &[Row] = &[
         "filter.distort.pinch",
         r##"{"amount": 50, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.pinch",
         r##"{"amount": 50, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.pinch",
@@ -775,13 +775,13 @@ const ROWS: &[Row] = &[
         "filter.distort.spherize",
         r##"{"amount": 100, "mode": "normal", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.spherize",
         r##"{"amount": 100, "mode": "normal", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.spherize",
@@ -800,13 +800,13 @@ const ROWS: &[Row] = &[
         "filter.distort.wave",
         r##"{"generators": 5, "seed": 1, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.wave",
         r##"{"generators": 5, "seed": 1, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.wave",
@@ -825,13 +825,13 @@ const ROWS: &[Row] = &[
         "filter.distort.ripple",
         r##"{"amount": 100, "size": "medium", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.ripple",
         r##"{"amount": 100, "size": "medium", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.ripple",
@@ -850,13 +850,13 @@ const ROWS: &[Row] = &[
         "filter.distort.polarCoordinates",
         r##"{"mode": "rectangularToPolar", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.polarCoordinates",
         r##"{"mode": "rectangularToPolar", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.distort.polarCoordinates",
@@ -875,13 +875,13 @@ const ROWS: &[Row] = &[
         "filter.other.highPass",
         r##"{"radius": 10, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.highPass",
         r##"{"radius": 10, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.highPass",
@@ -900,13 +900,13 @@ const ROWS: &[Row] = &[
         "filter.other.minimum",
         r##"{"radius": 1, "preserve": "roundness", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.minimum",
         r##"{"radius": 1, "preserve": "roundness", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.minimum",
@@ -925,13 +925,13 @@ const ROWS: &[Row] = &[
         "filter.other.maximum",
         r##"{"radius": 1, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.maximum",
         r##"{"radius": 1, "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.maximum",
@@ -950,13 +950,13 @@ const ROWS: &[Row] = &[
         "filter.other.offset",
         r##"{"horizontal": 5, "vertical": 2, "undefinedAreas": "wrap", "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.offset",
         r##"{"horizontal": 5, "vertical": 2, "undefinedAreas": "wrap", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.other.offset",
@@ -976,20 +976,20 @@ const ROWS: &[Row] = &[
         "filter.lastFilter",
         r##"{}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.gallery.coloredPencil: layer id-else-active,ignored; editor active,area,channeltarget,colors,quickmask; reads T.content,T.locks,T.mask,T.pixels,image.channels,image.mode,image.size
     r(
         "filter.gallery.coloredPencil",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.coloredPencil",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.coloredPencil",
@@ -1008,13 +1008,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.cutout",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.cutout",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.cutout",
@@ -1033,13 +1033,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.dryBrush",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.dryBrush",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.dryBrush",
@@ -1058,13 +1058,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.filmGrain",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.filmGrain",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.filmGrain",
@@ -1083,13 +1083,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.fresco",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.fresco",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.fresco",
@@ -1108,13 +1108,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.neonGlow",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.neonGlow",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.neonGlow",
@@ -1133,13 +1133,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.paintDaubs",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.paintDaubs",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.paintDaubs",
@@ -1158,13 +1158,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.paletteKnife",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.paletteKnife",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.paletteKnife",
@@ -1183,13 +1183,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.plasticWrap",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.plasticWrap",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.plasticWrap",
@@ -1208,13 +1208,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.posterEdges",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.posterEdges",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.posterEdges",
@@ -1233,13 +1233,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.roughPastels",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.roughPastels",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.roughPastels",
@@ -1258,13 +1258,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.smudgeStick",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.smudgeStick",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.smudgeStick",
@@ -1283,13 +1283,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.sponge",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sponge",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sponge",
@@ -1308,13 +1308,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.underpainting",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.underpainting",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.underpainting",
@@ -1333,13 +1333,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.watercolor",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.watercolor",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.watercolor",
@@ -1358,13 +1358,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.accentedEdges",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.accentedEdges",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.accentedEdges",
@@ -1383,13 +1383,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.angledStrokes",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.angledStrokes",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.angledStrokes",
@@ -1408,13 +1408,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.crosshatch",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.crosshatch",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.crosshatch",
@@ -1433,13 +1433,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.darkStrokes",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.darkStrokes",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.darkStrokes",
@@ -1458,13 +1458,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.inkOutlines",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.inkOutlines",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.inkOutlines",
@@ -1483,13 +1483,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.spatter",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.spatter",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.spatter",
@@ -1508,13 +1508,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.sprayedStrokes",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sprayedStrokes",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sprayedStrokes",
@@ -1533,13 +1533,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.sumiE",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sumiE",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.sumiE",
@@ -1558,13 +1558,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.diffuseGlow",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.diffuseGlow",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.diffuseGlow",
@@ -1583,13 +1583,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.glass",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.glass",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.glass",
@@ -1608,13 +1608,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.oceanRipple",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.oceanRipple",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.oceanRipple",
@@ -1633,13 +1633,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.basRelief",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.basRelief",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.basRelief",
@@ -1658,13 +1658,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.chalkCharcoal",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.chalkCharcoal",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.chalkCharcoal",
@@ -1683,13 +1683,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.charcoal",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.charcoal",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.charcoal",
@@ -1708,13 +1708,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.chrome",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.chrome",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.chrome",
@@ -1733,13 +1733,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.conteCrayon",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.conteCrayon",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.conteCrayon",
@@ -1758,13 +1758,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.graphicPen",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.graphicPen",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.graphicPen",
@@ -1783,13 +1783,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.halftonePattern",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.halftonePattern",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.halftonePattern",
@@ -1808,13 +1808,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.notePaper",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.notePaper",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.notePaper",
@@ -1833,13 +1833,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.photocopy",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.photocopy",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.photocopy",
@@ -1858,13 +1858,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.plaster",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.plaster",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.plaster",
@@ -1883,13 +1883,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.reticulation",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.reticulation",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.reticulation",
@@ -1908,13 +1908,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.stamp",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.stamp",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.stamp",
@@ -1933,13 +1933,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.tornEdges",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.tornEdges",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.tornEdges",
@@ -1958,13 +1958,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.waterPaper",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.waterPaper",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.waterPaper",
@@ -1983,13 +1983,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.glowingEdges",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.glowingEdges",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.glowingEdges",
@@ -2008,13 +2008,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.craquelure",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.craquelure",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.craquelure",
@@ -2033,13 +2033,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.grain",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.grain",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.grain",
@@ -2058,13 +2058,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.mosaicTiles",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.mosaicTiles",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.mosaicTiles",
@@ -2083,13 +2083,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.patchwork",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.patchwork",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.patchwork",
@@ -2108,13 +2108,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.stainedGlass",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.stainedGlass",
         r##"{"layer": "$SO"}"##,
         "active,area,colors",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.stainedGlass",
@@ -2133,13 +2133,13 @@ const ROWS: &[Row] = &[
         "filter.gallery.texturizer",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.texturizer",
         r##"{"layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.gallery.texturizer",
@@ -2158,231 +2158,231 @@ const ROWS: &[Row] = &[
         "filter.pixelate.colorHalftone",
         r##"{"layer": "$P", "maxRadius": 8}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.pixelate.crystallize: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.pixelate.crystallize",
         r##"{"layer": "$P", "cellSize": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.pixelate.facet: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.pixelate.facet",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.pixelate.fragment: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.pixelate.fragment",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.pixelate.mezzotint: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.pixelate.mezzotint",
         r##"{"layer": "$P", "type": "fineDots"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.pixelate.pointillize: layer ignored; editor area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.pixelate.pointillize",
         r##"{"layer": "$P", "cellSize": 5}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.diffuse: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.diffuse",
         r##"{"layer": "$P", "mode": "normal"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.extrude: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.extrude",
         r##"{"layer": "$P", "size": 30, "depth": 30}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.oilPaint: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.oilPaint",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.tiles: layer ignored; editor area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.tiles",
         r##"{"layer": "$P", "count": 10}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.traceContour: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.traceContour",
         r##"{"layer": "$P", "level": 128}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.stylize.wind: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.stylize.wind",
         r##"{"layer": "$P", "method": "wind"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.distort.displace: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.distort.displace",
         r##"{"layer": "$P", "mapDocument": 0, "mapLayer": "$C"}"##,
         "active,area",
-        &[("$C", "*", true), ("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$C", "*", true), ("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.distort.shear: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.distort.shear",
         r##"{"layer": "$P", "amount": 20}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.distort.zigZag: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.distort.zigZag",
         r##"{"layer": "$P", "amount": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.fibers: layer ignored; editor area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.fibers",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.lensFlare: layer ignored; editor area,channeltarget,quickmask; reads T.content,T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.lensFlare",
         r##"{"layer": "$P", "centerX": 0.5}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.lightingEffects: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.lightingEffects",
         r##"{"layer": "$P", "texture": "none"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.relight: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.relight",
         r##"{"layer": "$P", "angle": 45}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.noise.reduceNoise: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.noise.reduceNoise",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blur.smartBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blur.smartBlur",
         r##"{"layer": "$P", "radius": 3}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blur.lensBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.mask,T.pixels,image.mode,image.size
     r(
         "filter.blur.lensBlur",
         r##"{"layer": "$P", "radius": 15}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blur.shapeBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blur.shapeBlur",
         r##"{"layer": "$P", "radius": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blurGallery.tiltShift: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blurGallery.tiltShift",
         r##"{"layer": "$P", "blur": 15}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blurGallery.irisBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blurGallery.irisBlur",
         r##"{"layer": "$P", "blur": 15}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blurGallery.fieldBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blurGallery.fieldBlur",
         r##"{"layer": "$P", "blur": 15}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blurGallery.spinBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blurGallery.spinBlur",
         r##"{"layer": "$P", "blurAngle": 15}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blurGallery.pathBlur: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.blurGallery.pathBlur",
         r##"{"layer": "$P", "speed": 50}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.other.custom: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.other.custom",
         r##"{"layer": "$P", "kernel": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.other.hsbHsl: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.other.hsbHsl",
         r##"{"layer": "$P", "inputMode": "rgb", "rowOrder": "hsb"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.video.deInterlace: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.video.deInterlace",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.video.ntscColors: layer ignored; editor area,channeltarget,quickmask; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.video.ntscColors",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.other.colorToAlpha: layer ignored; editor area,channeltarget,quickmask; reads T.attr,T.locks,T.pixels,T.position,image.mode,image.size
     r(
         "filter.other.colorToAlpha",
         r##"{"layer": "$P", "color": "#ffffff"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.filterGallery: layer ignored,none; editor area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.mode,image.size
     // was held less: editor:colors
@@ -2390,35 +2390,35 @@ const ROWS: &[Row] = &[
         "filter.filterGallery",
         r##"{"layer": "$P", "effects": [{"filter": "cutout", "params": {}}]}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: editor:colors
     r(
         "filter.filterGallery",
         r##"{"list": true}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.blur.average: layer ignored; editor active,area,channeltarget,quickmask; reads T.locks,T.pixels,image.size
     r(
         "filter.blur.average",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.clouds: layer ignored; editor active,area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.size
     r(
         "filter.render.clouds",
         r##"{"seed": 0}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.differenceClouds: layer ignored; editor active,area,channeltarget,colors,quickmask; reads T.locks,T.pixels,image.size
     r(
         "filter.render.differenceClouds",
         r##"{"seed": 0}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.convertForEditableFilters: layer id-else-selected; editor selected; reads T.attr,T.content,T.effects,T.locks,T.mask,T.pixels,T.position,T.vmask,docState.global_light,docState.metadata,docState.patterns,image.dpi,image.mode,image.size,others
     r("filter.convertForEditableFilters", r##"{"layer": "$P"}"##, "selection", &[("$P", "*", true)]),
@@ -2429,50 +2429,47 @@ const ROWS: &[Row] = &[
         "filter.lensCorrection",
         r##"{"layer": "$P", "distortion": -20}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.exif,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,docState.exif,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.adaptiveWideAngle: layer id-else-active; editor area,channeltarget; reads T.attr,T.locks,T.pixels,T.position,docState.metadata,image.mode,image.size
     r(
         "filter.adaptiveWideAngle",
         r##"{"layer": "$P", "model": "perspective"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.rawDevelop: layer id-else-active; editor area,channeltarget; reads T.content,T.locks,T.pixels,image.mode,image.size
     r(
         "filter.rawDevelop",
         r##"{"layer": "$P", "exposure": 0.5}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.vanishingPoint: layer ignored; editor clipboard; reads T.locks,T.pixels,composite,image.mode,image.size,others
     r(
         "filter.vanishingPoint",
         r##"{"planes": [{"corners": [[120, 120], [280, 120], [360, 280], [40, 280]]}], "paste": [{"plane": 0, "layer": "$C"}]}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.vanishingPoint",
         r##"{"planes": [{"corners": [[120, 120], [280, 120], [360, 280], [40, 280]]}], "paste": [{"plane": 0}]}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.vanishingPoint",
         r##"{"planes": [{"corners": [[120, 120], [280, 120], [360, 280], [40, 280]]}], "clone": [{"source": [200, 257], "points": [[200, 160]]}]}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: image: docState.global_light,docState.patterns,icc,layers not held
     r(
         "filter.vanishingPoint",
         r##"{"planes": [{"corners": [[120, 120], [280, 120], [360, 280], [40, 280]]}], "clone": [{"source": [200, 257], "points": [[200, 160]]}], "newLayer": true}"##,
         "active",
-        &[
-            ("$P", "kind,locks,props.data,tiles", false),
-            ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~inheritedLocks", false),
-        ],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width,~inheritedLocks", false)],
     ),
     // filter.liquify: layer id-else-active; editor area,channeltarget; reads T.locks,T.pixels,image.mode,image.size
     // was held less: editor:area
@@ -2480,7 +2477,7 @@ const ROWS: &[Row] = &[
         "filter.liquify",
         r##"{"layer": "$P", "strokes": [{"tool": "forwardWarp", "size": 50, "points": [[100, 100], [120, 100]]}]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.flame: layer id-else-active; editor active,area; reads T.locks,T.pixels,image.mode,image.paths,image.size
     // was held less: image: docState.paths,docState.work_path not held
@@ -2488,27 +2485,27 @@ const ROWS: &[Row] = &[
         "filter.render.flame",
         r##"{"layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.paths,docState.work_path,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,paths,docState.work_path,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "filter.render.flame",
         r##"{"layer": "$P", "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.paths,docState.work_path,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,paths,docState.work_path,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.pictureFrame: layer id-else-active; editor active,area; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.pictureFrame",
         r##"{"layer": "$P", "frame": "roses"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // filter.render.tree: layer id-else-active; editor active,area; reads T.locks,T.pixels,image.mode,image.size
     r(
         "filter.render.tree",
         r##"{"layer": "$P", "baseTreeType": 1}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // image.imageRotation.flipCanvasHorizontal: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
     // was held less: image not held
@@ -2530,14 +2527,14 @@ const ROWS: &[Row] = &[
         "image.adjustments.desaturate",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // image.adjustments.brightnessContrast: layer ignored; editor active,area,channeltarget,quickmask; reads T.locks,T.mask,T.pixels,image.channels,image.mode,image.size
     r(
         "image.adjustments.brightnessContrast",
         r##"{"brightness": 20, "contrast": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.brightnessContrast",
@@ -2556,7 +2553,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.levels",
         r##"{"inBlack": 10, "gamma": 1.2}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.levels",
@@ -2575,7 +2572,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.curves",
         r##"{"points": [[0, 0], [128, 150], [255, 255]]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.curves",
@@ -2594,7 +2591,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.exposure",
         r##"{"exposure": 0.5}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.exposure",
@@ -2613,7 +2610,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.vibrance",
         r##"{"vibrance": 30}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.vibrance",
@@ -2632,7 +2629,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.hueSaturation",
         r##"{"hue": 20, "saturation": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.hueSaturation",
@@ -2651,7 +2648,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.colorBalance",
         r##"{"midtones": [10, 0, -10]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.colorBalance",
@@ -2670,7 +2667,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.blackWhite",
         r##"{"reds": 40, "tint": true}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.blackWhite",
@@ -2689,7 +2686,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.photoFilter",
         r##"{"filter": "warming85", "density": 25}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.photoFilter",
@@ -2708,7 +2705,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.channelMixer",
         r##"{"red": [100, 0, 0, 0]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.channelMixer",
@@ -2727,7 +2724,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.invert",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r("image.adjustments.invert", r##"{"target": "mask"}"##, "active,area", &[("$P", "kind,mask", false), ("image", "depth,height,mode,width", false)]),
     r(
@@ -2741,7 +2738,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.posterize",
         r##"{"levels": 4}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.posterize",
@@ -2760,7 +2757,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.threshold",
         r##"{"level": 128}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.threshold",
@@ -2779,7 +2776,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.gradientMap",
         r##"{"stops": [[0, "#000000"], [1, "#ffffff"]]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.gradientMap",
@@ -2798,7 +2795,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.selectiveColor",
         r##"{"colors": "reds", "cyan": 10}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.selectiveColor",
@@ -2818,7 +2815,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.colorLookup",
         r##"{"lut": "warm"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: editor:area
     r(
@@ -2836,23 +2833,18 @@ const ROWS: &[Row] = &[
     ),
     // image.autoTone: layer ignored; editor active,area; reads T.locks,T.pixels,image.mode,image.size
     // was held less: $P not held; image not held
-    r("image.autoTone", r##"{}"##, "active,area", &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)]),
+    r("image.autoTone", r##"{}"##, "active,area", &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)]),
     // image.autoContrast: layer ignored; editor active,area; reads T.locks,T.pixels,image.mode,image.size
     // was held less: $P not held; image not held
     r(
         "image.autoContrast",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // image.autoColor: layer ignored; editor active,area; reads T.locks,T.pixels,image.mode,image.size
     // was held less: $P not held; image not held
-    r(
-        "image.autoColor",
-        r##"{}"##,
-        "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
-    ),
+    r("image.autoColor", r##"{}"##, "active,area", &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)]),
     // image.imageSize: layer none; editor area,quickmask; reads docState.notes,image.channels,image.dpi,image.guides,image.mode,image.paths,image.size,others
     // was held less: image not held
     r("image.imageSize", r##"{"width": 200}"##, "", &[("image", "dpi,height,width", false)]),
@@ -2870,7 +2862,7 @@ const ROWS: &[Row] = &[
     r("image.crop", r##"{"x": 10, "y": 10, "width": 200, "height": 150, "angle": 5}"##, "area,colors", &[("image", "height,width", false)]),
     // image.trim: layer none; editor quickmask; reads composite,docState.notes,image.channels,image.paths,image.size,others
     // was held less: image not held
-    r("image.trim", r##"{"basedOn": "transparent"}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("image.trim", r##"{"basedOn": "transparent"}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // image.mode.rgb: layer none; editor prefs; reads composite,image.channels,image.mode,others
     // was held less: image not held
     r("image.mode.rgb", r##"{}"##, "", &[("image", "depth,docState.color_table,docState.duotone,icc,mode", false)]),
@@ -2899,7 +2891,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.equalize",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "image.adjustments.equalize",
@@ -2909,7 +2901,7 @@ const ROWS: &[Row] = &[
     ),
     // image.revealAll: layer none; editor quickmask; reads docState.notes,image.channels,image.paths,image.size,others
     // was held less: image not held
-    r("image.revealAll", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("image.revealAll", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // image.applyImage: layer active-only,none; editor active,area,channeltarget,quickmask; reads T.locks,T.pixels,image.channels,image.mode,image.size
     // was held less: $P not held; image: ~inheritedLocks not held
     r(
@@ -2917,7 +2909,7 @@ const ROWS: &[Row] = &[
         r##"{"source": {"layer": "$P2", "channel": "composite"}, "blending": "multiply", "opacity": 50}"##,
         "active,area",
         &[
-            ("$P", "kind,locks,props.data,tiles", false),
+            ("$P", "kind,locks,data,text,tiles", false),
             ("$P2", "*", true),
             ("image", "channels,depth,height,mode,width,~channelContents,~inheritedLocks", false),
         ],
@@ -2926,33 +2918,33 @@ const ROWS: &[Row] = &[
         "image.applyImage",
         r##"{"source": {"channel": "composite"}, "target": {"channel": 0}}"##,
         "active,area",
-        &[("$P", "-", false), ("image", "channels,depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~channelContents", false)],
+        &[("$P", "-", false), ("image", "channels,depth,docState.global_light,patterns,height,icc,layers,mode,width,~channelContents", false)],
     ),
     // image.calculations: layer none; editor active,area,quickmask; reads image.channels,image.dpi,image.mode,image.size
     r(
         "image.calculations",
         r##"{"source1": {"channel": "red"}, "source2": {"channel": "Alpha 1"}, "blending": "multiply"}"##,
         "",
-        &[("image", "channels,depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~channelContents", false)],
+        &[("image", "channels,depth,docState.global_light,patterns,height,icc,layers,mode,width,~channelContents", false)],
     ),
     r(
         "image.calculations",
         r##"{"source1": {"channel": "red"}, "result": "selection"}"##,
         "",
-        &[("image", "channels,depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~channelContents", false)],
+        &[("image", "channels,depth,docState.global_light,patterns,height,icc,layers,mode,width,~channelContents", false)],
     ),
     r(
         "image.calculations",
         r##"{"source1": {"channel": "red"}, "result": "newDocument"}"##,
         "",
-        &[("image", "channels,depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~channelContents", false)],
+        &[("image", "channels,depth,docState.global_light,patterns,height,icc,layers,mode,width,~channelContents", false)],
     ),
     // image.adjustments.shadowsHighlights: layer ignored; editor active,area,channeltarget; reads T.content,T.locks,T.pixels
     r(
         "image.adjustments.shadowsHighlights",
         r##"{"shadowAmount": 35}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // image.adjustments.replaceColor: layer ignored; editor active,area,channeltarget,colors; reads T.locks,T.pixels
     // was held less: editor:colors; editor:area; editor:active; $P not held; image not held
@@ -2960,7 +2952,7 @@ const ROWS: &[Row] = &[
         "image.adjustments.replaceColor",
         r##"{"color": "#ff0000", "fuzziness": 40, "hue": 30}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // image.adjustments.matchColor: layer ignored; editor active,area,channeltarget; reads T.content,T.locks,T.pixels
     // was held less: editor:area
@@ -2968,17 +2960,14 @@ const ROWS: &[Row] = &[
         "image.adjustments.matchColor",
         r##"{"source": 0, "luminance": 100}"##,
         "active,area",
-        &[
-            ("$P", "kind,locks,props.data,tiles", false),
-            ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~inheritedLocks", false),
-        ],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width,~inheritedLocks", false)],
     ),
     // image.adjustments.hdrToning: layer ignored; editor -; reads composite,image.mode,image.size
     r(
         "image.adjustments.hdrToning",
         r##"{"radius": 30, "strength": 0.5}"##,
         "",
-        &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // image.rotation.arbitrary: layer none; editor area,colors,quickmask; reads docState.notes,image.channels,image.dpi,image.paths,image.size,others
     // was held less: editor:colors; image not held
@@ -2989,7 +2978,7 @@ const ROWS: &[Row] = &[
         "image.mode.indexedColor",
         r##"{"palette": "selective", "colors": 256}"##,
         "",
-        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // image.mode.colorTable: layer none; editor -; reads docState.color_table
     // was held less: image not held
@@ -3000,7 +2989,7 @@ const ROWS: &[Row] = &[
         "image.mode.bitmap",
         r##"{"method": "diffusion"}"##,
         "",
-        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // image.mode.duotone: layer none; editor -; reads image.mode
     // was held less: image not held
@@ -3011,7 +3000,7 @@ const ROWS: &[Row] = &[
         "image.mode.multichannel",
         r##"{}"##,
         "",
-        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.color_table,docState.duotone,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // image.analysis.setMeasurementScale: layer none; editor -; reads docState.measurement
     // was held less: image not held
@@ -3049,12 +3038,7 @@ const ROWS: &[Row] = &[
     ),
     // image.trap: layer ignored; editor active; reads T.pixels,image.mode
     // was held less: editor:active; $P not held; image not held
-    r(
-        "image.trap",
-        r##"{"width": 1}"##,
-        "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
-    ),
+    r("image.trap", r##"{"width": 1}"##, "active", &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)]),
     // image.variables.define: layer none; editor -; reads others
     // was held less: image not held
     r("image.variables.define", r##"{"defs": [{"name": "title", "layer": "$T", "type": "textReplacement"}]}"##, "", &[("image", "docState.variables", false)]),
@@ -3072,11 +3056,11 @@ const ROWS: &[Row] = &[
         "image.applyDataSet",
         r##"{"name": "A"}"##,
         "",
-        &[("image", "depth,docState.global_light,docState.patterns,docState.variables,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.global_light,patterns,docState.variables,height,icc,layers,mode,width", false)],
     ),
     // layer.rasterize.vectorMask: layer id-else-active; editor active; reads T.mask,T.vmask,image.mode,image.size
     // was held more: $SH: every field held, reads kind,mask,props.extra; $SH: position held
-    r("layer.rasterize.vectorMask", r##"{"layer": "$SH"}"##, "active", &[("$SH", "kind,mask,props.extra", false)]),
+    r("layer.rasterize.vectorMask", r##"{"layer": "$SH"}"##, "active", &[("$SH", "kind,mask,extra", false)]),
     // layer.rasterize.shape: layer id-else-active; editor active; reads T.content,image.mode,image.size
     r("layer.rasterize.shape", r##"{"layer": "$SH"}"##, "active", &[("$SH", "*", true)]),
     // layer.rasterize.layer: layer id-else-active,other; editor active; reads T.content,image.mode,image.size
@@ -3085,7 +3069,7 @@ const ROWS: &[Row] = &[
     r("layer.rasterize.layer", r##"{"layer": "$FILL"}"##, "active", &[("$FILL", "*", true)]),
     // layer.rasterize.allLayers: layer none; editor active; reads image.mode,image.size,others
     // was held less: image not held
-    r("layer.rasterize.allLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.rasterize.allLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.rasterize.type: layer id-else-active; editor active; reads T.content,image.mode
     r("layer.rasterize.type", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
     // layer.rasterize.fillContent: layer id-else-active; editor active; reads T.content,image.mode,image.size
@@ -3122,72 +3106,72 @@ const ROWS: &[Row] = &[
     r("layer.objectLayers.convertToLinked", r##"{"layer": "$SO", "path": "/tmp/so.kphoto"}"##, "active", &[("$SO", "*", true)]),
     // layer.editableFilter.disableEditableFilters: layer id-else-active; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.disableEditableFilters", r##"{"layer": "$SO", "enabled": false}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.disableEditableFilters", r##"{"layer": "$SO", "enabled": false}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.deleteFilterMask: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.deleteFilterMask", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.deleteFilterMask", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.disableFilterMask: layer id-else-active; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.disableFilterMask", r##"{"layer": "$SO", "enabled": false}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.disableFilterMask", r##"{"layer": "$SO", "enabled": false}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.blendingOptions: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
     r(
         "layer.editableFilter.blendingOptions",
         r##"{"layer": "$SO", "index": 0, "blend": "multiply", "opacity": 50}"##,
         "active",
-        &[("$SO", "kind,props.data", false)],
+        &[("$SO", "kind,data,text", false)],
     ),
     // layer.editableFilter.clearEditableFilters: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.clearEditableFilters", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.clearEditableFilters", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.setVisible: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.setVisible", r##"{"layer": "$SO", "index": 0, "visible": false}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.setVisible", r##"{"layer": "$SO", "index": 0, "visible": false}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.setParams: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.setParams", r##"{"layer": "$SO", "index": 0, "params": {"radius": 4}}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.setParams", r##"{"layer": "$SO", "index": 0, "params": {"radius": 4}}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.delete: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.delete", r##"{"layer": "$SO", "index": 0}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.delete", r##"{"layer": "$SO", "index": 0}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.editableFilter.move: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.editableFilter.move", r##"{"layer": "$SO", "index": 0, "to": 1}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.editableFilter.move", r##"{"layer": "$SO", "index": 0, "to": 1}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.entropy: layer id-else-active; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.entropy", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.entropy", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.kurtosis: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.kurtosis", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.kurtosis", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.maximum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.maximum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.maximum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.mean: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.mean", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.mean", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.median: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.median", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.median", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.minimum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.minimum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.minimum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.range: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.range", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.range", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.skewness: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.skewness", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.skewness", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.standardDeviation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.standardDeviation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.standardDeviation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.summation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.summation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.summation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.variance: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.variance", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.variance", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.stackMode.none: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.none", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,props.data", false)]),
+    r("layer.objectLayers.stackMode.none", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.revealInFinder: layer ignored; editor active; reads -
     r("layer.objectLayers.revealInFinder", r##"{"dryRun": true}"##, "", &[]),
     // layer.objectLayers.warp: layer id-else-active; editor active,area; reads T.attr,T.content,T.locks,T.mask,T.pixels,T.position,image.mode,image.size
@@ -3277,7 +3261,7 @@ const ROWS: &[Row] = &[
         "layer.newFillLayer.solidColor",
         r##"{"color": "#ff00ff", "path": "Path 1"}"##,
         "active,area,colors",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newFillLayer.gradient: layer active-only; editor active,area,colors; reads image.mode,image.paths,others
     // was held less: $P not held
@@ -3287,7 +3271,7 @@ const ROWS: &[Row] = &[
         "layer.newFillLayer.gradient",
         r##"{"path": "work"}"##,
         "active,area,colors",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.brightnessContrast: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3297,7 +3281,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.brightnessContrast",
         r##"{"brightness": 20, "contrast": 10, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.levels: layer active-only; editor active,area; reads image.mode,image.paths,others
     // was held less: editor:area; $P not held
@@ -3307,7 +3291,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.levels",
         r##"{"input": [10, 245], "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.curves: layer active-only; editor active,area; reads composite,image.mode,image.paths,image.size,others
     // was held less: editor:area; $P not held
@@ -3317,14 +3301,14 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.curves",
         r##"{"eyedropper": {"point": "white", "at": [60, 60]}}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("$P", "clipped,kind", true), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // was held less: editor:area; $P not held
     r(
         "layer.newAdjustmentLayer.curves",
         r##"{"master": [[0, 0], [128, 150], [255, 255]], "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.exposure: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3334,7 +3318,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.exposure",
         r##"{"exposure": 1, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.vibrance: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3344,7 +3328,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.vibrance",
         r##"{"vibrance": 30, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.hueSaturation: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3354,7 +3338,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.hueSaturation",
         r##"{"hue": 40, "saturation": 20, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.colorBalance: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3364,7 +3348,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.colorBalance",
         r##"{"midtones": [10, 0, -10], "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.blackWhite: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3374,7 +3358,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.blackWhite",
         r##"{"reds": 40, "tint": true, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.photoFilter: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3384,7 +3368,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.photoFilter",
         r##"{"filter": "warming85", "density": 25, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.channelMixer: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3394,7 +3378,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.channelMixer",
         r##"{"red": [100, 0, 0, 0], "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.invert: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3404,7 +3388,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.invert",
         r##"{"path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.posterize: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3414,7 +3398,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.posterize",
         r##"{"levels": 4, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.threshold: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3424,7 +3408,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.threshold",
         r##"{"level": 128, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.gradientMap: layer active-only; editor active,area; reads image.paths,others
     // was held less: $P not held
@@ -3434,7 +3418,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.gradientMap",
         r##"{"stops": [[0, "#000000"], [1, "#ffffff"]], "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.selectiveColor: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3444,7 +3428,7 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.selectiveColor",
         r##"{"colors": "reds", "cyan": 10, "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.newAdjustmentLayer.colorLookup: layer active-only; editor active,area; reads image.paths,others
     // was held less: editor:area; $P not held
@@ -3454,36 +3438,36 @@ const ROWS: &[Row] = &[
         "layer.newAdjustmentLayer.colorLookup",
         r##"{"lut": "warm", "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,docState.work_path", false)],
     ),
     // layer.layerStyle.dropShadow: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.dropShadow", r##"{"layer": "$P", "distance": 8, "size": 6}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.dropShadow", r##"{"layer": "$P", "distance": 8, "size": 6}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.innerShadow: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.innerShadow", r##"{"layer": "$P", "choke": 10}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.innerShadow", r##"{"layer": "$P", "choke": 10}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.outerGlow: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.outerGlow", r##"{"layer": "$P", "size": 10}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.outerGlow", r##"{"layer": "$P", "size": 10}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.innerGlow: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.innerGlow", r##"{"layer": "$P", "source": "center"}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.innerGlow", r##"{"layer": "$P", "source": "center"}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.stroke: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.stroke", r##"{"layer": "$P", "size": 3, "color": "#00ff00"}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.stroke", r##"{"layer": "$P", "size": 3, "color": "#00ff00"}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.colorOverlay: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.colorOverlay", r##"{"layer": "$P", "color": "#0000ff"}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.colorOverlay", r##"{"layer": "$P", "color": "#0000ff"}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.gradientOverlay: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.gradientOverlay", r##"{"layer": "$P", "from": "#000000", "to": "#ffffff"}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.gradientOverlay", r##"{"layer": "$P", "from": "#000000", "to": "#ffffff"}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.patternOverlay: layer id-else-active; editor active,library,prefs; reads T.effects,docState.patterns,image.mode
     // was held more: $P: every field held, reads effects
     r(
         "layer.layerStyle.patternOverlay",
         r##"{"layer": "$P", "pattern": "Dots"}"##,
         "active",
-        &[("$P", "effects", false), ("image", "docState.patterns", false)],
+        &[("$P", "styleSettings,styles", false), ("image", "patterns", false)],
     ),
     // layer.layerStyle.bevelEmboss: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
@@ -3491,31 +3475,31 @@ const ROWS: &[Row] = &[
         "layer.layerStyle.bevelEmboss",
         r##"{"layer": "$P", "style": "inner", "texture": "Dots"}"##,
         "active",
-        &[("$P", "effects", false), ("image", "docState.patterns", false)],
+        &[("$P", "styleSettings,styles", false), ("image", "patterns", false)],
     ),
     // layer.layerStyle.satin: layer id-else-active; editor active; reads T.effects,image.mode
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.satin", r##"{"layer": "$P", "distance": 11}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.satin", r##"{"layer": "$P", "distance": 11}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.replace: layer id-else-active; editor active,library; reads docState.patterns,image.mode
     // was held more: $P: every field held, reads effects
     r(
         "layer.layerStyle.replace",
         r##"{"layer": "$P", "effects": [{"kind": "dropShadow", "params": {"distance": 4}}]}"##,
         "active",
-        &[("$P", "effects", false), ("image", "docState.patterns", false)],
+        &[("$P", "styleSettings,styles", false), ("image", "patterns", false)],
     ),
     // layer.layerStyle.clear: layer id-else-active; editor active; reads -
     // was held more: $P: every field held, reads effects
-    r("layer.layerStyle.clear", r##"{"layer": "$P"}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.clear", r##"{"layer": "$P"}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.vectorMask.add: layer id-else-active; editor active; reads T.locks,image.paths
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.add", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.add", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
     r(
         "layer.vectorMask.add",
         r##"{"layer": "$P", "name": "Path 1"}"##,
         "active",
-        &[("$P", "kind,locks,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "kind,locks,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // layer.vectorMask.fromPath: layer id-else-active; editor active; reads T.locks,image.paths
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
@@ -3523,60 +3507,60 @@ const ROWS: &[Row] = &[
         "layer.vectorMask.fromPath",
         r##"{"layer": "$P", "name": "Path 1"}"##,
         "active",
-        &[("$P", "kind,locks,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "kind,locks,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // layer.vectorMask.edit: layer id-else-active; editor active; reads T.vmask
     // was held more: $SO: every field held, reads kind,locks,props.extra; $SO: position held
-    r("layer.vectorMask.edit", r##"{"layer": "$SO", "density": 50}"##, "active", &[("$SO", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.edit", r##"{"layer": "$SO", "density": 50}"##, "active", &[("$SO", "kind,locks,extra", false)]),
     // layer.vectorMask.delete: layer id-else-active; editor active; reads T.vmask
     // was held more: $SO: every field held, reads kind,locks,props.extra; $SO: position held
-    r("layer.vectorMask.delete", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.delete", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,locks,extra", false)]),
     // layer.vectorMask.revealAll: layer id-else-active; editor active; reads T.locks
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.revealAll", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.revealAll", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // layer.vectorMask.hideAll: layer id-else-active; editor active; reads T.locks
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.hideAll", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.hideAll", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // layer.vectorMask.currentPath: layer id-else-active; editor active; reads T.locks,image.paths
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.currentPath", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.currentPath", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // layer.vectorMask.enabled: layer id-else-active; editor active; reads T.vmask
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.enabled", r##"{"layer": "$P", "enabled": false}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.enabled", r##"{"layer": "$P", "enabled": false}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // layer.vectorMask.linked: layer id-else-active; editor active; reads T.vmask
     // was held more: $P: every field held, reads kind,locks,props.extra; $P: position held
-    r("layer.vectorMask.linked", r##"{"layer": "$P", "linked": false}"##, "active", &[("$P", "kind,locks,props.extra", false)]),
+    r("layer.vectorMask.linked", r##"{"layer": "$P", "linked": false}"##, "active", &[("$P", "kind,locks,extra", false)]),
     // layer.combineShapes.unite: layer id-else-active; editor active,colors; reads T.content,image.mode
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("layer.combineShapes.unite", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,props.data", false)]),
+    r("layer.combineShapes.unite", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,data,text", false)]),
     // layer.combineShapes.subtractFrontShape: layer id-else-active; editor active,colors; reads T.content,image.mode
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("layer.combineShapes.subtractFrontShape", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,props.data", false)]),
+    r("layer.combineShapes.subtractFrontShape", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,data,text", false)]),
     // layer.combineShapes.intersectShapeAreas: layer id-else-active; editor active,colors; reads T.content,image.mode
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("layer.combineShapes.intersectShapeAreas", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,props.data", false)]),
+    r("layer.combineShapes.intersectShapeAreas", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,data,text", false)]),
     // layer.combineShapes.excludeOverlappingShapes: layer id-else-active; editor active,colors; reads T.content,image.mode
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("layer.combineShapes.excludeOverlappingShapes", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,props.data", false)]),
+    r("layer.combineShapes.excludeOverlappingShapes", r##"{"layer": "$SH", "subpath": 1}"##, "active,colors", &[("$SH", "kind,name,data,text", false)]),
     // layer.combineShapes.mergeShapeComponents: layer id-else-active; editor active; reads T.content
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("layer.combineShapes.mergeShapeComponents", r##"{"layer": "$SH"}"##, "active", &[("$SH", "kind,name,props.data", false)]),
+    r("layer.combineShapes.mergeShapeComponents", r##"{"layer": "$SH"}"##, "active", &[("$SH", "kind,name,data,text", false)]),
     // layer.layerStyle.copyLayerStyle: layer id-else-active; editor active; reads T.attr,T.effects,T.mask
     // was held more: $P: every field held, reads blend,effects,fillOpacity,props.extra
-    r("layer.layerStyle.copyLayerStyle", r##"{"layer": "$P"}"##, "active", &[("$P", "blend,effects,fillOpacity,props.extra", false)]),
+    r("layer.layerStyle.copyLayerStyle", r##"{"layer": "$P"}"##, "active", &[("$P", "blend,styleSettings,styles,fillOpacity,extra", false)]),
     // layer.layerStyle.pasteLayerStyle: layer id-else-active; editor active,clipboard; reads image.mode
     // was held more: $C: every field held, reads blend,effects,fillOpacity,props.extra
-    r("layer.layerStyle.pasteLayerStyle", r##"{"layer": "$C"}"##, "active", &[("$C", "blend,effects,fillOpacity,props.extra", false)]),
+    r("layer.layerStyle.pasteLayerStyle", r##"{"layer": "$C"}"##, "active", &[("$C", "blend,styleSettings,styles,fillOpacity,extra", false)]),
     // layer.layerStyle.hideAllEffects: layer ignored; editor -; reads others
     // was held less: image not held
-    r("layer.layerStyle.hideAllEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.layerStyle.hideAllEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.layerStyle.showAllEffects: layer ignored; editor -; reads others
     // was held less: image not held
-    r("layer.layerStyle.showAllEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.layerStyle.showAllEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.layerMask.enabled: layer id-else-active; editor active; reads T.mask
     // was held more: $C: every field held, reads kind,locks,mask,name; $C: position held
     r("layer.layerMask.enabled", r##"{"layer": "$C", "enabled": false}"##, "active", &[("$C", "kind,locks,mask,name", false)]),
@@ -3585,10 +3569,10 @@ const ROWS: &[Row] = &[
     r("layer.layerMask.linked", r##"{"layer": "$C", "linked": false}"##, "active", &[("$C", "kind,locks,mask,name", false)]),
     // layer.layerMask.apply: layer id-else-active; editor active; reads T.content,T.locks,T.mask,T.pixels
     // was held more: $C: every field held, reads kind,locks,mask,props.data,tiles; $C: position held
-    r("layer.layerMask.apply", r##"{"layer": "$C"}"##, "active", &[("$C", "kind,locks,mask,props.data,tiles", false)]),
+    r("layer.layerMask.apply", r##"{"layer": "$C"}"##, "active", &[("$C", "kind,locks,mask,data,text,tiles", false)]),
     // layer.layerMask.fromTransparency: layer id-else-active; editor active; reads T.locks,T.pixels
     // was held more: $P: every field held, reads kind,locks,mask,props.data,tiles; $P: position held
-    r("layer.layerMask.fromTransparency", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,mask,props.data,tiles", false)]),
+    r("layer.layerMask.fromTransparency", r##"{"layer": "$P"}"##, "active", &[("$P", "kind,locks,mask,data,text,tiles", false)]),
     // layer.layerMask.hideSelection: layer id-else-active; editor active,area; reads image.size
     // was held more: $P: every field held, reads kind,locks,mask,name; $P: position held
     r("layer.layerMask.hideSelection", r##"{"layer": "$P", "region": [50, 50, 100, 80]}"##, "active,area", &[("$P", "kind,locks,mask,name", false)]),
@@ -3598,7 +3582,7 @@ const ROWS: &[Row] = &[
         "layer.matting.defringe",
         r##"{"width": 2}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // layer.matting.removeBlackMatte: layer ignored; editor active; reads T.locks,T.pixels,T.position
     // was held less: editor:active; $P not held; image not held
@@ -3606,7 +3590,7 @@ const ROWS: &[Row] = &[
         "layer.matting.removeBlackMatte",
         r##"{}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // layer.matting.removeWhiteMatte: layer ignored; editor active; reads T.locks,T.pixels,T.position
     // was held less: editor:active; $P not held; image not held
@@ -3614,7 +3598,7 @@ const ROWS: &[Row] = &[
         "layer.matting.removeWhiteMatte",
         r##"{}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // layer.matting.colorDecontaminate: layer ignored; editor active; reads T.content,T.locks,T.pixels
     // was held less: editor:active; $P not held; image not held
@@ -3622,7 +3606,7 @@ const ROWS: &[Row] = &[
         "layer.matting.colorDecontaminate",
         r##"{"amount": 100, "radius": 4}"##,
         "active",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // layer.layerStyle.blendingOptions: layer id-else-active; editor active; reads T.attr,image.mode
     // was held more: $P: every field held, reads blend,fillOpacity,opacity,props.extra
@@ -3630,7 +3614,7 @@ const ROWS: &[Row] = &[
         "layer.layerStyle.blendingOptions",
         r##"{"layer": "$P", "opacity": 50, "blendIf": {"channel": "gray", "thisLayer": [0, 200]}}"##,
         "active",
-        &[("$P", "blend,fillOpacity,opacity,props.extra", false)],
+        &[("$P", "blend,fillOpacity,opacity,extra", false)],
     ),
     // layer.layerStyle.globalLight: layer none; editor -; reads docState.global_light
     // was held less: image not held
@@ -3639,23 +3623,18 @@ const ROWS: &[Row] = &[
     r("layer.layerStyle.createLayer", r##"{"layer": "$P"}"##, "active", &[("$P", "*", false)]),
     // layer.layerStyle.scaleEffects: layer id-else-active; editor active; reads T.effects
     // was held less: $P not held
-    r("layer.layerStyle.scaleEffects", r##"{"scale": 200}"##, "active", &[("$P", "effects", false)]),
+    r("layer.layerStyle.scaleEffects", r##"{"scale": 200}"##, "active", &[("$P", "styleSettings,styles", false)]),
     // layer.layerStyle.transferEffects: layer none; editor -; reads others
     r("layer.layerStyle.transferEffects", r##"{"from": "$P", "to": "$C", "copy": true}"##, "", &[("$C", "*", true), ("$P", "*", true)]),
     // layer.newFillLayer.pattern: layer active-only,none; editor active,area,library,prefs; reads docState.patterns,image.paths,others
     // was held less: $P not held
-    r(
-        "layer.newFillLayer.pattern",
-        r##"{"pattern": "pat1", "scale": 100}"##,
-        "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.patterns", false)],
-    ),
+    r("layer.newFillLayer.pattern", r##"{"pattern": "pat1", "scale": 100}"##, "active,area", &[("$P", "clipped,kind", true), ("image", "patterns", false)]),
     // was held less: $P not held
     r(
         "layer.newFillLayer.pattern",
         r##"{"pattern": "pat1", "path": "Path 1"}"##,
         "active,area",
-        &[("$P", "clipped,kind", true), ("image", "docState.paths,docState.patterns,docState.work_path", false)],
+        &[("$P", "clipped,kind", true), ("image", "paths,patterns,docState.work_path", false)],
     ),
     // layer.new.layer: layer active-only; editor active; reads image.mode,others
     // was held less: $P not held
@@ -3706,12 +3685,12 @@ const ROWS: &[Row] = &[
     r("layer.mergeDown", r##"{"layer": "$P2"}"##, "active", &[("$P", "*", true), ("$P2", "*", true)]),
     // layer.flattenImage: layer none; editor -; reads composite,docState.global_light,image.mode
     // was held less: image not held
-    r("layer.flattenImage", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.flattenImage", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.setAdjustment: layer id-else-active; editor active; reads T.content,image.mode
     // was held more: $ADJ: every field held, reads kind,props.data; $ADJ: position held
-    r("layer.setAdjustment", r##"{"layer": "$ADJ", "midtones": [10, 10, 10]}"##, "active", &[("$ADJ", "kind,props.data", false)]),
+    r("layer.setAdjustment", r##"{"layer": "$ADJ", "midtones": [10, 10, 10]}"##, "active", &[("$ADJ", "kind,data,text", false)]),
     // was held more: $ADJ: every field held, reads kind,props.data; $ADJ: position held
-    r("layer.setAdjustment", r##"{"layer": "$ADJ"}"##, "active", &[("$ADJ", "kind,props.data", false)]),
+    r("layer.setAdjustment", r##"{"layer": "$ADJ"}"##, "active", &[("$ADJ", "kind,data,text", false)]),
     // layer.moveTo: layer id-else-active,none; editor active; reads others
     r("layer.moveTo", r##"{"layer": "$SH", "target": "$G", "position": "into"}"##, "active", &[("$G", "*", true), ("$SH", "*", true)]),
     r(
@@ -3728,7 +3707,7 @@ const ROWS: &[Row] = &[
     r("layer.translate", r##"{"dx": 5}"##, "active,selection", &[("$P", "*", true), ("image", "~linkGroups", false)]),
     // layer.fill.solidColor.set: layer id-strict; editor active; reads T.content,T.locks,T.pixels,image.mode
     // was held more: $FILL: every field held, reads kind,locks,props.data; $FILL: position held
-    r("layer.fill.solidColor.set", r##"{"layer": "$FILL", "color": "#ff0000"}"##, "active", &[("$FILL", "kind,locks,props.data", false)]),
+    r("layer.fill.solidColor.set", r##"{"layer": "$FILL", "color": "#ff0000"}"##, "active", &[("$FILL", "kind,locks,data,text", false)]),
     // layer.removeBackground: layer id-else-active; editor -; reads T.effects,T.locks,T.mask,T.pixels,image.size
     r("layer.removeBackground", r##"{"layer": "$P"}"##, "active", &[("$P", "*", true)]),
     // layer.new.layerViaCopy: layer ignored; editor active,area; reads T.effects,T.mask,T.pixels,image.size,others
@@ -3741,12 +3720,12 @@ const ROWS: &[Row] = &[
     r("layer.new.layerViaCut", r##"{"region": [50, 50, 100, 80]}"##, "active,area,colors", &[("$P", "*", true)]),
     // layer.mergeVisible: layer none; editor -; reads composite,image.mode
     // was held less: image not held
-    r("layer.mergeVisible", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.mergeVisible", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.new.layerFromBackground: layer none; editor -; reads -
     r("layer.new.layerFromBackground", r##"{}"##, "", &[]),
     // layer.delete.hiddenLayers: layer none; editor active; reads others
     // was held less: image not held
-    r("layer.delete.hiddenLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("layer.delete.hiddenLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // layer.ungroupLayers: layer id-else-active; editor -; reads T.position,others
     r("layer.ungroupLayers", r##"{"layer": "$G"}"##, "active", &[("$G", "*", true)]),
     // layer.hideLayers: layer id-else-active,id-else-selected; editor active,selected; reads others
@@ -3806,7 +3785,7 @@ const ROWS: &[Row] = &[
     r("layer.distribute.vertically", r##"{}"##, "selection", &[("$P", "*", true), ("image", "~linkGroups", false)]),
     // layer.linkLayers: layer selected; editor selected; reads others
     // was held less: $P not held
-    r("layer.linkLayers", r##"{}"##, "selection", &[("$P", "props.extra", false)]),
+    r("layer.linkLayers", r##"{}"##, "selection", &[("$P", "extra", false)]),
     // layer.mergeLayers: layer ignored; editor active,selected; reads image.mode,others
     // was held less: $P not held
     r("layer.mergeLayers", r##"{}"##, "selection", &[("$P", "*", true)]),
@@ -3830,7 +3809,7 @@ const ROWS: &[Row] = &[
         "layer.stampVisible",
         r##"{}"##,
         "active",
-        &[("$P", "clipped,kind", true), ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("$P", "clipped,kind", true), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // layer.stampDown: layer ignored; editor active,selected; reads T.attr,others
     // was held less: editor:active; $P not held; $FILL not held
@@ -3848,7 +3827,7 @@ const ROWS: &[Row] = &[
         "layer.setLabelColor",
         r##"{"layer": "$G", "color": "red"}"##,
         "active,selection",
-        &[("$G", "props.extra.label", false), ("image", "~subtreeLabels[id=\"$G\"].labels", false)],
+        &[("$G", "extra.label", false), ("image", "~subtreeLabels[id=\"$G\"].labels", false)],
     ),
     // layer.new.artboard: layer none; editor -; reads image.size
     r("layer.new.artboard", r##"{"preset": "iPhone 14"}"##, "", &[]),
@@ -3868,7 +3847,7 @@ const ROWS: &[Row] = &[
     r("layer.new.frameFromLayers", r##"{"name": "Frame 1"}"##, "selection", &[("$P", "*", true)]),
     // layer.setEffectsVisible: layer id-strict; editor active; reads T.effects
     // was held more: $SH: every field held, reads effects; $SH: position held
-    r("layer.setEffectsVisible", r##"{"layer": "$SH", "index": 0, "visible": false}"##, "active", &[("$SH", "effects", false)]),
+    r("layer.setEffectsVisible", r##"{"layer": "$SH", "index": 0, "visible": false}"##, "active", &[("$SH", "styleSettings,styles", false)]),
     // type.create: layer active-only,ignored; editor active,colors,library; reads image.dpi,image.mode,others
     // was held less: $P not held
     r("type.create", r##"{"x": 20, "y": 60, "text": "Hello", "size": 24}"##, "active,colors", &[("$P", "clipped,kind", true)]),
@@ -3876,12 +3855,12 @@ const ROWS: &[Row] = &[
     r("type.create", r##"{"box": [10, 10, 200, 80], "text": "Para"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
     // type.edit: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.edit", r##"{"layer": "$T", "text": "New title"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.edit", r##"{"layer": "$T", "text": "New title"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.edit", r##"{"layer": "$T", "kernPair": {"at": 1, "by": 20}}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.edit", r##"{"layer": "$T", "kernPair": {"at": 1, "by": 20}}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.setStyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.setStyle", r##"{"layer": "$T", "range": [0, 3], "size": 30, "align": "center"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.setStyle", r##"{"layer": "$T", "range": [0, 3], "size": 30, "align": "center"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.rasterize: layer id-else-active; editor active; reads T.content,image.mode
     r("type.rasterize", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
     // shape.create: layer ignored; editor active,colors; reads image.mode,image.size,others
@@ -3892,7 +3871,7 @@ const ROWS: &[Row] = &[
     // shape.edit: layer id-else-active; editor active,colors; reads T.content,image.mode,image.size
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
-    r("shape.edit", r##"{"layer": "$SH", "rect": [20, 20, 60, 40], "fill": "#00ff00"}"##, "active,colors", &[("$SH", "kind,name,props.data", false)]),
+    r("shape.edit", r##"{"layer": "$SH", "rect": [20, 20, 60, 40], "fill": "#00ff00"}"##, "active,colors", &[("$SH", "kind,name,data,text", false)]),
     // shape.rasterize: layer id-else-active; editor active; reads T.content,image.mode,image.size
     r("shape.rasterize", r##"{"layer": "$SH"}"##, "active", &[("$SH", "*", true)]),
     // path.set: layer none; editor -; reads image.paths
@@ -3901,26 +3880,26 @@ const ROWS: &[Row] = &[
         "path.set",
         r##"{"name": "Path 1", "path": {"subpaths": [{"knots": [[0, 0], [10, 0], [10, 10]]}]}}"##,
         "",
-        &[("image", "docState.clipping_path,docState.paths,docState.work_path", false)],
+        &[("image", "docState.clipping_path,paths,docState.work_path", false)],
     ),
     // path.delete: layer none; editor -; reads image.paths
     // was held less: image: docState.clipping_path not held
-    r("path.delete", r##"{"name": "Path 1"}"##, "", &[("image", "docState.clipping_path,docState.paths,docState.work_path", false)]),
+    r("path.delete", r##"{"name": "Path 1"}"##, "", &[("image", "docState.clipping_path,paths,docState.work_path", false)]),
     // path.transform: layer id-else-active,ignored; editor active; reads T.content,T.vmask,image.paths,image.size
-    r("path.transform", r##"{"name": "Path 1", "translateX": 5}"##, "active", &[("image", "docState.paths,docState.work_path", false)]),
+    r("path.transform", r##"{"name": "Path 1", "translateX": 5}"##, "active", &[("image", "paths,docState.work_path", false)]),
     // was held more: $SH: every field held, reads kind,props.data,props.extra; $SH: position held
     r(
         "path.transform",
         r##"{"name": "layer", "layer": "$SH", "scaleX": 2}"##,
         "active",
-        &[("$SH", "kind,props.data,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.clippingPath.set: layer none; editor -; reads image.paths
     // was held less: image: docState.clipping_path not held
-    r("path.clippingPath.set", r##"{"name": "Path 1", "flatness": 2}"##, "", &[("image", "docState.clipping_path,docState.paths,docState.work_path", false)]),
+    r("path.clippingPath.set", r##"{"name": "Path 1", "flatness": 2}"##, "", &[("image", "docState.clipping_path,paths,docState.work_path", false)]),
     // path.clippingPath.clear: layer none; editor -; reads image.paths
     // was held less: image not held
-    r("path.clippingPath.clear", r##"{}"##, "", &[("image", "docState.clipping_path,docState.paths,docState.work_path", false)]),
+    r("path.clippingPath.clear", r##"{}"##, "", &[("image", "docState.clipping_path,paths,docState.work_path", false)]),
     // path.style.copyFill: layer ignored; editor active; reads others
     r("path.style.copyFill", r##"{}"##, "", &[]),
     // path.style.copyStroke: layer ignored; editor active; reads others
@@ -3935,12 +3914,12 @@ const ROWS: &[Row] = &[
         "path.rename",
         r##"{"name": "Path 1", "to": "Outline"}"##,
         "",
-        &[("image", "docState.clipping_path,docState.paths[name=\"Outline\"].name,docState.paths[name=\"Path 1\"].name", false)],
+        &[("$PATH", "name", false), ("image", "docState.clipping_path,paths[name=\"Outline\"].name", false)],
     ),
     // was held less: image: docState.clipping_path not held
-    r("path.rename", r##"{"name": "work", "to": "Saved"}"##, "", &[("image", "docState.clipping_path,docState.paths,docState.work_path", false)]),
+    r("path.rename", r##"{"name": "work", "to": "Saved"}"##, "", &[("image", "docState.clipping_path,paths,docState.work_path", false)]),
     // path.toSelection: layer ignored; editor active,area; reads image.paths,image.size
-    r("path.toSelection", r##"{"name": "Path 1", "mode": "add", "feather": 2}"##, "", &[("image", "docState.paths,docState.work_path", false)]),
+    r("path.toSelection", r##"{"name": "Path 1", "mode": "add", "feather": 2}"##, "", &[("image", "paths,docState.work_path", false)]),
     // path.fill: layer id-else-active; editor active,colors; reads T.locks,T.pixels,image.paths,image.size
     // was held less: editor:colors
     // was held more: $P: every field held, reads kind,locks,props.data,tiles; $P: position held
@@ -3948,7 +3927,7 @@ const ROWS: &[Row] = &[
         "path.fill",
         r##"{"name": "Path 1", "layer": "$P", "color": "#0000ff"}"##,
         "active,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.stroke: layer id-else-active; editor active,area,colors,tool; reads T.locks,T.pixels,image.paths
     // was held less: editor:colors; editor:area
@@ -3957,111 +3936,106 @@ const ROWS: &[Row] = &[
         "path.stroke",
         r##"{"name": "Path 1", "layer": "$P", "tool": "pencil"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.moveAnchors: layer id-else-active; editor active; reads T.content,T.vmask,image.paths,image.size
-    r("path.moveAnchors", r##"{"name": "Path 1", "anchors": [[0, 1]], "move": [5, 0]}"##, "active", &[("image", "docState.paths,docState.work_path", false)]),
+    r("path.moveAnchors", r##"{"name": "Path 1", "anchors": [[0, 1]], "move": [5, 0]}"##, "active", &[("image", "paths,docState.work_path", false)]),
     // was held more: $SH: every field held, reads kind,props.data,props.extra; $SH: position held
     r(
         "path.moveAnchors",
         r##"{"name": "layer", "anchors": [[0, 1]], "move": [5, 0], "layer": "$SH"}"##,
         "active",
-        &[("$SH", "kind,props.data,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.moveHandle: layer id-else-active; editor active; reads T.content,T.vmask,image.paths,image.size
     r(
         "path.moveHandle",
         r##"{"name": "Path 1", "subpath": 0, "knot": 1, "handle": "out", "to": [20, 5]}"##,
         "active",
-        &[("image", "docState.paths,docState.work_path", false)],
+        &[("image", "paths,docState.work_path", false)],
     ),
     // was held more: $SH: every field held, reads kind,props.data,props.extra; $SH: position held
     r(
         "path.moveHandle",
         r##"{"name": "layer", "subpath": 0, "knot": 1, "handle": "out", "to": [20, 5], "layer": "$SH"}"##,
         "active",
-        &[("$SH", "kind,props.data,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.bendSegment: layer id-else-active; editor active; reads T.content,T.vmask,image.paths,image.size
-    r(
-        "path.bendSegment",
-        r##"{"name": "Path 1", "subpath": 0, "knot": 0, "move": [0, 5]}"##,
-        "active",
-        &[("image", "docState.paths,docState.work_path", false)],
-    ),
+    r("path.bendSegment", r##"{"name": "Path 1", "subpath": 0, "knot": 0, "move": [0, 5]}"##, "active", &[("image", "paths,docState.work_path", false)]),
     // was held more: $SH: every field held, reads kind,props.data,props.extra; $SH: position held
     r(
         "path.bendSegment",
         r##"{"name": "layer", "subpath": 0, "knot": 0, "move": [0, 5], "layer": "$SH"}"##,
         "active",
-        &[("$SH", "kind,props.data,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // path.convertPoint: layer id-else-active; editor active; reads T.content,T.vmask,image.paths,image.size
-    r("path.convertPoint", r##"{"name": "Path 1", "subpath": 0, "knot": 1}"##, "active", &[("image", "docState.paths,docState.work_path", false)]),
+    r("path.convertPoint", r##"{"name": "Path 1", "subpath": 0, "knot": 1}"##, "active", &[("image", "paths,docState.work_path", false)]),
     // was held more: $SH: every field held, reads kind,props.data,props.extra; $SH: position held
     r(
         "path.convertPoint",
         r##"{"name": "layer", "subpath": 0, "knot": 1, "layer": "$SH"}"##,
         "active",
-        &[("$SH", "kind,props.data,props.extra", false), ("image", "docState.paths,docState.work_path", false)],
+        &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
     // type.antiAlias.none: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.none", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.none", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.sharp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.sharp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.sharp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.crisp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.crisp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.crisp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.strong: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.strong", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.strong", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.smooth: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.smooth", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.smooth", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.windowsLcd: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.windowsLcd", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.windowsLcd", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.antiAlias.windows: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.windows", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.antiAlias.windows", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.orientation.horizontal: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.orientation.horizontal", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.orientation.horizontal", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.orientation.vertical: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.orientation.vertical", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.orientation.vertical", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.standardLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.standardLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.standardLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.contextualAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.contextualAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.contextualAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.discretionaryLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.discretionaryLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.discretionaryLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.swash: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.swash", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.swash", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.oldstyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.oldstyle", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.oldstyle", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.stylisticAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.stylisticAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.stylisticAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.titlingAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.titlingAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.titlingAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.ornaments: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.ornaments", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.ornaments", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.ordinals: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.ordinals", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.ordinals", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.openType.fractions: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.fractions", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.openType.fractions", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.createWorkPath: layer id-else-active; editor -; reads T.content,image.dpi
     r("type.createWorkPath", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
     // type.convertToShape: layer id-else-active; editor -; reads T.content,image.dpi,image.mode,image.size
@@ -4070,39 +4044,39 @@ const ROWS: &[Row] = &[
     r("type.rasterizeTypeLayer", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
     // type.convertToParagraphText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.convertToParagraphText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.convertToParagraphText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.convertToPointText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.convertToPointText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.convertToPointText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.warpText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.warpText", r##"{"layer": "$T", "style": "arc", "bend": 30}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.warpText", r##"{"layer": "$T", "style": "arc", "bend": 30}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.updateAllTextLayers: layer ignored; editor -; reads image.dpi,image.mode,others
     // was held less: image not held
-    r("type.updateAllTextLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("type.updateAllTextLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // type.replaceAllMissingFonts: layer none; editor -; reads image.dpi,image.mode,others
     // was held less: image not held
-    r("type.replaceAllMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("type.replaceAllMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // type.resolveMissingFonts: layer none; editor -; reads image.dpi,others
     // was held less: image not held
     r(
         "type.resolveMissingFonts",
         r##"{"map": {"Old Font": "Inter"}}"##,
         "",
-        &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // was held less: image not held
-    r("type.resolveMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("type.resolveMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // type.pasteLoremIpsum: layer id-else-active,ignored; editor active,colors,library; reads T.attr,T.content,image.dpi,image.mode,image.size,others
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.pasteLoremIpsum", r##"{"layer": "$T", "at": 3}"##, "active,colors", &[("$T", "kind,name,props.data", false)]),
+    r("type.pasteLoremIpsum", r##"{"layer": "$T", "at": 3}"##, "active,colors", &[("$T", "kind,name,data,text", false)]),
     // was held less: $P not held
-    r("type.pasteLoremIpsum", r##"{"new": true}"##, "active,colors", &[("$P", "kind,name,props.data", false)]),
+    r("type.pasteLoremIpsum", r##"{"new": true}"##, "active,colors", &[("$P", "kind,name,data,text", false)]),
     // type.saveDefaultTypeStyles: layer ignored; editor active; reads others
     r("type.saveDefaultTypeStyles", r##"{}"##, "active", &[]),
     // type.loadDefaultTypeStyles: layer id-else-active; editor library; reads T.attr,T.content,image.dpi
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.loadDefaultTypeStyles", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.loadDefaultTypeStyles", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // type.characterStyle.new: layer id-else-active; editor active,selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: editor:selection
     r(
@@ -4165,12 +4139,12 @@ const ROWS: &[Row] = &[
     r("type.paragraphStyle.clearOverride", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
     // type.insertText: layer id-else-active; editor -; reads T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.insertText", r##"{"layer": "$T", "text": "!", "at": 2}"##, "active", &[("$T", "kind,name,props.data", false)]),
+    r("type.insertText", r##"{"layer": "$T", "text": "!", "at": 2}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // shape.presets.place: layer active-only; editor active,colors,library; reads image.mode,image.size,others
     // was held less: editor:colors; editor:active; $P not held
     r("shape.presets.place", r##"{"preset": "Cloud", "rect": [10, 10, 100, 80], "fill": "#ff0000"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
     // shape.presets.new: layer none; editor active,library; reads image.paths
-    r("shape.presets.new", r##"{"name": "Mine", "path": "Path 1"}"##, "", &[("image", "docState.paths,docState.work_path", false)]),
+    r("shape.presets.new", r##"{"name": "Mine", "path": "Path 1"}"##, "", &[("image", "paths,docState.work_path", false)]),
     // shape.presets.edit: layer none; editor library; reads -
     r("shape.presets.edit", r##"{"action": "rename", "preset": "Cloud", "name": "Cloud 2"}"##, "", &[]),
     // shape.presets.reset: layer none; editor library; reads -
@@ -4184,25 +4158,25 @@ const ROWS: &[Row] = &[
         "edit.fill",
         r##"{"layer": "$P", "contents": "color", "color": "#ff0000", "mode": "multiply", "opacity": 50}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "edit.fill",
         r##"{"contents": "pattern", "pattern": "pat1", "scale": 100, "angle": 0}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.patterns,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,patterns,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "edit.fill",
         r##"{"contents": "history", "state": 0}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "edit.fill",
         r##"{"layer": "$P", "contents": "smart", "colorAdaptation": true, "seed": 1}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.clear: layer id-else-active; editor area,colors; reads T.attr,T.locks,T.pixels,T.position,image.size
     // was held less: editor:colors
@@ -4210,7 +4184,7 @@ const ROWS: &[Row] = &[
         "edit.clear",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.transform: layer id-else-active; editor area,quickmask; reads T.attr,T.content,T.locks,T.mask,T.pixels,T.position,T.vmask,image.dpi,others
     // was held less: editor:area
@@ -4231,12 +4205,7 @@ const ROWS: &[Row] = &[
     r("select.convertToShape", r##"{"fill": "#00ff00", "name": "Sel Shape"}"##, "active,area,colors", &[("$P", "*", true)]),
     // edit.cut: layer active-only; editor active,area,colors; reads T.attr,T.content,T.locks,T.pixels
     // was held less: editor:colors; $P not held; image not held
-    r(
-        "edit.cut",
-        r##"{}"##,
-        "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
-    ),
+    r("edit.cut", r##"{}"##, "active,area,colors", &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)]),
     // edit.paste: layer active-only,ignored; editor active,channeltarget,clipboard; reads image.mode,image.size
     // was held less: editor:active; $P not held
     r("edit.paste", r##"{"center": [200, 150]}"##, "active", &[("$P", "clipped,kind", true)]),
@@ -4277,7 +4246,7 @@ const ROWS: &[Row] = &[
         "edit.stroke",
         r##"{"width": 3, "color": "#000000", "location": "outside"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.transform.rotate180: layer selected; editor active,area; reads T.attr,T.content,T.locks,T.mask,T.pixels,T.position,T.vmask
     // was held less: $P not held
@@ -4325,14 +4294,14 @@ const ROWS: &[Row] = &[
         "edit.smartFill",
         r##"{"sampling": "auto"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: $P not held; image not held
     r(
         "edit.smartFill",
         r##"{"output": "new"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.deleteAndFillSelection: layer active-only; editor active,area; reads T.locks,T.pixels
     // was held less: $P not held; image not held
@@ -4340,7 +4309,7 @@ const ROWS: &[Row] = &[
         "edit.deleteAndFillSelection",
         r##"{}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.smartScale: layer ignored; editor active,area; reads T.content,T.locks,T.pixels,image.channels
     // was held less: editor:active; $P not held; image not held
@@ -4348,27 +4317,27 @@ const ROWS: &[Row] = &[
         "edit.smartScale",
         r##"{"scaleX": 80}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.defineBrushPreset: layer none; editor active,area,library; reads T.pixels
     // was held less: $P not held
     r("edit.defineBrushPreset", r##"{"name": "Tip"}"##, "active,area", &[("$P", "*", true)]),
     // edit.defineCustomShape: layer none; editor active,library; reads image.paths
-    r("edit.defineCustomShape", r##"{"name": "Mine", "path": "Path 1"}"##, "", &[("image", "docState.paths,docState.work_path", false)]),
+    r("edit.defineCustomShape", r##"{"name": "Mine", "path": "Path 1"}"##, "", &[("image", "paths,docState.work_path", false)]),
     // edit.findAndReplaceText: layer none; editor active; reads image.dpi,others
     // was held less: image not held
     r(
         "edit.findAndReplaceText",
         r##"{"find": "Title", "replace": "Heading"}"##,
         "",
-        &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // was held less: image not held
     r(
         "edit.findAndReplaceText",
         r##"{"find": "Title", "replace": "Heading", "action": "changeFind"}"##,
         "",
-        &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
+        &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // edit.presets.presetManager: layer none; editor library; reads -
     r("edit.presets.presetManager", r##"{"action": "list"}"##, "", &[]),
@@ -4383,7 +4352,7 @@ const ROWS: &[Row] = &[
         "edit.fillForeground",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.fillBackground: layer id-else-active; editor area,channeltarget,colors; reads T.locks,T.pixels
     // was held less: image not held
@@ -4392,7 +4361,7 @@ const ROWS: &[Row] = &[
         "edit.fillBackground",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.fillForegroundPreserve: layer id-else-active; editor area,channeltarget,colors; reads T.locks,T.pixels
     // was held less: image not held
@@ -4401,7 +4370,7 @@ const ROWS: &[Row] = &[
         "edit.fillForegroundPreserve",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.fillBackgroundPreserve: layer id-else-active; editor area,channeltarget,colors; reads T.locks,T.pixels
     // was held less: image not held
@@ -4410,7 +4379,7 @@ const ROWS: &[Row] = &[
         "edit.fillBackgroundPreserve",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // edit.autoAlignLayers: layer selected; editor active,selected; reads image.size,others
     // was held less: $P not held
@@ -4449,11 +4418,11 @@ const ROWS: &[Row] = &[
         "channel.mergeSpot",
         r##"{"channel": "Spot Color 1"}"##,
         "",
-        &[("image", "channels,depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~channelContents", false)],
+        &[("image", "channels,depth,docState.global_light,patterns,height,icc,layers,mode,width,~channelContents", false)],
     ),
     // channel.split: layer none; editor -; reads composite,image.channels,image.mode,image.size
     // was held less: image not held
-    r("channel.split", r##"{"closeOriginal": true}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("channel.split", r##"{"closeOriginal": true}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // channel.merge: layer none; editor -; reads -
     r("channel.merge", r##"{"mode": "rgb"}"##, "", &[]),
     // edit.definePattern: layer none; editor area,library; reads composite,image.mode
@@ -4513,7 +4482,7 @@ const ROWS: &[Row] = &[
         "paint.stroke",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "color": "#ff0000", "size": 10}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles@", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles@", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     r(
         "paint.stroke",
@@ -4533,16 +4502,16 @@ const ROWS: &[Row] = &[
     // gradient.fill.set: layer id-else-active; editor colors; reads T.content,T.mask,T.vmask,image.mode,image.size
     // was held less: editor:colors
     // was held more: $FILL: every field held, reads kind,props.data; $FILL: position held
-    r("gradient.fill.set", r##"{"layer": "$FILL", "from": [0, 0], "to": [200, 0]}"##, "active,colors", &[("$FILL", "kind,props.data", false)]),
+    r("gradient.fill.set", r##"{"layer": "$FILL", "from": [0, 0], "to": [200, 0]}"##, "active,colors", &[("$FILL", "kind,data,text", false)]),
     // gradient.fill.stop: layer id-else-active; editor colors; reads T.content
     // was held less: editor:colors
     // was held more: $FILL: every field held, reads kind,props.data; $FILL: position held
-    r("gradient.fill.stop", r##"{"layer": "$FILL", "action": "add", "location": 0.5}"##, "active,colors", &[("$FILL", "kind,props.data", false)]),
+    r("gradient.fill.stop", r##"{"layer": "$FILL", "action": "add", "location": 0.5}"##, "active,colors", &[("$FILL", "kind,data,text", false)]),
     // paint.setSymmetry: layer none; editor -; reads image.size
     r("paint.setSymmetry", r##"{"mode": "vertical"}"##, "", &[]),
     // paint.symmetryFromPath: layer none; editor active; reads image.paths
     // was held less: $P not held
-    r("paint.symmetryFromPath", r##"{"name": "Path 1"}"##, "active", &[("$P", "*", true), ("image", "docState.paths,docState.work_path", false)]),
+    r("paint.symmetryFromPath", r##"{"name": "Path 1"}"##, "active", &[("$P", "*", true), ("image", "paths,docState.work_path", false)]),
     // paint.symmetryDisable: layer none; editor tool; reads -
     r("paint.symmetryDisable", r##"{}"##, "", &[]),
     // color.profileMismatch: layer none; editor prefs; reads image.mode,others
@@ -4559,7 +4528,7 @@ const ROWS: &[Row] = &[
         "paint.pencil",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "autoErase": true}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.mixerBrush: layer id-else-active; editor active,area,channeltarget,colors,library,tool; reads T.attr,T.locks,T.pixels,T.position,composite
     // was held less: editor:colors; editor:area; image: ~inheritedLocks not held
@@ -4568,10 +4537,7 @@ const ROWS: &[Row] = &[
         "paint.mixerBrush",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "sampleAllLayers": true}"##,
         "active,area,colors",
-        &[
-            ("$P", "kind,locks,props.data,tiles", false),
-            ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~inheritedLocks", false),
-        ],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width,~inheritedLocks", false)],
     ),
     // paint.colorReplacement: layer id-else-active; editor active,area,colors,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:colors; editor:area; image not held
@@ -4580,7 +4546,7 @@ const ROWS: &[Row] = &[
         "paint.colorReplacement",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "sampling": "backgroundSwatch"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // brush.presets.save: layer none; editor library,tool; reads -
     r("brush.presets.save", r##"{"name": "My Brush"}"##, "", &[]),
@@ -4608,7 +4574,7 @@ const ROWS: &[Row] = &[
         "paint.magicEraser",
         r##"{"x": 100, "y": 100, "tolerance": 32}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.backgroundEraser: layer ignored; editor active,area,colors,library,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:colors; editor:area; $P not held; image not held
@@ -4616,7 +4582,7 @@ const ROWS: &[Row] = &[
         "paint.backgroundEraser",
         r##"{"points": [[60, 60], [120, 100]], "tolerance": 50}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // brush.presets.importAbr: layer none; editor library,tool; reads -
     r("brush.presets.importAbr", r##"{"path": "/tmp/x.abr", "select": true}"##, "", &[]),
@@ -4651,7 +4617,7 @@ const ROWS: &[Row] = &[
         "paint.cloneStamp",
         r##"{"points": [[120, 100], [140, 110]], "layer": "$P", "offset": [-40, 0]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: editor:area; image: ~inheritedLocks not held
     // was held more: $P2: every field held, reads kind,locks,props.data,tiles; $P2: position held
@@ -4659,10 +4625,7 @@ const ROWS: &[Row] = &[
         "paint.cloneStamp",
         r##"{"points": [[120, 100]], "layer": "$P2", "offset": [-40, 0], "sampleLayer": "currentAndBelow"}"##,
         "active,area",
-        &[
-            ("$P2", "kind,locks,props.data,tiles", false),
-            ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~inheritedLocks", false),
-        ],
+        &[("$P2", "kind,locks,data,text,tiles", false), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width,~inheritedLocks", false)],
     ),
     // paint.patternStamp: layer id-else-active; editor active,area,library,tool; reads T.locks,T.pixels,docState.patterns
     // was held less: editor:area; image: depth,height,mode,width,~inheritedLocks not held
@@ -4671,7 +4634,7 @@ const ROWS: &[Row] = &[
         "paint.patternStamp",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "pattern": "Dots"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.patterns,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,patterns,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.healingBrush: layer id-else-active; editor active,area,channeltarget,library,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:area; image not held
@@ -4680,7 +4643,7 @@ const ROWS: &[Row] = &[
         "paint.healingBrush",
         r##"{"points": [[120, 100], [140, 110]], "layer": "$P", "offset": [-40, 0]}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.spotHealing: layer id-else-active; editor active,area,channeltarget,tool; reads T.locks,T.pixels,composite,image.size
     // was held less: editor:area; image not held
@@ -4689,7 +4652,7 @@ const ROWS: &[Row] = &[
         "paint.spotHealing",
         r##"{"points": [[100, 100]], "layer": "$P", "type": "smart"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.patch: layer id-else-active; editor active,area; reads T.attr,T.locks,T.pixels,T.position,image.size
     // was held less: editor:area; image not held
@@ -4698,7 +4661,7 @@ const ROWS: &[Row] = &[
         "paint.patch",
         r##"{"offset": [100, 0], "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.smartMove: layer id-else-active; editor active,area; reads T.locks,T.pixels,image.size
     // was held less: editor:area; image not held
@@ -4707,7 +4670,7 @@ const ROWS: &[Row] = &[
         "paint.smartMove",
         r##"{"offset": [100, 0], "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.dodge: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:area; image not held
@@ -4716,7 +4679,7 @@ const ROWS: &[Row] = &[
         "paint.dodge",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "range": "midtones"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.burn: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:area; image not held
@@ -4725,7 +4688,7 @@ const ROWS: &[Row] = &[
         "paint.burn",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "range": "shadows"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.sponge: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:area; image not held
@@ -4734,7 +4697,7 @@ const ROWS: &[Row] = &[
         "paint.sponge",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "mode": "saturate"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.blur: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position,composite
     // was held less: editor:area; image not held
@@ -4743,7 +4706,7 @@ const ROWS: &[Row] = &[
         "paint.blur",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "strength": 50}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.sharpen: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position,composite
     // was held less: editor:area; image not held
@@ -4752,7 +4715,7 @@ const ROWS: &[Row] = &[
         "paint.sharpen",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.smudge: layer id-else-active; editor active,area,channeltarget,colors,tool; reads T.attr,T.locks,T.pixels,T.position,composite
     // was held less: editor:colors; editor:area; image not held
@@ -4761,7 +4724,7 @@ const ROWS: &[Row] = &[
         "paint.smudge",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "fingerPainting": true}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.historyBrush: layer id-else-active; editor active,area,channeltarget,tool; reads T.attr,T.locks,T.pixels,T.position
     // was held less: editor:area; image not held
@@ -4770,7 +4733,7 @@ const ROWS: &[Row] = &[
         "paint.historyBrush",
         r##"{"points": [[60, 60], [120, 100]], "layer": "$P", "state": 0}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.redEye: layer id-else-active; editor area,channeltarget; reads T.locks,T.pixels
     // was held less: editor:area; image not held
@@ -4779,7 +4742,7 @@ const ROWS: &[Row] = &[
         "paint.redEye",
         r##"{"x": 100, "y": 100, "layer": "$P"}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.bucket: layer active-only,ignored; editor active,area,channeltarget,colors,library; reads T.locks,T.pixels,composite,docState.patterns,image.size
     // was held less: $P not held; image not held
@@ -4787,24 +4750,21 @@ const ROWS: &[Row] = &[
         "paint.bucket",
         r##"{"x": 100, "y": 100, "tolerance": 32}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: $P not held; image: ~inheritedLocks not held
     r(
         "paint.bucket",
         r##"{"x": 100, "y": 100, "sampleAllLayers": true}"##,
         "active,area,colors",
-        &[
-            ("$P", "kind,locks,props.data,tiles", false),
-            ("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width,~inheritedLocks", false),
-        ],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width,~inheritedLocks", false)],
     ),
     // was held less: $P not held; image: depth,height,mode,width,~inheritedLocks not held
     r(
         "paint.bucket",
         r##"{"x": 100, "y": 100, "contents": "pattern", "pattern": "Dots"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,docState.patterns,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,patterns,height,mode,width,~inheritedLocks", false)],
     ),
     // paint.gradient: layer ignored; editor active,area,channeltarget,colors,library; reads T.locks,T.pixels,image.size
     // was held less: editor:colors; editor:area; $P not held; image not held
@@ -4812,18 +4772,18 @@ const ROWS: &[Row] = &[
         "paint.gradient",
         r##"{"from": [0, 0], "to": [400, 0], "gradient": "Black, White"}"##,
         "active,area,colors",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // pattern.rename: layer none; editor library; reads docState.patterns
-    r("pattern.rename", r##"{"pattern": "Dots", "name": "Spots"}"##, "", &[("image", "docState.patterns", false)]),
+    r("pattern.rename", r##"{"pattern": "Dots", "name": "Spots"}"##, "", &[("image", "patterns", false)]),
     // pattern.delete: layer none; editor library; reads -
-    r("pattern.delete", r##"{"pattern": "Dots"}"##, "", &[("image", "docState.patterns", false)]),
+    r("pattern.delete", r##"{"pattern": "Dots"}"##, "", &[("image", "patterns", false)]),
     // pattern.import: layer none; editor library; reads -
     r("pattern.import", r##"{"path": "/tmp/x.pat"}"##, "", &[]),
     // pattern.export: layer none; editor library; reads docState.patterns
-    r("pattern.export", r##"{"path": "/tmp/out.pat", "patterns": ["Dots"]}"##, "", &[("image", "docState.patterns", false)]),
+    r("pattern.export", r##"{"path": "/tmp/out.pat", "patterns": ["Dots"]}"##, "", &[("image", "patterns", false)]),
     // brush.texturePattern: layer none; editor library,tool; reads docState.patterns
-    r("brush.texturePattern", r##"{"pattern": "Dots", "scale": 50}"##, "", &[("image", "docState.patterns", false)]),
+    r("brush.texturePattern", r##"{"pattern": "Dots", "scale": 50}"##, "", &[("image", "patterns", false)]),
     // gradient.presets.select: layer active-only; editor active,colors,library; reads image.mode,others
     // was held less: editor:colors; editor:active; $P not held
     r("gradient.presets.select", r##"{"preset": "Black, White"}"##, "active,colors", &[("$P", "*", true)]),
@@ -4841,15 +4801,15 @@ const ROWS: &[Row] = &[
     r("gradient.presets.reset", r##"{}"##, "", &[]),
     // pattern.presets.select: layer active-only; editor active,library; reads docState.patterns,others
     // was held less: editor:active; $P not held
-    r("pattern.presets.select", r##"{"pattern": "Dots"}"##, "active", &[("$P", "*", true), ("image", "docState.patterns", false)]),
+    r("pattern.presets.select", r##"{"pattern": "Dots"}"##, "active", &[("$P", "*", true), ("image", "patterns", false)]),
     // pattern.presets.apply: layer active-only; editor active,area,library; reads docState.patterns,image.paths,others
     // was held less: $P not held
-    r("pattern.presets.apply", r##"{"pattern": "Dots", "scale": 100}"##, "active,area", &[("$P", "clipped,kind", true), ("image", "docState.patterns", false)]),
+    r("pattern.presets.apply", r##"{"pattern": "Dots", "scale": 100}"##, "active,area", &[("$P", "clipped,kind", true), ("image", "patterns", false)]),
     // pattern.presets.new: layer none; editor area,library; reads composite,image.size
     r("pattern.presets.new", r##"{"name": "Mine"}"##, "area", &[]),
     // pattern.presets.edit: layer none; editor library; reads docState.patterns
-    r("pattern.presets.edit", r##"{"action": "rename", "preset": "Dots", "name": "Spots"}"##, "", &[("image", "docState.patterns", false)]),
-    r("pattern.presets.edit", r##"{"action": "move", "preset": "Dots", "to": "Textures"}"##, "", &[("image", "docState.patterns", false)]),
+    r("pattern.presets.edit", r##"{"action": "rename", "preset": "Dots", "name": "Spots"}"##, "", &[("image", "patterns", false)]),
+    r("pattern.presets.edit", r##"{"action": "move", "preset": "Dots", "to": "Textures"}"##, "", &[("image", "patterns", false)]),
     // style.presets.apply: layer id-else-active; editor library,selected; reads T.attr,T.effects,T.locks,docState.patterns,image.mode
     // was held less: editor:selection
     r("style.presets.apply", r##"{"preset": "Drop Shadow", "layer": "$P"}"##, "active,selection", &[("$P", "*", true)]),
@@ -4893,7 +4853,7 @@ const ROWS: &[Row] = &[
     r("view.clearGuides", r##"{}"##, "", &[("image", "guides", false)]),
     // file.scripts.deleteAllEmptyLayers: layer none; editor active; reads others
     // was held less: image not held
-    r("file.scripts.deleteAllEmptyLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("file.scripts.deleteAllEmptyLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // file.revert: layer none; editor active; reads -
     r("file.revert", r##"{}"##, "", &[]),
     // file.openAs: layer none; editor prefs; reads -
@@ -4929,10 +4889,10 @@ const ROWS: &[Row] = &[
     r("file.scripts.loadFilesIntoStack", r##"{"paths": ["/tmp/a.png", "/tmp/b.png"], "createObjectLayer": true}"##, "", &[]),
     // file.scripts.flattenAllLayerEffects: layer none; editor -; reads image.mode,image.size,others
     // was held less: image not held
-    r("file.scripts.flattenAllLayerEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("file.scripts.flattenAllLayerEffects", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // file.scripts.flattenAllMasks: layer none; editor -; reads image.mode,image.size,others
     // was held less: image not held
-    r("file.scripts.flattenAllMasks", r##"{}"##, "", &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)]),
+    r("file.scripts.flattenAllMasks", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // view.newGuideLayout: layer none; editor -; reads image.guides,image.size
     // was held less: image not held
     r("view.newGuideLayout", r##"{"columns": 4, "gutter": 10, "margin": 20}"##, "", &[("image", "height,width", false)]),
@@ -4947,12 +4907,7 @@ const ROWS: &[Row] = &[
     r("file.automate.mergeToHdrPro", r##"{"useOpenDocuments": true, "exposures": [0, 2, 4], "mode": "8"}"##, "", &[]),
     // file.automate.cropAndStraightenPhotos: layer none; editor active; reads composite,image.dpi,image.mode,image.size
     // was held less: image not held
-    r(
-        "file.automate.cropAndStraightenPhotos",
-        r##"{}"##,
-        "",
-        &[("image", "depth,docState.global_light,docState.patterns,height,icc,layers,mode,width", false)],
-    ),
+    r("file.automate.cropAndStraightenPhotos", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
     // file.automate.lensCorrection: layer none; editor -; reads -
     r("file.automate.lensCorrection", r##"{"input": ["/tmp/a.jpg"], "output": "/tmp/out", "profile": "auto"}"##, "", &[]),
     // layerComp.new: layer none; editor -; reads docState.layer_comps,others
@@ -4960,47 +4915,32 @@ const ROWS: &[Row] = &[
         "layerComp.new",
         r##"{"name": "Comp 2", "visibility": true, "position": true, "appearance": true}"##,
         "",
-        &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps,height,layers,width", false)],
+        &[("image", "comps,height,layers,width", false)],
     ),
     // layerComp.update: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps,others
-    r("layerComp.update", r##"{"comp": 1, "what": "all"}"##, "", &[("image", "docState.layer_comps,height,layers,width", false)]),
-    r("layerComp.update", r##"{"comp": "*", "what": "visibility"}"##, "", &[("image", "docState.layer_comps,height,layers,width", false)]),
+    r("layerComp.update", r##"{"comp": 1, "what": "all"}"##, "", &[("image", "comps,height,layers,width", false)]),
+    r("layerComp.update", r##"{"comp": "*", "what": "visibility"}"##, "", &[("image", "comps,height,layers,width", false)]),
     // layerComp.apply: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps,others
-    r("layerComp.apply", r##"{"comp": "Comp 1"}"##, "", &[("image", "docState.layer_comps,height,layers,width", false)]),
+    r("layerComp.apply", r##"{"comp": "Comp 1"}"##, "", &[("image", "comps,height,layers,width", false)]),
     // layerComp.previous: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps,others
-    r(
-        "layerComp.previous",
-        r##"{}"##,
-        "",
-        &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps,height,layers,width", false)],
-    ),
+    r("layerComp.previous", r##"{}"##, "", &[("image", "comps,height,layers,width", false)]),
     // layerComp.next: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps,others
-    r("layerComp.next", r##"{}"##, "", &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps,height,layers,width", false)]),
+    r("layerComp.next", r##"{}"##, "", &[("image", "comps,height,layers,width", false)]),
     // layerComp.delete: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.delete", r##"{"comp": 1}"##, "", &[("image", "docState.layer_comps", false)]),
+    r("layerComp.delete", r##"{"comp": 1}"##, "", &[("image", "comps", false)]),
     // layerComp.duplicate: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.duplicate", r##"{"comp": 1}"##, "", &[("image", "docState.layer_comps", false)]),
+    r("layerComp.duplicate", r##"{"comp": 1}"##, "", &[("image", "comps", false)]),
     // layerComp.rename: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.rename", r##"{"comp": 1, "name": "Renamed"}"##, "", &[("image", "docState.layer_comps[id=1].name", false)]),
+    r("layerComp.rename", r##"{"comp": 1, "name": "Renamed"}"##, "", &[("comp:1", "name", false)]),
     // layerComp.setComment: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.setComment", r##"{"comp": 1, "comment": "note"}"##, "", &[("image", "docState.layer_comps", false)]),
+    r("layerComp.setComment", r##"{"comp": 1, "comment": "note"}"##, "", &[("image", "comps", false)]),
     // layerComp.setOptions: layer none; editor -; reads docState.last_applied_comp,docState.layer_comps
-    r("layerComp.setOptions", r##"{"comp": 1, "visibility": false}"##, "", &[("image", "docState.layer_comps", false)]),
+    r("layerComp.setOptions", r##"{"comp": 1, "visibility": false}"##, "", &[("image", "comps", false)]),
     // layerComp.restoreLastDocumentState: layer none; editor -; reads docState.last_document_state,others
-    r(
-        "layerComp.restoreLastDocumentState",
-        r##"{}"##,
-        "",
-        &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps,height,layers,width", false)],
-    ),
+    r("layerComp.restoreLastDocumentState", r##"{}"##, "", &[("image", "comps,height,layers,width", false)]),
     // layerComp.updateWarnings: layer none; editor -; reads docState.layer_comps,others
-    r("layerComp.updateWarnings", r##"{}"##, "", &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps", false)]),
-    r(
-        "layerComp.updateWarnings",
-        r##"{"clear": true}"##,
-        "",
-        &[("image", "docState.last_applied_comp,docState.last_document_state,docState.layer_comps", false)],
-    ),
+    r("layerComp.updateWarnings", r##"{}"##, "", &[("image", "comps", false)]),
+    r("layerComp.updateWarnings", r##"{"clear": true}"##, "", &[("image", "comps", false)]),
     // view.clearSelectedArtboardGuides: layer none; editor active; reads image.guides
     // was held less: image not held
     r("view.clearSelectedArtboardGuides", r##"{}"##, "", &[("image", "guides", false)]),
@@ -5038,15 +4978,15 @@ const ROWS: &[Row] = &[
     r("measurementLog.export", r##"{}"##, "", &[]),
     // notes.add: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.add", r##"{"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}"##, "", &[("image", "docState.notes", false)]),
+    r("notes.add", r##"{"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}"##, "", &[("image", "notes", false)]),
     // notes.set: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.set", r##"{"index": 0, "text": "fixed", "x": 20}"##, "", &[("image", "docState.notes.0", false)]),
+    r("notes.set", r##"{"index": 0, "text": "fixed", "x": 20}"##, "", &[("$NOTE", "modified,popup,position,text", true)]),
     // notes.delete: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.delete", r##"{"index": 1}"##, "", &[("image", "docState.notes", false)]),
+    r("notes.delete", r##"{"index": 1}"##, "", &[("image", "notes", false)]),
     // was held less: image not held
-    r("notes.delete", r##"{"all": true}"##, "", &[("image", "docState.notes", false)]),
+    r("notes.delete", r##"{"all": true}"##, "", &[("image", "notes", false)]),
     // file.import.notes: layer none; editor -; reads image.size
     r("file.import.notes", r##"{"path": "/tmp/other.psd"}"##, "", &[]),
     // history.goTo: layer none; editor -; reads -
@@ -5136,14 +5076,14 @@ const ROWS: &[Row] = &[
         "plugin.run",
         r##"{"id": "org.example.tone", "layer": "$P", "params": {"amount": 50}}"##,
         "active,area",
-        &[("$P", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: editor:area; editor:active; $SO not held; image not held
     r(
         "plugin.run",
         r##"{"id": "org.example.tone", "layer": "$SO"}"##,
         "active,area",
-        &[("$SO", "kind,locks,props.data,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
+        &[("$SO", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
     // was held less: editor:area; editor:active; $P not held
     r(

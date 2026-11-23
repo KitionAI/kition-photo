@@ -16,12 +16,13 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use kition_kit::kdm::{KdmError, ObjectId, Replica, TreeEntry};
 use kition_kit::session::{BlobSource, IdMap};
 use kition_photo_color::{ColorMode, PixelFormat, SampleType};
-use kition_photo_doc::{AlphaChannel, Document, Guides, Layer, LayerContent, LayerId, LayerMask, MAX_GROUP_DEPTH, Size};
+use kition_photo_doc::{AlphaChannel, Document, Effect, Layer, LayerContent, LayerId, LayerMask, MAX_GROUP_DEPTH, Size};
+use kition_photo_raster::Surface;
 use serde_json::Value;
 
-use crate::props::{EffectsData, Props, SurfaceMeta};
+use crate::props::{LayerExtra, StyleSettings, SurfaceMeta};
 use crate::write::Nodes;
-use crate::{doc_state, image_id, kdm_err, tiles};
+use crate::{doc_state, guides, image_id, kdm_err, resources, text_body, tiles};
 
 type KdmResult<T> = Result<T, KdmError>;
 
@@ -103,10 +104,7 @@ pub fn read_document_reusing(replica: &Replica, blobs: &dyn BlobSource, reuse: O
         document.icc_profile = Some(std::sync::Arc::new(bytes.to_vec()));
     }
 
-    let guides = replica.get(&image, "guides")?;
-    if !guides.is_null() {
-        document.guides = serde_json::from_value::<Guides>(guides).map_err(kdm_err)?;
-    }
+    document.guides = guides::read(replica, &image)?;
 
     let mut ids = IdMap::default();
     let mut nodes = Nodes::default();
@@ -136,8 +134,9 @@ pub fn read_document_reusing(replica: &Replica, blobs: &dyn BlobSource, reuse: O
         }
     }
 
+    doc_state::apply(&mut document, replica.get(&image, "docState")?, blobs)?;
     // After `ids`: a layer comp's states name layers by their KDM object id.
-    doc_state::apply(&mut document, replica.get(&image, "docState")?, &ids, blobs)?;
+    resources::read(replica, &mut document, &ids, blobs)?;
 
     Ok(Read { document, ids, nodes, unstored: numbers.unstored })
 }
@@ -305,12 +304,7 @@ fn read_layers(
         let id = ctx.numbers.get(object).copied().ok_or_else(|| KdmError::Engine(format!("layer {object} has no number")))?;
         let before = ctx.old.layers.get(object).copied();
         let unchanged = ctx.old.changed.is_some_and(|changed| {
-            !changed.contains(object)
-                && match ctx.replica.get(object, "mask") {
-                    Ok(Value::String(mask)) => !changed.contains(&ObjectId::from_string(mask)),
-                    Ok(_) => true,
-                    Err(_) => false,
-                }
+            !changed.contains(object) && parts(ctx.replica, object).is_some_and(|parts| parts.iter().all(|part| !changed.contains(part)))
         });
         let mut layer = match before {
             Some(before) if unchanged => {
@@ -351,6 +345,21 @@ fn read_layers(
     Ok(layers)
 }
 
+/// The objects a layer holds (its mask, text body, styles and video frames), or `None` if they
+/// cannot be read.
+fn parts(replica: &Replica, object: &ObjectId) -> Option<Vec<ObjectId>> {
+    let mut out = Vec::new();
+    for field in ["mask", "text"] {
+        if let Value::String(part) = replica.get(object, field).ok()? {
+            out.push(ObjectId::from_string(part));
+        }
+    }
+    for field in ["styles", "frames"] {
+        out.extend(replica.list(object, field).ok()?);
+    }
+    Some(out)
+}
+
 pub(crate) fn read_layer(replica: &Replica, object: &ObjectId, mode: ColorMode, depth: SampleType, blobs: &dyn BlobSource) -> KdmResult<Layer> {
     let name = as_str(&replica.get(object, "name")?, "name")?;
     let visible = replica.get(object, "visible")?.as_bool().unwrap_or(true);
@@ -362,14 +371,21 @@ pub(crate) fn read_layer(replica: &Replica, object: &ObjectId, mode: ColorMode, 
     let clipped = replica.get(object, "clipped")?.as_bool().unwrap_or(false);
     let kind = as_str(&replica.get(object, "kind")?, "kind")?;
 
-    let props_value = replica.get(object, "props")?;
-    let props: Props = if props_value.is_null() { Props::default() } else { serde_json::from_value(props_value).map_err(kdm_err)? };
+    let data = replica.get(object, "data")?;
+    let extra_value = replica.get(object, "extra")?;
+    let extra: LayerExtra = if extra_value.is_null() { LayerExtra::default() } else { serde_json::from_value(extra_value).map_err(kdm_err)? };
 
     let content = if kind == "raster" {
         let format = raster_format(mode, depth);
-        LayerContent::Raster(tiles::read_all(replica, object, format, &crate::props::raster_default(&props.data, format.channels()), blobs)?)
+        LayerContent::Raster(tiles::read_all(replica, object, format, &crate::props::raster_default(&data, format.channels()), blobs)?)
     } else {
-        crate::props::content_from(&kind, props.data, blobs)?
+        let body = match replica.get(object, "text")? {
+            Value::String(id) if kind == "text" && replica.exists(&ObjectId::from_string(id.as_str())) => {
+                Some(text_body::read(replica, &ObjectId::from_string(id))?)
+            }
+            _ => None,
+        };
+        crate::props::content_from(&kind, data, body, blobs)?
     };
 
     let mask = match replica.get(object, "mask")? {
@@ -377,12 +393,24 @@ pub(crate) fn read_layer(replica: &Replica, object: &ObjectId, mode: ColorMode, 
         _ => None,
     };
 
-    let effects_value = replica.get(object, "effects")?;
-    let effects = if effects_value.is_null() {
-        Default::default()
-    } else {
-        serde_json::from_value::<EffectsData>(effects_value).map_err(kdm_err)?.into_effects(blobs)?
-    };
+    let settings_value = replica.get(object, "styleSettings")?;
+    let settings: StyleSettings = if settings_value.is_null() { StyleSettings::default() } else { serde_json::from_value(settings_value).map_err(kdm_err)? };
+    let mut items = Vec::new();
+    for style in replica.list(object, "styles")? {
+        if replica.exists(&style) {
+            items.push(serde_json::from_value::<Effect>(replica.get(&style, "effect")?).map_err(kdm_err)?);
+        }
+    }
+    let effects = settings.into_effects(items, blobs)?;
+
+    let mut frames = Vec::new();
+    if extra.video.is_some() {
+        for frame in replica.list(object, "frames")? {
+            if replica.exists(&frame) {
+                frames.push(read_frame(replica, &frame, raster_format(mode, depth), blobs)?);
+            }
+        }
+    }
 
     let mut layer = Layer::new(name, content);
     layer.visible = visible;
@@ -393,8 +421,17 @@ pub(crate) fn read_layer(replica: &Replica, object: &ObjectId, mode: ColorMode, 
     layer.clipped = clipped;
     layer.mask = mask;
     layer.effects = effects;
-    props.extra.apply_to(&mut layer, blobs)?;
+    extra.apply_to(&mut layer, frames, blobs)?;
     Ok(layer)
+}
+
+/// A video frame: its own format (the layer's raster format if it stores none).
+fn read_frame(replica: &Replica, surface_id: &ObjectId, format: PixelFormat, blobs: &dyn BlobSource) -> KdmResult<Surface> {
+    let props_value = replica.get(surface_id, "props")?;
+    let meta: SurfaceMeta = if props_value.is_null() { SurfaceMeta::default() } else { serde_json::from_value(props_value).map_err(kdm_err)? };
+    let format = meta.format.unwrap_or(format);
+    let default_pixel = if meta.default_pixel.len() == format.channels() { meta.default_pixel.clone() } else { vec![0.0; format.channels()] };
+    tiles::read_all(replica, surface_id, format, &default_pixel, blobs)
 }
 
 fn read_mask(replica: &Replica, surface_id: &ObjectId, blobs: &dyn BlobSource) -> KdmResult<LayerMask> {

@@ -248,7 +248,7 @@ fn concurrent_moves_of_different_layers_into_the_same_group_converge() {
         .execute(&person("setup"), move |_, tx| -> KResult<ObjectId> {
             let fields = serde_json::json!({
                 "name": "Group", "visible": true, "blend": "PassThrough", "opacity": 1.0, "fillOpacity": 1.0, "clipped": false, "kind": "group",
-                "props": { "data": { "expanded": true }, "extra": {} },
+                "data": { "artboard": null }, "extra": {},
             });
             let group = tx.create("Layer", fields.as_object().cloned().unwrap_or_default())?;
             tx.tree_create(&for_setup, "layers", None, &group)?;

@@ -155,7 +155,7 @@ fn malformed_group_props_refuse_without_panicking() {
     let result = exchange.batch(
         &mut doc,
         &json!({"ops":[{"op":"create","type":"Layer","in":"image.layers","fields":{
-            "name":"Group", "kind":"group", "visible":true, "blend":"PassThrough", "opacity":1, "fillOpacity":1, "clipped":false,"props":2
+            "name":"Group", "kind":"group", "visible":true, "blend":"PassThrough", "opacity":1, "fillOpacity":1, "clipped":false,"data":2
         }}]}),
         false,
     );
@@ -202,11 +202,15 @@ fn nested_vector_mask_and_effect_limits_refuse_atomically() {
     doc.execute("layer.vectorMask.add", json!({"layer":1,"path":{"subpaths":[]}})).unwrap();
     doc.execute("layer.layerStyle.dropShadow", json!({"layer":1})).unwrap();
     let mut exchange = Exchange::new();
-    for (field, value) in
-        [("props.extra.vector_mask.density", json!(2)), ("props.extra.vector_mask.feather", json!(-1)), ("effects.items.0.DropShadow.common.opacity", json!(2))]
-    {
+    // The layer's effects are its `styles`, one `Style` object each.
+    let style = exchange.replica(&mut doc).unwrap().objects_of_type("Style").pop().unwrap().to_string();
+    for (target, field, value) in [
+        ("1".to_owned(), "extra.vector_mask.density", json!(2)),
+        ("1".to_owned(), "extra.vector_mask.feather", json!(-1)),
+        (style, "effect.DropShadow.common.opacity", json!(2)),
+    ] {
         let before = exchange.replica(&mut doc).unwrap().state_json().unwrap();
-        let result = exchange.batch(&mut doc, &json!({"ops":[{"op":"set","target":"1","field":field,"value":value}]}), false);
+        let result = exchange.batch(&mut doc, &json!({"ops":[{"op":"set","target":target,"field":field,"value":value}]}), false);
         assert!(result.is_err(), "invalid {field} accepted: {result:?}");
         assert_eq!(exchange.replica(&mut doc).unwrap().state_json().unwrap(), before);
     }
@@ -223,7 +227,7 @@ fn json_mask_values_are_quantized_before_the_receipt() {
             .batch(
                 &mut doc,
                 &json!({"ops":[
-                    {"op":"set","target":"1","field":"props.extra.vector_mask.density","value":0.37123456},
+                    {"op":"set","target":"1","field":"extra.vector_mask.density","value":0.37123456},
                     {"op":"set","target":"1","field":"mask.props.density","value":0.37123456},
                     {"op":"set","target":"1","field":"mask.props.feather","value":0.123456789}
                 ]}),
@@ -232,8 +236,8 @@ fn json_mask_values_are_quantized_before_the_receipt() {
             .unwrap();
         let replica = exchange.replica(&mut doc).unwrap();
         let layer = replica.objects_of_type("Layer").pop().unwrap();
-        let props = replica.get(&layer, "props").unwrap();
-        let density = props.pointer("/extra/vector_mask/density").unwrap().as_f64().unwrap();
+        let extra = replica.get(&layer, "extra").unwrap();
+        let density = extra.pointer("/vector_mask/density").unwrap().as_f64().unwrap();
         assert_eq!(density, f64::from(density as f32), "the receipt must say the f32 the engine holds");
         let diff = saved_diff(&mut doc, &mut exchange, name);
         for list in ["created", "changed", "moved", "deleted"] {

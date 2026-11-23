@@ -8,9 +8,10 @@ use kition_kit::session::{BlobSink, IdMap};
 use kition_photo_doc::{Document, Layer, LayerContent, LayerId, MAX_GROUP_DEPTH};
 use serde_json::{Map, Value, json};
 
-use crate::props::{self, EffectsData, LayerExtra, Props, SurfaceMeta};
+use crate::lists::{self, Items};
+use crate::props::{self, LayerExtra, StyleSettings, SurfaceMeta};
 use crate::tiles::{Sink, TileCache};
-use crate::{doc_state, image_id, kdm_err, tiles};
+use crate::{doc_state, guides, image_id, kdm_err, resources, text_body, tiles};
 
 type KdmResult<T> = Result<T, KdmError>;
 /// A layer's current tree node, so a later diff can move or recurse into it without being able
@@ -51,15 +52,16 @@ pub fn write_document_with(tx: &mut Tx<'_>, document: &Document, ids: &mut IdMap
         "mode": mode_str(document.mode)?,
         "depth": depth_str(document.depth)?,
         "icc": icc,
-        "guides": serde_json::to_value(&document.guides).map_err(kdm_err)?,
     }));
     let image = tx.create_with_id("Image", &image_id(), image_fields)?;
+    guides::write_all(tx, &image, &document.guides)?;
     write_layers(tx, &image, &document.layers, None, ids, nodes, blobs, 0)?;
     for channel in &document.channels {
         write_channel(tx, &image, channel, blobs)?;
     }
+    tx.set(&image, "docState", doc_state::to_value(document, blobs)?)?;
     // Needs `ids` fully built first: a layer comp's states name layers by their KDM object id.
-    tx.set(&image, "docState", doc_state::to_value(document, ids, blobs)?)?;
+    resources::write_all(tx, document, ids, blobs)?;
     Ok(image)
 }
 
@@ -95,9 +97,13 @@ fn write_layer(tx: &mut Tx<'_>, layer: &Layer, blobs: &mut Sink<'_>) -> KdmResul
         Some(mask) => Some(write_surface(tx, &SurfaceMeta::for_mask(mask), &mask.surface, blobs)?),
     };
     let (kind, data) = props::content_data(&layer.content, blobs)?;
+    let text = match props::text_body(&layer.content) {
+        Some(body) => Some(text_body::create(tx, &body)?),
+        None => None,
+    };
     let (width, height) = canvas_size(tx)?;
-    let props_json = serde_json::to_value(&Props { data, extra: LayerExtra::from_layer(layer, width, height, blobs)? }).map_err(kdm_err)?;
-    let effects_json = serde_json::to_value(EffectsData::from_effects(&layer.effects, blobs)).map_err(kdm_err)?;
+    let extra = serde_json::to_value(LayerExtra::from_layer(layer, width, height, blobs)?).map_err(kdm_err)?;
+    let settings = serde_json::to_value(StyleSettings::of(&layer.effects, blobs)).map_err(kdm_err)?;
     let layer_fields = fields(json!({
         "name": layer.name,
         "visible": layer.visible,
@@ -107,8 +113,10 @@ fn write_layer(tx: &mut Tx<'_>, layer: &Layer, blobs: &mut Sink<'_>) -> KdmResul
         "fillOpacity": layer.fill_opacity,
         "clipped": layer.clipped,
         "kind": kind,
-        "props": props_json,
-        "effects": effects_json,
+        "data": data,
+        "extra": extra,
+        "text": text.as_ref().map(ObjectId::as_str),
+        "styleSettings": settings,
         "mask": mask.as_ref().map(ObjectId::as_str),
         // The layer's engine id, so every read gives it the same one (KHP A46, A57; see
         // `crate::read`). Read-only to the object model.
@@ -118,7 +126,88 @@ fn write_layer(tx: &mut Tx<'_>, layer: &Layer, blobs: &mut Sink<'_>) -> KdmResul
     if let LayerContent::Raster(surface) = &layer.content {
         tiles::write_all(tx, &object, surface, blobs)?;
     }
+    write_styles(tx, &object, &[], &layer.effects.items, blobs)?;
+    write_frames(tx, &object, &[], frames_of(layer), blobs)?;
     Ok(object)
+}
+
+/// A layer's video frames (none for a layer that is no video layer).
+fn frames_of(layer: &Layer) -> &[kition_photo_doc::Surface] {
+    layer.video.as_ref().map_or(&[], |video| video.frames.as_slice())
+}
+
+/// `Layer.styles`: one `Style` object per effect, matched by position.
+struct Styles;
+
+impl Items for Styles {
+    type Item = kition_photo_doc::Effect;
+
+    fn create(&mut self, tx: &mut Tx<'_>, effect: &Self::Item) -> KdmResult<ObjectId> {
+        tx.create("Style", fields(json!({ "effect": serde_json::to_value(effect).map_err(kdm_err)? })))
+    }
+
+    fn update(&mut self, tx: &mut Tx<'_>, object: &ObjectId, before: &Self::Item, after: &Self::Item) -> KdmResult<bool> {
+        if before == after {
+            return Ok(false);
+        }
+        tx.set(object, "effect", serde_json::to_value(after).map_err(kdm_err)?)?;
+        Ok(true)
+    }
+}
+
+fn positions(count: usize) -> Vec<String> {
+    (0..count).map(|index| lists::identity(None, index)).collect()
+}
+
+fn write_styles(
+    tx: &mut Tx<'_>,
+    layer: &ObjectId,
+    before: &[kition_photo_doc::Effect],
+    after: &[kition_photo_doc::Effect],
+    _blobs: &mut Sink<'_>,
+) -> KdmResult<bool> {
+    if before == after {
+        return Ok(false);
+    }
+    lists::sync(tx, layer, "styles", None, before, &positions(before.len()), after, &positions(after.len()), &mut Styles)
+}
+
+/// `Layer.frames`: one `Surface` per video frame, matched by position, each frame's tiles its own
+/// map entries.
+struct Frames<'a, 'b> {
+    blobs: &'a mut Sink<'b>,
+}
+
+impl Items for Frames<'_, '_> {
+    type Item = kition_photo_doc::Surface;
+
+    fn create(&mut self, tx: &mut Tx<'_>, frame: &Self::Item) -> KdmResult<ObjectId> {
+        write_surface(tx, &SurfaceMeta::for_frame(frame), frame, self.blobs)
+    }
+
+    fn update(&mut self, tx: &mut Tx<'_>, object: &ObjectId, before: &Self::Item, after: &Self::Item) -> KdmResult<bool> {
+        let mut wrote = false;
+        let (old, new) = (SurfaceMeta::for_frame(before), SurfaceMeta::for_frame(after));
+        if serde_json::to_value(&old).map_err(kdm_err)? != serde_json::to_value(&new).map_err(kdm_err)? {
+            tx.set(object, "props", serde_json::to_value(new).map_err(kdm_err)?)?;
+            wrote = true;
+        }
+        wrote |= tiles::write_diff(tx, object, before, after, self.blobs)?;
+        Ok(wrote)
+    }
+}
+
+fn write_frames(
+    tx: &mut Tx<'_>,
+    layer: &ObjectId,
+    before: &[kition_photo_doc::Surface],
+    after: &[kition_photo_doc::Surface],
+    blobs: &mut Sink<'_>,
+) -> KdmResult<bool> {
+    if before.is_empty() && after.is_empty() {
+        return Ok(false);
+    }
+    lists::sync(tx, layer, "frames", None, before, &positions(before.len()), after, &positions(after.len()), &mut Frames { blobs })
 }
 
 fn write_surface(tx: &mut Tx<'_>, meta: &SurfaceMeta, surface: &kition_photo_doc::Surface, blobs: &mut Sink<'_>) -> KdmResult<ObjectId> {
@@ -183,8 +272,7 @@ pub fn write_changes_with(
     wrote |= set_if_changed(tx, &image, "mode", json!(mode_str(before.mode)?), json!(mode_str(after.mode)?))?;
     wrote |= set_if_changed(tx, &image, "depth", json!(depth_str(before.depth)?), json!(depth_str(after.depth)?))?;
     if before.guides != after.guides {
-        tx.set(&image, "guides", serde_json::to_value(&after.guides).map_err(kdm_err)?)?;
-        wrote = true;
+        wrote |= guides::write_diff(tx, &image, &after.guides)?;
     }
 
     let before_layers = index_layers(&before.layers);
@@ -206,10 +294,8 @@ pub fn write_changes_with(
     // group: kition-kdm refuses to delete an object whose tree node has live children.
     for id in children_first(&before.layers).into_iter().filter(|id| !after_layers.contains_key(id)) {
         if let Some(object) = ids.object(id).cloned() {
-            // The layer's mask is its own: it goes with it.
-            if let Ok(Value::String(surface)) = tx.get(&object, "mask") {
-                tx.delete(&ObjectId::from_string(surface))?;
-            }
+            // What the layer holds is its own: it goes with it.
+            delete_parts(tx, &object)?;
             tx.delete(&object)?;
             ids.remove(&object);
             nodes.remove(&object);
@@ -217,17 +303,38 @@ pub fn write_changes_with(
         }
     }
 
-    // `docState` depends on `ids` (layer comps name layers by object id), so it runs last.
-    if let Some(value) = doc_state::diff(before, after, ids, blobs)? {
+    if let Some(value) = doc_state::diff(before, after, blobs)? {
         tx.set(&image, "docState", value)?;
         wrote = true;
     }
+    // Layer comps name layers by object id, so the resources go after every layer change.
+    wrote |= resources::write_changes(tx, before, after, ids, blobs)?;
 
     if before.channels != after.channels {
         wrote |= rewrite_channels(tx, &image, &after.channels, blobs)?;
     }
 
     Ok(wrote)
+}
+
+/// Deletes what a layer object holds: its mask, its text body, its styles and video frames.
+fn delete_parts(tx: &mut Tx<'_>, object: &ObjectId) -> KdmResult<()> {
+    for field in ["mask", "text"] {
+        if let Ok(Value::String(part)) = tx.get(object, field) {
+            let part = ObjectId::from_string(part);
+            if tx.exists(&part) {
+                tx.delete(&part)?;
+            }
+        }
+    }
+    for field in ["styles", "frames"] {
+        for part in tx.list_items(object, field)? {
+            if tx.exists(&part) {
+                tx.delete(&part)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn set_if_changed(tx: &mut Tx<'_>, object: &ObjectId, field: &str, before: Value, after: Value) -> KdmResult<bool> {
@@ -374,18 +481,38 @@ fn diff_layer(tx: &mut Tx<'_>, object: &ObjectId, before: &Layer, after: &Layer,
     wrote |= set_if_changed(tx, object, "fillOpacity", json!(before.fill_opacity), json!(after.fill_opacity))?;
     wrote |= set_if_changed(tx, object, "clipped", json!(before.clipped), json!(after.clipped))?;
 
-    if !content_fields_equal(before, after) || !extra_fields_equal(before, after) {
+    if !content_fields_equal(before, after) {
+        let (old_kind, old_data) = props::content_data(&before.content, blobs)?;
         let (kind, data) = props::content_data(&after.content, blobs)?;
-        let (width, height) = canvas_size(tx)?;
-        let props_json = serde_json::to_value(&Props { data, extra: LayerExtra::from_layer(after, width, height, blobs)? }).map_err(kdm_err)?;
-        tx.set(object, "kind", json!(kind))?;
-        tx.set(object, "props", props_json)?;
-        wrote = true;
+        if old_kind != kind {
+            tx.set(object, "kind", json!(kind))?;
+            wrote = true;
+        }
+        if old_data != data || old_kind != kind {
+            tx.set(object, "data", data)?;
+            wrote = true;
+        }
+        wrote |= diff_text(tx, object, before, after)?;
     }
+    if !extra_fields_equal(before, after) {
+        let (width, height) = canvas_size(tx)?;
+        let old = serde_json::to_value(LayerExtra::from_layer(before, width, height, blobs)?).map_err(kdm_err)?;
+        let new = serde_json::to_value(LayerExtra::from_layer(after, width, height, blobs)?).map_err(kdm_err)?;
+        if old != new {
+            tx.set(object, "extra", new)?;
+            wrote = true;
+        }
+    }
+    wrote |= write_frames(tx, object, frames_of(before), frames_of(after), blobs)?;
 
     if before.effects != after.effects {
-        tx.set(object, "effects", serde_json::to_value(EffectsData::from_effects(&after.effects, blobs)).map_err(kdm_err)?)?;
-        wrote = true;
+        let old = serde_json::to_value(StyleSettings::of(&before.effects, blobs)).map_err(kdm_err)?;
+        let new = serde_json::to_value(StyleSettings::of(&after.effects, blobs)).map_err(kdm_err)?;
+        if old != new {
+            tx.set(object, "styleSettings", new)?;
+            wrote = true;
+        }
+        wrote |= write_styles(tx, object, &before.effects.items, &after.effects.items, blobs)?;
     }
 
     wrote |= diff_mask(tx, object, &before.mask, &after.mask, blobs)?;
@@ -401,6 +528,32 @@ fn diff_layer(tx: &mut Tx<'_>, object: &ObjectId, before: &Layer, after: &Layer,
     Ok(wrote)
 }
 
+/// A type layer's text body: edited in place when the layer stays a type layer, made or deleted
+/// when it becomes or stops being one.
+fn diff_text(tx: &mut Tx<'_>, object: &ObjectId, before: &Layer, after: &Layer) -> KdmResult<bool> {
+    let stored = match tx.get(object, "text")? {
+        Value::String(id) => Some(ObjectId::from_string(id)).filter(|id| tx.exists(id)),
+        _ => None,
+    };
+    match (props::text_body(&before.content), props::text_body(&after.content), stored) {
+        (Some(old), Some(new), Some(body)) => text_body::update(tx, &body, &old, &new),
+        (_, Some(new), stored) => {
+            if let Some(body) = stored {
+                tx.delete(&body)?;
+            }
+            let body = text_body::create(tx, &new)?;
+            tx.set(object, "text", json!(body.as_str()))?;
+            Ok(true)
+        }
+        (_, None, Some(body)) => {
+            tx.delete(&body)?;
+            tx.set(object, "text", Value::Null)?;
+            Ok(true)
+        }
+        (_, None, None) => Ok(false),
+    }
+}
+
 fn canvas_size(tx: &Tx<'_>) -> KdmResult<(u32, u32)> {
     let side = |field| {
         tx.get(&crate::image_id(), field)?.as_u64().and_then(|value| u32::try_from(value).ok()).ok_or_else(|| kdm_err(format!("invalid canvas {field}")))
@@ -408,7 +561,7 @@ fn canvas_size(tx: &Tx<'_>) -> KdmResult<(u32, u32)> {
     Ok((side("width")?, side("height")?))
 }
 
-/// Whether the layer state `props.extra` holds ([`LayerExtra`]) is the same.
+/// Whether the layer state `Layer.extra` holds ([`LayerExtra`]) is the same.
 fn extra_fields_equal(before: &Layer, after: &Layer) -> bool {
     before.vector_mask == after.vector_mask
         && before.label == after.label
@@ -417,18 +570,19 @@ fn extra_fields_equal(before: &Layer, after: &Layer) -> bool {
         && before.blend_if == after.blend_if
         && before.advanced == after.advanced
         && before.psd_blocks == after.psd_blocks
-        && props::same_video(&before.video, &after.video)
+        && before.video.as_ref().map(|v| (&v.source, v.fps, v.show_altered)) == after.video.as_ref().map(|v| (&v.source, v.fps, v.show_altered))
 }
 
-/// Whether the two layers' content needs no `props`/`kind` rewrite: same kind, and (for raster,
-/// the common case of a stroke) only the default pixel — pixel tiles are diffed separately.
+/// Whether the two layers' content needs no `kind`, `data` or text body write: same kind, and (for
+/// raster, the common case of a stroke) only the default pixel — pixel tiles are diffed
+/// separately. A group's expanded state is not stored.
 fn content_fields_equal(before: &Layer, after: &Layer) -> bool {
     match (&before.content, &after.content) {
         (LayerContent::Raster(a), LayerContent::Raster(b)) => a.default_pixel() == b.default_pixel(),
-        (LayerContent::Group(a), LayerContent::Group(b)) => a.expanded == b.expanded && a.artboard == b.artboard,
+        (LayerContent::Group(a), LayerContent::Group(b)) => a.artboard == b.artboard,
         (LayerContent::Adjustment(a), LayerContent::Adjustment(b)) => a == b,
         (LayerContent::Fill(a), LayerContent::Fill(b)) => a == b,
-        (LayerContent::Text(a), LayerContent::Text(b)) => a == b,
+        (LayerContent::Text(a), LayerContent::Text(b)) => props::same_but_cache(&before.content, &after.content) || a == b,
         (LayerContent::Shape(a), LayerContent::Shape(b)) => a == b,
         (LayerContent::Smart(a), LayerContent::Smart(b)) => a == b,
         _ => false,

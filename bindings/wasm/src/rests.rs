@@ -57,13 +57,13 @@ fn inserts_at_active(command: &str) -> bool {
 /// layer), for commands outside the pixel families; `None` for every field. Positions: whether
 /// where the layer is matters.
 pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
-    const EFFECTS: &[&str] = &["effects"];
-    const STYLE: &[&str] = &["effects", "blend", "fillOpacity", "props.extra"];
+    const EFFECTS: &[&str] = &["styleSettings", "styles"];
+    const STYLE: &[&str] = &["styleSettings", "styles", "blend", "fillOpacity", "extra"];
     const MASK: &[&str] = &["kind", "locks", "mask", "name"];
-    const MASK_PIXELS: &[&str] = &["kind", "locks", "mask", "props.data", "tiles"];
-    const VECTOR_MASK: &[&str] = &["kind", "locks", "props.extra.vector_mask"];
-    const CONTENT: &[&str] = &["kind", "name", "props.data"];
-    const SHAPE_PATH: &[&str] = &["kind", "props.data", "props.extra"];
+    const MASK_PIXELS: &[&str] = &["kind", "locks", "mask", "data", "text", "tiles"];
+    const VECTOR_MASK: &[&str] = &["kind", "locks", "extra.vector_mask"];
+    const CONTENT: &[&str] = &["kind", "name", "data", "text"];
+    const SHAPE_PATH: &[&str] = &["kind", "data", "text", "extra"];
     const INSERT: &[&str] = &["kind", "clipped"];
     if inserts_at_active(command) {
         // `shape.create` with `addTo` adds to that shape layer instead.
@@ -84,7 +84,7 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         | "layer.layerStyle.clear"
         | "layer.layerStyle.scaleEffects"
         | "layer.setEffectsVisible" => (Some(EFFECTS), false),
-        "layer.layerStyle.blendingOptions" => (Some(&["opacity", "fillOpacity", "blend", "props.extra"]), false),
+        "layer.layerStyle.blendingOptions" => (Some(&["opacity", "fillOpacity", "blend", "extra"]), false),
         "layer.layerStyle.copyLayerStyle" | "layer.layerStyle.pasteLayerStyle" => (Some(STYLE), false),
         "layer.layerMask.enabled" => (Some(&["mask.props.enabled"]), false),
         "layer.layerMask.linked" => (Some(&["mask.props.linked"]), false),
@@ -94,11 +94,11 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         | "layer.layerMask.revealSelection"
         | "layer.layerMask.hideSelection" => (Some(MASK), false),
         "layer.layerMask.apply" | "layer.layerMask.fromTransparency" => (Some(MASK_PIXELS), false),
-        "layer.rasterize.vectorMask" => (Some(&["kind", "mask", "props.extra"]), false),
+        "layer.rasterize.vectorMask" => (Some(&["kind", "mask", "extra"]), false),
         _ if command.starts_with("layer.vectorMask.") => (Some(VECTOR_MASK), false),
-        _ if command.starts_with("layer.editableFilter.") || command.starts_with("layer.objectLayers.stackMode.") => (Some(&["kind", "props.data"]), false),
-        "layer.setAdjustment" | "gradient.fill.set" | "gradient.fill.stop" | "gradient.fill.get" => (Some(&["kind", "props.data"]), false),
-        "layer.fill.solidColor.set" => (Some(&["kind", "locks", "props.data"]), false),
+        _ if command.starts_with("layer.editableFilter.") || command.starts_with("layer.objectLayers.stackMode.") => (Some(&["kind", "data", "text"]), false),
+        "layer.setAdjustment" | "gradient.fill.set" | "gradient.fill.stop" | "gradient.fill.get" => (Some(&["kind", "data", "text"]), false),
+        "layer.fill.solidColor.set" => (Some(&["kind", "locks", "data", "text"]), false),
         _ if command.starts_with("layer.combineShapes.") || command == "shape.edit" => (Some(CONTENT), false),
         _ if command.starts_with("path.") && params.get("name").and_then(Value::as_str) == Some("layer") => (Some(SHAPE_PATH), false),
         "type.edit"
@@ -112,9 +112,9 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         _ if command.starts_with("type.antiAlias.") || command.starts_with("type.orientation.") || command.starts_with("type.openType.") => {
             (Some(CONTENT), false)
         }
-        "path.fill" | "path.stroke" => (Some(&["kind", "locks", "props.data", "tiles"]), false),
+        "path.fill" | "path.stroke" => (Some(&["kind", "locks", "data", "text", "tiles"]), false),
         "layer.renameLayer" => (Some(&["name"]), false),
-        "layer.setLabelColor" => (Some(&["props.extra.label"]), false),
+        "layer.setLabelColor" => (Some(&["extra.label"]), false),
         "layer.showLayers" => (Some(&["visible"]), false),
         // Where the layer is, and nothing of what it holds.
         _ if command.starts_with("layer.arrange.") => (Some(&NONE), true),
@@ -128,8 +128,8 @@ fn selected_fields(command: &str) -> Option<(Fields, bool)> {
     Some(match command {
         "layer.hideLayers" | "layer.showLayers" => (Some(&["visible"]), false),
         "layer.lockLayers" => (Some(&["locks"]), false),
-        "layer.linkLayers" => (Some(&["props.extra.link_group"]), false),
-        "layer.setLabelColor" => (Some(&["props.extra.label"]), false),
+        "layer.linkLayers" => (Some(&["extra.link_group"]), false),
+        "layer.setLabelColor" => (Some(&["extra.label"]), false),
         "layer.createClippingMask" | "layer.releaseClippingMask" => (Some(&["clipped"]), true),
         "layer.translate" => return None,
         _ if command.starts_with("layer.align.") || command.starts_with("layer.distribute.") => return None,
@@ -217,15 +217,15 @@ pub fn image_fields(command: &str, params: &Value) -> Vec<&'static str> {
         "file.fileInfo" => out.push("docState.xmp"),
         // Without `path`: the work path, else the first saved path.
         "filter.render.flame" | "shape.presets.new" if params.get("path").is_none_or(Value::is_null) => {
-            out.extend(["docState.paths", "docState.work_path"]);
+            out.extend(["paths", "docState.work_path"]);
         }
         "path.set" | "path.delete" | "path.rename" | "path.clippingPath.set" | "path.clippingPath.clear" => {
-            out.extend(["docState.paths", "docState.work_path", "docState.clipping_path"]);
+            out.extend(["paths", "docState.work_path", "docState.clipping_path"]);
         }
         _ => {}
     }
     if family("notes.") {
-        out.push("docState.notes");
+        out.push("notes");
     }
     if family("count.")
         || matches!(
@@ -254,7 +254,7 @@ pub fn image_fields(command: &str, params: &Value) -> Vec<&'static str> {
         out.extend(["channels", "~channelContents"]);
     }
     if samples_composite(command, params) {
-        out.extend(["layers", "width", "height", "mode", "depth", "icc", "docState.patterns", "docState.global_light"]);
+        out.extend(["layers", "width", "height", "mode", "depth", "icc", "patterns", "docState.global_light"]);
     }
     out.sort_unstable();
     out.dedup();
@@ -339,7 +339,7 @@ pub fn other_layers(doc: &Document, command: &str, id: LayerId) -> Vec<Premise> 
                 fields.push("docState.global_light");
             }
             if patterns {
-                fields.push("docState.patterns");
+                fields.push("patterns");
             }
             if !fields.is_empty() {
                 out.push(Premise::on(crate::place::IMAGE).fields(fields).positions(NONE));

@@ -64,10 +64,11 @@ fn every_parameter_that_takes_a_layer_id_is_marked_as_naming_objects() {
     assert!(marked >= 20, "{marked} marked parameters");
 }
 
-/// Parameters that take the id of something the file keeps in the `Image`'s one `docState`
-/// register (patterns, layer comps, character and paragraph styles): no KDM object with a tool id,
-/// so nothing the premise guard could hold by that id. Consumers hold the relevant docState
-/// member in under; pattern deletion changes only the session library, not the document.
+/// Parameters that take the id of something the image keeps outside its layers (a pattern or a
+/// layer comp, items of the `Image`'s `patterns` and `comps` lists, or a character or paragraph
+/// style in its `docState`): the bare number or name, not the tool id the object model names it
+/// by (`comp:1`), so nothing the premise guard holds by that value. Consumers hold the relevant
+/// list or member in under; pattern deletion changes only the session library, not the document.
 const IN_DOC_STATE: &[(&str, &[&str])] = &[
     (
         "pattern",
@@ -107,7 +108,7 @@ const IN_DOC_STATE: &[(&str, &[&str])] = &[
 
 /// kition-sdk's own check (`testing::check_id_params`, C8-fix-9): every integer parameter whose
 /// name or description says id is the command's targets, marked in `objects`, or a place; the
-/// allow-list is the parameters above that name no layer of the image and those in `docState`.
+/// allow-list is the parameters above that name no layer of the image and those of its lists and `docState`.
 #[test]
 fn the_sdk_finds_every_integer_id_parameter_marked() {
     let doc = PhotoDocument::create("art.psd", 64, 48).unwrap();

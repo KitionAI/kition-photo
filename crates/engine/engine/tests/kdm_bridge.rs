@@ -676,9 +676,9 @@ fn refused_changes_leave_the_document_as_it_was() {
     let mut script = Replica::load(kition_photo_engine::kdm_model::PhotoModel::schema(), &s.snapshot().unwrap(), ActorId::random()).unwrap();
     let since = script.version();
     let image = ObjectId::from_string("image");
-    // The schema takes any JSON for the guides (it refuses a depth it does not list), the image
-    // reads only guides.
-    script.transact(&Origin::system("script"), |tx| tx.set(&image, "guides", json!("khp check"))).unwrap();
+    // The schema takes any JSON for the document state (it refuses a depth it does not list), the
+    // image reads only that state's fields.
+    script.transact(&Origin::system("script"), |tx| tx.set(&image, "docState", json!("khp check"))).unwrap();
     let refused = script.export_changes(&since).unwrap();
     assert!(s.import_changes(&refused).is_err());
 

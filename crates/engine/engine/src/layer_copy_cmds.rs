@@ -173,8 +173,8 @@ fn relink(doc: &Document, l: &mut kition_photo_doc::Layer, links: &mut std::coll
         let next = match links.get(&group) {
             Some(mine) => Some(*mine),
             None => {
-                let used = links.values().copied().max();
-                let free = doc.unused_link_group().map(|g| used.map_or(g, |u| g.max(u.saturating_add(1))));
+                let minted: Vec<u64> = links.values().copied().collect();
+                let free = doc.new_link_group(&minted);
                 if let Some(free) = free {
                     links.insert(group, free);
                 }
