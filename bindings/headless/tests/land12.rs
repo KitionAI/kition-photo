@@ -59,7 +59,7 @@ async fn rectangle_guard_compares_the_addressed_pixels_inside_a_tile() {
             let mut reference = PhotoDocument::open("art.kphoto", &before).unwrap();
             reference.execute("select.rect", json!({"x":70,"y":70,"width":40,"height":40})).unwrap();
             reference.execute("edit.fill", json!({"layer":id,"color":"#00ff00"})).unwrap();
-            assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save(None).unwrap()));
+            assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save_sealed(None).unwrap()));
         }
         f.shutdown().await;
     }
@@ -70,7 +70,7 @@ async fn json_comp_names_keep_same_field_and_deletion_reasons() {
     for deleted in [false, true] {
         let mut doc = PhotoDocument::create("art.kphoto", 32, 24).unwrap();
         doc.execute("layerComp.new", json!({"name":"Comp"})).unwrap();
-        let f = Fixture::from_bytes("art.kphoto", &doc.save(None).unwrap(), Default::default());
+        let f = Fixture::from_bytes("art.kphoto", &doc.save_sealed(None).unwrap(), Default::default());
         let (_, basis) = f.inspect().await;
         f.colleague(&[if deleted { ("layerComp.delete", json!({"comp":"Comp"})) } else { ("layerComp.rename", json!({"comp":"Comp","name":"Away"})) }]);
         let answer = f.refused("run", json!({"basis":basis,"steps":[{"command":"layerComp.rename","params":{"comp":"Comp","name":"Final"}}]})).await;
@@ -84,7 +84,7 @@ async fn json_pattern_sources_keep_rename_and_deletion_reasons() {
     for deleted in [false, true] {
         let mut doc = image_doc("art.kphoto", 1);
         doc.execute("layer.newFillLayer.pattern", json!({"pattern":"Checkerboard"})).unwrap();
-        let f = Fixture::from_bytes("art.kphoto", &doc.save(None).unwrap(), Default::default());
+        let f = Fixture::from_bytes("art.kphoto", &doc.save_sealed(None).unwrap(), Default::default());
         let (seen, basis) = f.inspect().await;
         let id = ids_by_name(&seen)["L0"];
         let mut other = kition_photo_format::load_from_bytes(&std::fs::read(f.file()).unwrap()).unwrap();
@@ -113,7 +113,7 @@ async fn json_text_style_ids_still_need_a_resource_identity_contract() {
         for deleted in [false, true] {
             let mut doc = PhotoDocument::create("art.kphoto", 32, 24).unwrap();
             let id = doc.execute(&format!("{prefix}.new"), json!({"name":"Style","fromSelection":false})).unwrap()["id"].clone();
-            let f = Fixture::from_bytes("art.kphoto", &doc.save(None).unwrap(), Default::default());
+            let f = Fixture::from_bytes("art.kphoto", &doc.save_sealed(None).unwrap(), Default::default());
             let (_, basis) = f.inspect().await;
             let command = format!("{prefix}.{}", if deleted { "delete" } else { "rename" });
             let params = if deleted { json!({"id":id}) } else { json!({"id":id,"name":"Away"}) };

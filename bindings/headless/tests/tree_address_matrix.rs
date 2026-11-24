@@ -97,7 +97,7 @@ fn fixture() -> Vec<u8> {
     doc.execute("layer.select", json!({"layer":ids["L0"]})).unwrap();
     let outer = doc.execute("layer.new.group", json!({"name":"Outer"})).unwrap()["layer"].clone();
     doc.execute("layer.moveTo", json!({"layer":group,"target":outer,"position":"into"})).unwrap();
-    doc.save(Some(FILE)).unwrap()
+    doc.save_sealed(Some(FILE)).unwrap()
 }
 
 fn siblings<'a>(doc: &'a mut Document, path: &[usize]) -> &'a mut Vec<Layer> {
@@ -116,7 +116,7 @@ fn change(doc: &mut Document, form: Form, edit: Change, scope: usize, ids: &std:
     if let Some((command, params)) = global {
         let mut engine = PhotoDocument::open(FILE, &kition_photo_format::save_to_bytes(doc, &Default::default()).unwrap()).unwrap();
         engine.execute(command, params).unwrap();
-        *doc = kition_photo_format::load_from_bytes(&engine.save(Some(FILE)).unwrap()).unwrap();
+        *doc = kition_photo_format::load_from_bytes(&engine.save_sealed(Some(FILE)).unwrap()).unwrap();
         return;
     }
     match edit {
@@ -303,7 +303,7 @@ async fn matrix(waiting: bool, forms: &[Form]) -> (usize, usize, usize, usize, u
                         // Names still resolve to the observed ids in every applying cell.
                         reference.execute(command, params).unwrap();
                         reference.restore_editor_state(&state).unwrap();
-                        if saved(&std::fs::read(f.file()).unwrap()) != saved(&reference.save(Some(FILE)).unwrap()) {
+                        if saved(&std::fs::read(f.file()).unwrap()) != saved(&reference.save_sealed(Some(FILE)).unwrap()) {
                             merges.push(label);
                         }
                         applied += 1;

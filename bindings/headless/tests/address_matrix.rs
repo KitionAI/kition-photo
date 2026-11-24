@@ -280,7 +280,7 @@ async fn matrix(which: Partition) -> Totals {
                         }
                         reference.execute(command, if pixels(address) { json!({"color":"#00ff00"}) } else { json!({"layer":target,"opacity":0.6}) }).unwrap();
                         reference.restore_editor_state(&state).unwrap();
-                        let expected = saved(&reference.save(Some(FILE)).unwrap());
+                        let expected = saved(&reference.save_sealed(Some(FILE)).unwrap());
                         let actual = saved(&std::fs::read(f.file()).unwrap());
                         if actual != expected {
                             totals.bad_merge += 1;

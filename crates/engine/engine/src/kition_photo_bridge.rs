@@ -95,28 +95,23 @@ impl DocState {
     /// shared edit). The bundle holds the replica's content, not its history (kition-sdk data
     /// model 7.3, rule M16b): `kdm.bin` is its content snapshot, of the history only the seal, and
     /// of its blobs only those the current state references. The history (undo steps, deleted
-    /// layers' tiles) stays in the session and with the host.
+    /// layers' tiles) stays in the session and with the host. A replica must be sealed first
+    /// ([`DocState::seal`], which hosts call as `prepareSave`); an unsealed one is refused.
     pub fn save_kphoto(&self) -> Result<Vec<u8>> {
-        self.save_kphoto_sealed().map(|(bytes, _)| bytes)
-    }
-
-    /// [`DocState::save_kphoto`], with the seal it made on a copy when the replica was not sealed
-    /// ([`kdm_model::Content::seal`], the fallback), for [`DocState::take_seal`] once the host
-    /// stored the bytes.
-    pub fn save_kphoto_sealed(&self) -> Result<(Vec<u8>, Option<Vec<u8>>)> {
         let doc = &self.doc;
-        let content = self.kdm().map(|kdm| kdm.content().map_err(kdm_error)).transpose()?;
-        let (kdm, seal) = match content {
-            Some(content) => (Some(kition_photo_format::KdmSave { snapshot: content.snapshot, blobs: content.blobs }), content.seal),
-            None => (None, None),
+        let kdm = match self.kdm() {
+            Some(kdm) => {
+                let content = kdm.content().map_err(kdm_error)?;
+                Some(kition_photo_format::KdmSave { snapshot: content.snapshot, blobs: content.blobs })
+            }
+            None => None,
         };
         let opts = kition_photo_format::SaveOptions {
             thumbnail: Some(kition_photo_compose::thumbnail(doc, 256)),
             composite: Some(kition_photo_compose::thumbnail(doc, 1024)),
             kdm,
         };
-        let bytes = kition_photo_format::save_to_bytes(doc, &opts).map_err(|error| EngineError::Other(error.to_string()))?;
-        Ok((bytes, seal))
+        kition_photo_format::save_to_bytes(doc, &opts).map_err(|error| EngineError::Other(error.to_string()))
     }
 
     /// Seals the document's replica before a save (`KitDocument::prepare_save`), so the file holds
@@ -126,13 +121,6 @@ impl DocState {
             kdm.seal().map_err(kdm_error)?;
         }
         Ok(())
-    }
-
-    /// Takes in the seal a save made on a copy ([`DocState::save_kphoto_sealed`]).
-    pub fn take_seal(&mut self, seal: &[u8]) {
-        if let Some(kdm) = self.kdm.as_mut() {
-            kdm.take_seal(seal);
-        }
     }
 }
 

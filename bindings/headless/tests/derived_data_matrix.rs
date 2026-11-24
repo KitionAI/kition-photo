@@ -186,7 +186,7 @@ fn pair(name: &'static str) -> Pair {
         }
         _ => panic!("unknown pair {name}"),
     }
-    out.bytes = doc.save(Some(FILE)).unwrap();
+    out.bytes = doc.save_sealed(Some(FILE)).unwrap();
     out
 }
 
@@ -265,7 +265,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
                     reference.set_context(&CallContext { on: pair.on.clone(), ..Default::default() }).unwrap();
                     kition_kit::dispatch::with_gate(std::sync::Arc::new(Agent), || reference.execute(pair.command, pair.params.clone())).unwrap();
                     reference.restore_editor_state(&state).unwrap();
-                    if !same_saved_merge(&before, &std::fs::read(f.file()).unwrap(), &reference.save(Some(FILE)).unwrap()) {
+                    if !same_saved_merge(&before, &std::fs::read(f.file()).unwrap(), &reference.save_sealed(Some(FILE)).unwrap()) {
                         merges.push(label);
                     }
                     applied += 1;

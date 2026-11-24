@@ -57,7 +57,7 @@ fn fixture() -> Vec<u8> {
             doc.execute(command, p).unwrap();
         }
     }
-    let mut engine = kition_photo_format::load_from_bytes(&doc.save(Some(FILE)).unwrap()).unwrap();
+    let mut engine = kition_photo_format::load_from_bytes(&doc.save_sealed(Some(FILE)).unwrap()).unwrap();
     for i in 0..3 {
         engine.paths.push(NamedPath { name: format!("C{i}"), ..Default::default() });
     }
@@ -253,7 +253,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
                     (Ok(_), None) => {
                         let mut reference = PhotoDocument::open(FILE, &before).unwrap();
                         reference.execute(command, params.clone()).unwrap();
-                        if saved(&std::fs::read(f.file()).unwrap()) != saved(&reference.save(Some(FILE)).unwrap()) {
+                        if saved(&std::fs::read(f.file()).unwrap()) != saved(&reference.save_sealed(Some(FILE)).unwrap()) {
                             merges.push(label);
                         }
                         applied += 1;

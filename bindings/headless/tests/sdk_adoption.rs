@@ -39,7 +39,7 @@ async fn several_channel_sources_merge_private_coverage_on_the_image() {
                 doc.execute("select.saveSelection", json!({"name":name})).unwrap();
             }
             doc.execute("select.deselect", json!({})).unwrap();
-            let f = Fixture::from_bytes("Sources.kphoto", &doc.save(None).unwrap(), CallOptions::default());
+            let f = Fixture::from_bytes("Sources.kphoto", &doc.save_sealed(None).unwrap(), CallOptions::default());
             let (_, basis) = f.inspect().await;
             if pixels {
                 f.colleague(&[
@@ -118,7 +118,7 @@ async fn point_addresses_compare_masks_with_raw_surface_changes() {
                 }
                 _ => {}
             }
-            let f = Fixture::from_bytes("PointMasks.kphoto", &doc.save(None).unwrap(), CallOptions::default());
+            let f = Fixture::from_bytes("PointMasks.kphoto", &doc.save_sealed(None).unwrap(), CallOptions::default());
             let (_, basis) = f.inspect().await;
             f.colleague(&[match change {
                 "delete" => ("layer.layerMask.delete", json!({"layer":changed})),
@@ -159,7 +159,7 @@ async fn point_addresses_compare_masks_with_raw_surface_changes() {
                             doc.as_object_mut().unwrap().remove("selection");
                             doc
                         };
-                        assert_eq!(stored(&std::fs::read(f.file()).unwrap()), stored(&reference.save(None).unwrap()), "{change}/unrelated saved merge");
+                        assert_eq!(stored(&std::fs::read(f.file()).unwrap()), stored(&reference.save_sealed(None).unwrap()), "{change}/unrelated saved merge");
                     }
                 }
             }

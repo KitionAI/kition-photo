@@ -24,7 +24,7 @@ fn saved(bytes: &[u8]) -> Value {
 async fn slice_same_field_matrix() {
     let mut doc = PhotoDocument::create(FILE, 96, 64).unwrap();
     doc.execute("slice.new", json!({"rect":[8,8,16,16],"name":"Observed"})).unwrap();
-    let bytes = doc.save(Some(FILE)).unwrap();
+    let bytes = doc.save_sealed(Some(FILE)).unwrap();
     let mut wrong = vec![];
     let (mut applied, mut necessary) = (0, 0);
     for (field, mine, other) in [
@@ -71,7 +71,7 @@ async fn slice_same_field_matrix() {
                 result.unwrap_or_else(|error| panic!("{label}: {error}"));
                 let mut reference = PhotoDocument::open(FILE, &before).unwrap();
                 reference.execute("slice.set", params).unwrap();
-                let expected = saved(&reference.save(Some(FILE)).unwrap());
+                let expected = saved(&reference.save_sealed(Some(FILE)).unwrap());
                 let actual = saved(&std::fs::read(f.file()).unwrap());
                 assert_eq!(actual, expected, "{label}: saved merge");
                 applied += 1;

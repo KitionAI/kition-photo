@@ -3,9 +3,8 @@
 //! and none of the deleted or overwritten content; an unchanged image saves to the same bytes; a
 //! file opened without a store is the same document and edits; a replica from the file and one
 //! with the whole history converge; undo after a save takes back the last edit; and a file opens
-//! on top of a stored replica. Hosts seal before saving (`prepare_save`); the one fallback, a save
-//! nobody sealed for (the kit editor before its release that calls `prepareSave`), seals a copy and
-//! `mark_saved` takes the seal in.
+//! on top of a stored replica. Hosts seal before saving (`prepare_save`); a save of edits nobody
+//! sealed is refused.
 //!
 //! The needles below are written once each and share no run of four characters with anything else
 //! in the image, so the engine's compression keeps each literal in the bytes that hold it: every
@@ -221,28 +220,17 @@ fn a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state() {
     assert!(contains(&opened.snapshot().unwrap(), DELETED_LAYER), "on top of the stored history, which it keeps");
 }
 
-/// The fallback (delete with it once a kit-editor release that calls prepareSave is in
-/// web/pnpm-lock.yaml): a save nobody sealed for writes the content of a sealed copy, the same
-/// bytes for the same version, and `mark_saved` takes the seal into the session.
+/// Every host seals before it saves (`prepare_save`): a save of edits nobody sealed is refused,
+/// and changes nothing; sealed, the same image saves.
 #[test]
-fn a_save_nobody_sealed_for_seals_a_copy_and_mark_saved_takes_the_seal_in() {
+fn a_save_nobody_sealed_for_is_refused() {
     let (mut doc, _) = image_with_history();
     let at = version(&mut doc);
-    let first = doc.save(Some(FILE)).unwrap();
-    assert_eq!(version(&mut doc), at, "the session is not sealed by a save");
-    assert_eq!(doc.save(Some(FILE)).unwrap(), first, "the same version seals the same way");
-    let inside = held(&first);
-    for needle in NEEDLES {
-        assert!(!contains(&inside, needle), "the file holds {needle}");
-    }
-    assert_eq!(Replica::snapshot_origins(&content(&first)).unwrap(), vec![Some(Origin::system("content-seal"))]);
-    doc.mark_saved();
-    assert_eq!(version(&mut doc), version_of(&first), "mark_saved took the seal in");
-    let mut file = PhotoDocument::open(FILE, &first).unwrap();
-    doc.execute("layer.new.layer", json!({ "name": "Session" })).unwrap();
-    file.execute("layer.new.layer", json!({ "name": "File" })).unwrap();
-    let (to_file, to_doc) = (doc.export_changes(&file.version().unwrap()).unwrap(), file.export_changes(&doc.version().unwrap()).unwrap());
-    doc.import_changes(&to_doc).unwrap();
-    file.import_changes(&to_file).unwrap();
-    assert_eq!(state(&mut doc), state(&mut file));
+    let refused = doc.save(Some(FILE)).unwrap_err();
+    assert!(refused.contains("prepare_save"), "{refused}");
+    assert_eq!(version(&mut doc), at, "a refused save seals nothing");
+    let saved = host_save(&mut doc);
+    assert_eq!(Replica::snapshot_origins(&content(&saved)).unwrap(), vec![Some(Origin::system("content-seal"))]);
+    doc.execute("layer.new.layer", json!({ "name": "After" })).unwrap();
+    assert!(doc.save(Some(FILE)).is_err(), "an edit after the seal needs another");
 }

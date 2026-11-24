@@ -82,9 +82,6 @@ pub struct PhotoDocument {
     /// The editor states answered to hosts, for putting one back ([`context`]).
     kept: std::sync::Mutex<context::Kept>,
     pick_snapshots: std::sync::Mutex<point::Snapshots>,
-    /// The seal the last `.kphoto` save made on a copy of the replica (nobody sealed it first),
-    /// which `mark_saved` takes into the session once the host stored those bytes.
-    sealing: std::sync::Mutex<Option<Vec<u8>>>,
 }
 
 impl PhotoDocument {
@@ -96,7 +93,14 @@ impl PhotoDocument {
         if let Some(state) = session.active_mut() {
             state.psd_values = lower.ends_with(".psd") || lower.ends_with(".psb");
         }
-        Self { session, name: name.to_owned(), kept: Default::default(), pick_snapshots: Default::default(), sealing: Default::default() }
+        Self { session, name: name.to_owned(), kept: Default::default(), pick_snapshots: Default::default() }
+    }
+
+    /// The file as every host saves it: [`KitDocument::prepare_save`] (which seals the replica),
+    /// then [`KitDocument::save`]. For tools and tests that play the host.
+    pub fn save_sealed(&mut self, name: Option<&str>) -> Result<Vec<u8>, String> {
+        self.prepare_save()?;
+        self.save(name)
     }
 
     fn state(&self) -> Result<&kition_photo_engine::DocState, String> {
@@ -525,18 +529,12 @@ impl KitDocument for PhotoDocument {
     /// `.kphoto` embeds the document's content as its KDM replica holds it, if it has made one yet:
     /// the content snapshot, no history (rule M16b), so reopening it keeps the same document
     /// identity and object ids. Hosts call [`KitDocument::prepare_save`] first, which seals the
-    /// replica. The one fallback, for an editor that does not call `prepareSave` yet: a replica
-    /// nobody sealed saves the content of a sealed copy, and [`KitDocument::mark_saved`] takes that
-    /// seal into the session.
+    /// replica; a save of edits nobody sealed is refused.
     fn save(&self, name: Option<&str>) -> Result<Vec<u8>, String> {
         let target = name.unwrap_or(&self.name);
         let state = self.state()?;
         if kition_photo_engine::kition_photo_bridge::is_kition_photo_name(target) {
-            let (bytes, seal) = state.save_kphoto_sealed().map_err(|error| error.to_string())?;
-            if let Ok(mut sealing) = self.sealing.lock() {
-                *sealing = seal;
-            }
-            return Ok(bytes);
+            return state.save_kphoto().map_err(|error| error.to_string());
         }
         let exported = kition_photo_io::export(&state.doc, target, &kition_photo_io::ExportOptions::default()).map_err(|error| error.to_string())?;
         Ok(exported.bytes)
@@ -571,13 +569,7 @@ impl KitDocument for PhotoDocument {
 
     fn mark_saved(&mut self) {
         let target = self.name.clone();
-        // The fallback's seal (see `save`; delete with it once a kit-editor release that calls
-        // prepareSave is in web/pnpm-lock.yaml).
-        let seal = self.sealing.get_mut().ok().and_then(Option::take);
         if let Some(state) = self.session.active_mut() {
-            if let Some(seal) = seal {
-                state.take_seal(&seal);
-            }
             state.saved_to(target);
         }
     }
@@ -790,7 +782,13 @@ mod tests {
 
     #[test]
     fn keeps_the_kit_sdk_contract() {
-        check_contract::<PhotoDocument>(&fixture(), "fixture.kphoto", |doc| stroke(doc, json!([[4, 4, 1], [30, 20, 1]]), "#ff0000")).unwrap();
+        // The contract saves right after the edit, as a host does after its `prepare_save`: the
+        // edit ends with the seal.
+        check_contract::<PhotoDocument>(&fixture(), "fixture.kphoto", |doc| {
+            stroke(doc, json!([[4, 4, 1], [30, 20, 1]]), "#ff0000")?;
+            doc.prepare_save()
+        })
+        .unwrap();
     }
 
     #[test]

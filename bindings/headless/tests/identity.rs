@@ -150,7 +150,7 @@ async fn a_kphoto_tells_its_identity_and_forks_into_a_new_document_without_histo
     // The fork edits, saves and opens again as any picture, under its own id.
     let mut opened = PhotoDocument::open("Fork.kphoto", &fork_bytes).unwrap();
     filled(&mut opened, "New", "#808080", 32);
-    std::fs::write(dir.join("Edited.kphoto"), opened.save(Some("Edited.kphoto")).unwrap()).unwrap();
+    std::fs::write(dir.join("Edited.kphoto"), opened.save_sealed(Some("Edited.kphoto")).unwrap()).unwrap();
     assert_eq!(kit.identity("Edited.kphoto", LIMIT).await.unwrap().doc_id.as_deref(), Some(fork_id.as_str()), "an edit of the fork is the fork");
 
     // No history: the deleted layer's name is in neither file (a `.kphoto` holds content only).

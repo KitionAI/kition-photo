@@ -8,8 +8,8 @@ each package is published with a `package-v<version>` tag.
 - A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.3, rule M16b):
   `kdm.bin` is the replica's content snapshot (of the history, only the seal; no deleted layers,
   no overwritten values, no authors) and the replica blobs are only those its state references.
-  Hosts seal the document before saving (`prepareSave`); the undo history stays in the session and
-  the host's store. A file opens on a stored replica by its changes or, when saved elsewhere, by
+  Hosts seal the document before saving (`prepareSave`), and a save of edits nobody sealed is
+  refused; the undo history stays in the session and the host's store. A file opens on a stored replica by its changes or, when saved elsewhere, by
   its state. kition-sdk 82a3224.
 - The replica's schema is frozen at version 1: notes, layer comps, saved paths, patterns, layer
   styles and video frames are object lists, a type layer's text is a text with its style runs as

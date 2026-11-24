@@ -157,11 +157,14 @@ fn a_kphoto_keeps_its_ids_with_and_without_a_replica() {
     assert_eq!(ids(&opened_after_others("image.kphoto", &plain)), want);
     // With the replica the edits made: the document opens from the replica.
     s.version().unwrap();
+    // As a host saves: sealed first (`prepare_save`).
+    s.active_mut().unwrap().seal().unwrap();
     let bundled = s.active().unwrap().save_kphoto().unwrap();
     assert!(kition_photo_format::read_kdm(&bundled).unwrap().is_some());
-    let reopened = opened("image.kphoto", &bundled);
+    let mut reopened = opened("image.kphoto", &bundled);
     assert_eq!(ids(&reopened), want, "a .kphoto with its replica");
     assert_eq!(ids(&opened_after_others("image.kphoto", &bundled)), want);
+    reopened.active_mut().unwrap().seal().unwrap();
     assert_eq!(ids(&opened("image.kphoto", &reopened.active().unwrap().save_kphoto().unwrap())), want, "saved again");
     // The replica alone (a host-stored replica, or a sync room's state).
     let mut s = s;

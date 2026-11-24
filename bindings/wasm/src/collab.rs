@@ -465,6 +465,7 @@ mod tests {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
+        a.prepare_save().unwrap();
         let snapshot = a.snapshot().unwrap();
         let blobs = a.blobs_since(&[]).unwrap();
 
