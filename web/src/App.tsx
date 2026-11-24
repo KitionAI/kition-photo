@@ -14,6 +14,7 @@ import {
   type DockAreaHandle,
   type FrameTab,
   type HostConnection,
+  type KitViewState,
   type KitCanvasHandle,
   type KitCanvasView,
   type Phrases,
@@ -48,6 +49,7 @@ import { PaintLease, layerScope, useLayerObjectIds, withPaintLease } from './lay
 import { PhotoMenuKeys, photoMenuTabs, type MenuKeys } from './menus/photoMenus'
 import { HelpDialog, type HelpTopic } from './menus/HelpDialog'
 import { HomeTab } from './HomeTab'
+import { usePhotoViewState } from './viewState'
 import { PhotoCanvas } from './PhotoCanvas'
 import manifest from '../../kit.json'
 
@@ -69,8 +71,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     }
   }, [host, phrase])
   const engine = useMemo(engineManifest, [])
+  // The person's view (selection, collapsed groups, …), kept by the host after each save (see `viewState.ts`).
+  const keptView = useRef<KitViewState | undefined>(undefined)
+  const sessionOptions = useMemo(() => ({ viewState: () => keptView.current }), [])
+  const kitSession = useKitSession(host, engine, describe, sessionOptions)
+  usePhotoViewState(host, kitSession, keptView)
   // The editor runs every command through the mask target's session (see `useMaskTarget`).
-  const { session: photoSession, maskTarget, setMaskTarget } = useMaskTarget(useKitSession(host, engine, describe))
+  const { session: photoSession, maskTarget, setMaskTarget } = useMaskTarget(kitSession)
   const commandSequence = useRef(0)
   const pendingCommands = useRef(new Set<Promise<unknown>>())
   const runSession = useCallback((...args: Parameters<typeof photoSession.run>) => {

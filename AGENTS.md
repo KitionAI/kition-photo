@@ -179,4 +179,8 @@ A `.kphoto` holds content, never history (kition-sdk data model 7.3, rule M16b):
 the replica's content snapshot (`PhotoSession::content`), sealed by `prepare_save` before every
 save, with only the replica blobs its state references. Do not write a full snapshot, a change log,
 undo steps or blobs only history needs into the file; tests call `prepare_save` before `save` where
-a host would (`bindings/wasm/tests/content_file.rs`).
+a host would (`bindings/wasm/tests/content_file.rs`), or `PhotoDocument::save_sealed`. Tiles and
+blobs are named by the SHA-256 of their bytes, as the replica names its blobs, so each is stored
+once. Nor does the file hold anyone's view (selection, quick mask, expanded groups, open notes,
+playhead, last applied comp), the session's document handle or title, or a preview: a person's view
+goes to the host's `view-state` store (`crates/formats/format/src/view_state.rs`).

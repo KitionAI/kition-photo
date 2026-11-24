@@ -1969,9 +1969,7 @@ dependencies = [
 name = "kition-photo-format"
 version = "0.5.0"
 dependencies = [
- "blake3",
  "flate2",
- "kition-photo-codecs",
  "kition-photo-color",
  "kition-photo-doc",
  "kition-photo-geom",
@@ -1981,6 +1979,7 @@ dependencies = [
  "ruzstd",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror 2.0.21",
 ]
 
@@ -2045,6 +2044,7 @@ dependencies = [
  "kition-photo-raster",
  "kition-photo-text",
  "rayon",
+ "ruzstd",
  "serde_json",
 ]
 

@@ -3,18 +3,31 @@
 //! The native, lossless `.kphoto` document bundle (architecture §9).
 //!
 //! ```text
-//! manifest.json            versioned document tree (see [`manifest`])
-//! tiles/<blake3>.zst       content-addressed 256×256 tiles (zstd, little-endian samples)
-//! blobs/<blake3>.zst       content-addressed binary data (ICC, EXIF, PSD blocks, object layers)
-//! thumb.png                optional thumbnail (caller-rendered)
-//! composite/preview.png    optional flattened preview (caller-rendered)
+//! manifest.json            versioned description of the image's content (see [`manifest`])
 //! kdm.bin                  optional: the document's KDM replica as its content snapshot
-//! blobs/kdm/<sha256>.zst   the blobs that replica's state references
+//! tiles/<sha256>           content-addressed 256×256 tiles (zstd of little-endian samples)
+//! blobs/<sha256>.zst       content-addressed binary data (ICC, EXIF, PSD blocks, object layers)
 //! ```
+//!
+//! **One copy of every tile and blob.** Each entry is named by the SHA-256 of the bytes it
+//! holds (a tile's encoded bytes, [`encode_tile`]; a blob's own bytes), which is how the KDM
+//! replica names its blobs too: the manifest and `kdm.bin` refer to the same entries, and a save
+//! writes each once.
 //!
 //! `kdm.bin` holds the document's content, not its history (kition-sdk data model 7.3, rule
 //! M16b): the replica's state and, of its history, only the seal; the engine writes it
 //! (`DocState::save_kphoto`). The undo history stays in the session and the host's store.
+//! The manifest stays beside it: it is what a reader without the replica model opens (the PSD
+//! exporter placing a `.kphoto`, the importer, `kition-photo-io`'s export of a document that has
+//! made no replica yet), and it is what opens when this build refuses the replica (another schema
+//! version).
+//!
+//! **Content only.** Neither the manifest nor the replica holds one person's view (the
+//! selection, the quick mask, expanded groups, open notes, the timeline's playhead, the last
+//! applied layer comp), the document's handle or its title, so two people who open the same file
+//! and save it write the same bytes; [`view_state`] keeps a person's view apart, for the host's
+//! `view-state` store. Nor does the file hold a thumbnail or a flattened preview: it is not a
+//! composite another program opens, and anything that needs a picture renders one.
 //!
 //! A bundle is either a ZIP archive (STORE entries) or a directory with the
 //! same layout. Saving is incremental: [`KitionPhotoWriter`] remembers what it
@@ -22,9 +35,6 @@
 //! verify existing content-addressed objects once per writer and folder,
 //! rechecking files whose size or modification time changes; they replace
 //! damaged or missing objects and garbage-collect unreferenced ones.
-//!
-//! This crate sits at L3 next to the compositor, so it does not render.
-//! Callers pass previews in [`SaveOptions`]; `kition-photo-io` does that.
 #![forbid(unsafe_code)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -37,13 +47,13 @@ pub mod manifest;
 mod migrate;
 pub mod read;
 mod store;
+pub mod view_state;
 pub mod zip;
 
 use std::path::Path;
 use std::sync::Arc;
 
 use kition_photo_doc::Document;
-use kition_photo_raster::Rgba8Image;
 
 pub use atomic::atomic_write;
 #[cfg(not(target_arch = "wasm32"))]
@@ -52,7 +62,7 @@ pub use autosave::{Autosaver, RecoveryEntry, discard_recovery, list_recovery, re
 pub use convert::MAX_GROUP_DEPTH;
 pub use manifest::{FORMAT_VERSION, KdmM, Manifest};
 pub use read::read_file;
-pub use store::{DEFAULT_REVERIFY_BUDGET, KdmBundle, KitionPhotoWriter, SaveStats, decode_tile, encode_tile};
+pub use store::{DEFAULT_REVERIFY_BUDGET, KdmBundle, KitionPhotoWriter, SaveStats, decode_tile, encode_tile, hash_bytes as content_hash};
 
 /// File extension of the native format.
 pub const EXTENSION: &str = "kphoto";
@@ -83,20 +93,16 @@ impl FormatError {
 
 pub type Result<T> = std::result::Result<T, FormatError>;
 
-/// Previews to embed. The format crate cannot render (it sits beside the
-/// compositor), so callers provide them.
+/// What a save writes beside the document's manifest.
 #[derive(Debug, Clone, Default)]
 pub struct SaveOptions {
-    pub thumbnail: Option<Rgba8Image>,
-    pub composite: Option<Rgba8Image>,
-    /// The document's KDM replica (Kition phase 3a, Task 4) to embed, if it has made one yet.
+    /// The document's KDM replica to embed, if it has made one yet.
     pub kdm: Option<KdmSave>,
 }
 
 /// A KDM replica to embed in a `.kphoto` save: the snapshot bytes (written as `kdm.bin`) and the
-/// blobs it references, keyed by their SHA-256 hex hash (written as `blobs/kdm/<sha256>.zst`,
-/// content-addressed like the document's own tiles and blobs, so an incremental save never
-/// rewrites one whose bytes are unchanged).
+/// blobs it references, keyed by their SHA-256 hex hash. A blob the manifest names too (every
+/// tile of the image) is stored once, as the manifest's entry; the others as `blobs/<sha256>.zst`.
 #[derive(Debug, Clone, Default)]
 pub struct KdmSave {
     pub snapshot: Vec<u8>,
@@ -176,20 +182,9 @@ pub fn read_manifest(bytes: &[u8]) -> Result<Manifest> {
     store::read_manifest(&src, &LoadOptions::default())
 }
 
-/// The embedded thumbnail, if present (PNG bytes).
-pub fn read_thumbnail(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
-    let src = store::ZipSource::new(bytes)?;
-    let m = store::read_manifest(&src, &LoadOptions::default())?;
-    match m.thumbnail {
-        Some(p) => Ok(Some(store::Source::get(&src, &p, 64 << 20)?)),
-        None => Ok(None),
-    }
-}
-
-/// The bundle's KDM replica (Kition phase 3a, Task 4), if it has one: the snapshot bytes and the
-/// blobs it references, keyed by their SHA-256 hex hash. `None` for a bundle saved without a
-/// replica (or one written before this feature); such a document still loads normally through
-/// [`load_from_bytes`], just without its collaboration history.
+/// The bundle's KDM replica, if it has one: the snapshot bytes and the bundle's tiles and blobs,
+/// keyed by their SHA-256 hex hash. `None` for a bundle saved without a replica; such a document
+/// still loads through [`load_from_bytes`], as a new replica.
 pub fn read_kdm(bytes: &[u8]) -> Result<Option<KdmBundle>> {
     store::read_kdm(bytes, &LoadOptions::default())
 }
@@ -201,9 +196,9 @@ pub fn read_kdm_snapshot(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
 }
 
 /// `bytes` (a bundle with a replica) holding the replica `snapshot` instead of its own
-/// (`document.fork`): `kdm.bin` is `snapshot`, and of the replica's blobs (`blobs/kdm/<sha256>.zst`)
-/// only those `keep` names stay; the manifest, tiles, document blobs, previews and entries this
-/// build does not know are kept as they were. A bundle without a replica is an error.
+/// (`document.fork`): `kdm.bin` is `snapshot`, and of the tiles and blobs only those the manifest
+/// or `keep` names stay; the manifest and entries this build does not know are kept as they were.
+/// A bundle without a replica is an error.
 pub fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool) -> Result<Vec<u8>> {
     store::replace_kdm(bytes, snapshot, keep, &LoadOptions::default())
 }

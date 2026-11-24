@@ -198,7 +198,10 @@ fn is_native(name: &str, bytes: &[u8]) -> bool {
 fn import_stages(name: &str, bytes: &[u8], ctl: &kition_photo_raster::Interrupt) -> Result<ImportResult, IoError> {
     // A declared native extension must reach its loader so malformed bundles retain format errors.
     if is_native(name, bytes) {
-        return Ok(ImportResult { document: kition_photo_format::load_from_bytes(bytes)?, warnings: Vec::new(), source_read_only: false, preview_only: false });
+        // The bundle keeps no title: the document is named after its file, as a PSD is.
+        let mut document = kition_photo_format::load_from_bytes(bytes)?;
+        document.name = name.to_string();
+        return Ok(ImportResult { document, warnings: Vec::new(), source_read_only: false, preview_only: false });
     }
     if is_psd(bytes) {
         let file = PsdFile::from_bytes(bytes)?;
@@ -242,12 +245,7 @@ pub fn export(doc: &Document, name_or_ext: &str, opts: &ExportOptions) -> Result
         return Err(IoError::Unsupported("Affinity export is not implemented; save a new PSD, PNG or .kphoto copy".into()));
     }
     if ext == kition_photo_format::EXTENSION {
-        let previews = kition_photo_format::SaveOptions {
-            thumbnail: Some(kition_photo_compose::thumbnail(doc, 256)),
-            composite: Some(kition_photo_compose::thumbnail(doc, 1024)),
-            kdm: None,
-        };
-        return Ok(ExportResult { bytes: kition_photo_format::save_to_bytes(doc, &previews)?, warnings: Vec::new() });
+        return Ok(ExportResult { bytes: kition_photo_format::save_to_bytes(doc, &kition_photo_format::SaveOptions::default())?, warnings: Vec::new() });
     }
     if ext == "psd" || ext == "psb" {
         let o = PsdExportOptions { force_psb: opts.force_psb || ext == "psb", ..Default::default() };

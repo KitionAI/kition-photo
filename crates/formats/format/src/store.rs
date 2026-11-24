@@ -8,7 +8,8 @@ use std::time::SystemTime;
 
 use kition_photo_color::{PixelFormat, SampleType};
 use kition_photo_doc::Document;
-use kition_photo_raster::{Rgba8Image, Tile};
+use kition_photo_raster::Tile;
+use sha2::Digest;
 
 use crate::convert::{self, Fetch, Loader, Sink, is_valid_hash, swap_to_le};
 use crate::manifest::{ContentM, FORMAT_VERSION, Hash, KdmM, LayerM, Manifest};
@@ -16,29 +17,30 @@ use crate::zip::{ZipReader, ZipWriter};
 use crate::{FormatError, LoadOptions, Result, SaveOptions};
 
 pub(crate) const MANIFEST: &str = "manifest.json";
-pub(crate) const THUMB: &str = "thumb.png";
-pub(crate) const COMPOSITE: &str = "composite/preview.png";
-/// The document's KDM replica snapshot (Kition phase 3a, Task 4), stored next to the manifest
-/// rather than content-addressed: it is the one entry that changes on nearly every save.
+/// The document's KDM replica snapshot, stored next to the manifest rather than
+/// content-addressed: it is the one entry that changes on nearly every save.
 pub(crate) const KDM: &str = "kdm.bin";
 
+/// A tile: its encoded bytes ([`encode_tile`]), stored as they are (they are zstd already).
 fn tile_path(h: &str) -> String {
-    format!("tiles/{h}.zst")
+    format!("tiles/{h}")
 }
+/// Any other binary data, zstd-compressed.
 fn blob_path(h: &str) -> String {
     format!("blobs/{h}.zst")
 }
-/// The KDM replica's own blobs (SHA-256-keyed) live in their own namespace, apart from the
-/// document's BLAKE3-keyed tiles and blobs.
-fn kdm_blob_path(h: &str) -> String {
-    format!("blobs/kdm/{h}.zst")
+
+/// The hash a tile or blob is named by: the SHA-256 of its bytes (a tile's encoded bytes), as
+/// the KDM replica names its blobs, so the manifest and the replica name one stored copy.
+pub fn hash_bytes(b: &[u8]) -> Hash {
+    convert::hex(&sha2::Sha256::digest(b))
 }
 
 fn compress(data: &[u8]) -> Vec<u8> {
     ruzstd::encoding::compress_to_vec(data, ruzstd::encoding::CompressionLevel::Fastest)
 }
 
-fn decompress(data: &[u8], expected: usize, what: &str) -> Result<Vec<u8>> {
+pub(crate) fn decompress(data: &[u8], expected: usize, what: &str) -> Result<Vec<u8>> {
     let mut dec = ruzstd::decoding::StreamingDecoder::new(data).map_err(|e| FormatError::corrupt(format!("{what}: zstd: {e}")))?;
     let mut out = Vec::with_capacity(expected.min(64 << 20));
     (&mut dec).take(expected as u64 + 1).read_to_end(&mut out).map_err(|e| FormatError::corrupt(format!("{what}: zstd: {e}")))?;
@@ -46,16 +48,6 @@ fn decompress(data: &[u8], expected: usize, what: &str) -> Result<Vec<u8>> {
         return Err(FormatError::corrupt(format!("{what}: expected {expected} bytes, got {}", out.len())));
     }
     Ok(out)
-}
-
-fn hash_bytes(b: &[u8]) -> Hash {
-    blake3::hash(b).to_hex().to_string()
-}
-
-fn png(img: &Rgba8Image) -> Result<Vec<u8>> {
-    let image = kition_photo_codecs::Image::from_u8(img.width, img.height, kition_photo_codecs::ChannelLayout::Rgba, img.pixels.clone())
-        .map_err(|e| FormatError::Unsupported(format!("preview: {e}")))?;
-    kition_photo_codecs::encode(&image, kition_photo_codecs::Format::Png, &Default::default()).map_err(|e| FormatError::Unsupported(format!("preview: {e}")))
 }
 
 // ---------------------------------------------------------------------------
@@ -203,12 +195,11 @@ impl Fetch for LoadFetch<'_> {
         }
         self.account(len)?;
         let path = tile_path(hash);
-        let z = self.src.get(&path, len + len / 8 + 4096)?;
-        let data = decompress(&z, len, &path)?;
-        if hash_bytes(&data) != hash {
+        let encoded = self.src.get(&path, len + len / 8 + 4096)?;
+        if hash_bytes(&encoded) != hash {
             return Err(FormatError::corrupt(format!("{path}: content does not match its hash")));
         }
-        Ok(data)
+        decompress(&encoded, len, &path)
     }
 
     fn blob(&mut self, hash: &str) -> Result<Arc<Vec<u8>>> {
@@ -245,10 +236,10 @@ fn decompress_capped(data: &[u8], max: usize, what: &str) -> Result<Vec<u8>> {
     Ok(out)
 }
 
-/// The document's KDM replica (Kition phase 3a, Task 4), if the bundle has one: the snapshot
-/// bytes and the blobs it references, keyed by their SHA-256 hex hash. The hash is trusted as a
-/// lookup key, as `MemoryBlobs` is elsewhere; the ZIP reader already CRC32-checks every entry
-/// (SHA-256 itself belongs to the KDM crate, not this one, so it is not re-hashed here).
+/// The document's KDM replica, if the bundle has one: the snapshot bytes and the bundle's tiles
+/// and blobs, keyed by the SHA-256 hex hash the replica names them by (a tile as its encoded
+/// bytes, a blob decompressed). They are the manifest's too: the file holds each once. Every
+/// entry is checked against its hash.
 pub struct KdmBundle {
     pub snapshot: Vec<u8>,
     pub blobs: HashMap<String, Vec<u8>>,
@@ -264,22 +255,36 @@ pub(crate) fn read_kdm(bytes: &[u8], opts: &LoadOptions) -> Result<Option<KdmBun
     if total > opts.max_total_bytes {
         return Err(FormatError::LimitExceeded(format!("bundle expands beyond {} bytes", opts.max_total_bytes)));
     }
+    let max_compressed = opts.max_blob_bytes.saturating_add(opts.max_blob_bytes / 8).saturating_add(4096);
     let mut blobs = HashMap::new();
     for entry in &src.zip.entries {
-        let Some(hash) = entry.name.strip_prefix("blobs/kdm/").and_then(|rest| rest.strip_suffix(".zst")) else { continue };
-        if !is_valid_hash(hash) {
-            return Err(FormatError::corrupt(format!("invalid kdm blob hash in `{}`", entry.name)));
-        }
-        let max_compressed = opts.max_blob_bytes.saturating_add(opts.max_blob_bytes / 8).saturating_add(4096);
-        let compressed = src.zip.read(entry, max_compressed)?;
-        let data = decompress_capped(&compressed, opts.max_blob_bytes, &entry.name)?;
+        let Some((hash, data)) = object(&src, entry, max_compressed, opts)? else { continue };
         total += data.len() as u64;
         if total > opts.max_total_bytes {
             return Err(FormatError::LimitExceeded(format!("bundle expands beyond {} bytes", opts.max_total_bytes)));
         }
-        blobs.insert(hash.to_owned(), data);
+        blobs.insert(hash, data);
     }
     Ok(Some(KdmBundle { snapshot, blobs }))
+}
+
+/// A content-addressed entry's hash and the bytes it names (a tile's stored bytes, a blob
+/// decompressed), checked against the hash; `None` for an entry that is not one.
+fn object(src: &ZipSource<'_>, entry: &crate::zip::Entry, max_compressed: usize, opts: &LoadOptions) -> Result<Option<(String, Vec<u8>)>> {
+    let (hash, compressed) = match (entry.name.strip_prefix("tiles/"), entry.name.strip_prefix("blobs/").and_then(|rest| rest.strip_suffix(".zst"))) {
+        (Some(hash), _) => (hash, false),
+        (None, Some(hash)) => (hash, true),
+        (None, None) => return Ok(None),
+    };
+    if !is_valid_hash(hash) {
+        return Err(FormatError::corrupt(format!("invalid object hash in `{}`", entry.name)));
+    }
+    let stored = src.zip.read(entry, max_compressed)?;
+    let data = if compressed { decompress_capped(&stored, opts.max_blob_bytes, &entry.name)? } else { stored };
+    if hash_bytes(&data) != hash {
+        return Err(FormatError::corrupt(format!("{}: content does not match its hash", entry.name)));
+    }
+    Ok(Some((hash.to_owned(), data)))
 }
 
 /// The bundle's KDM replica snapshot alone (`kdm.bin`), without reading its blobs, or `None` for
@@ -290,12 +295,35 @@ pub(crate) fn read_kdm_snapshot(bytes: &[u8], opts: &LoadOptions) -> Result<Opti
     src.zip.read_by_name(&kdm.snapshot, opts.max_blob_bytes).map(Some)
 }
 
-/// `bytes` (a bundle with a replica) with `snapshot` as its replica snapshot and only the KDM
-/// blobs `keep` names; every other entry (the manifest, tiles, document blobs, previews, entries
-/// this build does not know) is kept as it was, in the same order.
+/// Every hash `value` (a manifest's JSON) names: any string of 64 lowercase hex digits. One that
+/// only looks like a hash keeps an entry it need not, never drops one it needs.
+fn named_hashes(value: &serde_json::Value, out: &mut HashSet<String>) {
+    let mut stack = vec![value];
+    while let Some(value) = stack.pop() {
+        match value {
+            serde_json::Value::String(text) if is_valid_hash(text) => {
+                out.insert(text.clone());
+            }
+            serde_json::Value::Array(items) => stack.extend(items),
+            serde_json::Value::Object(members) => stack.extend(members.values()),
+            _ => {}
+        }
+    }
+}
+
+/// `bytes` (a bundle with a replica) with `snapshot` as its replica snapshot, keeping the tiles
+/// and blobs the manifest names or `keep` does and dropping the others; every other entry (the
+/// manifest, entries this build does not know) is kept as it was, in the same order.
 pub(crate) fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool, opts: &LoadOptions) -> Result<Vec<u8>> {
     let src = ZipSource::new(bytes)?;
     let Some(kdm) = read_manifest(&src, opts)?.kdm else { return Err(FormatError::corrupt("the bundle holds no replica to replace")) };
+    let raw = src.get(MANIFEST, opts.max_manifest_bytes)?;
+    check_manifest_depth(&raw)?;
+    let mut de = serde_json::Deserializer::from_slice(&raw);
+    de.disable_recursion_limit();
+    let manifest = <serde_json::Value as serde::Deserialize>::deserialize(&mut de)?;
+    let mut named = HashSet::new();
+    named_hashes(&manifest, &mut named);
     let max = opts.max_blob_bytes.saturating_add(opts.max_blob_bytes / 8).saturating_add(4096);
     let mut out = ZipWriter::new();
     let mut total = 0u64;
@@ -304,7 +332,9 @@ pub(crate) fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> 
             out.add(&entry.name, snapshot)?;
             continue;
         }
-        if let Some(hash) = entry.name.strip_prefix("blobs/kdm/").and_then(|rest| rest.strip_suffix(".zst"))
+        let hash = entry.name.strip_prefix("tiles/").or_else(|| entry.name.strip_prefix("blobs/").and_then(|rest| rest.strip_suffix(".zst")));
+        if let Some(hash) = hash
+            && !named.contains(hash)
             && !keep(hash)
         {
             continue;
@@ -355,35 +385,35 @@ pub struct SaveStats {
     pub manifest_bytes: usize,
 }
 
+/// A tile's hash and its encoded bytes, remembered by the tile's address (checked against a
+/// weak handle: a freed tile's address can be reused).
+type TileCache = HashMap<usize, (Weak<Tile>, Hash, Arc<Vec<u8>>)>;
+
+/// Collects what a manifest names: every distinct tile (encoded) and blob, by hash.
 #[derive(Default)]
 struct Collect<'c> {
-    tiles: BTreeMap<Hash, (Arc<Tile>, SampleType)>,
+    tiles: BTreeMap<Hash, Arc<Vec<u8>>>,
     blobs: BTreeMap<Hash, Arc<Vec<u8>>>,
-    hash_cache: Option<&'c mut HashMap<usize, (Weak<Tile>, Hash)>>,
+    tile_cache: Option<&'c mut TileCache>,
 }
 
 impl Sink for Collect<'_> {
     fn tile(&mut self, format: PixelFormat, tile: &Arc<Tile>) -> Hash {
         let key = Arc::as_ptr(tile) as usize;
-        if let Some(cache) = self.hash_cache.as_deref_mut()
-            && let Some((w, h)) = cache.get(&key)
+        if let Some(cache) = self.tile_cache.as_deref_mut()
+            && let Some((w, h, encoded)) = cache.get(&key)
             && w.upgrade().is_some_and(|t| Arc::ptr_eq(&t, tile))
         {
             let h = h.clone();
-            self.tiles.entry(h.clone()).or_insert_with(|| (tile.clone(), format.sample));
+            self.tiles.entry(h.clone()).or_insert_with(|| encoded.clone());
             return h;
         }
-        let h = if cfg!(target_endian = "big") {
-            let mut b = tile.bytes().to_vec();
-            swap_to_le(&mut b, format.sample);
-            hash_bytes(&b)
-        } else {
-            hash_bytes(tile.bytes())
-        };
-        if let Some(cache) = self.hash_cache.as_deref_mut() {
-            cache.insert(key, (Arc::downgrade(tile), h.clone()));
+        let encoded = Arc::new(encode_tile(format, tile));
+        let h = hash_bytes(&encoded);
+        if let Some(cache) = self.tile_cache.as_deref_mut() {
+            cache.insert(key, (Arc::downgrade(tile), h.clone(), encoded.clone()));
         }
-        self.tiles.entry(h.clone()).or_insert_with(|| (tile.clone(), format.sample));
+        self.tiles.entry(h.clone()).or_insert(encoded);
         h
     }
 
@@ -391,6 +421,29 @@ impl Sink for Collect<'_> {
         let h = hash_bytes(data);
         self.blobs.entry(h.clone()).or_insert_with(|| data.clone());
         h
+    }
+}
+
+/// Gathers the tiles a manifest names that `cache` has not encoded yet (by address), so
+/// [`KitionPhotoWriter::prepare`] encodes them on every core before it writes the manifest.
+struct Uncached<'c> {
+    cache: &'c TileCache,
+    seen: HashSet<usize>,
+    tiles: Vec<(PixelFormat, Arc<Tile>)>,
+}
+
+impl Sink for Uncached<'_> {
+    fn tile(&mut self, format: PixelFormat, tile: &Arc<Tile>) -> Hash {
+        let key = Arc::as_ptr(tile) as usize;
+        let cached = self.cache.get(&key).is_some_and(|(w, _, _)| w.upgrade().is_some_and(|t| Arc::ptr_eq(&t, tile)));
+        if !cached && self.seen.insert(key) {
+            self.tiles.push((format, tile.clone()));
+        }
+        Hash::new()
+    }
+
+    fn blob(&mut self, _data: &Arc<Vec<u8>>) -> Hash {
+        Hash::new()
     }
 }
 
@@ -404,9 +457,9 @@ fn tile_le(t: &Tile, sample: SampleType) -> std::borrow::Cow<'_, [u8]> {
     }
 }
 
-/// Encodes one tile exactly as `.kphoto` stores it: canonical little-endian sample bytes,
-/// zstd-compressed. Public so kits that keep tiles as content-addressed blobs outside `.kphoto`
-/// (Kition's KDM bridge, `crates/kdm/kdm-model`) reuse the same bytes `.kphoto` would hash and write.
+/// Encodes one tile exactly as `.kphoto` stores it and names it: canonical little-endian sample
+/// bytes, zstd-compressed; the file's `tiles/<sha256>` entry holds these bytes, and the KDM
+/// replica (`crates/kdm/kdm-model`) keeps the same bytes as the tile's blob, under the same hash.
 pub fn encode_tile(format: PixelFormat, tile: &Tile) -> Vec<u8> {
     compress(&tile_le(tile, format.sample))
 }
@@ -437,7 +490,7 @@ pub const DEFAULT_REVERIFY_BUDGET: u64 = 16 * 1024 * 1024;
 /// [`Self::set_reverify_budget`]). Over enough saves every object is read again, and a damaged
 /// one is rewritten.
 pub struct KitionPhotoWriter {
-    hash_cache: HashMap<usize, (Weak<Tile>, Hash)>,
+    tile_cache: TileCache,
     /// Compressed objects by bundle path (ZIP mode).
     compressed: HashMap<String, Arc<Vec<u8>>>,
     verified_directory: Option<DirectoryVerificationCache>,
@@ -446,7 +499,7 @@ pub struct KitionPhotoWriter {
 
 impl Default for KitionPhotoWriter {
     fn default() -> Self {
-        Self { hash_cache: HashMap::new(), compressed: HashMap::new(), verified_directory: None, reverify_budget: DEFAULT_REVERIFY_BUDGET }
+        Self { tile_cache: HashMap::new(), compressed: HashMap::new(), verified_directory: None, reverify_budget: DEFAULT_REVERIFY_BUDGET }
     }
 }
 
@@ -478,32 +531,39 @@ struct FileSignature {
 struct Prepared {
     manifest: Vec<u8>,
     objects: BTreeMap<String, Object>,
-    previews: Vec<(&'static str, Vec<u8>)>,
-    /// The KDM replica snapshot (`kdm.bin`), if the save has one; its blobs are already in
-    /// `objects` under `blobs/kdm/<sha256>.zst`.
+    /// The KDM replica snapshot (`kdm.bin`), if the save has one; its blobs are among `objects`.
     kdm: Option<Vec<u8>>,
     stats: SaveStats,
 }
 
+/// A content-addressed entry: a tile's encoded bytes (stored as they are) or a blob (stored
+/// zstd-compressed). Either way the entry's name is the SHA-256 of these bytes.
 enum Object {
-    Tile(Arc<Tile>, SampleType),
+    Tile(Arc<Vec<u8>>),
     Blob(Arc<Vec<u8>>),
 }
 
 impl Object {
-    fn compressed(&self) -> Vec<u8> {
+    /// The bytes the bundle stores.
+    fn stored(&self) -> Arc<Vec<u8>> {
         match self {
-            Object::Tile(t, s) => compress(&tile_le(t, *s)),
-            Object::Blob(b) => compress(b),
+            Object::Tile(encoded) => encoded.clone(),
+            Object::Blob(b) => Arc::new(compress(b)),
         }
     }
 
-    fn matches_content_hash(&self, compressed: &[u8], what: &str) -> bool {
-        let expected = match self {
-            Object::Tile(tile, sample) => tile_le(tile, *sample),
-            Object::Blob(blob) => std::borrow::Cow::Borrowed(blob.as_slice()),
-        };
-        decompress(compressed, expected.len(), what).is_ok_and(|actual| hash_bytes(&actual) == hash_bytes(&expected))
+    /// The length of the bytes the entry names.
+    fn len(&self) -> usize {
+        match self {
+            Object::Tile(b) | Object::Blob(b) => b.len(),
+        }
+    }
+
+    fn matches_content(&self, stored: &[u8], what: &str) -> bool {
+        match self {
+            Object::Tile(encoded) => stored == encoded.as_slice(),
+            Object::Blob(blob) => decompress(stored, blob.len(), what).is_ok_and(|actual| actual == **blob),
+        }
     }
 }
 
@@ -542,10 +602,7 @@ fn existing_object_is_valid(path: &Path, object: &Object, what: &str) -> Result<
     }
     let signature = file_signature(&metadata);
 
-    let expected_len = match object {
-        Object::Tile(tile, sample) => tile_le(tile, *sample).len(),
-        Object::Blob(blob) => blob.len(),
-    };
+    let expected_len = object.len();
     // This is the same bound used by the tile loader. It comfortably includes
     // zstd framing overhead while keeping damaged files bounded when inspected.
     let max_compressed_len = expected_len.saturating_add(expected_len / 8).saturating_add(4096);
@@ -559,7 +616,7 @@ fn existing_object_is_valid(path: &Path, object: &Object, what: &str) -> Result<
     if compressed.len() > max_compressed_len {
         return Ok((false, None));
     }
-    Ok((object.matches_content_hash(&compressed, what), signature))
+    Ok((object.matches_content(&compressed, what), signature))
 }
 
 /// A bundle path and its compressed bytes.
@@ -567,20 +624,25 @@ type Compressed<'a> = (&'a String, Arc<Vec<u8>>);
 
 /// Compresses `objects` on scoped worker threads (sequentially on wasm).
 fn par_compress<'a>(objects: &[(&'a String, &'a Object)]) -> Result<Vec<Compressed<'a>>> {
+    par_map(objects, |(p, o)| (*p, o.stored()))
+}
+
+/// `f` of every item, on scoped worker threads (sequentially on wasm), in no particular order.
+fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Result<Vec<R>> {
     let threads = if cfg!(target_arch = "wasm32") { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).clamp(1, 32) };
-    if threads < 2 || objects.len() < 2 {
-        return Ok(objects.iter().map(|(p, o)| (*p, Arc::new(o.compressed()))).collect());
+    if threads < 2 || items.len() < 2 {
+        return Ok(items.iter().map(&f).collect());
     }
     let next = std::sync::atomic::AtomicUsize::new(0);
     std::thread::scope(|sc| {
-        let hs: Vec<_> = (0..threads.min(objects.len()))
+        let hs: Vec<_> = (0..threads.min(items.len()))
             .map(|_| {
                 sc.spawn(|| {
                     let mut out = Vec::new();
                     loop {
                         let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some((p, o)) = objects.get(i) else { break };
-                        out.push((*p, Arc::new(o.compressed())));
+                        let Some(item) = items.get(i) else { break };
+                        out.push(f(item));
                     }
                     out
                 })
@@ -589,7 +651,7 @@ fn par_compress<'a>(objects: &[(&'a String, &'a Object)]) -> Result<Vec<Compress
         // Join every worker before looking at the results, so one failure can't leave
         // another worker unjoined (the scope would then panic).
         let joined: Vec<_> = hs.into_iter().map(|h| h.join()).collect();
-        let mut out = Vec::with_capacity(objects.len());
+        let mut out = Vec::with_capacity(items.len());
         for r in joined {
             out.extend(r.map_err(|_| FormatError::Io(std::io::Error::other("compression worker panicked")))?);
         }
@@ -610,23 +672,23 @@ impl KitionPhotoWriter {
     }
 
     fn prepare(&mut self, doc: &Document, opts: &SaveOptions) -> Result<Prepared> {
-        self.hash_cache.retain(|_, (w, _)| w.strong_count() > 0);
+        self.tile_cache.retain(|_, (w, _, _)| w.strong_count() > 0);
         convert::check_nesting(&doc.layers)?;
-        let mut c = Collect { hash_cache: Some(&mut self.hash_cache), ..Default::default() };
+        // The tiles not encoded yet, encoded on every core first (zstd dominates a full save);
+        // the manifest is then written from the cache.
+        let mut uncached = Uncached { cache: &self.tile_cache, seen: HashSet::new(), tiles: Vec::new() };
+        convert::doc_m(doc, &mut uncached);
+        let fresh = par_map(&uncached.tiles, |(format, tile)| {
+            let encoded = Arc::new(encode_tile(*format, tile));
+            (Arc::as_ptr(tile) as usize, (Arc::downgrade(tile), hash_bytes(&encoded), encoded))
+        })?;
+        self.tile_cache.extend(fresh);
+        let mut c = Collect { tile_cache: Some(&mut self.tile_cache), ..Default::default() };
         let document = convert::doc_m(doc, &mut c);
-        let mut previews = Vec::new();
-        if let Some(t) = &opts.thumbnail {
-            previews.push((THUMB, png(t)?));
-        }
-        if let Some(t) = &opts.composite {
-            previews.push((COMPOSITE, png(t)?));
-        }
         let manifest = Manifest {
             format_version: FORMAT_VERSION,
             generator: format!("kition-photo-format {}", env!("CARGO_PKG_VERSION")),
             document,
-            thumbnail: opts.thumbnail.as_ref().map(|_| THUMB.to_owned()),
-            composite: opts.composite.as_ref().map(|_| COMPOSITE.to_owned()),
             kdm: opts.kdm.as_ref().map(|_| KdmM { snapshot: KDM.to_owned() }),
         };
         // serde_json writes NaN and the infinities as `null`, which the manifest's float fields
@@ -639,23 +701,28 @@ impl KitionPhotoWriter {
         check_manifest_depth(&manifest)?;
         let stats = SaveStats { tiles_total: c.tiles.len(), blobs_total: c.blobs.len(), manifest_bytes: manifest.len(), ..Default::default() };
         let mut objects = BTreeMap::new();
-        for (h, (t, s)) in c.tiles {
-            objects.insert(tile_path(&h), Object::Tile(t, s));
+        for (h, encoded) in c.tiles {
+            objects.insert(tile_path(&h), Object::Tile(encoded));
         }
         for (h, b) in c.blobs {
             objects.insert(blob_path(&h), Object::Blob(b));
         }
         let mut kdm = None;
         if let Some(save) = &opts.kdm {
+            // The replica names its blobs by the same hashes: a tile or blob the manifest names
+            // is stored once, under that name; only what the replica alone names is added.
             for (h, bytes) in &save.blobs {
                 if !is_valid_hash(h) {
                     return Err(FormatError::corrupt(format!("invalid kdm blob hash `{h}`")));
                 }
-                objects.insert(kdm_blob_path(h), Object::Blob(Arc::new(bytes.to_vec())));
+                if objects.contains_key(&tile_path(h)) || objects.contains_key(&blob_path(h)) {
+                    continue;
+                }
+                objects.insert(blob_path(h), Object::Blob(Arc::new(bytes.to_vec())));
             }
             kdm = Some(save.snapshot.clone());
         }
-        Ok(Prepared { manifest, objects, previews, kdm, stats })
+        Ok(Prepared { manifest, objects, kdm, stats })
     }
 
     /// Save as a ZIP bundle in memory.
@@ -664,14 +731,11 @@ impl KitionPhotoWriter {
         let mut stats = p.stats;
         let mut z = ZipWriter::new();
         z.add(MANIFEST, &p.manifest)?;
-        for (name, data) in &p.previews {
-            z.add(name, data)?;
-        }
         if let Some(kdm) = &p.kdm {
             z.add(KDM, kdm)?;
         }
         let mut next = HashMap::with_capacity(p.objects.len());
-        // New objects are compressed on all cores first (zstd dominates a full save).
+        // New blobs are compressed on all cores first (tiles are encoded already).
         let todo: Vec<(&String, &Object)> = p.objects.iter().filter(|(path, _)| !self.compressed.contains_key(*path)).collect();
         let mut fresh: HashMap<&String, Arc<Vec<u8>>> = par_compress(&todo)?.into_iter().collect();
         for (path, obj) in &p.objects {
@@ -687,7 +751,7 @@ impl KitionPhotoWriter {
                         Object::Tile(..) => stats.tiles_written += 1,
                         Object::Blob(_) => stats.blobs_written += 1,
                     }
-                    fresh.remove(path).unwrap_or_else(|| Arc::new(obj.compressed()))
+                    fresh.remove(path).unwrap_or_else(|| obj.stored())
                 }
             };
             z.add(path, &data)?;
@@ -704,7 +768,7 @@ impl KitionPhotoWriter {
         crate::host_files::refuse(dir)?;
         let p = self.prepare(doc, opts)?;
         let mut stats = p.stats;
-        for sub in ["tiles", "blobs", "blobs/kdm", "composite"] {
+        for sub in ["tiles", "blobs"] {
             std::fs::create_dir_all(dir.join(sub))?;
         }
         let canonical_dir = std::fs::canonicalize(dir)?;
@@ -751,7 +815,7 @@ impl KitionPhotoWriter {
                 Object::Tile(..) => stats.tiles_written += 1,
                 Object::Blob(_) => stats.blobs_written += 1,
             }
-            write_atomic(&object_path, &obj.compressed())?;
+            write_atomic(&object_path, &obj.stored())?;
             let written = path_signature(&object_path)?;
             if let Some(cache) = &mut self.verified_directory {
                 match written {
@@ -762,14 +826,6 @@ impl KitionPhotoWriter {
                         cache.objects.remove(path);
                     }
                 }
-            }
-        }
-        for (name, data) in &p.previews {
-            write_atomic(&dir.join(name), data)?;
-        }
-        for stale in [THUMB, COMPOSITE] {
-            if !p.previews.iter().any(|(n, _)| *n == stale) {
-                let _ = std::fs::remove_file(dir.join(stale));
             }
         }
         match &p.kdm {
@@ -829,14 +885,16 @@ impl KitionPhotoWriter {
     }
 }
 
+/// The content-addressed entries of a directory bundle: `tiles/<sha256>` and
+/// `blobs/<sha256>.zst` (a temporary file of an interrupted write is neither).
 fn list_objects(dir: &Path) -> Result<HashSet<String>> {
     let mut out = HashSet::new();
-    for sub in ["tiles", "blobs", "blobs/kdm"] {
+    for (sub, suffix) in [("tiles", ""), ("blobs", ".zst")] {
         let rd = std::fs::read_dir(dir.join(sub))?;
         for e in rd {
             let e = e?;
             let name = e.file_name().to_string_lossy().into_owned();
-            if name.ends_with(".zst") {
+            if name.strip_suffix(suffix).is_some_and(is_valid_hash) {
                 out.insert(format!("{sub}/{name}"));
             }
         }

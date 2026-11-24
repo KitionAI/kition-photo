@@ -320,9 +320,18 @@ psd/src/
   document's KDM replica as a content snapshot: the state and, of the history, only the seal (no
   deleted or overwritten content, no authors), with only the replica blobs that state references.
   The history (undo steps) stays in the session and the host's store, never in the file.
-  - `manifest.json`: a versioned document tree with serde, including `format_version` and migrations.
-  - `tiles/<blake3>.zst`: content-addressed tiles, zstd-compressed.
-  - `thumb.png` and `composite/` mips for quick look and previews.
+  - `manifest.json`: a versioned description of the image's content with serde, including
+    `format_version`; what opens the file without the replica model (the PSD exporter, the
+    importer, a document that has made no replica yet).
+  - `tiles/<sha256>` (a tile's zstd-encoded samples) and `blobs/<sha256>.zst`: content-addressed
+    by the SHA-256 of the bytes they hold, the same names the replica gives its blobs, so the
+    manifest and `kdm.bin` refer to one copy of every tile.
+  - No thumbnail or preview: the bundle is not a picture another program opens.
+- **Content only.** Neither the manifest nor the replica holds a person's view (the selection, the
+  quick mask, collapsed groups, open notes, the timeline's playhead, the last applied layer comp)
+  or the session's document handle and title: two people who open the same file and save it write
+  the same bytes. The view goes to the host's `view-state` store
+  (`kition_photo_format::view_state`, the editor's `web/src/viewState.ts`).
 - **Saving is incremental.** Tiles are content-addressed, so a save writes only new tiles plus the manifest, and garbage-collects unreferenced ones.
 - **Autosave and crash recovery** reuse the same writer into a recovery directory, reading from a snapshot on a background thread.
 - **PSD is the interchange format,** and `.kphoto` is the lossless native one.

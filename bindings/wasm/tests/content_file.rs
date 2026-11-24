@@ -234,3 +234,54 @@ fn a_save_nobody_sealed_for_is_refused() {
     doc.execute("layer.new.layer", json!({ "name": "After" })).unwrap();
     assert!(doc.save(Some(FILE)).is_err(), "an edit after the seal needs another");
 }
+
+/// Every hash a manifest's JSON names (any string of 64 lowercase hex digits).
+fn manifest_hashes(value: &Value, out: &mut std::collections::BTreeSet<String>) {
+    match value {
+        Value::String(text) if text.len() == 64 && text.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) => {
+            out.insert(text.clone());
+        }
+        Value::Array(items) => items.iter().for_each(|item| manifest_hashes(item, out)),
+        Value::Object(members) => members.values().for_each(|member| manifest_hashes(member, out)),
+        _ => {}
+    }
+}
+
+/// Pixels are stored once (case `photo.file.content-only/pixels-stored-once`): an image of N
+/// distinct tiles is a file of N tile entries, and the manifest and the replica both name those
+/// same entries; the file holds no entry neither names, and none twice.
+#[test]
+fn a_file_with_n_distinct_tiles_holds_n_pixel_entries_that_the_manifest_and_the_replica_share() {
+    use std::collections::BTreeSet;
+    // 3 × 2 tiles of clouds, each tile its own pixels.
+    let mut doc = PhotoDocument::create(FILE, 768, 512).unwrap();
+    doc.execute("filter.render.clouds", json!({ "seed": 5 })).unwrap();
+    let bytes = host_save(&mut doc);
+    let zip = kition_photo_format::zip::ZipReader::new(&bytes).unwrap();
+    let names: Vec<String> = zip.entries.iter().map(|entry| entry.name.clone()).collect();
+    let tiles: BTreeSet<String> = names.iter().filter_map(|name| name.strip_prefix("tiles/")).map(str::to_owned).collect();
+    assert_eq!(tiles.len(), 6, "N distinct tiles, N tile entries: {names:?}");
+    let blobs: BTreeSet<String> =
+        names.iter().filter_map(|name| name.strip_prefix("blobs/").and_then(|rest| rest.strip_suffix(".zst"))).map(str::to_owned).collect();
+    for name in &names {
+        assert!(name == "manifest.json" || name == "kdm.bin" || name.starts_with("tiles/") || name.starts_with("blobs/"), "{name}");
+    }
+
+    let manifest: Value = serde_json::from_slice(&zip.read_by_name("manifest.json", 64 << 20).unwrap()).unwrap();
+    let mut by_manifest = BTreeSet::new();
+    manifest_hashes(&manifest, &mut by_manifest);
+    let replica = Replica::load(kition_photo_engine::kdm_model::PhotoModel::schema(), &content(&bytes), ActorId::random()).unwrap();
+    let by_replica = kition_photo_engine::kdm_model::state_blobs(&replica);
+    assert!(tiles.is_subset(&by_manifest), "the manifest names every tile entry");
+    assert!(tiles.is_subset(&by_replica), "the replica names the same tile entries: {tiles:?} {by_replica:?}");
+    let stored: BTreeSet<String> = tiles.union(&blobs).cloned().collect();
+    assert_eq!(stored.len(), tiles.len() + blobs.len(), "no hash is stored twice");
+    let named: BTreeSet<String> = by_manifest.union(&by_replica).cloned().collect();
+    assert_eq!(stored, named, "the file holds what the manifest or the replica names, and nothing else");
+
+    // A copy of a layer adds no pixels: its tiles are the same entries.
+    doc.execute("layer.duplicate", json!({})).unwrap();
+    let copied = host_save(&mut doc);
+    let copied_tiles = kition_photo_format::zip::ZipReader::new(&copied).unwrap().entries.iter().filter(|entry| entry.name.starts_with("tiles/")).count();
+    assert_eq!(copied_tiles, 6, "a duplicated layer shares its tiles");
+}

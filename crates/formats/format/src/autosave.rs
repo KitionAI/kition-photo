@@ -211,7 +211,10 @@ pub fn list_recovery(recovery_dir: &Path) -> Vec<RecoveryEntry> {
 
 /// Load a recovered document.
 pub fn recover(entry: &RecoveryEntry) -> Result<Document> {
-    crate::load_path(&entry.bundle)
+    // The bundle keeps no title; the entry does.
+    let mut doc = crate::load_path(&entry.bundle)?;
+    doc.name.clone_from(&entry.info.document_name);
+    Ok(doc)
 }
 
 /// Delete a recovery entry.

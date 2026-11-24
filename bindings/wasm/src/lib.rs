@@ -8,8 +8,9 @@
 //! [`PhotoDocument`] implements the Kition SDK's [`KitDocument`] contract and is exported with
 //! [`kition_kit::export_kit_document!`]; the native tests check it with
 //! [`kition_kit::testing::check_contract`]. Photo's own extras (`selectionOutline`, and the panels'
-//! `layerThumbnail`, `maskThumbnail`, `channelThumbnails`, `maskTargetCommands`, `histogram`, and
-//! `navigatorImage`) sit in [`web`].
+//! `layerThumbnail`, `maskThumbnail`, `channelThumbnails`, `maskTargetCommands`, `histogram`,
+//! `navigatorImage`, and `viewState`, the person's view for the host's `view-state` store) sit in
+//! [`web`].
 #![forbid(unsafe_code)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -138,6 +139,9 @@ impl PhotoDocument {
         if command == render::MEASURE {
             return self.measure(&params);
         }
+        if command == RESTORE_VIEW_STATE {
+            return self.restore_view_state_command(&params, origin);
+        }
         let agent = self.is_agent() || origin.is_some_and(|origin| origin.kind == kition_kit::kdm::OriginKind::Agent);
         let engine = move |doc: &mut Self, params: Value| {
             let was_open = doc.session.active().is_some();
@@ -172,6 +176,53 @@ impl PhotoDocument {
             params["layer"] = json!(id.0);
         }
         engine(self, params)
+    }
+}
+
+/// The editor's own command that puts back the view the host kept for this person
+/// (`{state, bytes: base64}`, [`PhotoDocument::view_state`]'s), run once the image opens. Not in
+/// the command list and refused to agents: a person's view is theirs.
+pub const RESTORE_VIEW_STATE: &str = "photo.restoreViewState";
+
+impl PhotoDocument {
+    /// This person's view of the image as the host's `view-state` store keeps it
+    /// ([`kition_photo_engine::DocState::view_state`]): `[json length u32 LE][json][bytes]`, the
+    /// JSON `null` when there is nothing to keep.
+    pub fn view_state(&self) -> Result<Vec<u8>, String> {
+        let view = self.state()?.view_state();
+        let json = match &view.state {
+            Some(state) => serde_json::to_vec(state).map_err(|error| error.to_string())?,
+            None => b"null".to_vec(),
+        };
+        let len = u32::try_from(json.len()).map_err(|_| "the view state is too large".to_owned())?;
+        let mut out = Vec::with_capacity(4 + json.len() + view.bytes.len());
+        out.extend_from_slice(&len.to_le_bytes());
+        out.extend_from_slice(&json);
+        out.extend_from_slice(&view.bytes);
+        Ok(out)
+    }
+
+    /// Puts back a view [`PhotoDocument::view_state`] answered (its JSON and bytes): no edit, the
+    /// document stays as clean as it was. `null` changes nothing.
+    pub fn restore_view_state(&mut self, state: &Value, bytes: &[u8]) -> Result<(), String> {
+        if state.is_null() {
+            return Ok(());
+        }
+        self.session.active_mut().ok_or_else(|| "no document is open".to_owned())?.put_view_state(state, bytes).map_err(engine_error)
+    }
+
+    fn restore_view_state_command(&mut self, params: &Value, origin: Option<&kition_photo_engine::Origin>) -> Result<Value, String> {
+        if self.is_agent() || origin.is_some_and(|origin| origin.kind == kition_kit::kdm::OriginKind::Agent) {
+            return Err(context::disabled(format!("`{RESTORE_VIEW_STATE}` puts back the person's own view; it is not the agent's")));
+        }
+        let state = params.get("state").cloned().unwrap_or(Value::Null);
+        let bytes = match params.get("bytes") {
+            None | Some(Value::Null) => Vec::new(),
+            Some(Value::String(text)) => base64_decode(text).ok_or_else(|| context::invalid("`bytes` is not base64"))?,
+            Some(other) => return Err(context::invalid(format!("`bytes` is base64 text, not {other}"))),
+        };
+        self.restore_view_state(&state, &bytes)?;
+        Ok(json!({}))
     }
 }
 
@@ -230,6 +281,34 @@ fn base64_encode(bytes: &[u8]) -> String {
         }
     }
     out
+}
+
+/// Reads standard base64 (padding optional); `None` for anything else.
+fn base64_decode(text: &str) -> Option<Vec<u8>> {
+    let digit = |c: u8| -> Option<u32> {
+        Some(u32::from(match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => return None,
+        }))
+    };
+    let body = text.trim_end_matches('=').as_bytes();
+    if text.len() - body.len() > 2 || body.len() % 4 == 1 {
+        return None;
+    }
+    let mut out = Vec::with_capacity(body.len() / 4 * 3 + 2);
+    for chunk in body.chunks(4) {
+        let mut n = 0u32;
+        for (i, c) in chunk.iter().enumerate() {
+            n |= digit(*c)? << (18 - 6 * i);
+        }
+        let [_, a, b, c] = n.to_be_bytes();
+        out.extend_from_slice([a, b, c].get(..chunk.len().saturating_sub(1))?);
+    }
+    Some(out)
 }
 
 impl KitDocument for PhotoDocument {
@@ -624,6 +703,14 @@ pub mod web {
         #[wasm_bindgen(js_name = selectionOutline)]
         pub fn selection_outline(&self, x0: i32, y0: i32, x1: i32, y1: i32, step: u32) -> Result<Vec<i32>, JsError> {
             self.0.selection_outline(x0, y0, x1, y1, step).map_err(error)
+        }
+
+        /// The person's view of the image for the host's `view-state` store:
+        /// `[json length u32 LE][json][bytes]` ([`crate::PhotoDocument::view_state`]); the editor
+        /// puts it back with the `photo.restoreViewState` command.
+        #[wasm_bindgen(js_name = viewState)]
+        pub fn view_state(&self) -> Result<Vec<u8>, JsError> {
+            self.0.view_state().map_err(error)
         }
 
         /// Layer `layer`'s thumbnail on the canvas: `[width u32 LE][height u32 LE]` then RGBA.

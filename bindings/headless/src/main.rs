@@ -24,7 +24,7 @@ use kition_photo_engine::kdm_model::kition_kit::kdm::Schema;
 use kition_photo_engine::kdm_model::kition_kit::session::KitModel;
 
 /// Where this kit's files keep the document's replica (Kit Process Protocol section 5.6): a
-/// `.kphoto` bundle's `kdm.bin` and `blobs/kdm/` entries
+/// `.kphoto` bundle's `kdm.bin` and the tiles and blobs it names
 /// (`kition_photo_engine::kition_photo_bridge::embedded_replica` and `replace_replica`).
 struct PhotoFiles;
 

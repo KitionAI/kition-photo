@@ -22,7 +22,7 @@ fn autosave_then_recover() {
     assert_eq!(entries[0].info.revision, 7);
     assert_eq!(entries[0].info.original_path.as_deref(), Some("/work/a.kphoto"));
     assert_eq!(entries[0].info.document_name, "Rich");
-    assert_eq!(recover(&entries[0]).unwrap(), *doc);
+    assert_eq!(viewed(recover(&entries[0]).unwrap(), &doc), *doc);
     discard_recovery(&dir, &entries[0]).unwrap();
     assert!(list_recovery(&dir).is_empty());
     std::fs::remove_dir_all(dir).unwrap();
@@ -59,7 +59,7 @@ fn background_save_outcomes_report_failure_then_recovery() {
     assert_eq!(revision, 7);
     result.unwrap();
     assert_eq!(list_recovery(&blocked).len(), 1);
-    assert_eq!(recover(&list_recovery(&blocked)[0]).unwrap(), *doc);
+    assert_eq!(viewed(recover(&list_recovery(&blocked)[0]).unwrap(), &doc), *doc);
     drop(saver);
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -77,7 +77,7 @@ fn repeated_autosaves_are_incremental_and_coalesced() {
     saver.flush().unwrap().unwrap();
     let e = list_recovery(&dir);
     assert_eq!(e[0].info.revision, 4, "newest snapshot wins");
-    assert_eq!(recover(&e[0]).unwrap(), doc);
+    assert_eq!(viewed(recover(&e[0]).unwrap(), &doc), doc);
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -135,7 +135,10 @@ fn recovered(store: &RecoveryStore) -> std::collections::BTreeMap<String, Docume
         .collect()
 }
 
-fn same(mut doc: Document) -> Document {
+/// `doc` as a recovered entry holds it: its id cleared, and no view (a recovery bundle is a
+/// `.kphoto`, which keeps none).
+fn same(doc: Document) -> Document {
+    let mut doc = kition_photo_format::view_state::without_view(&doc);
     doc.id = DocId(0);
     doc
 }

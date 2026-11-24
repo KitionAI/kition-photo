@@ -1,4 +1,5 @@
-//! doc → .kphoto → doc equality, incremental saves, ids, previews.
+//! doc → .kphoto → doc equality (the file's content and the view state's view), incremental
+//! saves, ids, no previews, no one's view in the file.
 
 mod common;
 use common::*;
@@ -6,8 +7,8 @@ use kition_photo_color::{ColorMode, SampleType};
 use kition_photo_doc::text::{CharStyle, ParagraphStyle, TextRun};
 use kition_photo_doc::text_styles::{CharacterStyleDef, ParagraphStyleDef};
 use kition_photo_doc::{Document, Layer, LayerContent, LayerId, Slice, TextLayer};
+use kition_photo_format::view_state::{BYTES_LIMIT, put_view_state, view_state, without_view};
 use kition_photo_format::*;
-use kition_photo_raster::Rgba8Image;
 
 const MODES: [ColorMode; 4] = [ColorMode::Rgb, ColorMode::Grayscale, ColorMode::Cmyk, ColorMode::Lab];
 
@@ -16,7 +17,7 @@ fn check_zip(mode: ColorMode, depth: SampleType) {
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
     assert!(is_kphoto(&bytes));
     let back = load_from_bytes(&bytes).unwrap();
-    assert_eq!(back, doc, "{mode:?} {depth:?}");
+    assert_eq!(viewed(back.clone(), &doc), doc, "{mode:?} {depth:?}");
 }
 
 macro_rules! zip_cases {
@@ -43,7 +44,7 @@ fn directory_bundle_roundtrip_all_modes() {
             let dir = temp_dir("dir");
             KitionPhotoWriter::new().save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
             assert!(dir.join("manifest.json").is_file());
-            assert_eq!(load_path(&dir).unwrap(), doc, "{mode:?} {depth:?}");
+            assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc, "{mode:?} {depth:?}");
             std::fs::remove_dir_all(dir).unwrap();
         }
     }
@@ -56,7 +57,7 @@ fn save_path_zip_file() {
     let path = dir.join("a.kphoto");
     KitionPhotoWriter::new().save_path(&doc, &path, &SaveOptions::default()).unwrap();
     assert!(path.is_file());
-    assert_eq!(load_path(&path).unwrap(), doc);
+    assert_eq!(viewed(load_path(&path).unwrap(), &doc), doc);
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -85,7 +86,7 @@ fn deeply_nested_groups_roundtrip() {
         for (levels, depth) in [(40, SampleType::U8), (MAX_GROUP_DEPTH, SampleType::U16), (MAX_GROUP_DEPTH, SampleType::F32)] {
             let doc = nested_doc(levels, depth);
             let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
-            assert_eq!(back, doc, "{levels} levels at {depth:?}");
+            assert_eq!(viewed(back.clone(), &doc), doc, "{levels} levels at {depth:?}");
         }
     };
     std::thread::Builder::new().stack_size(1 << 20).spawn(run).unwrap().join().unwrap();
@@ -101,7 +102,7 @@ fn nesting_beyond_the_load_limit_is_refused_at_save() {
 #[test]
 fn empty_document_roundtrips() {
     let doc = Document::new("empty", kition_photo_doc::Size::new(1, 1), ColorMode::Rgb, SampleType::U8);
-    assert_eq!(load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap(), doc);
+    assert_eq!(viewed(load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap(), &doc), doc);
 }
 
 #[test]
@@ -151,7 +152,7 @@ fn zip_incremental_only_new_tiles() {
     doc.layer_mut(id).unwrap().surface_mut().unwrap().write_pixel(3, 3, &[0.5, 0.5, 0.5, 1.0]);
     let (bytes, s3) = w.save_zip(&doc, &SaveOptions::default()).unwrap();
     assert_eq!(s3.tiles_written, 1);
-    assert_eq!(load_from_bytes(&bytes).unwrap(), doc);
+    assert_eq!(viewed(load_from_bytes(&bytes).unwrap(), &doc), doc);
 }
 
 #[test]
@@ -173,7 +174,7 @@ fn directory_incremental_and_gc() {
     doc.remove(paint);
     let s3 = w.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
     assert!(s3.objects_removed > 0, "{s3:?}");
-    assert_eq!(load_path(&dir).unwrap(), doc);
+    assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc);
     let files = std::fs::read_dir(dir.join("tiles")).unwrap().count();
     assert_eq!(files, s3.tiles_total);
     std::fs::remove_dir_all(dir).unwrap();
@@ -223,21 +224,122 @@ fn fresh_ids_option() {
     assert_eq!(back.layers[1].surface(), doc.layers[1].surface());
 }
 
+/// Owner decision: no thumbnail or preview image in the content file, which is a layered bundle
+/// no other program opens as a picture. A bundle holds its manifest, its tiles and blobs, and
+/// (with a replica) `kdm.bin`, nothing else.
 #[test]
-fn previews_embedded_and_readable() {
+fn the_bundle_holds_no_preview() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
-    let mut thumb = Rgba8Image::new(4, 3);
-    thumb.pixels.iter_mut().enumerate().for_each(|(i, p)| *p = i as u8);
-    let opts = SaveOptions { thumbnail: Some(thumb.clone()), composite: Some(thumb.clone()), kdm: None };
-    let bytes = save_to_bytes(&doc, &opts).unwrap();
-    let png = read_thumbnail(&bytes).unwrap().unwrap();
-    let img = kition_photo_codecs::decode(&png).unwrap();
-    assert_eq!(img.dimensions(), (4, 3));
-    assert_eq!(img.to_rgba8(), thumb.pixels);
-    let m = read_manifest(&bytes).unwrap();
-    assert_eq!(m.composite.as_deref(), Some("composite/preview.png"));
-    assert_eq!(m.format_version, FORMAT_VERSION);
-    assert!(read_thumbnail(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap().is_none());
+    let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
+    let r = zip::ZipReader::new(&bytes).unwrap();
+    for e in &r.entries {
+        assert!(e.name == "manifest.json" || e.name.starts_with("tiles/") || e.name.starts_with("blobs/"), "{}", e.name);
+    }
+    let m = serde_json::to_value(read_manifest(&bytes).unwrap()).unwrap();
+    assert_eq!(m["format_version"], FORMAT_VERSION);
+    assert!(m.get("thumbnail").is_none() && m.get("composite").is_none(), "{m}");
+}
+
+/// A rich image with every part of one person's view set: a collapsed group, a selection and a
+/// quick mask ([`rich_doc`]), an open note, the timeline at frame 4, and a layer comp applied
+/// with its Last Document State.
+fn viewed_doc(depth: SampleType) -> Document {
+    use kition_photo_doc::{CompLayerState, LayerComp, Note, Timeline};
+    let mut doc = rich_doc(ColorMode::Rgb, depth);
+    doc.notes.push(Note { key: Some("n1".into()), text: "open".into(), open: true, ..Default::default() });
+    doc.notes.push(Note { text: "closed".into(), ..Default::default() });
+    doc.notes.push(Note { text: "open, no key".into(), open: true, ..Default::default() });
+    let mut timeline = Timeline::new(10, 24.0);
+    timeline.current = 4;
+    doc.timeline = Some(timeline);
+    let layer = doc.layers[0].id;
+    let comp = LayerComp {
+        id: 7,
+        name: "Comp".into(),
+        comment: String::new(),
+        apply_visibility: true,
+        apply_position: false,
+        apply_appearance: false,
+        states: vec![CompLayerState { layer, visible: Some(false), position: None, appearance: None }],
+    };
+    doc.layer_comps.push(comp.clone());
+    doc.last_applied_comp = Some(7);
+    doc.last_document_state = Some(LayerComp { id: 0, name: "Last Document State".into(), ..comp });
+    doc
+}
+
+/// The file holds the image's content and nobody's view, nor the session's handle or title: the
+/// same image saved with another view, handle and title is the same bytes. Put back from the view
+/// state, the view makes the whole document again.
+#[test]
+fn the_file_keeps_no_view_and_the_view_state_keeps_it() {
+    for depth in SampleType::ALL {
+        let doc = viewed_doc(depth);
+        let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
+        let mut other = without_view(&doc);
+        other.id = kition_photo_doc::DocId::fresh();
+        other.name = "Elsewhere.kphoto".into();
+        assert_ne!(other, doc);
+        assert_eq!(save_to_bytes(&other, &SaveOptions::default()).unwrap(), bytes, "{depth:?}: the same file");
+        let text = String::from_utf8(zip::ZipReader::new(&bytes).unwrap().read_by_name("manifest.json", usize::MAX).unwrap()).unwrap();
+        for key in ["\"selection\"", "\"quick_mask\"", "\"expanded\"", "\"last_applied_comp\"", "\"last_document_state\"", "\"open\": true", "\"Rich\""] {
+            assert!(!text.contains(key), "{depth:?}: the manifest holds {key}");
+        }
+
+        let mut back = load_from_bytes(&bytes).unwrap();
+        assert_eq!(back, without_view(&back), "{depth:?}: opened with no view");
+        let view = view_state(&doc);
+        let state = view.state.as_ref().expect("a view to keep");
+        assert!(serde_json::to_vec(state).unwrap().len() <= kition_photo_format::view_state::JSON_LIMIT);
+        put_view_state(&mut back, state, &view.bytes).unwrap();
+        back.id = doc.id;
+        back.name.clone_from(&doc.name);
+        assert_eq!(back, doc, "{depth:?}: the file and the view state make the whole document");
+    }
+}
+
+/// A view with nothing in it is not kept (the host deletes what it kept); a value of another
+/// version or another kit changes nothing; a damaged one is an error and changes nothing.
+#[test]
+fn an_empty_view_is_not_kept_and_a_foreign_one_changes_nothing() {
+    let doc = viewed_doc(SampleType::U8);
+    assert_eq!(view_state(&without_view(&doc)), Default::default());
+    let view = view_state(&doc);
+    let state = view.state.clone().unwrap();
+    let mut back = without_view(&doc);
+    let before = back.clone();
+    let mut other = state.clone();
+    other["v"] = 2.into();
+    put_view_state(&mut back, &other, &view.bytes).unwrap();
+    put_view_state(&mut back, &serde_json::json!({ "zoom": 2 }), &[]).unwrap();
+    assert_eq!(back, before, "another version and another payload are ignored");
+    assert!(put_view_state(&mut back, &state, &view.bytes[..view.bytes.len() / 2]).is_err(), "cut bytes");
+    let mut flipped = view.bytes.clone();
+    flipped[0] ^= 1;
+    assert!(put_view_state(&mut back, &state, &flipped).is_err(), "a changed byte");
+    assert_eq!(back, before, "a damaged value changes nothing");
+}
+
+/// A selection whose compressed pixels pass the host's 16 MB is not kept (nor the quick mask);
+/// the rest of the view is.
+#[test]
+fn a_view_too_large_for_the_host_keeps_all_but_its_pixels() {
+    let mut doc = viewed_doc(SampleType::U8);
+    let mut selection = kition_photo_raster::Surface::new(kition_photo_color::PixelFormat::GRAY8);
+    let mut rng = Rng::new(3);
+    for i in 0..300 {
+        for byte in selection.tile_mut(kition_photo_geom::TileCoord::new(i % 20, i / 20)).bytes_mut() {
+            *byte = rng.next() as u8;
+        }
+    }
+    doc.selection = Some(selection);
+    let view = view_state(&doc);
+    assert!(view.bytes.len() <= BYTES_LIMIT, "{}", view.bytes.len());
+    let state = view.state.unwrap();
+    assert!(state.get("selection").is_none() && state.get("quickMask").is_none(), "{state}");
+    assert_eq!(state["frame"], 4);
+    assert_eq!(state["lastAppliedComp"], 7);
+    assert!(state.get("lastDocumentState").is_some());
 }
 
 #[test]
@@ -250,7 +352,7 @@ fn manifest_is_human_readable_json() {
     assert!(text.contains("\"format_version\": 1"));
     assert!(text.contains("\"Hue/Sat\""));
     assert!(text.contains("filter.blur.gaussian"));
-    assert!(r.entries.iter().any(|e| e.name.starts_with("tiles/") && e.name.ends_with(".zst")));
+    assert!(r.entries.iter().any(|e| e.name.strip_prefix("tiles/").is_some_and(|hash| hash.len() == 64)));
     assert!(r.entries.iter().any(|e| e.name.starts_with("blobs/")));
 }
 
@@ -372,7 +474,7 @@ fn channel_restrictions_and_bevel_elements_roundtrip() {
     b.texture = Some(BevelTexture { name: "p".into(), id: "i".into(), scale: 0.5, depth: -1.5, invert: true, link: false, phase: (1.0, 2.0) });
     doc.layers[0].effects.items.push(Effect::BevelEmboss(Bevel { ..b }));
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
-    assert_eq!(back, doc);
+    assert_eq!(viewed(back.clone(), &doc), doc);
     assert_eq!(back.layers[0].excluded_channels, 0b101);
 }
 
@@ -385,7 +487,7 @@ fn blend_if_roundtrips() {
     bi.set(3, [BlendRange::FULL, BlendRange { black: [0, 0], white: [180, 220] }]);
     doc.layers[0].blend_if = bi.clone();
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
-    assert_eq!(back, doc);
+    assert_eq!(viewed(back.clone(), &doc), doc);
     assert_eq!(back.layers[0].blend_if, bi);
     // Layers without Blend If keep the default (the field is omitted from the manifest).
     assert!(back.layers.iter().skip(1).all(|l| l.blend_if.is_default()));
@@ -413,7 +515,7 @@ fn advanced_blending_roundtrips_and_defaults_when_absent() {
         }
         let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
         let back = load_from_bytes(&bytes).unwrap();
-        assert_eq!(back, doc, "{depth:?}");
+        assert_eq!(viewed(back.clone(), &doc), doc, "{depth:?}");
         assert_eq!(back.layers[0].advanced, a);
         // Only the non-default layers carry the field.
         let m = read_manifest(&bytes).unwrap();
@@ -506,5 +608,5 @@ fn a_non_finite_float_is_refused_at_save_rather_than_breaking_every_later_load()
     let mut doc = base.clone();
     doc.insert_above(None, Layer::new("adj", LayerContent::Adjustment(Adjustment::Exposure { exposure: 0.5, offset: 0.0, gamma: 1.0 })));
     let back = load_from_bytes(&save_to_bytes(&doc, &SaveOptions::default()).unwrap()).unwrap();
-    assert_eq!(back, doc);
+    assert_eq!(viewed(back.clone(), &doc), doc);
 }

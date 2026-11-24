@@ -1,0 +1,24 @@
+format: 1
+id: photo.file.content-only/same-bytes-across-sessions
+feature: photo.file.content-only
+intent: >-
+  A .kphoto holds the image's content and nobody's view of it: two sessions that open the same file
+  and save it without editing it write the same bytes, the whole file, though each has its own
+  selection, quick mask, collapsed and expanded groups, open notes and timeline frame, and its own
+  document handle and title. The manifest names no selection, quick mask, expanded state, open
+  popup, playhead, last applied comp, document id or title; the same image saved with another view
+  is the same bytes.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/view_state.rs, crates/formats/format/tests/roundtrip.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: view_state, filter: two_sessions_that_open_the_same_file_and_save_it_unedited_write_the_same_bytes }
+  - cargo-test: { package: kition-photo-format, test: roundtrip, filter: the_file_keeps_no_view_and_the_view_state_keeps_it }
+  - cargo-test: { package: kition-photo-format, test: roundtrip, filter: the_bundle_holds_no_preview }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-23"

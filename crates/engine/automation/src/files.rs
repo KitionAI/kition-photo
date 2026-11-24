@@ -19,7 +19,10 @@ pub struct Opened {
 /// Decode a document that was read through a filesystem capability.
 pub fn open_bytes(name: &str, bytes: &[u8]) -> Result<Opened, AutomationError> {
     if Path::new(name).extension().is_some_and(|extension| extension.eq_ignore_ascii_case(kition_photo_format::EXTENSION)) {
-        return Ok(Opened { document: kition_photo_format::load_from_bytes(bytes)?, warnings: Vec::new(), source_read_only: false });
+        // The bundle keeps no title: the document is named after its file.
+        let mut document = kition_photo_format::load_from_bytes(bytes)?;
+        document.name = name.to_owned();
+        return Ok(Opened { document, warnings: Vec::new(), source_read_only: false });
     }
     let r = kition_photo_io::import(name, bytes)?;
     Ok(Opened { document: r.document, warnings: r.warnings, source_read_only: r.source_read_only })
@@ -29,16 +32,13 @@ pub fn open_bytes(name: &str, bytes: &[u8]) -> Result<Opened, AutomationError> {
 /// natively; everything else goes through `kition-photo-io` (PSD, PNG, …).
 pub fn open(path: &Path) -> Result<Opened, AutomationError> {
     if path.is_dir() {
-        return Ok(Opened { document: kition_photo_format::load_path(path)?, warnings: Vec::new(), source_read_only: false });
+        let mut document = kition_photo_format::load_path(path)?;
+        document.name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        return Ok(Opened { document, warnings: Vec::new(), source_read_only: false });
     }
     let bytes = kition_photo_format::read_file(path).map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))?;
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
     open_bytes(&name, &bytes)
-}
-
-/// Previews for a `.kphoto` bundle.
-pub fn previews(doc: &Document) -> SaveOptions {
-    SaveOptions { thumbnail: Some(kition_photo_compose::thumbnail(doc, 256)), composite: Some(kition_photo_compose::thumbnail(doc, 1024)), kdm: None }
 }
 
 /// Save or export `doc` to `path`, choosing the format from the extension
@@ -58,7 +58,7 @@ pub fn save(
     if ext == kition_photo_format::EXTENSION {
         let mut local = KitionPhotoWriter::new();
         let w = writer.unwrap_or(&mut local);
-        w.save_path(doc, path, &previews(doc))?;
+        w.save_path(doc, path, &SaveOptions::default())?;
         return Ok(Vec::new());
     }
     let r = kition_photo_io::export(doc, &ext, opts)?;
@@ -75,7 +75,7 @@ pub fn save_bytes(doc: &Document, name: &str, format_override: Option<&str>, opt
         .or_else(|| Path::new(name).extension().map(|extension| extension.to_string_lossy().to_ascii_lowercase()))
         .ok_or_else(|| AutomationError::BadRequest(format!("cannot tell the format of `{name}`; pass a format")))?;
     if ext == kition_photo_format::EXTENSION {
-        return Ok((kition_photo_format::save_to_bytes(doc, &previews(doc))?, Vec::new()));
+        return Ok((kition_photo_format::save_to_bytes(doc, &SaveOptions::default())?, Vec::new()));
     }
     let result = kition_photo_io::export(doc, &ext, opts)?;
     Ok((result.bytes, result.warnings))

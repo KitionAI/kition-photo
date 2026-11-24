@@ -1,6 +1,6 @@
 //! `document.identity` and `document.fork` (Kit Process Protocol section 5.6, KitModel M7a)
-//! through the real `kition-photo` process. A `.kphoto` bundle embeds its replica (`kdm.bin` and
-//! the replica's blobs under `blobs/kdm/`), and the kit opens the document from it, so a byte copy
+//! through the real `kition-photo` process. A `.kphoto` bundle embeds its replica (`kdm.bin`, its
+//! blobs among the bundle's content-addressed `tiles/` and `blobs/` entries), and the kit opens the document from it, so a byte copy
 //! of a bundle is the same document. A host reads the identity a file carries without opening it,
 //! and forks a file into a new document: a new docId, the same layers, ids and pixels, and every
 //! other entry of the bundle as it was. Neither file holds history (deleted content, blobs only an
@@ -50,9 +50,15 @@ fn entries(bytes: &[u8]) -> Vec<(String, Vec<u8>)> {
     zip.entries.iter().map(|entry| (entry.name.clone(), zip.read(entry, usize::MAX).unwrap())).collect()
 }
 
-/// The replica's blobs a bundle holds (`blobs/kdm/<sha256>.zst`).
+/// Whether `name` is one of a bundle's content-addressed entries (`tiles/<sha256>`,
+/// `blobs/<sha256>.zst`), which the manifest and the replica share.
+fn content_addressed(name: &str) -> bool {
+    name.starts_with("tiles/") || name.starts_with("blobs/")
+}
+
+/// The content-addressed entries a bundle holds.
 fn replica_blobs(bytes: &[u8]) -> BTreeSet<String> {
-    entries(bytes).into_iter().filter(|(name, _)| name.starts_with("blobs/kdm/")).map(|(name, _)| name).collect()
+    entries(bytes).into_iter().filter(|(name, _)| content_addressed(name)).map(|(name, _)| name).collect()
 }
 
 /// A picture with a replica: two filled layers, then a third (named [`SECRET`]) filled and
@@ -137,14 +143,13 @@ async fn a_kphoto_tells_its_identity_and_forks_into_a_new_document_without_histo
     assert_ne!(draft["documentId"], state["documentId"], "{draft}");
     kit.request("document.close", json!({ "documentId": state["documentId"] }), LIMIT).await.unwrap();
 
-    // The fork's file: the replica's blobs its state references and no others; every other entry
-    // (manifest, tiles, previews, the unknown entry) as it was.
+    // The fork's file: the tiles and blobs the manifest and the fork's state name and no others;
+    // every other entry (the manifest, the unknown entry) as it was.
     let (source_bytes, fork_bytes) = (std::fs::read(dir.join("Plan.kphoto")).unwrap(), std::fs::read(dir.join("Fork.kphoto")).unwrap());
     let (source_blobs, fork_blobs) = (replica_blobs(&source_bytes), replica_blobs(&fork_bytes));
-    assert!(fork_blobs.is_subset(&source_blobs), "the fork's blobs are the source's state's: {source_blobs:?} {fork_blobs:?}");
-    let others = |bytes: &[u8]| -> Vec<(String, Vec<u8>)> {
-        entries(bytes).into_iter().filter(|(name, _)| name != "kdm.bin" && !name.starts_with("blobs/kdm/")).collect()
-    };
+    assert!(!fork_blobs.is_empty() && fork_blobs.is_subset(&source_blobs), "the fork's blobs are the source's state's: {source_blobs:?} {fork_blobs:?}");
+    let others =
+        |bytes: &[u8]| -> Vec<(String, Vec<u8>)> { entries(bytes).into_iter().filter(|(name, _)| name != "kdm.bin" && !content_addressed(name)).collect() };
     assert_eq!(others(&fork_bytes), others(&source_bytes), "everything but the replica is kept");
 
     // The fork edits, saves and opens again as any picture, under its own id.

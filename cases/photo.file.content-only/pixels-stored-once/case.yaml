@@ -1,0 +1,21 @@
+format: 1
+id: photo.file.content-only/pixels-stored-once
+feature: photo.file.content-only
+intent: >-
+  A .kphoto stores each tile once: every tile and blob is named by the SHA-256 of the bytes it holds,
+  as the KDM replica names its blobs, so the manifest and the replica (kdm.bin) refer to the same
+  entries. An image of N distinct tiles is a file of N tile entries; the file holds what the
+  manifest or the replica names and nothing else, no hash twice; a duplicated layer adds no tile.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/content_file.rs, crates/formats/format/tests/kdm.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: a_file_with_n_distinct_tiles_holds_n_pixel_entries_that_the_manifest_and_the_replica_share }
+  - cargo-test: { package: kition-photo-format, test: kdm, filter: a_tile_the_manifest_and_the_replica_both_name_is_stored_once }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-23"

@@ -1,5 +1,5 @@
 //! Document ⇄ manifest conversion. Binary data is routed through a
-//! [`Sink`] (save) or [`Fetch`] (load) keyed by BLAKE3 hash.
+//! [`Sink`] (save) or [`Fetch`] (load) keyed by SHA-256 hash.
 
 use std::sync::Arc;
 
@@ -100,7 +100,7 @@ pub(crate) fn tile_len(format: &PixelFormat) -> usize {
 // Save
 // ---------------------------------------------------------------------------
 
-fn surface_m(s: &Surface, sink: &mut dyn Sink) -> SurfaceM {
+pub(crate) fn surface_m(s: &Surface, sink: &mut dyn Sink) -> SurfaceM {
     let f = s.format();
     let mut dp = vec![0u8; f.bytes_per_pixel()];
     encode_pixel(&f, &s.default_pixel(), &mut dp);
@@ -124,9 +124,8 @@ fn video_m(v: &kition_photo_doc::VideoData, sink: &mut dyn Sink) -> crate::manif
 fn layer_m(l: &Layer, sink: &mut dyn Sink) -> LayerM {
     let content = match &l.content {
         LayerContent::Raster(s) => ContentM::Raster { surface: surface_m(s, sink) },
-        LayerContent::Group(g) => {
-            ContentM::Group { children: g.children.iter().map(|c| layer_m(c, sink)).collect(), expanded: g.expanded, artboard: g.artboard.clone() }
-        }
+        // Whether the group is expanded is each person's own (`view_state`).
+        LayerContent::Group(g) => ContentM::Group { children: g.children.iter().map(|c| layer_m(c, sink)).collect(), artboard: g.artboard.clone() },
         LayerContent::Adjustment(a) => ContentM::Adjustment { adjustment: a.clone() },
         LayerContent::Fill(f) => ContentM::Fill { fill: f.clone() },
         LayerContent::Text(t) => ContentM::Text {
@@ -209,16 +208,17 @@ fn layer_m(l: &Layer, sink: &mut dyn Sink) -> LayerM {
     }
 }
 
-fn channel_m(c: &AlphaChannel, sink: &mut dyn Sink) -> ChannelM {
+pub(crate) fn channel_m(c: &AlphaChannel, sink: &mut dyn Sink) -> ChannelM {
     // Destructured so a new `AlphaChannel` field fails to compile here until it is saved.
     let AlphaChannel { key, name, surface, spot, color, opacity, indicates } = c;
     ChannelM { key: key.clone(), name: name.clone(), surface: surface_m(surface, sink), spot: *spot, color: *color, opacity: *opacity, indicates: *indicates }
 }
 
+/// The manifest of `d`'s content. Its view (the selection, the quick mask, which groups are
+/// expanded, open notes, the timeline's playhead, the last applied comp) and its handle and title
+/// are left out: two people's saves of the same image write the same manifest.
 pub(crate) fn doc_m(d: &Document, sink: &mut dyn Sink) -> DocM {
     DocM {
-        id: d.id.0,
-        name: d.name.clone(),
         size: d.size,
         resolution_dpi: d.resolution_dpi,
         mode: d.mode,
@@ -232,7 +232,6 @@ pub(crate) fn doc_m(d: &Document, sink: &mut dyn Sink) -> DocM {
             horizontal_keys: d.guides.horizontal.iter().map(|g| g.key.clone()).collect(),
             vertical_keys: d.guides.vertical.iter().map(|g| g.key.clone()).collect(),
         },
-        selection: d.selection.as_ref().map(|s| surface_m(s, sink)),
         metadata: MetadataM {
             xmp: d.metadata.xmp.clone(),
             exif: opt_blob(&d.metadata.exif, sink),
@@ -248,7 +247,6 @@ pub(crate) fn doc_m(d: &Document, sink: &mut dyn Sink) -> DocM {
             .collect(),
         work_path: d.work_path.clone(),
         clipping_path: d.clipping_path.clone(),
-        quick_mask: d.quick_mask.as_ref().map(|c| channel_m(c, sink)),
         patterns: d
             .patterns
             .iter()
@@ -257,12 +255,10 @@ pub(crate) fn doc_m(d: &Document, sink: &mut dyn Sink) -> DocM {
         color_table: d.color_table.clone(),
         duotone: d.duotone.clone(),
         variables: d.variables.clone(),
-        timeline: d.timeline.clone(),
+        timeline: d.timeline.clone().map(|timeline| kition_photo_doc::Timeline { current: 0, ..timeline }),
         layer_comps: d.layer_comps.iter().map(|c| comp_m(c, sink)).collect(),
-        last_applied_comp: d.last_applied_comp,
-        last_document_state: d.last_document_state.as_ref().map(|c| comp_m(c, sink)),
         measurement: d.measurement.clone(),
-        notes: d.notes.clone(),
+        notes: d.notes.iter().map(|note| kition_photo_doc::Note { open: false, ..note.clone() }).collect(),
         text_styles: d.text_styles.clone(),
         slices: d.slices.clone(),
     }
@@ -272,7 +268,7 @@ fn effects_m(e: &Effects, sink: &mut dyn Sink) -> EffectsM {
     EffectsM { enabled: e.enabled, items: e.items.clone(), psd_raw: opt_blob(&e.psd_raw, sink), reference: e.reference }
 }
 
-fn comp_m(c: &LayerComp, sink: &mut dyn Sink) -> LayerCompM {
+pub(crate) fn comp_m(c: &LayerComp, sink: &mut dyn Sink) -> LayerCompM {
     // Destructured so a new `LayerComp` field fails to compile here until it is saved.
     let LayerComp { id, name, comment, apply_visibility, apply_position, apply_appearance, states } = c;
     LayerCompM {
@@ -318,7 +314,7 @@ impl Loader<'_> {
         Ok(kition_photo_doc::VideoData { frames, source: m.source.clone(), fps: m.fps, show_altered: m.show_altered })
     }
 
-    fn surface(&mut self, m: &SurfaceM) -> Result<Surface> {
+    pub(crate) fn surface(&mut self, m: &SurfaceM) -> Result<Surface> {
         let f = m.format;
         let mut dp = unhex(&m.default)?;
         if dp.len() != f.bytes_per_pixel() {
@@ -364,7 +360,7 @@ impl Loader<'_> {
         id
     }
 
-    fn comp(&mut self, m: &LayerCompM) -> Result<LayerComp> {
+    pub(crate) fn comp(&mut self, m: &LayerCompM) -> Result<LayerComp> {
         let mut states = Vec::with_capacity(m.states.len());
         for s in &m.states {
             let appearance = match &s.appearance {
@@ -418,7 +414,7 @@ impl Loader<'_> {
     fn layer_with(&mut self, m: &LayerM, children: Vec<Layer>) -> Result<Layer> {
         let content = match &m.content {
             ContentM::Raster { surface } => LayerContent::Raster(self.surface(surface)?),
-            ContentM::Group { expanded, artboard, .. } => LayerContent::Group(Group { artboard: artboard.clone(), children, expanded: *expanded }),
+            ContentM::Group { artboard, .. } => LayerContent::Group(Group { artboard: artboard.clone(), children, expanded: true }),
             ContentM::Adjustment { adjustment } => LayerContent::Adjustment(adjustment.clone()),
             ContentM::Fill { fill } => LayerContent::Fill(fill.clone()),
             ContentM::Text { text, font_family, size_pt, color, transform, cache, psd_raw, runs, paragraphs, shape, orientation, antialias, warp } => {
@@ -522,7 +518,6 @@ impl Loader<'_> {
         for c in &m.channels {
             channels.push(self.channel(c)?);
         }
-        let quick_mask = m.quick_mask.as_ref().map(|c| self.channel(c)).transpose()?;
         let mut md = Metadata {
             xmp: m.metadata.xmp.clone(),
             exif: self.opt_blob(&m.metadata.exif)?,
@@ -545,7 +540,6 @@ impl Loader<'_> {
             patterns.push(Pattern { id: p.id.clone(), name: p.name.clone(), width: p.width, height: p.height, surface: self.surface(&p.surface)? });
         }
         let layer_comps = m.layer_comps.iter().map(|c| self.comp(c)).collect::<Result<Vec<_>>>()?;
-        let last_document_state = m.last_document_state.as_ref().map(|c| self.comp(c)).transpose()?;
         // Layer-based slices follow their layer through id remapping; a dangling one becomes a
         // user slice (its rect stays where it was).
         let mut slices = m.slices.clone();
@@ -557,15 +551,10 @@ impl Loader<'_> {
                 }
             }
         }
-        let id = if self.preserve_ids {
-            self.max_id = self.max_id.max(m.id);
-            DocId(m.id)
-        } else {
-            DocId::fresh()
-        };
+        // The file names no document handle and no title: the session that opens it gives both.
         Ok(Document {
-            id,
-            name: m.name.clone(),
+            id: DocId::fresh(),
+            name: String::new(),
             size: m.size,
             resolution_dpi: m.resolution_dpi,
             mode: m.mode,
@@ -589,21 +578,21 @@ impl Loader<'_> {
                     .map(|(i, position)| kition_photo_doc::Guide { key: m.guides.vertical_keys.get(i).cloned().flatten(), position: *position })
                     .collect(),
             },
-            selection: self.opt_surface(&m.selection)?,
+            selection: None,
             metadata: md,
             global_light: m.global_light,
             paths,
             work_path: m.work_path.clone(),
             clipping_path: m.clipping_path.clone(),
-            quick_mask,
+            quick_mask: None,
             patterns,
             color_table: m.color_table.clone(),
             duotone: m.duotone.clone(),
             variables: m.variables.clone(),
             timeline: m.timeline.clone(),
             layer_comps,
-            last_applied_comp: m.last_applied_comp,
-            last_document_state,
+            last_applied_comp: None,
+            last_document_state: None,
             measurement: m.measurement.clone(),
             notes: m.notes.clone(),
             text_styles: m.text_styles.clone(),
@@ -611,7 +600,7 @@ impl Loader<'_> {
         })
     }
 
-    fn channel(&mut self, c: &ChannelM) -> Result<AlphaChannel> {
+    pub(crate) fn channel(&mut self, c: &ChannelM) -> Result<AlphaChannel> {
         Ok(AlphaChannel {
             key: c.key.clone(),
             name: c.name.clone(),

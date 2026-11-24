@@ -35,7 +35,7 @@ fn older_bundles_without_text_metadata_still_load() {
         Some(serde_json::to_vec(&manifest).unwrap())
     });
     doc.metadata.text.clear();
-    assert_eq!(load_from_bytes(&old).unwrap(), doc);
+    assert_eq!(viewed(load_from_bytes(&old).unwrap(), &doc), doc);
 }
 
 #[test]
@@ -184,7 +184,7 @@ fn directory_bundle_resave_repairs_tampered_objects() {
             } else {
                 assert_eq!(stats.blobs_written, 1);
             }
-            assert_eq!(load_path(&dir).unwrap(), doc);
+            assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc);
         }
     }
 
@@ -226,7 +226,7 @@ fn same_size_same_mtime_tamper_is_repaired_on_the_next_save() {
     // every cached object again (and on Unix the change time differs as well).
     let stats = writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
     assert_eq!(stats.tiles_written, 1);
-    assert_eq!(load_path(&dir).unwrap(), doc);
+    assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc);
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -250,7 +250,7 @@ fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
         }
     }
     assert!(repaired, "a damaged object was not re-verified within {objects} saves");
-    assert_eq!(load_path(&dir).unwrap(), doc);
+    assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc);
 
     // A zero budget re-reads nothing whose signature is unchanged; a fresh writer still verifies
     // everything on its first save.
@@ -258,7 +258,7 @@ fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
     fresh.set_reverify_budget(0);
     damage_in_place_keeping_size_and_mtime(&dir);
     assert_eq!(fresh.save_dir(&doc, &dir, &SaveOptions::default()).unwrap().tiles_written, 1);
-    assert_eq!(load_path(&dir).unwrap(), doc);
+    assert_eq!(viewed(load_path(&dir).unwrap(), &doc), doc);
     std::fs::remove_dir_all(dir).unwrap();
 }
 

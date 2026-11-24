@@ -1,0 +1,26 @@
+format: 1
+id: photo.view.state/kept-by-the-host
+feature: photo.view.state
+intent: >-
+  A person's view of an image (the selection, the quick mask, collapsed groups, open notes, the
+  timeline's frame, the last applied layer comp and its Last Document State) is kept by the host's
+  view-state store, not in the file: the engine answers it (viewState, at most 256 KB of JSON and
+  16 MB of bytes, the pixels as compressed tiles; pixels too large are dropped and the rest kept),
+  the editor puts it back when the image opens (photo.restoreViewState), which is no edit and no
+  undo step; the file and the view state together give back the whole document. A view of another
+  version is ignored; a damaged one is refused and changes nothing.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/view_state.rs, crates/formats/format/tests/roundtrip.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: view_state, filter: the_view_travels_through_the_view_state_and_putting_it_back_is_no_edit }
+  - cargo-test: { package: kition-photo-format, test: roundtrip, filter: the_file_keeps_no_view_and_the_view_state_keeps_it }
+  - cargo-test: { package: kition-photo-format, test: roundtrip, filter: an_empty_view_is_not_kept_and_a_foreign_one_changes_nothing }
+  - cargo-test: { package: kition-photo-format, test: roundtrip, filter: a_view_too_large_for_the_host_keeps_all_but_its_pixels }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-23"

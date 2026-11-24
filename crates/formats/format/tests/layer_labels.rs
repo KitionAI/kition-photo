@@ -1,3 +1,5 @@
+mod common;
+
 use kition_photo_color::{ColorMode, SampleType};
 use kition_photo_doc::{Document, LabelColor, Layer, Size};
 
@@ -13,7 +15,7 @@ fn layer_labels_kition_photo_roundtrip_all_colors_and_depths() {
             doc.layers.push(group);
         }
         let bytes = kition_photo_format::save_to_bytes(&doc, &Default::default()).unwrap();
-        assert_eq!(kition_photo_format::load_from_bytes(&bytes).unwrap(), doc, "{depth:?}");
+        assert_eq!(common::viewed(kition_photo_format::load_from_bytes(&bytes).unwrap(), &doc), doc, "{depth:?}");
         assert!(kition_photo_format::load_from_bytes(&bytes[..bytes.len() / 2]).is_err());
     }
 }

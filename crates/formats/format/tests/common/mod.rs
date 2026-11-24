@@ -267,6 +267,21 @@ pub fn vector_path() -> Path {
     ])
 }
 
+/// `back`, opened from a file `doc` was saved to, with what the file does not keep put back:
+/// `doc`'s handle and title (the session's) and `doc`'s view (each person's, kept apart by
+/// `view_state`). Equal to `doc` when the file kept all of its content and the view state all of
+/// its view. `back` itself must hold no view: the file keeps none.
+pub fn viewed(mut back: Document, doc: &Document) -> Document {
+    assert_eq!(back, kition_photo_format::view_state::without_view(&back), "the file holds a view");
+    let view = kition_photo_format::view_state::view_state(doc);
+    if let Some(state) = &view.state {
+        kition_photo_format::view_state::put_view_state(&mut back, state, &view.bytes).unwrap();
+    }
+    back.id = doc.id;
+    back.name.clone_from(&doc.name);
+    back
+}
+
 /// A fresh, empty directory under the system temp dir, unique per test process and call.
 pub fn temp_dir(tag: &str) -> std::path::PathBuf {
     use std::sync::atomic::{AtomicU32, Ordering};

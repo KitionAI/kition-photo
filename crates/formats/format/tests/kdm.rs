@@ -1,6 +1,7 @@
-//! `.kphoto`'s KDM replica payload (Kition phase 3a, Task 4): `kdm.bin` and `blobs/kdm/<sha256>`
-//! round-trip, a bundle without one loads as before, and an incremental save never rewrites a
-//! KDM blob whose bytes are unchanged.
+//! `.kphoto`'s KDM replica payload: `kdm.bin` beside the manifest, and the replica's blobs among
+//! the bundle's own content-addressed entries (`tiles/<sha256>`, `blobs/<sha256>.zst`), so a tile
+//! the manifest and the replica both name is stored once; a bundle without a replica loads as a
+//! plain document; an incremental save never rewrites an entry whose bytes are unchanged.
 
 mod common;
 use std::sync::Arc;
@@ -9,13 +10,12 @@ use common::*;
 use kition_photo_color::{ColorMode, SampleType};
 use kition_photo_format::*;
 
-fn kdm_save(snapshot: &[u8], blobs: &[(&str, &[u8])]) -> KdmSave {
-    KdmSave { snapshot: snapshot.to_vec(), blobs: blobs.iter().map(|(h, b)| ((*h).to_owned(), Arc::from(*b))).collect() }
+fn kdm_save(snapshot: &[u8], blobs: &[&[u8]]) -> KdmSave {
+    KdmSave { snapshot: snapshot.to_vec(), blobs: blobs.iter().map(|b| (content_hash(b), Arc::from(*b))).collect() }
 }
 
-/// A plausible-looking 64-hex-char SHA-256 key, distinct per `seed`.
-fn hash(seed: u8) -> String {
-    (0..64).map(|i| char::from_digit(u32::from((seed.wrapping_add(i)) % 16), 16).unwrap_or('0')).collect()
+fn names(zip_bytes: &[u8]) -> Vec<String> {
+    kition_photo_format::zip::ZipReader::new(zip_bytes).unwrap().entries.iter().map(|e| e.name.clone()).collect()
 }
 
 #[test]
@@ -23,47 +23,80 @@ fn a_bundle_without_a_replica_has_no_kdm() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
     assert!(read_kdm(&bytes).unwrap().is_none());
-    // It still loads as a plain document, exactly as before this feature existed.
-    assert_eq!(load_from_bytes(&bytes).unwrap(), doc);
+    // It loads as a plain document.
+    assert_eq!(viewed(load_from_bytes(&bytes).unwrap(), &doc), doc);
 }
 
 #[test]
 fn a_bundle_with_a_replica_round_trips_the_snapshot_and_its_blobs() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
-    let (h1, h2) = (hash(1), hash(2));
-    let opts = SaveOptions { kdm: Some(kdm_save(b"a fake replica snapshot", &[(&h1, b"first blob"), (&h2, b"second blob")])), ..Default::default() };
+    let opts = SaveOptions { kdm: Some(kdm_save(b"a fake replica snapshot", &[b"first blob", b"second blob"])) };
     let bytes = save_to_bytes(&doc, &opts).unwrap();
     // The document itself is unaffected: a reader that knows nothing about KDM still loads it.
-    assert_eq!(load_from_bytes(&bytes).unwrap(), doc);
+    assert_eq!(viewed(load_from_bytes(&bytes).unwrap(), &doc), doc);
 
     let bundle = read_kdm(&bytes).unwrap().unwrap();
     assert_eq!(bundle.snapshot, b"a fake replica snapshot");
-    assert_eq!(bundle.blobs.len(), 2);
-    assert_eq!(bundle.blobs.get(&h1).map(Vec::as_slice), Some(b"first blob".as_slice()));
-    assert_eq!(bundle.blobs.get(&h2).map(Vec::as_slice), Some(b"second blob".as_slice()));
+    assert_eq!(bundle.blobs.get(&content_hash(b"first blob")).map(Vec::as_slice), Some(b"first blob".as_slice()));
+    assert_eq!(bundle.blobs.get(&content_hash(b"second blob")).map(Vec::as_slice), Some(b"second blob".as_slice()));
+    // Every entry the bundle holds is named by the hash of what it holds.
+    for (hash, data) in &bundle.blobs {
+        assert_eq!(&content_hash(data), hash);
+    }
+}
+
+/// The replica names a tile by the SHA-256 of its encoded bytes, as the manifest does: the bundle
+/// holds that tile once, as the manifest's `tiles/<sha256>`, and the replica reads it from there.
+#[test]
+fn a_tile_the_manifest_and_the_replica_both_name_is_stored_once() {
+    let doc = rich_doc(ColorMode::Rgb, SampleType::U16);
+    let layer = doc.layers.iter().find(|l| l.surface().is_some_and(|s| s.tile_count() > 0)).unwrap();
+    let surface = layer.surface().unwrap();
+    let (_, tile) = surface.tiles().next().unwrap();
+    let encoded = encode_tile(surface.format(), tile);
+    let hash = content_hash(&encoded);
+    let opts = SaveOptions { kdm: Some(kdm_save(b"snapshot", &[&encoded])) };
+    let (bytes, stats) = KitionPhotoWriter::new().save_zip(&doc, &opts).unwrap();
+    let names = names(&bytes);
+    let holding: Vec<&String> = names.iter().filter(|n| n.contains(&hash)).collect();
+    assert_eq!(holding, vec![&format!("tiles/{hash}")], "one entry holds the tile");
+    assert_eq!(names.iter().filter(|n| n.starts_with("tiles/")).count(), stats.tiles_total, "one entry per distinct tile");
+    let bundle = read_kdm(&bytes).unwrap().unwrap();
+    assert_eq!(bundle.blobs.get(&hash), Some(&encoded), "the replica reads the manifest's entry");
+    assert_eq!(viewed(load_from_bytes(&bytes).unwrap(), &doc), doc);
 }
 
 #[test]
 fn an_invalid_kdm_blob_hash_is_refused_at_save() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
-    let opts = SaveOptions { kdm: Some(kdm_save(b"snap", &[("not-a-valid-hash", b"x")])), ..Default::default() };
+    let opts = SaveOptions { kdm: Some(KdmSave { snapshot: b"snap".to_vec(), blobs: vec![("not-a-valid-hash".to_owned(), Arc::from(&b"x"[..]))] }) };
     assert!(matches!(save_to_bytes(&doc, &opts), Err(FormatError::Corrupt(_))));
+}
+
+/// An entry whose bytes do not match the hash it is named by is refused when the replica is read.
+#[test]
+fn a_replica_blob_that_does_not_match_its_hash_is_refused() {
+    let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
+    let wrong = content_hash(b"something else");
+    let opts = SaveOptions { kdm: Some(KdmSave { snapshot: b"snap".to_vec(), blobs: vec![(wrong, Arc::from(&b"a blob"[..]))] }) };
+    let bytes = save_to_bytes(&doc, &opts).unwrap();
+    assert!(matches!(read_kdm(&bytes), Err(FormatError::Corrupt(_))));
 }
 
 #[test]
 fn zip_incremental_save_never_rewrites_an_unchanged_kdm_blob() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
-    let h = hash(3);
+    let h = content_hash(b"stable blob");
     let mut w = KitionPhotoWriter::new();
-    let opts1 = SaveOptions { kdm: Some(kdm_save(b"snapshot v1", &[(&h, b"stable blob")])), ..Default::default() };
+    let opts1 = SaveOptions { kdm: Some(kdm_save(b"snapshot v1", &[b"stable blob"])) };
     let (bytes1, _) = w.save_zip(&doc, &opts1).unwrap();
-    let blob1 = find_entry(&bytes1, &format!("blobs/kdm/{h}.zst"));
+    let blob1 = find_entry(&bytes1, &format!("blobs/{h}.zst"));
 
     // A later save with a new snapshot (as any edit makes) but the same blob content: the blob
     // entry's compressed bytes are identical (content-addressed, reused from the writer's cache).
-    let opts2 = SaveOptions { kdm: Some(kdm_save(b"snapshot v2, after an edit", &[(&h, b"stable blob")])), ..Default::default() };
+    let opts2 = SaveOptions { kdm: Some(kdm_save(b"snapshot v2, after an edit", &[b"stable blob"])) };
     let (bytes2, _) = w.save_zip(&doc, &opts2).unwrap();
-    let blob2 = find_entry(&bytes2, &format!("blobs/kdm/{h}.zst"));
+    let blob2 = find_entry(&bytes2, &format!("blobs/{h}.zst"));
     assert_eq!(blob1, blob2, "the unchanged blob's bytes in the bundle did not change");
 
     let bundle2 = read_kdm(&bytes2).unwrap().unwrap();
@@ -76,22 +109,23 @@ fn directory_save_writes_and_then_garbage_collects_kdm_blobs() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("kdm-dir");
     let mut w = KitionPhotoWriter::new();
-    let (h1, h2) = (hash(4), hash(5));
-    let opts1 = SaveOptions { kdm: Some(kdm_save(b"v1", &[(&h1, b"one"), (&h2, b"two")])), ..Default::default() };
+    let (h1, h2) = (content_hash(b"one"), content_hash(b"two"));
+    let opts1 = SaveOptions { kdm: Some(kdm_save(b"v1", &[b"one", b"two"])) };
     w.save_dir(&doc, &dir, &opts1).unwrap();
     assert!(dir.join("kdm.bin").is_file());
-    assert!(dir.join(format!("blobs/kdm/{h1}.zst")).is_file());
-    assert!(dir.join(format!("blobs/kdm/{h2}.zst")).is_file());
+    assert!(dir.join(format!("blobs/{h1}.zst")).is_file());
+    assert!(dir.join(format!("blobs/{h2}.zst")).is_file());
 
     // A later save that only references one of the two blobs drops the other.
-    let opts2 = SaveOptions { kdm: Some(kdm_save(b"v2", &[(&h1, b"one")])), ..Default::default() };
+    let opts2 = SaveOptions { kdm: Some(kdm_save(b"v2", &[b"one"])) };
     w.save_dir(&doc, &dir, &opts2).unwrap();
-    assert!(dir.join(format!("blobs/kdm/{h1}.zst")).is_file());
-    assert!(!dir.join(format!("blobs/kdm/{h2}.zst")).is_file(), "the no-longer-referenced blob was removed");
+    assert!(dir.join(format!("blobs/{h1}.zst")).is_file());
+    assert!(!dir.join(format!("blobs/{h2}.zst")).is_file(), "the no-longer-referenced blob was removed");
 
     // Saving without a replica at all removes `kdm.bin` too.
     w.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
     assert!(!dir.join("kdm.bin").exists());
+    assert!(!dir.join(format!("blobs/{h1}.zst")).is_file());
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

@@ -20,8 +20,10 @@ const alone = window.setTimeout(() => {
 const UPSTREAM = import.meta.glob('./i18n/upstream/*.tsv', { query: '?raw', import: 'default' })
 
 // `replica`: in a host that keeps replicas, a PSD keeps its KDM replica (identity, collaboration)
-// across saves; elsewhere the editor opens and saves files as before.
-void connectHost({ id: 'kit.photo', version: manifest.version, capabilities: ['ai', 'replica'], brand: manifest.ui.brand, display: manifest.ui.display, ui: PHOTO_UI }).then(async (host) => {
+// across saves; elsewhere the editor opens and saves files as before. `view-state`: the host keeps
+// each person's view (the selection, collapsed groups, …) apart from the file; without it the view
+// is not kept between sessions.
+void connectHost({ id: 'kit.photo', version: manifest.version, capabilities: ['ai', 'replica', 'view-state'], brand: manifest.ui.brand, display: manifest.ui.display, ui: PHOTO_UI }).then(async (host) => {
   window.clearTimeout(alone)
   const phrase = withPhrases(await loadPhrases(UPSTREAM, host.init.locale), PHRASES, host.init.locale)
   // No StrictMode: its doubled effects would open the document twice, in two engine workers.

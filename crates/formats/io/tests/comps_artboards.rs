@@ -1,5 +1,6 @@
 //! Layer comps (resource 1065 + per-layer `cmls`) and artboards (`artb`) through PSD and
-//! `.kphoto`: byte-exact while unchanged, regenerated after edits.
+//! `.kphoto` (the comp applied last through the view state): byte-exact while unchanged,
+//! regenerated after edits.
 
 #[cfg(feature = "corpus")]
 use std::path::PathBuf;
@@ -211,8 +212,14 @@ fn synthetic_kition_photo_roundtrip_keeps_everything() {
     let bytes = kition_photo_format::save_to_bytes(&d, &Default::default()).unwrap();
     let back = kition_photo_format::load_from_bytes(&bytes).unwrap();
     assert_eq!(back.layer_comps, d.layer_comps);
-    assert_eq!(back.last_applied_comp, d.last_applied_comp);
-    assert_eq!(back.last_document_state, d.last_document_state);
+    // The comp applied last and the Last Document State are the person's: not in the file, kept
+    // by the view state.
+    assert_eq!((back.last_applied_comp, &back.last_document_state), (None, &None));
+    let view = kition_photo_format::view_state::view_state(&d);
+    let mut viewed = back.clone();
+    kition_photo_format::view_state::put_view_state(&mut viewed, view.state.as_ref().unwrap(), &view.bytes).unwrap();
+    assert_eq!(viewed.last_applied_comp, d.last_applied_comp);
+    assert_eq!(viewed.last_document_state, d.last_document_state);
     assert_eq!(back.artboards().len(), 2);
     assert_eq!(back.layers[1].artboard(), d.layers[1].artboard());
     // Remapped ids still point at the same layers.

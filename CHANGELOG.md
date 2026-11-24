@@ -5,6 +5,14 @@ each package is published with a `package-v<version>` tag.
 
 ## Unreleased
 
+- A `.kphoto` stores every tile once: tiles (`tiles/<sha256>`, their encoded bytes) and blobs
+  (`blobs/<sha256>.zst`) are named by the SHA-256 of their bytes, as the replica names its blobs,
+  so the manifest and `kdm.bin` share them (no second copy under `blobs/kdm/`). The file holds no
+  thumbnail or preview, and nobody's view: the selection, the quick mask, expanded groups, open
+  notes, the timeline's playhead and the last applied layer comp, the document handle and the title
+  are left out, so two people who open a file and save it unedited write the same bytes. The
+  editor keeps each person's view with the host (capability `view-state`) and puts it back when
+  the image opens.
 - A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.3, rule M16b):
   `kdm.bin` is the replica's content snapshot (of the history, only the seal; no deleted layers,
   no overwritten values, no authors) and the replica blobs are only those its state references.

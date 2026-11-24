@@ -1,11 +1,16 @@
 //! `manifest.json` schema. This is a *separate* serde model from
-//! `kition-photo-doc` on purpose: the on-disk schema is versioned and migrated
-//! independently of in-memory refactors.
+//! `kition-photo-doc` on purpose: the on-disk schema is versioned independently of in-memory
+//! refactors.
 //!
-//! Binary payloads never live in JSON. Surfaces reference tiles
-//! (`tiles/<blake3>.zst`) and other binary data references blobs
-//! (`blobs/<blake3>.zst`), both by the BLAKE3 hash of their uncompressed
-//! bytes (little-endian samples for tiles).
+//! Binary payloads never live in JSON. Surfaces reference tiles (`tiles/<sha256>`, a tile's
+//! encoded bytes as [`crate::encode_tile`] writes them) and other binary data references blobs
+//! (`blobs/<sha256>.zst`), each by the SHA-256 of the bytes it names: the same hashes the
+//! document's KDM replica names its blobs by, so the file holds each tile once.
+//!
+//! The manifest holds the image's content, never one person's view of it: no selection, no
+//! quick mask, no group's expanded state, no open note, no timeline playhead, no last applied
+//! layer comp, no document handle and no title (the file's name is its title). Those are kept
+//! apart, per person ([`crate::view_state`]).
 
 use kition_photo_color::{BlendMode, Color, ColorMode, PixelFormat, SampleType};
 use kition_photo_doc::{
@@ -17,7 +22,7 @@ use serde::{Deserialize, Serialize};
 /// Current manifest version written by this build.
 pub const FORMAT_VERSION: u32 = 1;
 
-/// Hex-encoded BLAKE3 hash (64 chars).
+/// Hex-encoded SHA-256 hash (64 chars).
 pub type Hash = String;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,21 +31,15 @@ pub struct Manifest {
     /// Free-form writer identification, e.g. `kition-photo-format 0.1.0`.
     pub generator: String,
     pub document: DocM,
-    /// Optional previews present in the bundle.
-    #[serde(default)]
-    pub thumbnail: Option<String>,
-    #[serde(default)]
-    pub composite: Option<String>,
-    /// The document's KDM replica (Kition phase 3a, Task 4), if it has made one yet: `None` for
-    /// a bundle saved without one (or one written before this field existed), which loads as a
-    /// plain document, as always.
+    /// The document's KDM replica, if it has made one yet: `None` for a bundle saved without one,
+    /// which loads as a plain document.
     #[serde(default)]
     pub kdm: Option<KdmM>,
 }
 
-/// Where a `.kphoto` bundle's KDM replica lives: the snapshot entry (`kdm.bin`); its blobs are
-/// the bundle's `blobs/kdm/<sha256>.zst` entries (discovered by scanning the archive, not listed
-/// here, so nothing has to be kept in sync by hand when a save adds or drops one).
+/// Where a `.kphoto` bundle's KDM replica lives: the snapshot entry (`kdm.bin`). Its blobs are the
+/// bundle's own `tiles/<sha256>` and `blobs/<sha256>.zst` entries, the ones the manifest names
+/// too (discovered by scanning the archive, not listed here).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct KdmM {
     pub snapshot: String,
@@ -48,8 +47,6 @@ pub struct KdmM {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DocM {
-    pub id: u64,
-    pub name: String,
     pub size: Size,
     pub resolution_dpi: f32,
     pub mode: ColorMode,
@@ -59,7 +56,6 @@ pub struct DocM {
     pub layers: Vec<LayerM>,
     pub channels: Vec<ChannelM>,
     pub guides: GuidesM,
-    pub selection: Option<SurfaceM>,
     pub metadata: MetadataM,
     pub global_light: GlobalLight,
     /// Saved paths (Paths panel).
@@ -69,9 +65,6 @@ pub struct DocM {
     pub work_path: Option<Path>,
     #[serde(default)]
     pub clipping_path: Option<ClippingPath>,
-    /// The temporary Quick Mask channel (saved while Quick Mask mode is on).
-    #[serde(default)]
-    pub quick_mask: Option<ChannelM>,
     /// Patterns stored with the document.
     #[serde(default)]
     pub patterns: Vec<PatternM>,
@@ -84,20 +77,16 @@ pub struct DocM {
     /// Window › Layer Comps.
     #[serde(default)]
     pub layer_comps: Vec<LayerCompM>,
-    #[serde(default)]
-    pub last_applied_comp: Option<u32>,
-    #[serde(default)]
-    pub last_document_state: Option<LayerCompM>,
     /// Image › Variables and Data Sets.
     #[serde(default)]
     pub variables: kition_photo_doc::Variables,
-    /// Window › Timeline.
+    /// Window › Timeline (its `current` frame is always 0: the playhead is each person's).
     #[serde(default)]
     pub timeline: Option<kition_photo_doc::Timeline>,
     /// Image › Analysis: measurement scale, count groups, ruler.
     #[serde(default)]
     pub measurement: kition_photo_doc::Measurement,
-    /// Note tool annotations.
+    /// Note tool annotations (`open` is always false: an open popup is each person's).
     #[serde(default)]
     pub notes: Vec<kition_photo_doc::Note>,
     /// Character and paragraph styles.
@@ -263,7 +252,6 @@ pub enum ContentM {
     },
     Group {
         children: Vec<LayerM>,
-        expanded: bool,
         /// Artboard (Layer › New › Artboard).
         #[serde(default)]
         artboard: Option<kition_photo_doc::Artboard>,

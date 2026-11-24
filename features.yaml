@@ -97,9 +97,17 @@ features:
     dimension: [platform, data-safety]
     priority: P1
     status: has
-    paths: [crates/kdm/kdm-model/src/session.rs, crates/engine/engine/src/kition_photo_bridge.rs, crates/engine/engine/src/kdm_bridge.rs, bindings/wasm/src/lib.rs, bindings/wasm/src/collab.rs, bindings/wasm/tests/content_file.rs, bindings/headless/tests/content_file.rs]
-    cases: [photo.file.content-only/no-history, photo.file.content-only/reopen-and-converge]
+    paths: [crates/kdm/kdm-model/src/session.rs, crates/engine/engine/src/kition_photo_bridge.rs, crates/engine/engine/src/kdm_bridge.rs, crates/formats/format/src/store.rs, crates/formats/format/src/convert.rs, bindings/wasm/src/lib.rs, bindings/wasm/src/collab.rs, bindings/wasm/tests/content_file.rs, bindings/wasm/tests/view_state.rs, bindings/headless/tests/content_file.rs]
+    cases: [photo.file.content-only/no-history, photo.file.content-only/reopen-and-converge, photo.file.content-only/same-bytes-across-sessions, photo.file.content-only/pixels-stored-once]
     since: "2026-11-22"
+  - id: photo.view.state
+    title: "Each person's view of an image (selection, quick mask, collapsed groups, open notes, the timeline's frame, the last applied layer comp) is kept by the host's view-state store, never in the .kphoto, and put back when the image opens"
+    dimension: [platform, data-safety]
+    priority: P1
+    status: has
+    paths: [crates/formats/format/src/view_state.rs, crates/engine/engine/src/kition_photo_bridge.rs, bindings/wasm/src/lib.rs, web/src/viewState.ts, bindings/wasm/tests/view_state.rs]
+    cases: [photo.view.state/kept-by-the-host]
+    since: "2026-11-23"
   - id: photo.layer.new-layer
     title: "A new layer survives saving to PSD and reopening"
     dimension: [function, conversion, data-safety]

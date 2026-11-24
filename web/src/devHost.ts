@@ -2,4 +2,4 @@
 import { startDevHost } from '@kition/sdk/dev-host'
 
 // `host/pick` answers with workspace images (Place) and look files (Color Lookup's Load).
-startDevHost({ sample: './sample/Sample.psd', pickable: /\.(png|jpe?g|gif|svg|webp|cube|3dl|look|csp)$/i })
+startDevHost({ sample: './sample/Sample.psd', viewState: true, pickable: /\.(png|jpe?g|gif|svg|webp|cube|3dl|look|csp)$/i })

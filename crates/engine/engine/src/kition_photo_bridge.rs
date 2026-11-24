@@ -106,12 +106,27 @@ impl DocState {
             }
             None => None,
         };
-        let opts = kition_photo_format::SaveOptions {
-            thumbnail: Some(kition_photo_compose::thumbnail(doc, 256)),
-            composite: Some(kition_photo_compose::thumbnail(doc, 1024)),
-            kdm,
-        };
-        kition_photo_format::save_to_bytes(doc, &opts).map_err(|error| EngineError::Other(error.to_string()))
+        kition_photo_format::save_to_bytes(doc, &kition_photo_format::SaveOptions { kdm }).map_err(|error| EngineError::Other(error.to_string()))
+    }
+
+    /// This person's view of the image, which the file does not hold (the selection, the quick
+    /// mask, collapsed groups, open notes, the timeline's playhead, the last applied comp), as the
+    /// host's `view-state` store keeps it ([`kition_photo_format::view_state`]).
+    pub fn view_state(&self) -> kition_photo_format::view_state::ViewState {
+        kition_photo_format::view_state::view_state(&self.doc)
+    }
+
+    /// Puts a view the host kept ([`DocState::view_state`]'s) back on the image: no edit, no undo
+    /// step, the revision and the saved state stay. A damaged value is an error and changes
+    /// nothing; one of another version is ignored.
+    pub fn put_view_state(&mut self, state: &serde_json::Value, bytes: &[u8]) -> Result<()> {
+        let mut doc = (*self.doc).clone();
+        kition_photo_format::view_state::put_view_state(&mut doc, state, bytes).map_err(|error| EngineError::Other(error.to_string()))?;
+        if let Some(kdm) = self.kdm.as_mut() {
+            kdm.set_view(doc.clone());
+        }
+        self.doc = Arc::new(doc);
+        Ok(())
     }
 
     /// Seals the document's replica before a save (`KitDocument::prepare_save`), so the file holds

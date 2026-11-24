@@ -119,10 +119,15 @@ KITION_FONTS_DIR="$PWD/../kition-fonts" cargo test --workspace
 `crates/formats/format` defines the lossless native bundle. It is either a ZIP of STORE entries or a
 directory with the same layout:
 
-- `manifest.json`: the versioned document tree, with migrations in `format/src/migrate.rs`.
-- `tiles/<blake3>.zst` and `blobs/<blake3>.zst`: zstd-compressed objects, content-addressed by the
-  BLAKE3 hash of their uncompressed bytes.
-- `thumb.png` and `composite/preview.png`: previews.
+- `manifest.json`: the versioned description of the image's content (no one's view of it).
+- `kdm.bin`: the document's KDM replica as its sealed content snapshot, when it has one.
+- `tiles/<sha256>` (a tile's zstd-encoded samples, `encode_tile`) and `blobs/<sha256>.zst`:
+  content-addressed by the SHA-256 of the bytes they hold, which is how the replica names its blobs
+  too: each tile is stored once, for the manifest and the replica alike.
+
+A person's view of the image (selection, quick mask, collapsed groups, open notes, playhead, last
+applied comp) is kept by the host's `view-state` store, never in the file
+(`format/src/view_state.rs`).
 
 Keep one writer per open document: re-saving then only compresses and writes tiles that changed.
 Directory bundles verify objects on first encounter in a folder; later saves reuse them while

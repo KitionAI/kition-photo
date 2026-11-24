@@ -1,4 +1,5 @@
-//! Image › Analysis data and notes survive a `.kphoto` round trip; old manifests default them.
+//! Image › Analysis data and notes survive a `.kphoto` round trip (a note's open popup is the
+//! person's view, not the file's); old manifests default them.
 
 use kition_photo_color::{Color, ColorMode, SampleType};
 use kition_photo_doc::{CountGroup, Document, MeasurementScale, Note, Ruler, Size};
@@ -28,7 +29,9 @@ fn measurement_and_notes_roundtrip_and_default_when_absent() {
     let bytes = save_to_bytes(&doc, &SaveOptions::default()).unwrap();
     let back = load_from_bytes(&bytes).unwrap();
     assert_eq!(back.measurement, doc.measurement);
-    assert_eq!(back.notes, doc.notes);
+    // The note is all there; whether its popup is open is each person's (the view state's).
+    assert_eq!(back.notes, kition_photo_format::view_state::without_view(&doc).notes);
+    assert!(!back.notes[0].open);
 
     let m = read_manifest(&bytes).unwrap();
     let mut v = serde_json::to_value(&m.document).unwrap();
