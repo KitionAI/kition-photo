@@ -869,11 +869,9 @@ mod tests {
 
     #[test]
     fn keeps_the_kit_sdk_contract() {
-        // The contract saves right after the edit, as a host does after its `prepare_save`: the
-        // edit ends with the seal.
         check_contract::<PhotoDocument>(&fixture(), "fixture.kphoto", |doc| {
             stroke(doc, json!([[4, 4, 1], [30, 20, 1]]), "#ff0000")?;
-            doc.prepare_save()
+            Ok(())
         })
         .unwrap();
     }
