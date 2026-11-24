@@ -243,7 +243,7 @@ mod tests {
             snapshot: old.snapshot().unwrap(),
             blobs: blobs.0.iter().map(|(hash, data)| (hash.clone(), data.clone())).collect(),
         };
-        let bytes = kition_photo_format::save_to_bytes(&doc, &kition_photo_format::SaveOptions { kdm: Some(kdm), ..Default::default() }).unwrap();
+        let bytes = kition_photo_format::save_to_bytes(&doc, &kition_photo_format::SaveOptions { kdm: Some(kdm) }).unwrap();
         assert!(kition_photo_format::read_kdm(&bytes).unwrap().is_some(), "the bundle holds the old replica");
         assert_eq!(embedded_replica(&bytes).unwrap(), None, "a replica of another schema version is not the document's identity");
 

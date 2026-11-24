@@ -307,11 +307,14 @@ fn deflated_zip_entries_are_readable() {
     out.extend_from_slice(&(central.len() as u32).to_le_bytes());
     out.extend_from_slice(&cd_off.to_le_bytes());
     out.extend_from_slice(&[0, 0]);
-    assert_eq!(load_from_bytes(&out).unwrap(), rich_doc_ids_from(&b));
+    let read = load_from_bytes(&out).unwrap();
+    assert_eq!(read, rich_doc_ids_from(&b, &read));
 }
 
-fn rich_doc_ids_from(b: &[u8]) -> kition_photo_doc::Document {
-    load_from_bytes(b).unwrap()
+/// The document `b` holds, with `read`'s handle: each load gives one of its own (the file names
+/// none).
+fn rich_doc_ids_from(b: &[u8], read: &kition_photo_doc::Document) -> kition_photo_doc::Document {
+    kition_photo_doc::Document { id: read.id, ..load_from_bytes(b).unwrap() }
 }
 
 proptest! {

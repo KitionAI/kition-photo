@@ -84,7 +84,8 @@ fn selected_pixels_become_one_editable_object_layer_in_every_mode_and_depth() {
             assert!(!s.undo(), "conversion is one undo step");
             assert!(s.redo());
             assert_eq!(s.active().unwrap().selected_layers(), vec![id]);
-            assert_eq!(contents(&s), inner);
+            // Each decode gives the contents a handle of its own: the file names none.
+            assert_eq!(Document { id: inner.id, ..contents(&s) }, inner);
         }
     }
 }

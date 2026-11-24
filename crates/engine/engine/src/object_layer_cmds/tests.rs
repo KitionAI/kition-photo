@@ -153,6 +153,11 @@ fn editable_filters_are_re_editable() {
     for depth in [8, 16] {
         let mut s = session(depth);
         paint(&mut s);
+        // Contents of this test's own: the decode cache is the process's, keyed by the contents'
+        // bytes, and a `.kphoto` names no document handle, so other tests' identical layers would
+        // share its entry and its count.
+        let active = s.active().unwrap().active_layer.unwrap();
+        s.execute("layer.setProps", json!({"layer": active.0, "name": format!("Re-editable at {depth} bits")})).unwrap();
         let original = flat(&s);
         s.execute("filter.convertForEditableFilters", json!({})).unwrap();
         assert!(!s.is_enabled("filter.convertForEditableFilters"), "already smart");

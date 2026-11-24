@@ -35,5 +35,3 @@ base64 = "0.22"
 rayon = { workspace = true }
 # The object model's schema, for comparing the replica with the saved file's.
 kdm-model = { path = "../../crates/kdm/kdm-model" }
-# TEMPORARY: reads the old fixtures' zstd entries (tests/convert_fixtures.rs).
-ruzstd = "0.9"
