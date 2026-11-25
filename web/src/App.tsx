@@ -17,6 +17,7 @@ import {
   type KitViewState,
   type KitCanvasHandle,
   type KitCanvasView,
+  type KitPointer,
   type KitTool,
   type Phrases,
   type Strings,
@@ -28,7 +29,7 @@ import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
 import { describe, pictureArea, picturePanBounds } from './photo'
 import { CanvasScrollbars } from './CanvasScrollbars'
-import { forgetStrokeEnd, photoCanvasTool, transformTool, ALT_PICKS, type CropFrame, type PendingClicks, type PhotoToolEnv } from './tools/canvas'
+import { dashed, forgetStrokeEnd, photoCanvasTool, transformTool, ALT_PICKS, type CropFrame, type PendingClicks, type PhotoToolEnv } from './tools/canvas'
 import { brushSizeStep, cropParams, digitPercent, hardnessStep, nudgeStep, type DigitEntry } from './tools/canvas/geometry'
 import { livePreview } from './tools/canvas/live'
 import { createHeldKeys } from './tools/held'
@@ -52,6 +53,10 @@ import { usePhotoColors } from './colors'
 import { useMaskTarget } from './panels/useMaskTarget'
 import { pendingFontChoices, pendingTypeFont } from './panels/useTypeStyle'
 import { TextField, type TextDraft, type TextFieldActions } from './TextField'
+import { TypeSession, sessionKey } from './type/session'
+import { TypeEditor } from './type/TypeEditor'
+import { TypeEditingContext, type TypeEditing } from './type/context'
+import { dragBox, isBoxDrag, type Range as TextRange } from './type/text'
 import { DEFAULT_WINDOWS, windowCommand, zoomStep, type DockTabs } from './menus/kitMenus'
 import { isHiddenCommand } from './menus/hidden'
 import { PhotoStatus } from './PhotoStatus'
@@ -107,6 +112,22 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const session = { ...photoSession, run: runSession }
   const editor = useKitEditorState(session, host, t, 'photo', phrase)
   const { doc, change, state } = session
+  // Type edited on the canvas (plan 2026-11-24, stage 4): one session at a time, its commands in one history step.
+  const typeRun = useRef(editor.run)
+  typeRun.current = editor.run
+  const typeQuery = useRef(editor.query)
+  typeQuery.current = editor.query
+  const typeSession = useMemo(
+    () =>
+      new TypeSession({
+        run: (command, params) => typeRun.current(command, params),
+        query: (command, params) => typeQuery.current(command, params),
+        revision: () => docNow.current?.info.revision ?? 0,
+      }),
+    [],
+  )
+  const typeTarget = useLive(typeSession.target)
+  const typeEditing = typeTarget != null
   const canvas = useRef<KitCanvasHandle>(null)
   const workspace = useRef<HTMLDivElement>(null)
   const viewMemory = useRef<RasterView | null>(null)
@@ -177,13 +198,29 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     // A file-stamp refresh replaces the engine without remounting App. Proposals and
     // asynchronous tool continuations still belong to the engine that created them.
     cancelToolDrafts()
+    typeSession.drop()
     setCloneSource(null)
     forgetStrokeEnd()
     transformNow.current.forget()
     // The canvas builds a new viewport for a new document: the old one must never draw again (it
     // would put the previous document's pixels back). The next pointer event brings the new one.
     viewport.current = null
-  }, [doc, cancelToolDrafts])
+  }, [doc, cancelToolDrafts, typeSession])
+  // Someone else's change (an undo, a panel, an agent) ends the edit where it is; so does another
+  // layer becoming the active one (Photoshop commits then).
+  useEffect(() => typeSession.checkExternal(), [change.revision, typeSession])
+  const activeBefore = useRef<number | null | undefined>(undefined)
+  useEffect(() => {
+    const before = activeBefore.current
+    activeBefore.current = state?.activeLayer
+    if (typeSession.active && before === typeSession.layer && state?.activeLayer !== typeSession.layer) void typeSession.commit()
+  }, [state?.activeLayer, typeSession])
+  useLayoutEffect(() => {
+    typeSession.onEnd = () => {
+      // The keyboard goes back to the canvas when it was the session's.
+      if (document.activeElement instanceof HTMLTextAreaElement && document.activeElement.dataset.testid === 'photo-type-input') workspace.current?.focus({ preventScroll: true })
+    }
+  }, [typeSession])
   const { run, query } = editor
   // Keys work as soon as the picture shows: the editor takes the keyboard focus once, on open.
   const focused = useRef(false)
@@ -334,6 +371,12 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   )
   const applyCropNow = useRef<() => void>(() => undefined)
 
+  // The Type tools' presses and the Move tool's double click on type (defined below, read when they act).
+  type TypeContextArg = Parameters<KitTool['begin']>[1]
+  const typePressNow = useRef<(pointer: KitPointer, orientation: 'horizontal' | 'vertical', context: TypeContextArg) => ReturnType<KitTool['begin']>>(() => undefined)
+  const typeHoverNow = useRef<(pointer: KitPointer, context: TypeContextArg) => void>(() => undefined)
+  const editTextAtNow = useRef<(pointer: KitPointer) => Promise<void>>(() => Promise.resolve())
+
   // The session's `run` takes a repaint area, which tells the canvas what to redraw; a failed tool
   // command says why. A tool that paints pixels asks first to rasterize a layer that has none.
   const env = useMemo<PhotoToolEnv>(() => ({
@@ -398,21 +441,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           const open = docNow.current
           return open ? open.invoke<Uint8Array>('layerThumbnail', layer, 1024).then(toBitmap, () => null) : Promise.resolve(null)
         },
-        beginText: (pointer, orientation) => {
-          // The old draft can be unfocused after visiting its options. Finish it before
-          // replacing it; a rejected command keeps the old draft available for retry.
-          const draft = { id: ++textDraftId.current, x: pointer.x, y: pointer.y, left: pointer.canvasX, top: pointer.canvasY, orientation }
-          const navigation = ++textNavigation.current
-          const start = () => {
-            if (navigation !== textNavigation.current) return
-            focusText.current = true
-            setTextDirty(false)
-            setTextDraft(draft)
-          }
-          const actions = textActions.current
-          if (actions) void actions.commit(false).then((committed) => { if (committed) start() })
-          else start()
-        },
+        typePress: (pointer, orientation, context) => typePressNow.current(pointer, orientation, context),
+        typeHover: (pointer, context) => typeHoverNow.current(pointer, context),
+        editTextAt: (pointer) => void editTextAtNow.current(pointer),
         cloneSource,
         setCloneSource,
         pending,
@@ -514,6 +545,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const chooseTool = async (next: PhotoToolId) => {
     const navigation = ++textNavigation.current
     if (next !== tool) {
+      // Choosing another tool commits text edited on the canvas, as Photoshop's does.
+      if (typeSession.active) await typeSession.commit()
       // Visiting text options leaves the draft open but no longer focused, so switching tools
       // may not blur it. Finish with the old tool's options and keep focus on the chosen tool.
       const actions = textActions.current
@@ -620,15 +653,18 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     setTextDraft(null)
   }
   // New text takes the Type tool's options (with its anti-aliasing, in one step) and the foreground colour.
-  const placeText = (text: string, focusEditor: boolean) => {
+  // Enter (`goOn`) goes on editing it on the canvas, on a new line, in the same history step.
+  const placeText = (text: string, focusEditor: boolean, goOn = false) => {
     const draft = textDraft
     if (!draft) return Promise.resolve(false)
     focusAfterText.current = focusEditor
     setTextPending(true)
     const generation = toolGenerationNow.current
+    const navigation = textNavigation.current
+    const key = sessionKey()
     const font = pendingTypeFont(doc)
     const create = (choice: Partial<ToolOptions> = {}) => generation === toolGenerationNow.current
-      ? run('type.create', { x: Math.round(draft.x), y: Math.round(draft.y), text, color: fg, orientation: draft.orientation, ...toolParams('Type', { ...options, ...choice }) })
+      ? run('type.create', { x: Math.round(draft.x), y: Math.round(draft.y), text, color: fg, orientation: draft.orientation, ...toolParams('Type', { ...options, ...choice }), coalesce: key })
       : Promise.resolve(null)
     // A font selection is an editing intent even before metadata answers. Capture its result
     // for this draft; later option changes still belong to the next draft (UI38).
@@ -636,6 +672,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       if (result !== null) {
         setTextDirty(false)
         setTextDraft(null)
+        if (goOn) void continueText(result, key, navigation, revisionNow())
       }
       // Restore typing only if focus is still in the workspace; preserve a later field choice.
       else focusText.current = document.activeElement === workspace.current
@@ -657,6 +694,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         textSaveAgain.current = false
         const target = { draft: textDraftId.current, revision: null as number | null, command: commandSequence.current }
         textSaveTarget.current = target
+        if (typeSession.active) await typeSession.commit()
         const actions = textActions.current
         if (actions && !(await actions.commit())) return
         const fonts = await Promise.all(pendingFontChoices(doc))
@@ -676,6 +714,175 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     })
     textSave.current = saving
     return saving
+  }
+
+  /** The layer id a `type.create` answered (its JSON), or null. */
+  const createdLayer = (result: string | null): number | null => {
+    try {
+      const layer = result ? (JSON.parse(result) as { layer?: unknown }).layer : null
+      return typeof layer === 'number' ? layer : null
+    } catch {
+      return null
+    }
+  }
+  /** After Enter on new text: edit it on the canvas, the caret on a new line, if nothing came between. */
+  const continueText = async (result: string | null, key: string, navigation: number, revision: number) => {
+    const layer = createdLayer(result)
+    if (layer == null) return
+    // Let the field go and the keyboard come back to the canvas first.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    if (navigation !== textNavigation.current || revisionNow() !== revision || document.activeElement !== workspace.current) return
+    await typeSession.start({ layer, created: true, key, pendingBreak: true })
+  }
+  /** Edits type layer `layer` with `select` selected (its caret when empty); the layer becomes the active one first. */
+  const startEditing = async (layer: number, select: TextRange) => {
+    // A fully locked layer refuses every edit: say so once instead of at every key.
+    if (stateNow.current?.layers.find((item) => item.id === layer)?.locks.all) {
+      say('type.locked')
+      return false
+    }
+    if (stateNow.current?.activeLayer !== layer && (await run('layer.select', { layer, mode: 'replace' })) === null) return false
+    return typeSession.start({ layer, select })
+  }
+  /** Chooses the Type tool for a layer's orientation, then edits it (the Move tool's double click, a Layers thumbnail's). */
+  const editLayerText = async (layer: number, select: (length: number) => TextRange) => {
+    if (editor.host.readOnly) return
+    const info = await query<{ text: string; orientation: string }>('type.info', { layer })
+    if (!info || typeof info.text !== 'string') return
+    const next: PhotoToolId = info.orientation === 'Vertical' ? 'VerticalType' : 'Type'
+    if (next !== tool) await chooseToolNow.current(next)
+    await startEditing(layer, select(Array.from(info.text).length))
+  }
+  editTextAtNow.current = async (pointer) => {
+    const hit = await query<{ layer: number; index: number }>('type.hitTest', { x: pointer.x, y: pointer.y })
+    if (typeof hit?.layer === 'number') await editLayerText(hit.layer, () => [hit.index, hit.index])
+  }
+  const typeEditingApi = useMemo<TypeEditing>(() => ({ target: typeSession.target, editLayer: (layer) => void editLayerTextNow.current(layer, (length) => [0, length]) }), [typeSession])
+  const editLayerTextNow = useRef(editLayerText)
+  editLayerTextNow.current = editLayerText
+  /** A new paragraph box dragged out: an empty paragraph layer, edited at once (removed if left empty). */
+  const placeParagraph = async (box: [number, number, number, number], orientation: 'horizontal' | 'vertical', navigation: number) => {
+    const key = sessionKey()
+    const result = await run('type.create', { box, text: '', color: colorsNow.current.foreground, orientation, ...toolParams('Type', optionsNow.current), coalesce: key })
+    const layer = createdLayer(result)
+    if (layer == null || navigation !== textNavigation.current) return
+    await typeSession.start({ layer, created: true, key, select: [0, 0] })
+  }
+  /** A Type tool press with no text edited: on type it edits it; elsewhere a click places point text, a drag a paragraph box. */
+  const freshTypePress = (pointer: KitPointer, orientation: 'horizontal' | 'vertical'): ReturnType<KitTool['begin']> => {
+    // The old draft can be unfocused after visiting its options. Finish it before replacing it; a
+    // rejected command keeps the old draft available for retry. Only the latest press may go on.
+    const navigation = ++textNavigation.current
+    const draftActions = textActions.current
+    const finished = Promise.all([draftActions ? draftActions.commit(false) : Promise.resolve(true), typeSession.settled()]).then(([committed]) => committed)
+    const from = { x: pointer.canvasX, y: pointer.canvasY }
+    // Counted now: a double click's second press can come before the first one's edit has started.
+    const clicks = typeSession.countPress(from)
+    let last = pointer
+    let moved = false
+    let onType = false
+    let release: (outcome: 'cancel' | [number, number, number, number] | null) => void = () => undefined
+    const released = new Promise<'cancel' | [number, number, number, number] | null>((resolve) => {
+      release = resolve
+    })
+    void (async () => {
+      if (!(await finished) || navigation !== textNavigation.current) return
+      // A Shift-press makes new text even over type (Photoshop's way to start text on text).
+      const hit = !pointer.shift && !editor.host.readOnly ? await query<{ layer: number; index: number }>('type.hitTest', { x: pointer.x, y: pointer.y }) : null
+      if (navigation !== textNavigation.current) return
+      if (typeof hit?.layer === 'number') {
+        onType = true
+        if (!(await startEditing(hit.layer, [hit.index, hit.index]))) return
+        typeSession.press(pointer, from, false, clicks)
+        if (moved) typeSession.dragTo(last)
+        return
+      }
+      const outcome = await released
+      if (outcome === 'cancel' || navigation !== textNavigation.current) return
+      if (outcome) return void placeParagraph(outcome, orientation, navigation)
+      focusText.current = true
+      setTextDirty(false)
+      setTextDraft({ id: ++textDraftId.current, x: pointer.x, y: pointer.y, left: pointer.canvasX, top: pointer.canvasY, orientation })
+    })()
+    return {
+      move: (at, { overlay }) => {
+        last = at
+        moved = moved || Math.hypot(at.canvasX - from.x, at.canvasY - from.y) >= 3
+        if (onType) {
+          if (typeSession.active && moved) typeSession.dragTo(at)
+          return
+        }
+        if (!isBoxDrag(from, { x: at.canvasX, y: at.canvasY })) return overlay.clear()
+        // The paragraph box being dragged out.
+        overlay.draw((context, toScreen) => {
+          const a = toScreen(pointer.x, pointer.y)
+          const b = toScreen(at.x, at.y)
+          context.beginPath()
+          context.rect(Math.min(a.x, b.x) + 0.5, Math.min(a.y, b.y) + 0.5, Math.abs(b.x - a.x), Math.abs(b.y - a.y))
+          dashed(context)
+        })
+      },
+      end: (at, { overlay }) => {
+        last = at
+        overlay.clear()
+        release(!onType && isBoxDrag(from, { x: at.canvasX, y: at.canvasY }) ? dragBox(pointer, at) : null)
+        if (onType && typeSession.active) {
+          if (moved) typeSession.dragTo(at)
+          typeSession.focusInput()
+        }
+      },
+      cancel: ({ overlay }) => {
+        overlay.clear()
+        release('cancel')
+      },
+    }
+  }
+  typePressNow.current = (pointer, orientation, { viewport }) => {
+    if (typeSession.active) {
+      const screen = { x: pointer.canvasX, y: pointer.canvasY }
+      const toScreen = (x: number, y: number) => viewport.toScreen(x, y)
+      const handle = typeSession.handleAt(screen, toScreen)
+      if (handle) {
+        // A paragraph box's handle: the box follows the drag, its text wrapping as it goes.
+        return {
+          move: (at) => typeSession.resize(handle, at),
+          end: (at) => {
+            typeSession.resize(handle, at)
+            typeSession.focusInput()
+          },
+        }
+      }
+      const zoom = canvas.current?.view()?.zoom ?? 1
+      if (typeSession.contains(pointer, 4 / zoom)) {
+        // On the edited text: the caret goes there (two clicks a word, three a paragraph), a drag selects.
+        typeSession.press(pointer, screen, pointer.shift)
+        let moved = false
+        return {
+          move: (at) => {
+            moved = moved || Math.hypot(at.canvasX - screen.x, at.canvasY - screen.y) >= 3
+            if (moved) typeSession.dragTo(at)
+          },
+          end: (at) => {
+            if (moved) typeSession.dragTo(at)
+            typeSession.focusInput()
+          },
+        }
+      }
+      // Elsewhere the press commits the edit, then does what a press does with nothing edited.
+      void typeSession.commit()
+    }
+    return freshTypePress(pointer, orientation)
+  }
+  typeHoverNow.current = (pointer, { viewport }) => {
+    const handle = typeSession.active ? typeSession.handleAt({ x: pointer.canvasX, y: pointer.canvasY }, (x, y) => viewport.toScreen(x, y)) : null
+    setToolCursor(handle ? (handle === 'n' || handle === 's' ? 'ns-resize' : handle === 'e' || handle === 'w' ? 'ew-resize' : handle === 'nw' || handle === 'se' ? 'nwse-resize' : 'nesw-resize') : null)
+  }
+  /** Undo, Redo and Save from the keys of text being edited: the edit is committed first. */
+  const typeAction = async (kind: 'undo' | 'redo' | 'save') => {
+    await typeSession.commit()
+    workspace.current?.focus({ preventScroll: true })
+    if (kind === 'save') await saveWithText()
+    else await run(kind === 'undo' ? 'edit.undo' : 'edit.redo', {})
   }
 
   // Arrow keys nudge (plan 2026-11-24, stage 2): Free Transform's box, the crop frame, the active
@@ -723,6 +930,18 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const command = event.metaKey || event.ctrlKey
     const key = event.key.toLowerCase()
+    // Text being edited while the keyboard is elsewhere in the editor (after the options bar, say):
+    // Escape cancels it and Cmd+Enter commits it, as in its own field.
+    if (typeSession.active && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) {
+      if (key === 'escape') {
+        void typeSession.cancel()
+        return true
+      }
+      if (key === 'enter' && (command || event.code === 'NumpadEnter')) {
+        void typeSession.commit()
+        return true
+      }
+    }
     const box = transformNow.current.boxNow.current
     const frame = cropNow.current
     if (box && key === 'enter') void transformNow.current.commit()
@@ -748,6 +967,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
 
   return (
     <KitEditorProvider editor={{ ...editor, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
+      <TypeEditingContext.Provider value={typeEditingApi}>
       <DialogsProvider value={dialogs}>
         <EditorFrame
           tabs={tabs}
@@ -764,7 +984,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 layer={activeLayer ? { id: activeLayer.id, kind: activeLayer.kind } : null}
                 crop={{ proposed: crop != null && !crop.initial, commit: () => void applyCrop(), cancel: cancelCrop }}
                 transform={transform.fields ? { fields: transform.fields, set: transform.setFields, commit: () => void transform.commit(), cancel: () => void transform.cancel() } : null}
-                text={{ editing: textDraft != null, submitting: textPending, commit: () => textActions.current?.commit(), cancel: () => textActions.current?.cancel() }}
+                text={{
+                  editing: textDraft != null || typeEditing,
+                  submitting: textPending,
+                  layer: typeTarget?.layer ?? null,
+                  commit: () => (typeSession.active ? void typeSession.commit() : textActions.current?.commit()),
+                  cancel: () => (typeSession.active ? void typeSession.cancel() : textActions.current?.cancel()),
+                }}
                 cloneSourceSet={cloneSource != null}
                 view={{ fit: () => canvas.current?.fit(), actual: () => canvas.current?.zoomTo(1) }}
               />
@@ -838,7 +1064,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
             <PhotoCanvas
               activeTool={tool}
-              onDenied={cancelToolDrafts}
+              onDenied={() => {
+                cancelToolDrafts()
+                void typeSession.commit()
+              }}
               held={held}
               temporaryMove={temporaryMove}
               wheelZooms={prefs.zoomWithWheel}
@@ -860,7 +1089,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
               }}
             >
               {outline != null ? <BrushCursor pointer={canvasPointer} diameter={outline} hardness={TOOL_FIELDS[tool].includes('hardness') ? options.hardness : 100} /> : null}
-              {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={options.fontSize} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
+              <TypeEditor session={typeSession} view={view} label={t('type.editing')} onAction={(kind) => void typeAction(kind)} />
+              {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={(options.fontSize * (state?.resolution ?? 72)) / 72} font={options.font} fontStyle={options.fontStyle} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
               {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
               <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} picture={state ? { width: state.width, height: state.height } : null} />
             </PhotoCanvas>
@@ -883,6 +1113,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
         </EditorFrame>
       </DialogsProvider>
+      </TypeEditingContext.Provider>
     </KitEditorProvider>
   )
 }

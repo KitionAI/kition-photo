@@ -40,7 +40,13 @@ export type ParagraphStyle = {
 }
 
 /** What `type.info` answers that the editor reads. */
-export type TypeInfo = { antialias: string; orientation: string; transform: number[] | { m: number[] }; runs: { style: RunStyle }[]; paragraphs: { style: ParagraphStyle }[] }
+export type TypeInfo = { antialias: string; orientation: string; transform: number[] | { m: number[] }; runs: { start?: number; end?: number; style: RunStyle }[]; paragraphs: { start?: number; end?: number; style: ParagraphStyle }[] }
+
+/** The entry of `list` (runs or paragraphs, with character `start` and `end`) holding character `at`: the one it is inside, else the one ending there, else the first. */
+function entryAt<T extends { start?: number; end?: number }>(list: readonly T[], at: number | undefined): T {
+  if (at == null) return list[0]
+  return list.find((item) => item.start != null && item.end != null && at >= item.start && at < item.end) ?? list.find((item) => item.end === at) ?? list[0]
+}
 
 /** Upstream's paragraph alignments, in its order (`type_sections`), with their tooltips. */
 export const ALIGNMENTS = [
@@ -139,13 +145,14 @@ export type TypeLayer = TypeValues & { layer: number; vertical: boolean; scale: 
 
 /**
  * Type layer `layer`'s style from its `type.info`, or null without runs; `hex` writes its colour
- * (0 to 255 per channel) as `#rrggbb` (kit-editor's `rgbToHex`).
+ * (0 to 255 per channel) as `#rrggbb` (kit-editor's `rgbToHex`). `at`: the character whose run and
+ * paragraph show (a selection's start while text is edited on the canvas); the first otherwise.
  */
-export function typeLayerOf(layer: number, info: TypeInfo | null, hex: (rgb: readonly [number, number, number]) => string): TypeLayer | null {
+export function typeLayerOf(layer: number, info: TypeInfo | null, hex: (rgb: readonly [number, number, number]) => string, at?: number): TypeLayer | null {
   if (!info?.runs?.length) return null
   const scale = transformScale(info.transform)
-  const run = info.runs[0].style
-  const paragraph = info.paragraphs?.[0]?.style ?? {}
+  const run = entryAt(info.runs, at).style
+  const paragraph = (info.paragraphs?.length ? entryAt(info.paragraphs, at) : undefined)?.style ?? {}
   const autoLeading = run.leading_pt == null
   return {
     layer,

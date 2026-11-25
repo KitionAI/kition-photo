@@ -240,7 +240,8 @@ export function TypeBar() {
   const ui = useUi()
   const denied = host.readOnly || ui.state(`tool:${tool}`).denied
   // A pending draft still owns the bar: later options are for new text, never the old active layer.
-  const style = useTypeStyle({ layer: layer?.kind === 'Type' && !text.editing ? layer.id : undefined, options: o, setOptions: set, foreground, setForeground })
+  // Text edited on the canvas owns the bar: its selected range (or all its text) takes the changes.
+  const style = useTypeStyle({ layer: text.layer ?? (layer?.kind === 'Type' && !text.editing ? layer.id : undefined), options: o, setOptions: set, foreground, setForeground })
   const { layer: target, values, apply } = style
   const { fonts: fontChoices, styles: styleChoices } = useFontChoices(values.font, values.fontStyle)
   return (
@@ -279,7 +280,7 @@ export function TypeBar() {
       {text.editing && !text.submitting ? (
         <span className="photo-options-end">
           <Icon field="cancel" icon={Ban} label={phrase('Cancel any current edits (Esc)')} keepFocus onClick={text.cancel} />
-          <Icon field="commit" icon={CheckIcon} label={fill(phrase('Commit any current edits ({key})'), { key: 'Enter' })} keepFocus disabled={denied} onClick={text.commit} />
+          <Icon field="commit" icon={CheckIcon} label={fill(phrase('Commit any current edits ({key})'), { key: t('type.commitKey') })} keepFocus disabled={denied} onClick={text.commit} />
         </span>
       ) : (
         <>

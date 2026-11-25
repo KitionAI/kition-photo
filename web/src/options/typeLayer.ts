@@ -12,10 +12,10 @@ export { shownSize, type TypeLayer } from './typeStyle'
 export type Fonts = { families: string[] }
 export type Faces = { faces: { style: string }[] }
 
-/** The style of type layer `id` (asked again after every change), or null for none. */
-export function useTypeLayer(id: number | undefined): TypeLayer | null {
+/** The style of type layer `id` (asked again after every change), or null for none; `at`: the character whose style shows (see `typeLayerOf`). */
+export function useTypeLayer(id: number | undefined, at?: number): TypeLayer | null {
   const info = useEngineQuery<TypeInfo>('type.info', { layer: id ?? -1 }, id)
-  return id == null ? null : typeLayerOf(id, info, rgbToHex)
+  return id == null ? null : typeLayerOf(id, info, rgbToHex, at)
 }
 
 /** The families and the styles of `family` the engine has, each list keeping a name it lacks (so a choice still shows it). */

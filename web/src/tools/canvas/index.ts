@@ -13,7 +13,7 @@ import { typeTool } from './type'
 import { eyedropperTool, markTool, rulerTool, zoomTool } from './view'
 
 export type { CropFrame, PendingClicks, PhotoToolEnv, TransformBox } from './common'
-export { drawCropProposal, drawPathOutline, drawSelectionAnts, drawTransformBox, type PathData } from './common'
+export { dashed, drawCropProposal, drawPathOutline, drawSelectionAnts, drawTransformBox, type PathData } from './common'
 export { transformTool } from './move'
 export { forgetStrokeEnd } from './paint'
 export { ALT_PICKS, picksColour } from '../altPicks'

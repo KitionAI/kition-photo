@@ -87,8 +87,15 @@ export type PhotoToolEnv = {
   redraw: () => void
   /** The layer's own pixels on the canvas (the Layers panel's thumbnail, up to 1024 pixels on its longer side), for the Move tool's drag. */
   layerImage: (layer: number) => Promise<ImageBitmap | null>
-  /** The Type tools ask for text at a document point. */
-  beginText: (pointer: KitPointer, orientation: 'horizontal' | 'vertical') => void
+  /**
+   * A Type tool's press (plan 2026-11-24, stage 4): on type it edits it, elsewhere a click places
+   * point text and a drag a paragraph box; while text is edited, a press on it moves the caret.
+   */
+  typePress: (pointer: KitPointer, orientation: 'horizontal' | 'vertical', context: Parameters<KitTool['begin']>[1]) => KitGesture | void
+  /** The Type tool's cursor over a paragraph box's handles while text is edited. */
+  typeHover?: (pointer: KitPointer, context: Parameters<KitTool['begin']>[1]) => void
+  /** The Move tool's double click: edits the type under the pointer (the Type tool chosen), if there is any. */
+  editTextAt?: (pointer: KitPointer) => void
   /** The Clone Stamp's and Healing Brush's source, set with Alt-click; null until then. */
   cloneSource: { x: number; y: number } | null
   setCloneSource: (source: { x: number; y: number } | null) => void

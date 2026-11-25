@@ -194,6 +194,8 @@ export function moveTool(env: PhotoToolEnv): KitTool {
       env.setCursor(handle ? handleCursor(handle, 0) : null)
     },
     leave: () => env.setCursor(null),
+    // Photoshop's double click on type: the Type tool edits it, the caret at the character there (plan 2026-11-24, stage 4).
+    doubleClick: (pointer) => env.editTextAt?.(pointer),
   }
 }
 

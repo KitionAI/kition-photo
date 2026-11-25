@@ -541,6 +541,7 @@ const DIALOG_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
 /** The canvas's own words (plan 2026-11-24, stage 2): Free Transform's bar and what a refused gesture says. [key, English, Chinese] */
 const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['move.locked', 'Could not use the Move tool because the layer is locked.', '无法使用移动工具，因为图层已锁定。'],
+  ['type.locked', 'Could not edit the text because the layer is locked.', '无法编辑文字，因为图层已锁定。'],
   ['nudge.failed', 'Could not nudge it there.', '无法移动到那里。'],
   ['transform.locked', 'Could not transform: the layer is locked.', '无法变换：图层已锁定。'],
   ['transform.empty', 'Could not transform: the layer has no pixels there.', '无法变换：图层在那里没有像素。'],
@@ -569,6 +570,8 @@ const enUS: Catalog = {
   "cancel": "Cancel",
   "fontSize": "Size",
   "typePlaceholder": "Type, then press Enter",
+  "type.editing": "Text being edited",
+  "type.commitKey": "Cmd+Enter",
   "options.selectionMode": "Selection mode",
   "options.gradientType": "Gradient type",
   "options.gradientStyle": "Gradient style",
@@ -646,6 +649,8 @@ const zhCN: Catalog = {
   "cancel": "取消",
   "fontSize": "字号",
   "typePlaceholder": "输入文字后按回车",
+  "type.editing": "正在编辑的文字",
+  "type.commitKey": "Cmd+回车",
   "options.selectionMode": "选区模式",
   "options.gradientType": "渐变类型",
   "options.gradientStyle": "渐变样式",

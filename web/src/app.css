@@ -1535,3 +1535,86 @@ select.kui-field.photo-kerning-presets {
   border-color: var(--kit-primary);
   background: var(--kit-primary-soft);
 }
+
+/* Type edited on the canvas (plan 2026-11-24, stage 4): the caret, the selection, an input
+   method's composition and a paragraph box over the engine's rendering of the text. */
+.photo-type-editor {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.photo-type-marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.photo-type-selection {
+  fill: var(--kit-primary);
+  fill-opacity: 0.35;
+}
+
+.photo-type-composition {
+  stroke: var(--kit-text);
+  stroke-width: 1.5;
+}
+
+.photo-type-caret-halo {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 3;
+}
+
+.photo-type-caret-line {
+  stroke: #111111;
+  stroke-width: 1;
+}
+
+.photo-type-caret {
+  animation: photo-type-blink 1.06s steps(1, end) infinite;
+}
+
+@keyframes photo-type-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-type-caret {
+    animation: none;
+  }
+}
+
+.photo-type-box-frame {
+  fill: none;
+  stroke: var(--kit-primary);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.photo-type-box-handle {
+  fill: #ffffff;
+  stroke: var(--kit-primary);
+  stroke-width: 1;
+}
+
+/* The session's keyboard: an invisible text area at the caret (an input method's candidates show there). */
+.photo-type-input {
+  position: absolute;
+  width: 1px;
+  height: 1em;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  resize: none;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 16px;
+  white-space: pre;
+  pointer-events: none;
+}

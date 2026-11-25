@@ -13,8 +13,11 @@ export type BarProps = {
   layer: { id: number | undefined; kind: string } | null
   /** The Crop tool's proposed area: whether there is one, and its commit and cancel. */
   crop: { proposed: boolean; commit: () => void; cancel: () => void }
-  /** A draft keeps the Type bar until submission finishes; its commit/cancel actions are only available before submission. */
-  text: { editing: boolean; submitting: boolean; commit: () => void; cancel: () => void }
+  /**
+   * A draft keeps the Type bar until submission finishes; its commit/cancel actions are only available before submission.
+   * `layer`: the type layer edited on the canvas (plan 2026-11-24, stage 4), whose selected range the bar styles; null with none.
+   */
+  text: { editing: boolean; submitting: boolean; layer: number | null; commit: () => void; cancel: () => void }
   /** Whether the Clone Stamp's and Healing Brush's source is set. */
   cloneSourceSet: boolean
   /** The view: fit the image on screen, or show it at 100 %. */

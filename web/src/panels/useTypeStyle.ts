@@ -4,6 +4,7 @@ import type { ToolOptions } from '../tools/options'
 import { styleForFamily, useTypeLayer } from '../options/typeLayer'
 import { TOOL_FIELDS, shownSize, typeEdit, typeValuesOf, type ToolField, type TypeEdit, type TypeLayer, type TypeValues } from '../options/typeStyle'
 import { useGestures } from './gesture'
+import { useTypeEditingTarget } from '../type/context'
 
 /** What a type style is for: the active type layer, else new type (the Type tool's options and the foreground). */
 export type TypeTarget = {
@@ -42,6 +43,10 @@ export function pendingFontChoices(doc: object | null) {
  * Without one, the tool's own options (font, style, size, alignment) and the foreground colour
  * show and change, for new type; every other field is disabled (`editable`), new type taking it
  * from the engine's default type styles.
+ *
+ * While the layer's text is edited on the canvas (plan 2026-11-24, stage 4), the fields show the
+ * style at the selection's start, and an edit restyles the selected characters only (the whole
+ * text when nothing is selected), in the edit session's one history step.
  */
 export function useTypeStyle(target: TypeTarget) {
   const { run, query, session } = useKitEditor()
@@ -52,8 +57,16 @@ export function useTypeStyle(target: TypeTarget) {
     mounted.current = true
     return () => { mounted.current = false }
   }, [])
-  const layer = useTypeLayer(target.layer)
+  const editing = useTypeEditingTarget()
+  const edited = editing && target.layer != null && editing.layer === target.layer ? editing : null
+  const layer = useTypeLayer(target.layer, edited?.range?.[0])
   const gestures = useGestures(`type-${layer?.layer ?? 'tool'}`)
+  /** A command on the layer: in the edit session's step (on its selected range), else on its own. */
+  const runOnLayer = (command: string, params: Record<string, unknown>, coalesce?: string) => {
+    if (!layer) return
+    if (edited) void edited.run(command, { ...params, ...(edited.range && command === 'type.setStyle' ? { range: edited.range } : {}) })
+    else void run(command, { layer: layer.layer, ...params, ...(coalesce ? { coalesce } : {}) })
+  }
   const values: TypeValues = layer ? { ...layer, size: shownSize(layer) } : typeValuesOf(target.options, target.foreground)
 
   /** Whether `field` can change now: every field for a layer, the tool's own for new type. */
@@ -63,7 +76,7 @@ export function useTypeStyle(target: TypeTarget) {
   const apply = (edit: TypeEdit, field: string, final = true) => {
     const { style, options } = typeEdit(edit, layer?.scale ?? 1)
     if (Object.keys(options).length) target.setOptions(options)
-    if (layer && Object.keys(style).length) void run('type.setStyle', { layer: layer.layer, ...style, coalesce: gestures.key(field, final) })
+    if (layer && Object.keys(style).length) runOnLayer('type.setStyle', style, gestures.key(field, final))
   }
 
   const setFont = async (font: string) => {
@@ -88,19 +101,19 @@ export function useTypeStyle(target: TypeTarget) {
 
   /** The text colour: the layer's, or the foreground for new type (upstream's Type bar swatch). */
   const setColor = (color: string, final: boolean) => {
-    if (layer) void run('type.setStyle', { layer: layer.layer, color, coalesce: gestures.key('color', final) })
+    if (layer) runOnLayer('type.setStyle', { color }, gestures.key('color', final))
     else target.setForeground(color)
   }
 
   /** The anti-aliasing: the layer's (Type › Anti-Alias), and the tool's for new type. */
   const setAntialias = (value: string) => {
     if (TOOL_ANTI_ALIAS.includes(value)) target.setOptions({ textAntiAlias: value })
-    if (layer) void run(`type.antiAlias.${value}`, { layer: layer.layer })
+    if (layer) runOnLayer(`type.antiAlias.${value}`, {})
   }
 
   /** The layer's orientation (Type › Orientation); new type takes the tool's (Horizontal or Vertical Type). */
   const setOrientation = (vertical: boolean) => {
-    if (layer && layer.vertical !== vertical) void run(`type.orientation.${vertical ? 'vertical' : 'horizontal'}`, { layer: layer.layer })
+    if (layer && layer.vertical !== vertical) runOnLayer(`type.orientation.${vertical ? 'vertical' : 'horizontal'}`, {})
   }
 
   return {

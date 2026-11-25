@@ -10,6 +10,7 @@ import { useThumbnails, type ThumbnailSource } from './thumbnails'
 import { layersLeasedByOthers, useLayerObjectIds } from '../layerLeases'
 import { gestureKey } from './gesture'
 import { useDialogs } from '../dialogs/DialogHost'
+import { useTypeEditing } from '../type/context'
 
 
 const AppWindow = TesseraIcons.AppWindowIcon
@@ -130,6 +131,7 @@ function menuEntries(layer: PhotoLayer, multi: boolean, hasSelection: boolean): 
 
 export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInfo; maskTarget: boolean; onMaskTarget: (on: boolean) => void }) {
   const { run, ask, enabled, byId, phrase, t, session } = useKitEditor()
+  const typeEditing = useTypeEditing()
   const dialogs = useDialogs()
   /** A "…" command's dialog (with its live preview), or the generic form for one the dialog host has none for. */
   const askFirst = (command: string) => {
@@ -229,6 +231,8 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
     if (listDisabled) return
     const part = partOf(event)
     if (part === 'mask' || part === 'eye') return
+    // A type layer's thumbnail edits its text on the canvas, all of it selected (plan 2026-11-24, stage 4).
+    if (part === 'thumb' && layer.kind === 'Type' && typeEditing && layer.id != null) return typeEditing.editLayer(layer.id)
     // The Background becomes a normal layer; a name renames in place; elsewhere opens Blending Options.
     if (layer.background) void run('layer.new.layerFromBackground', {})
     else if (part === 'name') setRenaming({ key: layer.id!, text: layer.name })
