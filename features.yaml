@@ -690,3 +690,23 @@ features:
     gap: "The generic dialog draws a control per parameter; the reference's per-filter layouts (thumbnail preview pane, Blur Gallery pins, colour pickers) and the remaining dialogs (Layer Style, Color Range, Select and Mask, Export) come in later stages."
     cases: [photo.editor.dialogs/menu-rows, photo.editor.dialogs/preview-dialog]
     since: "2026-11-24"
+  - id: photo.editor.canvas-handles
+    title: "Handles and held keys on the canvas: the Move tool drags the layer's own pixels (Shift keeps an axis, Alt copies, arrows nudge in one step, a selection's pixels float, a locked layer says so and leaves nothing drawn, the selected layer is marked); Free Transform (Cmd+T, Edit › Free Transform, Show Transform Controls' handles) has eight handles, a rotation zone and a reference point, previews live, has X/Y/W/H/angle in the bar, commits on Enter and cancels on Escape; Crop starts with a frame round the canvas that its handles size, a drag inside moves and a drag outside turns, committed by Enter or a double click; a selection tool moves and nudges the selection's outline, the marquee draws from its centre and shows its size, the Polygonal Lasso takes points back, Quick Selection grows during the drag; Space, Cmd+Space and Cmd lend the Hand, Zoom and Move tools, also mid-drag; a wheel notch zooms 1.2 times, with Alt too; the editor has the keyboard on open"
+    dimension: [function]
+    priority: P0
+    status: has
+    paths: [web/src/PhotoCanvas.tsx, web/src/overlays.ts, web/src/CanvasScrollbars.tsx, web/src/PhotoStatus.tsx, web/src/tools/PhotoToolRail.tsx, web/src/tools/held.ts, web/src/tools/canvasKeys.ts, web/src/tools/useFreeTransform.ts, web/src/tools/canvas/geometry.ts, web/src/tools/canvas/live.ts, web/src/tools/canvas/move.ts, web/src/tools/canvas/crop.ts, web/src/tools/canvas/select.ts, web/src/tools/canvas/lasso.ts, web/src/tools/canvas/common.ts, web/src/options/OptionsBar.tsx, web/tests/handles.mjs]
+    target: "Photoshop 2026"
+    gap: "A Move drag shows the layer's own pixels over the canvas until the release (its old place stays drawn meanwhile: the engine cannot render the image without the layer yet); warp, perspective and the Transform submenu's modes, snapping and smart guides, crop presets with a size and the other crop overlays are not there; an Alt-drag copy is two history steps (Duplicate, Move)."
+    cases: [photo.editor.canvas-handles/handles, photo.editor.canvas-handles/geometry]
+    since: "2026-11-24"
+  - id: photo.editor.brush-keys
+    title: "The brush tools' outline cursor (the brush's size at the zoom, a ring for its hardness, the crosshair below 4 screen pixels) and Photoshop's brush keys: [ and ] step the size, Shift+[ and Shift+] the hardness, number keys the opacity (Shift: the flow; other tools the layer's), Shift keeps a stroke on one axis, Shift-click joins the last stroke's end, Alt picks the foreground colour"
+    dimension: [function]
+    priority: P0
+    status: has
+    paths: [web/src/tools/BrushCursor.tsx, web/src/tools/altPicks.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/geometry.ts, web/src/tools/canvasKeys.ts, web/src/tools/rasterize.ts, web/src/App.tsx, web/tests/brush-keys.mjs]
+    target: "Photoshop 2026"
+    gap: "The outline is a circle for every tip (no shaped or angled tips, no Precise/Full-Size preference); strokes still land on release (live strokes are stage 3)."
+    cases: [photo.editor.brush-keys/brush-keys]
+    since: "2026-11-24"

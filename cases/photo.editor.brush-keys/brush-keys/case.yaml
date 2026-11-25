@@ -1,0 +1,27 @@
+format: 1
+id: photo.editor.brush-keys/brush-keys
+feature: photo.editor.brush-keys
+intent: >-
+  Real keys and pointer drags with the Brush (plan 2026-11-24, stage 2): its outline shows at the brush size times
+  the zoom instead of the system cursor; ] ] [ steps 20 → 25 → 30 → 25; Shift+[ and Shift+] step the hardness by
+  25 % and the outline draws a hardness ring; below 4 screen pixels the crosshair shows instead; 5 sets the opacity
+  to 50 %, 4 5 to 45 %, 0 to 100 % and Shift+3 the flow to 30 %; Shift keeps a stroke level although the pointer
+  drifts; Shift-click joins the last stroke's end with a straight stroke; Alt-click on a shape layer picks its colour
+  as the foreground, asks nothing and adds no history step.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/brush-keys.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/brush-keys.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 180
+since: "2026-11-24"

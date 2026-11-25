@@ -1,0 +1,27 @@
+format: 1
+id: photo.editor.canvas-handles/geometry
+feature: photo.editor.canvas-handles
+intent: >-
+  The canvas gestures' arithmetic (plan 2026-11-24, stage 2): [ and ] step the brush through Photoshop's sizes and
+  Shift with them the hardness by quarters; number keys give 10–100 % and two quick keys an exact value; a Shift
+  stroke locks to the axis it set out along after 3 screen pixels; a Shift move keeps to eight directions and the
+  Polygonal Lasso to 45°; an arrow nudges one screen pixel (Shift 10 document pixels); a mouse notch zooms at most
+  1.2 times while a pinch zooms as before; the marquee draws from its centre; a point is inside a traced selection
+  outline; Free Transform's handles, scale (Shift proportional, Alt about the reference point), rotation (Shift 15°),
+  move, distort, skew and bar numbers; the crop frame's handles in its turned axes, a held ratio, its turn and the
+  whole pixels `image.crop` takes.
+layer: gate
+source:
+  kind: probe
+  from: web/src/tools/canvas/geometry.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/tools/canvas/geometry.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-24"

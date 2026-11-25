@@ -1,0 +1,35 @@
+format: 1
+id: photo.editor.canvas-handles/handles
+feature: photo.editor.canvas-handles
+intent: >-
+  Real pointer drags and keys on the editor (plan 2026-11-24, stage 2). V works without a click after opening. A Move
+  drag shows the layer's pixels under the pointer while the engine is untouched, and the release moves it by the
+  drag in one history step; Shift keeps the drag to one axis exactly; Alt copies the layer and moves the copy;
+  arrows nudge 1 px and Shift+arrows 10 px in one bundled step; dragging the locked Background says so, changes
+  nothing and leaves nothing drawn; the selected layer is marked; with a selection Move floats the selected pixels.
+  Cmd+T opens Free Transform with its bar; a corner handle scales the layer live during the drag; Shift keeps the
+  proportions; outside the box rotates; Enter commits one step; Escape restores the layer and history; the bar's W
+  scales; Edit › Free Transform and Show Transform Controls' handles open it. The Crop tool's first frame covers the
+  canvas; a handle resizes it and Enter crops; a drag outside turns it and a double click crops. A selection tool
+  drags and nudges the selection's outline; Alt after the press draws the marquee from its centre; Backspace takes
+  a Polygonal Lasso point back; Quick Selection selects during the drag. Cmd lends the Move tool to the Brush; Space
+  pans mid-stroke; Cmd+Space zooms in; a Ctrl or Alt wheel notch zooms 1.2 times; the zoom field gives the keyboard
+  back on Enter; Shift and a tool key cycles its slot; double-clicking the Zoom and Hand tools shows 100 % and fits;
+  a press on the canvas draws no focus ring.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/handles.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/handles.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 240
+since: "2026-11-24"
