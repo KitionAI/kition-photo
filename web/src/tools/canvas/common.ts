@@ -2,6 +2,7 @@ import { dragRect, type KitPointer, type KitTool, type RasterRect } from '@kitio
 import type { ToolOptions } from '../options'
 import { CORNERS, EDGES, HANDLE_AT, cropQuad, quadPoint, snap45, type CropBox, type Point, type Quad } from './geometry'
 import type { LivePreview } from './live'
+import type { LiveStroke } from './stroke'
 
 /** An image area that needs no repaint: the change touched no pixels (selections, paths, notes). */
 export const NO_REPAINT: RasterRect = { x0: 0, y0: 0, x1: 0, y1: 0 }
@@ -15,6 +16,8 @@ export type Area = { x: number; y: number; width: number; height: number }
 type ToScreen = (x: number, y: number) => { x: number; y: number }
 /** The canvas's preview layer a tool draws on. */
 export type KitOverlay = Parameters<KitTool['begin']>[1]['overlay']
+/** The canvas's view a tool draws through. */
+export type KitViewport = Parameters<KitTool['begin']>[1]['viewport']
 /** One drag a tool's press starts. */
 export type KitGesture = Exclude<ReturnType<KitTool['begin']>, void>
 
@@ -93,6 +96,17 @@ export type PhotoToolEnv = {
   pending: { current: PendingClicks | null }
   /** The Move tool says a drag started or ended (the transform box hides meanwhile). */
   moving: (moving: boolean) => void
+  /**
+   * A stroke the engine paints while it is drawn (plan 2026-11-24, stage 3), begun with the
+   * command's params and the points so far; `failed` is called when it shows no preview after all,
+   * so the tool draws its own line. Absent where there is no engine: strokes paint on release.
+   */
+  liveStroke?: (command: string, params: Record<string, unknown>, viewport: KitViewport, failed: () => void) => LiveStroke | null
+  /**
+   * Leaves `layer` out of the canvas until the document next changes (the Move tool's drag shows
+   * the layer only at the pointer); null puts it back. `area` is drawn again (the whole view when null).
+   */
+  omitLayer?: (layer: number | null, viewport: KitViewport, area: RasterRect | null) => void
 }
 
 export function rectArea(area: Area, margin = 0): RasterRect {

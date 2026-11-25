@@ -36,6 +36,7 @@ import { BrushCursor, outlineDiameter, type CanvasPoint } from './tools/BrushCur
 import { previewEngine, useFreeTransform } from './tools/useFreeTransform'
 import { Nudges, digitTarget } from './tools/canvasKeys'
 import { toBitmap } from './panels/thumbnails'
+import { liveStroke } from './tools/canvas/stroke'
 import { usePhotoPrefs, type PhotoPrefs } from './prefs'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
@@ -92,7 +93,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const kitSession = useKitSession(host, engine, describe, sessionOptions)
   usePhotoViewState(host, kitSession, keptView)
   // The editor runs every command through the mask target's session (see `useMaskTarget`).
-  const { session: photoSession, maskTarget, setMaskTarget } = useMaskTarget(kitSession)
+  const { session: photoSession, maskTarget, setMaskTarget, aim } = useMaskTarget(kitSession)
   const commandSequence = useRef(0)
   const pendingCommands = useRef(new Set<Promise<unknown>>())
   const runSession = useCallback((...args: Parameters<typeof photoSession.run>) => {
@@ -416,10 +417,42 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         setCloneSource,
         pending,
         moving: setMoving,
+        // Plan 2026-11-24, stage 3: the engine paints a brush stroke while it is drawn
+        // (`bindings/wasm` `stroke.rs`), aimed at the mask target as the commit is.
+        liveStroke: (command, params, viewport, failed) => {
+          const open = docNow.current
+          if (!open || toolGeneration !== toolGenerationNow.current) return null
+          return liveStroke(
+            {
+              begin: async (name, given) => {
+                const aimed = await aim(name, given)
+                if (!aimed || docNow.current !== open) throw new Error('the document changed')
+                return open.invoke<string>('strokeBegin', name, JSON.stringify(aimed))
+              },
+              push: (stroke, points) => open.invoke<Int32Array>('strokePush', stroke, points),
+              cancel: (stroke) => open.invoke<Int32Array>('strokeCancel', stroke),
+              repaint: (area) => (docNow.current === open ? viewport.patch(area) : Promise.resolve(false)),
+            },
+            command,
+            params,
+            failed,
+          )
+        },
+        omitLayer: (layer, viewport, area) => {
+          const open = docNow.current
+          if (!open) return
+          void open
+            .invoke('omitLayer', layer ?? -1)
+            .then(() => {
+              if (docNow.current !== open) return
+              return area ? viewport.patch(area) : viewport.render()
+            })
+            .catch(() => undefined)
+        },
     }),
     // The getters read refs; what is passed by value is in the list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline],
+    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline, aim],
   )
   const transformOpen = transform.box != null
   // While Free Transform's box is open the canvas is the box's: asked on every press, so a box a

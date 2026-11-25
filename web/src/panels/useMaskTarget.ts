@@ -65,16 +65,22 @@ export function useMaskTarget<S extends Session>(session: S) {
   followsNow.current = follows
   // Stable, as the session's own `run` is: callers keep it across documents.
   const baseRun = session.run
+  /** `params` aimed as `run` aims them; null when the document changed meanwhile. */
+  const aim = useCallback(async (command: string, params: Record<string, unknown>) => {
+    const open = documentNow.current
+    const targeted = appliesNow.current
+    const commands = await followsNow.current
+    if (!commands || documentNow.current !== open) return null
+    return withMaskTarget(command, params, commands, targeted)
+  }, [])
   const run = useCallback(
     async (command: string, params: Record<string, unknown> = {}, damage: RasterRect | null = null) => {
-      const open = documentNow.current
-      const targeted = appliesNow.current
-      const commands = await followsNow.current
-      if (!commands || documentNow.current !== open) return null
-      return baseRun(command, withMaskTarget(command, params, commands, targeted), damage)
+      const aimed = await aim(command, params)
+      return aimed ? baseRun(command, aimed, damage) : null
     },
-    [baseRun],
+    [aim, baseRun],
   )
   const aimedSession = { ...session, doc: aimedDoc, run } as S
-  return { session: aimedSession, maskTarget: applies, setMaskTarget }
+  // `aim` is for what reaches the engine beside `run`: a live stroke's begin (plan 2026-11-24, stage 3).
+  return { session: aimedSession, maskTarget: applies, setMaskTarget, aim }
 }

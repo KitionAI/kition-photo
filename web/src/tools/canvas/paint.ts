@@ -5,6 +5,7 @@ import { NO_REPAINT, accentTint, clipToDocument, lineDrag, strokeArea, tracePoly
 import { lockAxis } from './geometry'
 import { picksColour } from '../altPicks'
 import type { LivePreview } from './live'
+import { LIVE_COMMANDS } from './stroke'
 
 /** Brush-like tools with no colour of their own show their reach in the accent at this opacity while painting. */
 const REACH_ALPHA = 0.35
@@ -44,9 +45,13 @@ export function forgetStrokeEnd() {
 
 /**
  * The one factory every brush-like tool shares: it collects the stroke's points and runs
- * `command` with the tool's options (`toolParams`) and its own extras. Shift keeps a drag to the
- * axis it set out along (after 3 screen pixels) and a Shift-press starts with a straight line from
- * the last stroke's end; Alt picks the foreground colour on the tools that have no Alt of their own.
+ * `command` with the tool's options (`toolParams`) and its own extras. While the pointer moves the
+ * engine paints the stroke so far (`env.liveStroke`, plan 2026-11-24 stage 3), for the commands it
+ * can preview; for the others, or when the preview cannot run, a line of the brush's width marks
+ * the stroke until the release paints it. The release runs the command once with every point;
+ * Escape drops the stroke. Shift keeps a drag to the axis it set out along (after 3 screen pixels)
+ * and a Shift-press starts with a straight line from the last stroke's end; Alt picks the
+ * foreground colour on the tools that have no Alt of their own.
  */
 export function brushTool(id: PhotoToolId, command: string, env: PhotoToolEnv): KitTool {
   return {
@@ -58,54 +63,70 @@ export function brushTool(id: PhotoToolId, command: string, env: PhotoToolEnv): 
       const size = env.options.size
       const extras = strokeExtras(id, env, start)
       if (!extras) return
+      // The options as the press found them: the preview and the commit paint with the same.
+      const params = { ...toolParams(id, env.options), ...extras }
       const from = start.shift && strokeEnd ? strokeEnd : null
       const points: number[][] = from ? [[from[0], from[1], from[2]], [start.x, start.y, start.pressure]] : [[start.x, start.y, start.pressure]]
-      let last = from ? { x: from[0], y: from[1] } : { x: start.x, y: start.y }
       // Shift's lock: from where the drag (or Shift, pressed mid-drag) began.
       let origin: { x: number; y: number } | null = null
       let locked: 'h' | 'v' | null = null
-      const segment = (to: { x: number; y: number }) =>
+      const segment = (a: readonly number[], b: readonly number[]) =>
         overlay.add((canvas, toScreen) => {
-          const a = toScreen(last.x, last.y)
-          const b = toScreen(to.x, to.y)
+          const p = toScreen(a[0], a[1])
+          const q = toScreen(b[0], b[1])
           clipToDocument(canvas, toScreen, env.documentSize)
           canvas.lineCap = id === 'Pencil' ? 'square' : 'round'
           canvas.lineJoin = 'round'
           canvas.lineWidth = Math.max(1, size * viewport.view.zoom)
           canvas.strokeStyle = COLOURED.has(id) ? env.foreground : id === 'Eraser' ? ERASE_TINT : accentTint(REACH_ALPHA)
           canvas.beginPath()
-          canvas.moveTo(a.x, a.y)
-          canvas.lineTo(b.x, b.y)
+          canvas.moveTo(p.x, p.y)
+          canvas.lineTo(q.x, q.y)
           canvas.stroke()
         })
-      segment({ x: start.x, y: start.y })
-      last = { x: start.x, y: start.y }
+      // The line of the points so far, when the engine shows no preview (from the press, or from
+      // where it stopped).
+      const drawLine = () => points.forEach((point, index) => segment(points[Math.max(0, index - 1)], point))
+      const live = LIVE_COMMANDS.has(command) && env.liveStroke ? env.liveStroke(command, { points: points.map((point) => [...point]), ...params }, viewport, drawLine) : null
+      if (!live) drawLine()
+      const lastPoint = () => points[points.length - 1]
       const place = (pointer: KitPointer, zoom: number) => {
         if (!pointer.shift) {
           origin = null
           locked = null
           return { x: pointer.x, y: pointer.y }
         }
-        origin ??= { ...last }
+        const last = lastPoint()
+        origin ??= { x: last[0], y: last[1] }
         const held = lockAxis(origin, pointer, zoom, locked)
         locked = held.locked
         return held.point
       }
+      const add = (point: number[]) => {
+        const previous = lastPoint()
+        points.push(point)
+        if (live && !live.failed) live.add(point)
+        else segment(previous, point)
+      }
       return {
         move: (pointer, now) => {
           const at = place(pointer, now.viewport.view.zoom)
-          points.push([at.x, at.y, pointer.pressure])
-          segment(at)
-          last = at
+          add([at.x, at.y, pointer.pressure])
         },
+        cancel: () => void live?.close(false),
         end: (pointer, now) => {
           // Release may be newer than the last move; a click must still produce only one dab.
           const at = place(pointer, now.viewport.view.zoom)
-          if (at.x !== last.x || at.y !== last.y) points.push([at.x, at.y, pointer.pressure])
-          strokeEnd = points[points.length - 1]
+          const last = lastPoint()
+          if (at.x !== last[0] || at.y !== last[1]) add([at.x, at.y, pointer.pressure])
+          strokeEnd = lastPoint()
           // Effects on this layer, its group or a clipped layer can extend beyond the brush tip.
           const damage = env.hasLayerEffects ? null : strokeArea(points, size)
-          void env.run(command, { points, ...toolParams(id, env.options), ...extras }, damage)
+          if (!live) return void env.run(command, { points, ...params }, damage)
+          // The seed the preview drew its jitter with goes to the commit, so the release changes nothing on screen.
+          void live.settled
+            .then((added) => env.run(command, { points, ...params, ...added }, damage))
+            .then((ran) => live.close(ran), () => live.close(false))
         },
       }
     },
