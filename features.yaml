@@ -1,6 +1,6 @@
 format: 1
 kit: photo
-updated: "2026-11-24"
+updated: "2026-11-25"
 gate_budget_s: 600
 protected: []
 features:
@@ -707,7 +707,7 @@ features:
     status: has
     paths: [web/src/tools/BrushCursor.tsx, web/src/tools/altPicks.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/geometry.ts, web/src/tools/canvasKeys.ts, web/src/tools/rasterize.ts, web/src/App.tsx, web/tests/brush-keys.mjs]
     target: "Photoshop 2026"
-    gap: "The outline is a circle for every tip (no shaped or angled tips, no Precise/Full-Size preference); strokes still land on release (live strokes are stage 3)."
+    gap: "The outline is a circle for every tip (no shaped or angled tips, no Precise/Full-Size preference)."
     cases: [photo.editor.brush-keys/brush-keys]
     since: "2026-11-24"
   - id: photo.editor.preferences
@@ -719,4 +719,14 @@ features:
     target: "Photoshop 2026"
     gap: "Only these three settings; the other Preferences pages stay out of the menus until they have settings that work."
     cases: [photo.editor.preferences/general]
+    since: "2026-11-25"
+  - id: photo.editor.live-stroke
+    title: "Brush strokes show their real pixels while they are drawn: the Brush, Pencil, Eraser, Clone Stamp, Healing Brush (its texture; the blend on release), History Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge paint through the engine's live stroke as the pointer moves (a frame's moves in one call, only the changed area drawn again); the release leaves one history step with the same pixels as the command; Escape mid-stroke puts the picture back and changes nothing; the Move tool's drag leaves the layer out of its old place"
+    dimension: [function, performance]
+    priority: P0
+    status: has
+    paths: [bindings/wasm/src/stroke.rs, bindings/wasm/src/lib.rs, bindings/wasm/tests/live_stroke.rs, crates/engine/engine/src/jobs.rs, web/src/tools/canvas/stroke.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/move.ts, web/src/tools/canvas/common.ts, web/src/panels/useMaskTarget.ts, web/src/App.tsx, web/tests/live-stroke.mjs]
+    target: "Photoshop 2026"
+    gap: "Spot Healing, the Mixer Brush and the Background Eraser have no live preview in the engine and still paint on release (with the line of the brush's width meanwhile), as do Blur, Sharpen and Smudge with Sample All Layers; the release paints the whole stroke again in the engine (the preview is not handed over); layer effects outside the stroke's area show on release; on a 6000 px picture a 500 px brush stays behind the pointer (see kition-plan kit-docs/photo/walkthrough/measurements.md)."
+    cases: [photo.editor.live-stroke/live-stroke, photo.editor.live-stroke/traffic, photo.editor.live-stroke/binding]
     since: "2026-11-25"

@@ -1,0 +1,26 @@
+format: 1
+id: photo.editor.live-stroke/live-stroke
+feature: photo.editor.live-stroke
+intent: >-
+  Real pointer drags on dev.html (plan 2026-11-24, stage 3): the Brush, the Eraser and the Clone Stamp change the
+  canvas's pixels under the pointer before the pointer is released, while the document's revision and history stay
+  as they were; each release leaves exactly one history step and keeps the pixels; Escape in the middle of a Brush
+  stroke puts the picture back and leaves the revision and history unchanged; during a Move drag the layer's old
+  place shows what is under it, and Escape puts it back.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/live-stroke.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/live-stroke.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 180
+since: "2026-11-25"

@@ -1,0 +1,26 @@
+format: 1
+id: photo.editor.live-stroke/binding
+feature: photo.editor.live-stroke
+intent: >-
+  The WebAssembly binding's live strokes (plan 2026-11-24, stage 3): a Brush, Eraser, Pencil, Clone Stamp, Healing
+  Brush, History Brush, Dodge, Burn, Sponge, Blur, Sharpen or Smudge stroke shows in the rendered pixels while the
+  document's revision and history stay as they were; ending it leaves exactly one history step with the same pixels
+  as the command run directly with the same points (the Brush's with the seed its preview drew with, also smoothed
+  and scattered); cancelling leaves the pixels, revision, history and dirty state as they were; a change of the
+  document drops the preview; not-a-number, off-range, too many or malformed points, unknown keys, commands without
+  a preview and hidden layers are errors, never a panic; a render can leave one layer out until the document changes.
+layer: gate
+source:
+  kind: probe
+  from: bindings/wasm/tests/live_stroke.rs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, kition-photo-kit, --test, live_stroke]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 600
+since: "2026-11-25"

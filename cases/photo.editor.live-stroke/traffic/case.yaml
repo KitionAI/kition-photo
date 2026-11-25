@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.live-stroke/traffic
+feature: photo.editor.live-stroke
+intent: >-
+  The editor's side of a live stroke (plan 2026-11-24, stage 3): the points of one animation frame go to the engine
+  in one call and only one call is under way at a time, so a fast pointer queues no work; each area the engine says
+  changed is drawn again, an empty one is not; the commit gets the seed the preview drew with; a refused begin or
+  step stops the preview once and takes it away, so the release paints as before; Escape draws the area again from
+  the document; only the commands the engine previews go live.
+layer: gate
+source:
+  kind: probe
+  from: web/src/tools/canvas/stroke.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/tools/canvas/stroke.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"
