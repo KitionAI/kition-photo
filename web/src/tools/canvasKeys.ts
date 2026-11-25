@@ -1,5 +1,5 @@
 import type { PhotoToolId } from './catalog'
-import { TOOL_FIELDS, type OptionKey } from './options'
+import { toolFields, type OptionKey } from './options'
 import { livePreview, type LivePreview } from './canvas/live'
 import type { Preview } from '../dialogs/preview'
 
@@ -10,7 +10,7 @@ import type { Preview } from '../dialogs/preview'
  * the active layer's Opacity (with Shift its Fill).
  */
 export function digitTarget(tool: PhotoToolId, shift: boolean): { option: OptionKey } | { layer: 'opacity' | 'fill' } | null {
-  const fields = TOOL_FIELDS[tool]
+  const fields = toolFields(tool)
   if (tool === 'Gradient' || tool === 'PaintBucket') return { option: 'fillOpacity' }
   if (tool === 'MagicEraser') return { option: 'eraserOpacity' }
   if (tool === 'BackgroundEraser') return { option: 'bgTolerance' }

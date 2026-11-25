@@ -839,3 +839,14 @@ features:
     gap: "No Freeform or Curvature Pen, no path operations (combine, subtract…), no rubber-band option, no Alt-drag of a whole component; a shape layer edited anchor by anchor becomes a plain path shape (its live rectangle or ellipse settings go, as in Photoshop); vector masks and saved paths are reached only through the work path."
     cases: [photo.editor.path-editing/paths, photo.editor.path-editing/geometry]
     since: "2026-11-25"
+  - id: photo.editor.added-tools
+    title: "Five tools added to upstream's rail, the engine's commands being there (plan 2026-11-24, stage 7): the Single Row and Single Column Marquee in the marquees' flyout (a click selects the row or column under it, combined as the bar's mode or Shift and Alt say), Red Eye in the Spot Healing Brush's (a click darkens a red pupil), Color Replacement in the Brush's (the foreground colour replaces the colour under the stroke, with sampling, limits, tolerance and anti-aliasing), the Pattern Stamp in the Clone Stamp's (paints the current pattern, Aligned), and Convert Point in the Pen's"
+    dimension: [function]
+    priority: P1
+    status: has
+    commands: [select.rect, paint.redEye, paint.colorReplacement, paint.patternStamp, path.convertPoint, path.moveHandle]
+    paths: [web/src/tools/catalog.ts, web/src/tools/options.ts, web/src/options/addedBars.tsx, web/src/options/OptionsBar.tsx, web/src/tools/canvas/index.ts, web/src/tools/canvas/select.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/pathTools.ts, web/src/tools/PhotoToolRail.tsx, web/src/photoUi.ts, web/tests/added-tools.mjs]
+    target: "Photoshop 2026"
+    gap: "The tools have no letter of their own (the letters cycle through upstream's tools); Red Eye's pupil size and darkening, Color Replacement's mode and the Pattern Stamp's pattern choice and Impressionist are not in their bars (the engine's defaults: 50 %, Color, the Patterns panel's current pattern); Color Replacement and the Pattern Stamp paint on release (the engine has no live preview for them), with the line of the brush's width meanwhile."
+    cases: [photo.editor.added-tools/added-tools]
+    since: "2026-11-25"

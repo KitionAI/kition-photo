@@ -44,7 +44,7 @@ import { liveStroke } from './tools/canvas/stroke'
 import { usePhotoPrefs, type PhotoPrefs } from './prefs'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
-import { TOOL_FIELDS, optionsFor, toolParams, type ToolOptions } from './tools/options'
+import { optionsFor, toolFields, toolParams, type ToolOptions } from './tools/options'
 import { PhotoToolRail, type ToolKeys } from './tools/PhotoToolRail'
 import { toolFor, type PhotoToolId } from './tools/catalog'
 import { NO_EXTRAS, NO_MARKS, usePhotoOverlays, type CanvasExtras, type CanvasMarks } from './overlays'
@@ -453,7 +453,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   )
   // [ and ] step the brush's size through Photoshop's sizes, Shift+[ and Shift+] its hardness by quarters.
   const stepBrush = (direction: 1 | -1, hardness: boolean) => {
-    const fields = TOOL_FIELDS[tool]
+    const fields = toolFields(tool)
     if (hardness) {
       if (fields.includes('hardness')) setToolOptions(tool, { hardness: hardnessStep(options.hardness, direction) })
     } else if (fields.includes('size')) setToolOptions(tool, { size: brushSizeStep(options.size, direction) })
@@ -1483,7 +1483,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 if (nextStats) setStats(nextStats)
               }}
             >
-              {outline != null ? <BrushCursor pointer={canvasPointer} diameter={outline} hardness={TOOL_FIELDS[tool].includes('hardness') ? options.hardness : 100} /> : null}
+              {outline != null ? <BrushCursor pointer={canvasPointer} diameter={outline} hardness={toolFields(tool).includes('hardness') ? options.hardness : 100} /> : null}
               <TypeEditor session={typeSession} view={view} label={t('type.editing')} onAction={(kind) => void typeAction(kind)} />
               {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={(options.fontSize * (state?.resolution ?? 72)) / 72} font={options.font} fontStyle={options.fontStyle} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
               {/* The scrollbars: there only while the picture and its margin are longer than the view. */}

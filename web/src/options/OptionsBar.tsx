@@ -5,6 +5,7 @@ import type { BarProps } from './bar'
 import { BackgroundEraserBar, BrushBar, MagicEraserBar, MixerBar, PencilBar, RetouchBar } from './brushBars'
 import { LassoBar, MagicWandBar, MarqueeBar, ObjectSelectionBar, QuickSelectionBar } from './selectionBars'
 import { BarProvider, Opt, bare } from './fields'
+import { ColorReplacementBar, ConvertPointBar, PatternStampBar, RedEyeBar } from './addedBars'
 import { BucketBar, CropBar, EyedropperBar, GradientBar, MeasureBar, MoveBar, PathSelectionBar, PenBar, ShapeBar, TypeBar, ViewBar } from './otherBars'
 
 type Bar = ComponentType
@@ -60,6 +61,13 @@ const BARS: Record<PhotoToolId, Bar> = {
   CustomShape: ShapeBar,
   Hand: ViewBar,
   Zoom: ViewBar,
+  // The tools added in plan 2026-11-24, stage 7.
+  SingleRowMarquee: LassoBar,
+  SingleColumnMarquee: LassoBar,
+  RedEye: RedEyeBar,
+  ColorReplacement: ColorReplacementBar,
+  PatternStamp: PatternStampBar,
+  ConvertPoint: ConvertPointBar,
 }
 
 /**

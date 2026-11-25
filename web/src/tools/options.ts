@@ -1,4 +1,4 @@
-import type { PhotoToolId } from './catalog'
+import type { AddedToolId, PhotoToolId, UpstreamToolId } from './catalog'
 
 /**
  * The options Photo's options bars hold, shared as upstream shares them: one brush for every
@@ -231,7 +231,7 @@ const CLONE = [...TIP, 'aligned', 'cloneSample'] as const
  * The options each tool's bar draws, in its order (upstream's `options_bar` arms). A test holds
  * the bars to this list, and every option to some tool, so nothing is drawn without being kept.
  */
-export const TOOL_FIELDS: Record<PhotoToolId, readonly OptionKey[]> = {
+export const TOOL_FIELDS: Record<UpstreamToolId, readonly OptionKey[]> = {
   Move: ['autoSelect', 'autoSelectTarget', 'showTransform'],
   RectMarquee: MARQUEE,
   EllipseMarquee: MARQUEE,
@@ -281,6 +281,24 @@ export const TOOL_FIELDS: Record<PhotoToolId, readonly OptionKey[]> = {
   CustomShape: [...SHAPE, 'customShape'],
   Hand: [],
   Zoom: ['scrubbyZoom'],
+}
+
+/**
+ * The options of the tools Kition Photo adds (plan 2026-11-24, stage 7): only options upstream's
+ * tools keep, so nothing new is stored.
+ */
+export const ADDED_TOOL_FIELDS: Record<AddedToolId, readonly OptionKey[]> = {
+  SingleRowMarquee: LASSO,
+  SingleColumnMarquee: LASSO,
+  RedEye: [],
+  ColorReplacement: [...TIP, 'bgSampling', 'bgLimits', 'bgTolerance', 'antiAlias'],
+  PatternStamp: [...TIP, 'aligned'],
+  ConvertPoint: [],
+}
+
+/** The options `tool`'s bar draws. */
+export function toolFields(tool: PhotoToolId): readonly OptionKey[] {
+  return (TOOL_FIELDS as Partial<Record<PhotoToolId, readonly OptionKey[]>>)[tool] ?? ADDED_TOOL_FIELDS[tool as AddedToolId] ?? []
 }
 
 /** `value` for option `key`, if it may stand for it: its default's type, clamped to its range, one of its choices, its form. */
@@ -378,6 +396,11 @@ const PARAMS: Partial<Record<PhotoToolId, (o: ToolOptions) => Record<string, unk
   MixerBrush: (o) => ({ size: o.size, brush: { hardness: fraction(o.hardness) }, wet: o.wet, load: o.load, mix: o.mix, flow: o.mixerFlow, sampleAllLayers: o.mixerSampleAll }),
   BackgroundEraser: (o) => ({ size: o.size, hardness: fraction(o.hardness), sampling: o.bgSampling, limits: o.bgLimits, tolerance: o.bgTolerance, protectForegroundColor: o.protectForeground }),
   CloneStamp: clone,
+  // The tools added in plan 2026-11-24, stage 7.
+  SingleRowMarquee: (o) => ({ feather: o.feather }),
+  SingleColumnMarquee: (o) => ({ feather: o.feather }),
+  ColorReplacement: (o) => ({ size: o.size, brush: { hardness: fraction(o.hardness) }, sampling: o.bgSampling, limits: o.bgLimits, tolerance: o.bgTolerance, antiAlias: o.antiAlias }),
+  PatternStamp: (o) => ({ size: o.size, hardness: o.hardness, aligned: o.aligned }),
   Healing: clone,
   SpotHealing: (o) => ({ ...tip(o), type: o.spotType, sampleAllLayers: o.sampleAllLayers }),
   HistoryBrush: tip,

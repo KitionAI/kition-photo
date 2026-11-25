@@ -9,6 +9,12 @@ import {
   CircleIcon as Circle,
   CircleDashedIcon as CircleDashed,
   CircleDotIcon as CircleDot,
+  Columns2Icon as Columns2,
+  Grid3x3Icon as Grid3x3,
+  ReplaceIcon as Replace,
+  Rows2Icon as Rows2,
+  ScanEyeIcon as ScanEye,
+  SplineIcon as Spline,
   CloudIcon as Cloud,
   CropIcon as Crop,
   DropletIcon as Droplet,
@@ -159,10 +165,34 @@ const SECTIONS = [
   [[['Hand', 'H', Hand, VIEW]], [['Zoom', 'Z', ZoomIn, VIEW]]],
 ] as const satisfies readonly (readonly (readonly Entry[])[])[]
 
-export type PhotoToolId = (typeof SECTIONS)[number][number][number][0]
+/** Upstream's tools' ids. */
+export type UpstreamToolId = (typeof SECTIONS)[number][number][number][0]
 
-/** Upstream's labels (`Tool::label`). */
+/**
+ * The tools Kition Photo adds to upstream's rail (plan 2026-11-24, stage 7), the engine's commands
+ * being there: each goes into the slot of the tool it follows, after it, as Photoshop groups them.
+ * They have no letter of their own: the letters cycle through upstream's tools as before.
+ */
+const ADDED = [
+  ['SingleRowMarquee', 'EllipseMarquee', Rows2, 'select.rect'],
+  ['SingleColumnMarquee', 'SingleRowMarquee', Columns2, 'select.rect'],
+  ['RedEye', 'SmartMove', ScanEye, 'paint.redEye'],
+  ['ColorReplacement', 'Pencil', Replace, 'paint.colorReplacement', 'brush'],
+  ['PatternStamp', 'CloneStamp', Grid3x3, 'paint.patternStamp', 'brush'],
+  ['ConvertPoint', 'Pen', Spline, 'path.convertPoint'],
+] as const satisfies readonly (readonly [string, string, IconComponent, string, ...('brush' | undefined)[]])[]
+
+export type AddedToolId = (typeof ADDED)[number][0]
+export type PhotoToolId = UpstreamToolId | AddedToolId
+
+/** Upstream's labels (`Tool::label`), and Photoshop's for the tools added. */
 const LABELS: Record<PhotoToolId, string> = {
+  SingleRowMarquee: 'Single Row Marquee Tool',
+  SingleColumnMarquee: 'Single Column Marquee Tool',
+  RedEye: 'Red Eye Tool',
+  ColorReplacement: 'Color Replacement Tool',
+  PatternStamp: 'Pattern Stamp Tool',
+  ConvertPoint: 'Convert Point Tool',
   Move: 'Move Tool',
   RectMarquee: 'Rectangular Marquee Tool',
   EllipseMarquee: 'Elliptical Marquee Tool',
@@ -224,8 +254,19 @@ export const PHOTO_TOOLS: readonly PhotoTool[] = (SECTIONS as readonly (readonly
   ),
 )
 
+/** Upstream's tools with the added ones in their slots: the rail, its flyouts and the declared tools. */
+export const RAIL_TOOLS: readonly PhotoTool[] = (() => {
+  const out = [...PHOTO_TOOLS]
+  for (const [id, after, icon, command, brush] of ADDED as readonly (readonly [string, string, IconComponent, string, ('brush' | undefined)?])[]) {
+    const index = out.findIndex((tool) => tool.id === after)
+    const anchor = out[index]
+    out.splice(index + 1, 0, { id: id as PhotoToolId, section: anchor.section, slot: anchor.slot, group: anchor.group, key: null, label: LABELS[id as PhotoToolId], icon, command, brush: brush === 'brush' })
+  }
+  return out
+})()
+
 export function toolFor(id: string) {
-  return PHOTO_TOOLS.find((tool) => tool.id === id)
+  return RAIL_TOOLS.find((tool) => tool.id === id)
 }
 
 /** Whether `key` (lower case) is a tool's letter. */

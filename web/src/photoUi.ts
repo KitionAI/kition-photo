@@ -1,5 +1,5 @@
 import { defineKitUi } from '@kition/sdk/editor'
-import { PHOTO_TOOLS } from './tools/catalog'
+import { RAIL_TOOLS } from './tools/catalog'
 import { PHOTO_MENUS } from './menus/catalog'
 import { isHiddenInMenus } from './menus/hidden'
 import { OPTION_ELEMENTS } from './options/controls'
@@ -16,7 +16,7 @@ import { DOCK_PANELS, PANEL_CONTROLS } from './panels/dock'
  */
 export const PHOTO_UI = defineKitUi({
   tabs: [{ id: 'tab:home', label: 'homeTab' }],
-  tools: PHOTO_TOOLS.map((tool) => ({ id: `tool:${tool.id}`, label: tool.label })),
+  tools: RAIL_TOOLS.map((tool) => ({ id: `tool:${tool.id}`, label: tool.label })),
   panels: DOCK_PANELS,
   controls: [
     { id: 'control:colors', label: 'colors' },

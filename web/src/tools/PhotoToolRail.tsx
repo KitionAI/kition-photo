@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, type KeyboardEvent, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { ToolRail, useEngineQuery, useKitEditor, useKitStore, useUi } from '@kition/sdk/editor'
-import { PHOTO_TOOLS, isToolKey, toolFor, toolForKey, type PhotoToolId } from './catalog'
+import { RAIL_TOOLS, isToolKey, toolFor, toolForKey, type PhotoToolId } from './catalog'
 
 /** A key handler the editor calls before the shell's own: true when it took the key. */
 export type ToolKeys = (event: KeyboardEvent<HTMLDivElement>) => boolean
@@ -25,7 +25,7 @@ export function PhotoToolRail({ active, onChoose, shown, keys, onView, children 
   const { phrase } = useKitEditor()
   const ui = useUi()
   const [columns, setColumns] = useKitStore<1 | 2>('kit.photo', 'railColumns', { initial: 2, validate: columnCount })
-  const tools = useMemo(() => PHOTO_TOOLS.map((tool) => ({ id: tool.id, label: phrase(tool.label), icon: tool.icon, shortcut: tool.key, group: tool.group, section: tool.section })), [phrase])
+  const tools = useMemo(() => RAIL_TOOLS.map((tool) => ({ id: tool.id, label: phrase(tool.label), icon: tool.icon, shortcut: tool.key, group: tool.group, section: tool.section })), [phrase])
   // Read again after every change (a preferences command is one): a single small query.
   const shiftSwitch = useEngineQuery<boolean>('prefs.get', { path: SHIFT_SWITCH }) === true
   const allowed = (id: string) => !ui.state(`tool:${id}`).denied

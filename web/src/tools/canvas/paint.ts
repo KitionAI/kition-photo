@@ -12,7 +12,7 @@ const REACH_ALPHA = 0.35
 const ERASE_TINT = '#f3f3f6'
 
 /** Tools that paint the foreground colour, and preview in it. */
-const COLOURED = new Set(['Brush', 'Pencil', 'MixerBrush'])
+const COLOURED = new Set(['Brush', 'Pencil', 'MixerBrush', 'ColorReplacement'])
 /** Tools that sample from a source set with Alt-click. */
 const SOURCED = new Set(['CloneStamp', 'Healing'])
 

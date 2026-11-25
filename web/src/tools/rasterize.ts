@@ -33,7 +33,7 @@ export const RASTERIZE_KINDS: Readonly<Record<string, RasterizeKind>> = {
 }
 
 /** The brush-like tools (upstream's `is_brushlike`), which all paint the layer's pixels. */
-const BRUSH_LIKE: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['Brush', 'Pencil', 'MixerBrush', 'Eraser', 'BackgroundEraser', 'SpotHealing', 'Healing', 'CloneStamp', 'HistoryBrush', 'Blur', 'Sharpen', 'Smudge', 'Dodge', 'Burn', 'Sponge'])
+const BRUSH_LIKE: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['Brush', 'Pencil', 'MixerBrush', 'Eraser', 'BackgroundEraser', 'SpotHealing', 'Healing', 'CloneStamp', 'HistoryBrush', 'Blur', 'Sharpen', 'Smudge', 'Dodge', 'Burn', 'Sponge', 'ColorReplacement', 'PatternStamp', 'RedEye'])
 
 /** Whether `tool` paints the layer's pixels (upstream's `paints_pixels`): the brush-like tools, the Paint Bucket, the Magic Eraser, and the Gradient in classic mode. */
 export function paintsPixels(tool: PhotoToolId, gradientClassic: boolean) {

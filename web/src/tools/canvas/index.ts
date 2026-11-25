@@ -3,12 +3,13 @@ import { toolFor, type PhotoToolId } from '../catalog'
 import { toolParams } from '../options'
 import type { PhotoToolEnv } from './common'
 import { brushTool, clickFill, gradientTool, quickSelectionTool, withAltPick } from './paint'
-import { magicWandTool, marqueeTool, objectSelectionTool } from './select'
+import { magicWandTool, marqueeTool, objectSelectionTool, singleLineMarqueeTool } from './select'
 import { clickLassoTool, lassoTool } from './lasso'
 import { selectionDragTool, sliceSelectTool, sliceTool } from './transformLike'
 import { cropTool } from './crop'
 import { moveTool } from './move'
 import { directSelectionTool, lineTool, pathSelectionTool, penTool, shapeTool } from './shape'
+import { convertPointTool } from './pathTools'
 import { typeTool } from './type'
 import { eyedropperTool, markTool, rulerTool, zoomTool } from './view'
 
@@ -77,6 +78,18 @@ const FACTORIES: Record<PhotoToolId, Factory> = {
   CustomShape: (env) => shapeTool('CustomShape', env),
   Hand: () => HAND_TOOL,
   Zoom: zoomTool,
+  // The tools added in plan 2026-11-24, stage 7.
+  SingleRowMarquee: (env) => singleLineMarqueeTool('SingleRowMarquee', env),
+  SingleColumnMarquee: (env) => singleLineMarqueeTool('SingleColumnMarquee', env),
+  RedEye: (env) => ({
+    id: 'RedEye',
+    cursor: 'crosshair',
+    // A click on a red pupil darkens it; with none near, the engine says so.
+    begin: (pointer) => void env.run('paint.redEye', { x: Math.floor(pointer.x), y: Math.floor(pointer.y) }),
+  }),
+  ColorReplacement: brush('ColorReplacement'),
+  PatternStamp: brush('PatternStamp'),
+  ConvertPoint: convertPointTool,
 }
 
 /** The canvas tool for a Photo tool. */

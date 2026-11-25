@@ -1,6 +1,6 @@
 import { TesseraIcons } from '@kition/sdk/editor'
 import { CommandButton, CommandItem, MenuSeparator, RibbonButton, RibbonGroup, RibbonMenu, RibbonStack, useKitEditor, useUi } from '@kition/sdk/editor'
-import { PHOTO_TOOLS, type PhotoToolId } from './tools/catalog'
+import { toolFor, type PhotoToolId } from './tools/catalog'
 import { useDialogs } from './dialogs/DialogHost'
 
 
@@ -29,7 +29,7 @@ const TRANSFORMS = ['edit.transform.again', 'edit.transform.rotate180', 'edit.tr
 function HomeTool({ id, tool, onTool, primary, size = 'large' }: { id: PhotoToolId; tool: PhotoToolId; onTool: (id: PhotoToolId) => void; primary?: boolean; size?: 'large' | 'small' }) {
   const { phrase } = useKitEditor()
   const ui = useUi()
-  const entry = PHOTO_TOOLS.find((item) => item.id === id)
+  const entry = toolFor(id)
   const state = ui.state(`tool:${id}`)
   if (!entry || state.hidden) return null
   return (

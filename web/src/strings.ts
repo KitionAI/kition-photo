@@ -684,6 +684,8 @@ const STAGE6_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
 const STAGE7_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['ruler.top', 'Ruler (drag down for a guide)', '标尺（向下拖出参考线）'],
   ['ruler.left', 'Ruler (drag right for a guide)', '标尺（向右拖出参考线）'],
+  ['redEye.hint', 'Click a red pupil to darken it', '单击发红的瞳孔，把它变暗'],
+  ['convertPoint.hint', 'Drag an anchor: smooth direction lines · Click an anchor: corner · Drag a direction point: move it alone', '拖动锚点：拉出平滑方向线 · 单击锚点：变成角点 · 拖动方向点：只移动这一条'],
 ]
 
 const enUS: Catalog = {

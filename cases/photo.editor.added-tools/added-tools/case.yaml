@@ -1,0 +1,27 @@
+format: 1
+id: photo.editor.added-tools/added-tools
+feature: photo.editor.added-tools
+intent: >-
+  The five tools added to the rail (plan 2026-11-24, stage 7), each chosen from its slot's flyout with its bar named:
+  the Single Row Marquee selects the whole row under a click, one pixel high, and the Single Column Marquee with
+  Shift adds its column; Red Eye darkens a red pupil in one step; Color Replacement (with its sampling, limits and
+  tolerance) replaces the red under a stroke with the foreground colour; the Pattern Stamp (with Aligned) paints the
+  current pattern on an empty layer; Convert Point pulls smooth direction lines out of an anchor and a click makes
+  it a corner again.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/added-tools.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/added-tools.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

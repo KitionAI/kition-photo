@@ -153,6 +153,29 @@ export function marqueeTool(id: 'RectMarquee' | 'EllipseMarquee', ellipse: boole
   return withOutlineMove(id, tool, env)
 }
 
+/**
+ * The Single Row and Single Column Marquee (plan 2026-11-24, stage 7): a click selects the whole
+ * row (or column) of pixels under it, one pixel high (wide), combined as the bar's mode or Shift
+ * and Alt say; the click snaps as the marquees' corners do.
+ */
+export function singleLineMarqueeTool(id: 'SingleRowMarquee' | 'SingleColumnMarquee', env: PhotoToolEnv): KitTool {
+  const tool: KitTool = {
+    id,
+    cursor: 'crosshair',
+    begin: (pointer, { viewport }) => {
+      const at = env.snap ? env.snap.point({ x: pointer.x, y: pointer.y }, viewport.view.zoom) : pointer
+      env.snap?.done()
+      const { width, height } = env.documentSize
+      const row = id === 'SingleRowMarquee'
+      const x = Math.min(width - 1, Math.max(0, Math.floor(at.x)))
+      const y = Math.min(height - 1, Math.max(0, Math.floor(at.y)))
+      const area = row ? { x: 0, y, width, height: 1 } : { x, y: 0, width: 1, height }
+      void env.run('select.rect', { ...area, mode: selectionModeFor(id, env.options.selectionMode, pointer), ...toolParams(id, env.options) }, NO_REPAINT)
+    },
+  }
+  return withOutlineMove(id, tool, env)
+}
+
 /** Object Selection: the object inside the dragged box. */
 export function objectSelectionTool(env: PhotoToolEnv): KitTool {
   const tool = rectDrag('ObjectSelection', 'crosshair', (area, start) => {
