@@ -2092,3 +2092,189 @@ select.kui-field.photo-kerning-presets {
   --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%);
   background-size: 100% 100%, 8px 8px;
 }
+
+/* Plan 2026-11-24, stage 6: Export As, the drop targets, the long command's bar, the engine's errors. */
+.photo-export {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.photo-export-fields {
+  min-width: 260px;
+}
+.photo-export-preview {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 300px;
+}
+.photo-export-picture {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--kit-border);
+  border-radius: 4px;
+  background-color: var(--kit-surface);
+  background-image: conic-gradient(var(--kit-surface-muted) 25%, transparent 0 50%, var(--kit-surface-muted) 0 75%, transparent 0);
+  background-size: 12px 12px;
+  overflow: hidden;
+}
+.photo-export-picture img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.photo-export-preview figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--kit-text-muted);
+}
+.photo-workspace[data-drop]::before,
+[data-testid='photo-kit-layers'][data-drop]::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed var(--kit-primary);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--kit-primary) 10%, transparent);
+  pointer-events: none;
+  z-index: 20;
+}
+.photo-workspace[data-drop]::after,
+[data-testid='photo-kit-layers'][data-drop]::after {
+  content: attr(data-drop-label);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--kit-surface);
+  color: var(--kit-text);
+  box-shadow: var(--kit-shadow-card);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 21;
+}
+[data-testid='photo-kit-layers'][data-drop] {
+  position: relative;
+}
+.photo-paste-catcher {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.photo-busy {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid var(--kit-border);
+  border-radius: 8px;
+  background: var(--kit-surface);
+  color: var(--kit-text);
+  box-shadow: var(--kit-shadow-card);
+  font-size: 12px;
+  /* Only Cancel takes the pointer: the canvas under the bar keeps working. */
+  pointer-events: none;
+}
+.photo-busy button {
+  pointer-events: auto;
+}
+.photo-busy-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.photo-busy-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.photo-busy-time {
+  color: var(--kit-text-muted);
+}
+.photo-busy-bar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  min-width: 80px;
+  border-radius: 2px;
+  background: var(--kit-surface-muted);
+  overflow: hidden;
+}
+.photo-busy-bar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  border-radius: 2px;
+  background: var(--kit-primary);
+  animation: photo-busy-slide 1.2s ease-in-out infinite;
+}
+@keyframes photo-busy-slide {
+  from {
+    left: -35%;
+  }
+  to {
+    left: 100%;
+  }
+}
+.photo-notices {
+  position: fixed;
+  right: 16px;
+  bottom: 40px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 340px;
+}
+.photo-notice {
+  padding: 10px 12px;
+  border: 1px solid var(--kit-border);
+  border-left: 3px solid var(--kit-danger);
+  border-radius: 6px;
+  background: var(--kit-surface);
+  color: var(--kit-text);
+  box-shadow: var(--kit-shadow-card);
+  font-size: 12px;
+}
+.photo-notice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.photo-notice-message {
+  margin: 4px 0 0;
+}
+.photo-notice-detail {
+  margin-top: 6px;
+  color: var(--kit-text-muted);
+}
+.photo-notice-detail code {
+  display: block;
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 11px;
+}

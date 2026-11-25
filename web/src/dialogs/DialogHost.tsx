@@ -54,14 +54,14 @@ type Open = { serial: number; command: KitCommand | null; kind: DialogKind | 'ne
  * editor's provider). Levels and Curves read the image's histograms before they open, so the
  * histogram shows the image before the preview changes it.
  */
-export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dialogs | null>; info: PhotoInfo | null; colors: { foreground: string; background: string }; prefs: { value: PhotoPrefs; save: (next: PhotoPrefs) => void } }) {
+export function PhotoDialogs({ api, info, colors, prefs, onPlace }: { api: RefObject<Dialogs | null>; info: PhotoInfo | null; colors: { foreground: string; background: string }; prefs: { value: PhotoPrefs; save: (next: PhotoPrefs) => void }; onPlace?: () => void }) {
   const editor = useKitEditor()
   const ui = useUi()
   const [open, setOpen] = useState<Open | null>(null)
   const serial = useRef(0)
   const busy = useRef(false)
-  const latest = useRef({ editor, ui, open })
-  latest.current = { editor, ui, open }
+  const latest = useRef({ editor, ui, open, onPlace })
+  latest.current = { editor, ui, open, onPlace }
 
   useLayoutEffect(() => {
     const show = (next: Omit<Open, 'serial'>) => {
@@ -74,6 +74,11 @@ export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dial
       const kind = routeOf(command)
       if (!command || !kind) return false
       if (current || busy.current || !now.enabled(id) || uiNow.state(`command:${id}`, command.menu).denied) return true
+      if (kind === 'place') {
+        // Place Embedded asks the host for the file, not for parameters (plan 2026-11-24, stage 6).
+        latest.current.onPlace?.()
+        return true
+      }
       if (kind === 'levels' || kind === 'curves') {
         // The histograms of the image as it is, read before the dialog's preview runs.
         const doc = now.session.doc
@@ -157,6 +162,8 @@ export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dial
       }
       case 'preferences':
         return <PreferencesDialog prefs={prefs.value} onSave={prefs.save} onClose={close} />
+      case 'place':
+        return null
       case 'params':
         return <ParamsDialog {...props} info={info} values={open.values} />
     }

@@ -7,7 +7,7 @@ import { isHiddenCommand } from '../menus/hidden.ts'
  */
 
 /** The purpose-built dialogs, and `params`, the generic one drawn from a command's parameters. */
-export type DialogKind = 'levels' | 'curves' | 'hueSaturation' | 'brightnessContrast' | 'colorBalance' | 'imageSize' | 'canvasSize' | 'fill' | 'stroke' | 'preferences' | 'layerStyle' | 'params'
+export type DialogKind = 'levels' | 'curves' | 'hueSaturation' | 'brightnessContrast' | 'colorBalance' | 'imageSize' | 'canvasSize' | 'fill' | 'stroke' | 'preferences' | 'layerStyle' | 'place' | 'params'
 
 /** Commands with a dialog of their own; the adjustments' rows that make an adjustment layer share the adjustment's. */
 export const PURPOSE_BUILT: Readonly<Record<string, DialogKind>> = {
@@ -28,6 +28,8 @@ export const PURPOSE_BUILT: Readonly<Record<string, DialogKind>> = {
   // Preferences › General: the editor's own settings (plan 2026-11-24, stage 2).
   'edit.preferences.general': 'preferences',
   // Layer › Layer Style's rows and the fx menu: Photoshop's Layer Style dialog, on that effect (plan 2026-11-24, stage 5).
+  // File › Place Embedded…: the host's file picker, then the file placed (plan 2026-11-24, stage 6).
+  'file.placeEmbedded': 'place',
   ...Object.fromEntries(['blendingOptions', 'dropShadow', 'innerShadow', 'outerGlow', 'innerGlow', 'bevelEmboss', 'satin', 'colorOverlay', 'gradientOverlay', 'patternOverlay', 'stroke'].map((kind) => [`layer.layerStyle.${kind}`, 'layerStyle' as const])),
 }
 

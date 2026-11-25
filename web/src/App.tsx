@@ -75,6 +75,11 @@ import { GradientEditorOutlet, GradientEditorProvider } from './gradient/Gradien
 import { BrushPickerPopover, BrushPresets, BrushSettingsPanel, type BrushOptions } from './brushes/BrushPicker'
 import { SMOOTHING_TOOLS } from './tools/options'
 import manifest from '../../kit.json'
+import { Busy } from './io/busy'
+import { BusyIndicator } from './io/BusyIndicator'
+import { ErrorNotices, reportError } from './io/ErrorNotices'
+import { PhotoFileIo, fileAbilities, type FileIo } from './io/PhotoFileIo'
+import { withoutEllipsis } from './dialogs/routes'
 
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
@@ -108,16 +113,45 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const { session: photoSession, maskTarget, setMaskTarget, aim } = useMaskTarget(kitSession)
   const commandSequence = useRef(0)
   const pendingCommands = useRef(new Set<Promise<unknown>>())
+  // A command still running after half a second shows the progress bar with Cancel (plan
+  // 2026-11-24, stage 6); a cancelled one's step is taken away when it ends (`io/busy.ts`).
+  const busy = useMemo(() => new Busy(), [])
+  const titleOf = useRef<(command: string) => string>((command) => command)
+  const photoRun = useRef(photoSession)
+  photoRun.current = photoSession
   const runSession = useCallback((...args: Parameters<typeof photoSession.run>) => {
     commandSequence.current += 1
+    const [id, params] = args
+    // A dialog shows its own progress (its preview), and History's own steps are not ones to cancel.
+    const tracked = !document.querySelector('.kui-dialog') && !id.startsWith('history.') && !(typeof params?.coalesce === 'string' && params.coalesce.startsWith('photo-dialog'))
+    const job = tracked ? busy.begin(titleOf.current(id), id !== 'edit.undo' && id !== 'edit.redo') : null
+    const before = photoRun.current.doc?.info.revision ?? 0
     const command = photoSession.run(...args)
     pendingCommands.current.add(command)
     const finished = () => { pendingCommands.current.delete(command) }
     void command.then(finished, finished)
+    if (job) {
+      void command.then(
+        async (answer) => {
+          if (!busy.end(job) || answer === null) return
+          // Cancelled: the step it made leaves the history (Redo included), as a cancelled dialog's preview does.
+          const session = photoRun.current
+          if ((session.doc?.info.revision ?? 0) === before) return
+          if ((await session.run('history.deleteState', {})) === null) await session.run('edit.undo', {})
+        },
+        () => void busy.end(job),
+      )
+    }
     return command
-  }, [photoSession.run])
+  }, [photoSession.run, busy])
   const session = { ...photoSession, run: runSession }
-  const editor = useKitEditorState(session, host, t, 'photo', phrase)
+  // The engine's errors in the editor's words (plan 2026-11-24, stage 6), never its English with command ids.
+  const editorOptions = useMemo(() => ({ report: (title: string, error: unknown) => void reportError(t, title, error) }), [t])
+  const editor = useKitEditorState(session, host, t, 'photo', phrase, undefined, editorOptions)
+  titleOf.current = (command) => {
+    const title = editor.byId.get(command)?.title
+    return title ? phrase(withoutEllipsis(title)) : command
+  }
   const { doc, change, state } = session
   // Type edited on the canvas (plan 2026-11-24, stage 4): one session at a time, its commands in one history step.
   const typeRun = useRef(editor.run)
@@ -675,9 +709,18 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const dialogApi = useRef<Dialogs | null>(null)
   const runNow = useRef(run)
   runNow.current = run
+  // Files in and out (plan 2026-11-24, stage 6): Place Embedded picks through the host, Copy also
+  // fills the system clipboard, Paste takes an image from it (`io/PhotoFileIo.tsx`).
+  const fileIo = useRef<FileIo | null>(null)
   const dialogs = useMemo<Dialogs>(
     () => ({
-      invoke: (command) => (dialogApi.current ? dialogApi.current.invoke(command) : void runNow.current(command)),
+      invoke: (command) => {
+        const io = fileIo.current
+        if (io && command === 'file.placeEmbedded') return void io.place()
+        if (io && (command === 'edit.copy' || command === 'edit.copyMerged')) return io.copy(command)
+        if (io && command === 'edit.paste') return io.paste()
+        return dialogApi.current ? dialogApi.current.invoke(command) : void runNow.current(command)
+      },
       open: (command, values) => dialogApi.current?.open(command, values) ?? false,
       asks: (command) => dialogApi.current?.asks(command) ?? false,
       newDocument: () => dialogApi.current?.newDocument(),
@@ -688,9 +731,23 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // Edit › Free Transform (Cmd+T): Kition's own row at the top of Edit (the engine's transform takes the box the canvas draws).
   const startTransformNow = useRef(startTransform)
   startTransformNow.current = startTransform
+  // File's own rows (plan 2026-11-24, stage 6): what the host can do, and nothing it cannot.
+  const saveNow = useRef<() => unknown>(() => undefined)
+  const abilities = useMemo(() => fileAbilities(host), [host])
   const fileActions = useMemo(
     () => ({
-      File: [{ label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' }],
+      File: [
+        { label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' },
+        ...(abilities.open ? [{ label: t('file.open'), onSelect: () => void fileIo.current?.open(), testId: 'photo-file-open' }] : []),
+        ...(host.readOnly ? [] : [{ label: t('file.save'), onSelect: () => void saveNow.current(), testId: 'photo-file-save' }]),
+        ...(abilities.saveAs ? [{ label: t('file.saveAs'), onSelect: () => void fileIo.current?.saveAs(), testId: 'photo-file-save-as' }] : []),
+        ...(abilities.export
+          ? [
+              { label: t('file.exportAs'), onSelect: () => fileIo.current?.exportAs(), testId: 'photo-file-export-as' },
+              { label: t('file.quickExport'), onSelect: () => void fileIo.current?.quickExport(), testId: 'photo-file-quick-export' },
+            ]
+          : []),
+      ],
       Edit: [{ label: phrase('Free Transform'), onSelect: () => startTransformNow.current(), testId: 'photo-edit-free-transform' }],
       // Window › Brush Settings (F5) and Brushes: Kition's own floating windows (plan 2026-11-24, stage 5).
       Window: [
@@ -698,7 +755,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         { label: phrase('Brushes'), onSelect: () => toggleFloating('brushes'), testId: 'photo-window-brushes' },
       ],
     }),
-    [t, dialogs, phrase, toggleFloating],
+    [t, dialogs, phrase, toggleFloating, abilities, host],
   )
   const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase])
   // Home's tool buttons choose as the rail does (the latest `chooseTool`); the tabs are built again when the tool changes, for its pressed state.
@@ -743,6 +800,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
 
   // Every editor Save entry point must finish a draft, including one left open in text options.
   // Repeated requests for the same content share a write; newer edits request a follow-up.
+  saveNow.current = () => saveWithText()
   const saveWithText = () => {
     if (textSave.current) {
       const target = textSaveTarget.current
@@ -1134,7 +1192,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           }
         >
           <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} dialogs={dialogs} />
-          <PhotoDialogs api={dialogApi} info={state} colors={colors} prefs={{ value: prefs, save: savePrefs }} />
+          <PhotoDialogs api={dialogApi} info={state} colors={colors} prefs={{ value: prefs, save: savePrefs }} onPlace={() => void fileIo.current?.place()} />
+          <PhotoFileIo api={fileIo} workspace={workspace} canvas={canvas} size={state ? { width: state.width, height: state.height } : null} busy={busy} editing={() => typeSession.active || textDraft != null} />
           <GradientEditorOutlet />
           <ColorPickerOutlet />
           <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
@@ -1167,6 +1226,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
               {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
               <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} picture={state ? { width: state.width, height: state.height } : null} />
             </PhotoCanvas>
+            <BusyIndicator busy={busy} t={t} onCancel={() => {
+              const job = busy.cancel()
+              if (job) toast('info', t('busy.cancelled', { label: job.label }))
+            }} />
             {floatingPanels.length ? <FloatingPanels kit="kit.photo" store="floating" panels={floatingPanels} onClose={closeFloating} focused={floatingFocus} onFocus={setFloatingFocus} defaultSize={{ width: 300, height: 420 }} minSize={{ width: 260, height: 220 }} testId="photo-floating" /> : null}
           </div>
           {rasterize ? (
@@ -1184,6 +1247,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
               }}
             />
           ) : null}
+          <ErrorNotices t={t} />
           {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
           {brushPicker ? <BrushPickerPopover at={brushPicker} options={brushOptions} onClose={() => setBrushPicker(null)} /> : null}
         </EditorFrame>

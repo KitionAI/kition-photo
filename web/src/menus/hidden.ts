@@ -135,6 +135,9 @@ const KIT_OWN: Readonly<Record<string, string>> = {
   // Plan 2026-11-24, stage 5: floating windows of Kition's own (the dock's groups are upstream's).
   'window.panel.brushSettings': "Kition's own Window › Brush Settings row (F5) opens the Brush Settings window.",
   'window.panel.brushes': "Kition's own Window › Brushes row opens the Brushes window.",
+  // Plan 2026-11-24, stage 6: Kition's own rows at the top of the File menu export through the host.
+  'file.export.exportAs': "Kition's own File › Export As… row (Cmd+Alt+Shift+W) opens the Export As dialog.",
+  'file.export.quickExportAsPng': "Kition's own File › Quick Export as PNG row writes the PNG through the host.",
 }
 
 /** Why the menus leave out `command` for a Kition row of its own, or null. */
