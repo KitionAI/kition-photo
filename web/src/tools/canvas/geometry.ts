@@ -113,15 +113,17 @@ export function centredBox(start: Point, pointer: Point, square: boolean): { x: 
 export const WHEEL_NOTCH_ZOOM = 1.2
 const WHEEL_SPEED = 0.01
 
+/** A wheel event at least this many pixels (or in lines or pages) is a mouse notch; smaller ones are a trackpad's. */
+export const WHEEL_NOTCH_PX = 50
+
 /**
- * The zoom factor of one wheel event with Cmd, Ctrl or Alt: a trackpad pinch's small deltas zoom as
- * before (e^(−delta/100)); a mouse notch (about 100 pixels, or 3 lines) at most ×1.2 or ÷1.2.
+ * The zoom factor of one wheel event with Cmd, Ctrl or Alt: a trackpad's small deltas (and a
+ * pinch's) zoom as before, e^(−delta/100); a mouse notch (about 100 pixels, or lines) ×1.2 or ÷1.2.
  */
 export function wheelZoomFactor(deltaY: number, deltaMode = 0): number {
-  const pixels = deltaY * (deltaMode === 1 ? 33 : deltaMode === 2 ? 800 : 1)
-  const most = Math.log(WHEEL_NOTCH_ZOOM)
-  const step = Math.min(most, Math.max(-most, -pixels * WHEEL_SPEED))
-  return Math.exp(step)
+  if (!deltaY) return 1
+  if (deltaMode !== 0 || Math.abs(deltaY) >= WHEEL_NOTCH_PX) return deltaY < 0 ? WHEEL_NOTCH_ZOOM : 1 / WHEEL_NOTCH_ZOOM
+  return Math.exp(-deltaY * WHEEL_SPEED)
 }
 
 // ------------------------------------------------------------------ selection outlines

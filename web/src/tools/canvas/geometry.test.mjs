@@ -95,11 +95,14 @@ test('an arrow nudges one screen pixel (at least one document pixel); Shift nudg
   assert.equal(nudgeStep(0.25, true), 10)
 })
 
-test('a mouse notch zooms at most 1.2 times; a trackpad pinch as before', () => {
+test('a mouse notch zooms 1.2 times; a trackpad step or pinch as before', () => {
   assert.ok(near(wheelZoomFactor(-100), 1.2))
+  assert.ok(near(wheelZoomFactor(-120), 1.2))
   assert.ok(near(wheelZoomFactor(100), 1 / 1.2))
   assert.ok(near(wheelZoomFactor(-3, 1), 1.2))
   assert.ok(near(wheelZoomFactor(-4), Math.exp(0.04)))
+  assert.ok(near(wheelZoomFactor(-20), Math.exp(0.2)))
+  assert.equal(wheelZoomFactor(0), 1)
 })
 
 test('a marquee from its centre spans the drag both ways', () => {

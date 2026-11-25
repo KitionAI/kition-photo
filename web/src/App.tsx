@@ -179,6 +179,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     setCloneSource(null)
     forgetStrokeEnd()
     transformNow.current.forget()
+    // The canvas builds a new viewport for a new document: the old one must never draw again (it
+    // would put the previous document's pixels back). The next pointer event brings the new one.
+    viewport.current = null
   }, [doc, cancelToolDrafts])
   const { run, query } = editor
   // Keys work as soon as the picture shows: the editor takes the keyboard focus once, on open.
