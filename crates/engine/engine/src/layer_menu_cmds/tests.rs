@@ -403,7 +403,7 @@ fn stack_modes_render_from_the_nested_layers() {
     s.execute("layer.stackMode.range", json!({})).unwrap();
     assert!(at(&s, 10, 10)[0] < 1.0 / 255.0);
     for m in StackMode::ALL {
-        s.execute(&format!("layer.objectLayers.stackMode.{}", m.id()), json!({})).unwrap();
+        s.execute(&format!("layer.stackMode.{}", m.id()), json!({})).unwrap();
         match &active(&s).content {
             LayerContent::Smart(sm) => assert_eq!(sm.stack_mode, Some(m)),
             _ => panic!(),

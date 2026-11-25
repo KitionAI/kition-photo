@@ -405,7 +405,7 @@ fn inputs(doc: &PhotoDocument, under: &mut Under, command: &str, params: &Value)
             image_fields(under, ["patterns"]);
         }
     }
-    if command.starts_with("type.characterStyle.") || command.starts_with("type.paragraphStyle.") {
+    if command.starts_with("text.characterStyle.") || command.starts_with("text.paragraphStyle.") {
         image_fields(under, ["docState.text_styles"]);
     }
     if command.starts_with("layerComp.") {

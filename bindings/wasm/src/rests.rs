@@ -96,7 +96,7 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         "layer.layerMask.apply" | "layer.layerMask.fromTransparency" => (Some(MASK_PIXELS), false),
         "layer.rasterize.vectorMask" => (Some(&["kind", "mask", "extra"]), false),
         _ if command.starts_with("layer.vectorMask.") => (Some(VECTOR_MASK), false),
-        _ if command.starts_with("layer.editableFilter.") || command.starts_with("layer.objectLayers.stackMode.") => (Some(&["kind", "data", "text"]), false),
+        _ if command.starts_with("layer.editableFilter.") || command.starts_with("layer.stackMode.") => (Some(&["kind", "data", "text"]), false),
         "layer.setAdjustment" | "gradient.fill.set" | "gradient.fill.stop" | "gradient.fill.get" => (Some(&["kind", "data", "text"]), false),
         "layer.fill.setSolidColor" => (Some(&["kind", "locks", "data", "text"]), false),
         _ if command.starts_with("layer.combineShapes.") || command == "shape.edit" => (Some(CONTENT), false),
@@ -109,7 +109,7 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         | "text.convertToPointText"
         | "text.loadDefaultTypeStyles"
         | "text.pasteLoremIpsum" => (Some(CONTENT), false),
-        _ if command.starts_with("type.antiAlias.") || command.starts_with("type.orientation.") || command.starts_with("type.openType.") => {
+        _ if command.starts_with("text.antiAlias.") || command.starts_with("text.orientation.") || command.starts_with("text.openType.") => {
             (Some(CONTENT), false)
         }
         "path.fill" | "path.stroke" => (Some(&["kind", "locks", "data", "text", "tiles"]), false),
@@ -117,7 +117,7 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         "layer.setLabelColor" => (Some(&["extra.label"]), false),
         "layer.showLayers" => (Some(&["visible"]), false),
         // Where the layer is, and nothing of what it holds.
-        _ if command.starts_with("layer.arrange.") => (Some(&NONE), true),
+        _ if command.starts_with("arrange.") => (Some(&NONE), true),
         _ => (None, !crate::acts::position_independent(command)),
     }
 }
@@ -224,7 +224,7 @@ pub fn image_fields(command: &str, params: &Value) -> Vec<&'static str> {
         }
         _ => {}
     }
-    if family("notes.") {
+    if family("note.") {
         out.push("notes");
     }
     if family("count.")

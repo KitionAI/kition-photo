@@ -178,7 +178,7 @@ pub fn authorize_engine_command(id: &str, params: &Value) -> Result<(), Automati
             | "layer.objectLayers.convertToLayers"
             | "layer.objectLayers.saveContents"
     );
-    if (id.starts_with("layer.objectLayers.") && !in_memory_smart_command)
+    if ((id.starts_with("layer.objectLayers.") || id.starts_with("layer.stackMode.")) && !in_memory_smart_command)
         || matches!(
             id,
             "pattern.import"

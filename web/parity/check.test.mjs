@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { PHOTO_MENUS, SECOND_COPIES } from '../src/menus/catalog.ts'
+import { PHOTO_MENUS, SECOND_COPIES, engineId } from '../src/menus/catalog.ts'
 import { hiddenReason, isHiddenOnWeb } from '../src/menus/hidden.ts'
 import { KIT_TAKEOVERS } from '../src/menus/kitMenus.ts'
 import { PHOTO_TOOLS, VIEW } from '../src/tools/catalog.ts'
@@ -59,7 +59,7 @@ test('status entries use a known status and wave', () => {
 test('web-hidden menu rows, and only they, are hidden in the status file', () => {
   const wrong = manifest.menus
     .filter((row) => row.command !== '---')
-    .filter((row) => (status[`menu:${row.path.join('/')}/${row.command}`]?.status === 'hidden') !== isHiddenOnWeb(row))
+    .filter((row) => (status[`menu:${row.path.join('/')}/${row.command}`]?.status === 'hidden') !== isHiddenOnWeb({ ...row, command: engineId(row.command) }))
     .map((row) => row.command)
   assert.deepEqual(wrong, [], `status disagrees with isHiddenOnWeb: ${wrong.join(', ')}`)
 })
@@ -79,7 +79,7 @@ function runBare(command) {
   const doc = sdk.PhotoDocument.create('Untitled', 64, 64)
   for (const [setup, params] of [
     ['layer.new.layer', '{}'],
-    ['select.all', '{}'],
+    ['edit.selectAll', '{}'],
     ['edit.fill', '{"contents":"foreground"}'],
   ])
     doc.execute(setup, params)
@@ -128,7 +128,7 @@ test('done menu rows run in the engine or are Kition rows', { skip: engine ? fal
   const wrong = Object.entries(status)
     .filter(([key, value]) => key.startsWith('menu:') && value.status === 'done')
     .map(([key]) => key.split('/').pop())
-    .filter((command) => !engine.has(command) && !KIT_TAKEOVERS[command])
+    .filter((command) => !engine.has(engineId(command)) && !KIT_TAKEOVERS[command])
   assert.deepEqual(wrong, [], `done rows the engine lacks: ${wrong.join(', ')}`)
 })
 

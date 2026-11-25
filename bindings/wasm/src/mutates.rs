@@ -14,6 +14,8 @@ const PERSONAL_COMMANDS: &[&str] = &[
     "file.printOneCopy",
     "file.saveACopy",
     "file.revealInFinder",
+    "edit.selectAll",
+    "edit.deselectAll",
     "edit.copy",
     "edit.copyMerged",
     "edit.colorSettings",
@@ -31,7 +33,7 @@ const PERSONAL_COMMANDS: &[&str] = &[
 ];
 
 /// Families of [`PERSONAL_COMMANDS`].
-const PERSONAL_FAMILIES: &[&str] = &["select.", "tools.", "channel.target", "edit.purge.", "file.export."];
+const PERSONAL_FAMILIES: &[&str] = &["select.", "tool.", "channel.target", "edit.purge.", "file.export."];
 
 /// Selection commands that do change the document: they make a path, shape, channel or layer.
 const SELECTION_EDITS: &[&str] = &["select.toWorkPath", "select.convertToShape", "select.saveSelection", "select.float", "select.drop"];

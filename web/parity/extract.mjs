@@ -120,9 +120,13 @@ function parsePlaceAfter(text) {
  * the catalog lacks (by id, or by path and label without a trailing "…") goes right after its
  * `PLACE_AFTER` row, else after the last row of its top-level menu, in the engine's order.
  * Upstream's `UI_COMMANDS` (its own shell's rows: Help links, themes,
- * window toggles) are left out; Kition draws its own.
+ * window toggles) are left out; Kition draws its own. The manifest keeps upstream's ids: an engine
+ * command is matched and written under the id upstream has for it (`photo-upstream-ids.json`,
+ * upstream id → the engine's id).
  */
-function withEngineRows(catalog, commands, placeAfter) {
+function withEngineRows(catalog, engineCommands, placeAfter) {
+  const upstreamOf = new Map(Object.entries(JSON.parse(readFileSync(new URL('./photo-upstream-ids.json', import.meta.url), 'utf8'))).map(([upstream, engine]) => [engine, upstream]))
+  const commands = engineCommands.map((command) => ({ ...command, id: upstreamOf.get(command.id) ?? command.id }))
   const items = catalog.slice()
   const bare = (label) => label.replace(/…+$/, '')
   for (const command of commands.filter((item) => item.menu?.length)) {

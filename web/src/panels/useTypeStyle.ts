@@ -108,12 +108,12 @@ export function useTypeStyle(target: TypeTarget) {
   /** The anti-aliasing: the layer's (Type › Anti-Alias), and the tool's for new type. */
   const setAntialias = (value: string) => {
     if (TOOL_ANTI_ALIAS.includes(value)) target.setOptions({ textAntiAlias: value })
-    if (layer) runOnLayer(`type.antiAlias.${value}`, {})
+    if (layer) runOnLayer(`text.antiAlias.${value}`, {})
   }
 
   /** The layer's orientation (Type › Orientation); new type takes the tool's (Horizontal or Vertical Type). */
   const setOrientation = (vertical: boolean) => {
-    if (layer && layer.vertical !== vertical) runOnLayer(`type.orientation.${vertical ? 'vertical' : 'horizontal'}`, {})
+    if (layer && layer.vertical !== vertical) runOnLayer(`text.orientation.${vertical ? 'vertical' : 'horizontal'}`, {})
   }
 
   return {

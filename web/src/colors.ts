@@ -42,7 +42,7 @@ let saidLocal = false
  * The foreground and background colours and the swatch library. The engine's session holds them
  * (`session.tools`, `presets.swatches`), as upstream's does: colours are read with
  * `session.inspect` and written with `tool.setColors`, swapped and reset with `tool.swapColors`
- * and `tool.defaultColors`, swatches used, added, and deleted with `swatches.*`. None of these is
+ * and `tool.defaultColors`, swatches used, added, and deleted with `swatch.*`. None of these is
  * a history step.
  *
  * Every Photo tab shares them through Kit UI's kit store, as upstream's one session does: a

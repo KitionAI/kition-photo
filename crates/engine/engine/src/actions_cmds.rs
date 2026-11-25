@@ -67,7 +67,7 @@ impl ActionState {
 pub fn replayable(id: &str) -> bool {
     // Again journals its concrete transform too; recording the wrapper would replay it twice.
     id == "action.play"
-        || (!id.starts_with("actions.") && id != "edit.transform.again" && (shell_view_command(id) || crate::commands::find(id).is_some_and(|c| c.journal)))
+        || (!id.starts_with("action.") && id != "edit.transform.again" && (shell_view_command(id) || crate::commands::find(id).is_some_and(|c| c.journal)))
 }
 
 /// View-only menu commands recorded by the desktop shell. Headless playback reports
@@ -555,7 +555,7 @@ mod tests {
         let got = s.execute("action.get", json!({"action": "Red"})).unwrap();
         let ids: Vec<&str> = got["steps"].as_array().unwrap().iter().map(|st| st[0].as_str().unwrap()).collect();
         assert_eq!(ids, ["layer.new.layer", "select.rect", "edit.fill"]);
-        assert!(s.journal.iter().all(|(id, _)| !id.starts_with("actions.")));
+        assert!(s.journal.iter().all(|(id, _)| !id.starts_with("action.")));
         let listed = s.execute("action.list", json!({})).unwrap();
         assert_eq!(listed["actions"][0]["steps"], 3);
         assert!(listed["recording"].is_null());

@@ -29,41 +29,40 @@ Commands by namespace (the part of the id before the first dot):
 
 | Namespace | Commands | Change the document | Open to the agent | Examples |
 | --- | ---: | ---: | ---: | --- |
-| `actions` | 7 | 1 | 7 | `action.move`, `action.list`, `action.get` |
+| `action` | 7 | 1 | 7 | `action.move`, `action.list`, `action.get` |
+| `arrange` | 5 | 5 | 5 | `arrange.bringForward`, `arrange.sendBackward`, `arrange.bringToFront` |
 | `brush` | 14 | 12 | 14 | `brush.presets.list`, `brush.presets.save`, `brush.presets.update` |
 | `channel` | 21 | 11 | 21 | `channel.new`, `channel.newSpot`, `channel.duplicate` |
 | `cloneSource` | 5 | 4 | 5 | `cloneSource.list`, `cloneSource.select`, `cloneSource.set` |
 | `color` | 1 | 1 | 1 | `color.profileMismatch` |
 | `command` | 1 | 0 | 1 | `command.list` |
 | `count` | 7 | 7 | 7 | `count.add`, `count.remove`, `count.move` |
-| `document` | 9 | 2 | 9 | `file.inspect`, `file.activate`, `file.move` |
-| `edit` | 76 | 46 | 76 | `edit.undo`, `edit.redo`, `edit.fill` |
-| `file` | 50 | 30 | 50 | `file.new`, `file.close`, `file.newFromClipboard` |
+| `edit` | 78 | 46 | 78 | `edit.undo`, `edit.redo`, `edit.fill` |
+| `file` | 59 | 32 | 59 | `file.new`, `file.close`, `file.inspect` |
 | `filter` | 124 | 124 | 124 | `filter.blur.gaussianBlur`, `filter.blur.blur`, `filter.blur.blurMore` |
 | `gradient` | 12 | 10 | 12 | `gradient.fill.add`, `gradient.fill.set`, `gradient.fill.stop` |
 | `history` | 3 | 3 | 3 | `history.goTo`, `history.deleteState`, `history.newDocument` |
 | `image` | 64 | 61 | 64 | `image.imageRotation.flipCanvasHorizontal`, `image.imageRotation.flipCanvasVertical`, `image.imageRotation.rotate180` |
-| `jobs` | 2 | 0 | 2 | `job.list`, `job.cancel` |
-| `layer` | 203 | 187 | 203 | `layer.new.layer`, `layer.new.group`, `layer.groupLayers` |
+| `job` | 2 | 0 | 2 | `job.list`, `job.cancel` |
+| `layer` | 198 | 182 | 198 | `layer.new.layer`, `layer.new.group`, `layer.groupLayers` |
 | `layerComp` | 13 | 12 | 13 | `layerComp.new`, `layerComp.update`, `layerComp.apply` |
 | `measurementLog` | 3 | 2 | 3 | `measurementLog.list`, `measurementLog.delete`, `measurementLog.export` |
-| `notes` | 4 | 3 | 4 | `note.add`, `note.set`, `note.delete` |
+| `note` | 4 | 3 | 4 | `note.add`, `note.set`, `note.delete` |
 | `paint` | 25 | 25 | 25 | `paint.stroke`, `paint.setSymmetry`, `paint.symmetryFromPath` |
 | `path` | 19 | 17 | 19 | `path.list`, `path.info`, `path.set` |
 | `pattern` | 10 | 8 | 10 | `pattern.list`, `pattern.rename`, `pattern.delete` |
 | `plugin` | 5 | 1 | 5 | `plugin.list`, `plugin.install`, `plugin.remove` |
 | `prefs` | 3 | 0 | 3 | `prefs.get`, `prefs.set`, `prefs.reset` |
-| `select` | 34 | 5 | 34 | `edit.selectAll`, `edit.deselectAll`, `select.inverse` |
+| `select` | 32 | 5 | 32 | `select.inverse`, `select.rect`, `select.float` |
 | `session` | 1 | 0 | 1 | `session.inspect` |
 | `shape` | 9 | 7 | 9 | `shape.add`, `shape.edit`, `shape.info` |
 | `slice` | 7 | 6 | 7 | `slice.new`, `slice.fromGuides`, `slice.set` |
 | `style` | 5 | 4 | 5 | `style.presets.list`, `style.presets.apply`, `style.presets.new` |
-| `swatches` | 12 | 11 | 12 | `swatch.list`, `swatch.add`, `swatch.delete` |
+| `swatch` | 12 | 11 | 12 | `swatch.list`, `swatch.add`, `swatch.delete` |
+| `text` | 59 | 52 | 59 | `text.add`, `text.edit`, `text.setStyle` |
 | `timeline` | 7 | 6 | 7 | `timeline.add`, `timeline.delete`, `timeline.setFrame` |
-| `tool` | 5 | 4 | 5 | `tool.presets.list`, `tool.presets.new`, `tool.presets.select` |
-| `tools` | 8 | 0 | 8 | `tool.setColors`, `tool.swapColors`, `tool.defaultColors` |
-| `type` | 59 | 52 | 59 | `text.add`, `text.edit`, `text.setStyle` |
-| `variables` | 1 | 0 | 1 | `variable.list` |
+| `tool` | 13 | 4 | 13 | `tool.setColors`, `tool.swapColors`, `tool.defaultColors` |
+| `variable` | 1 | 0 | 1 | `variable.list` |
 | `view` | 23 | 10 | 23 | `view.newGuide`, `view.moveGuide`, `view.deleteGuide` |
 
 ### The image

@@ -188,8 +188,8 @@ pub(crate) fn targets_mask(params: &Value) -> bool {
 /// Commands whose work is moving the editor (the pixel selection, the layer selection, the
 /// targeted channel, the colors, the brush, the view): they keep their effect for an agent too.
 pub(crate) fn moves_the_editor(command: &str) -> bool {
-    ["select.", "view.", "tools.", "brush.", "channel.target", "layer.select", "symmetry."].iter().any(|prefix| command.starts_with(prefix))
-        || matches!(command, "layer.showOnly" | "layer.isolate" | "layer.setEffectsExpanded")
+    ["select.", "view.", "tool.", "brush.", "channel.target", "layer.select", "symmetry."].iter().any(|prefix| command.starts_with(prefix))
+        || matches!(command, "edit.selectAll" | "edit.deselectAll" | "layer.showOnly" | "layer.isolate" | "layer.setEffectsExpanded")
 }
 
 /// What an agent's call gave of the state a command reads, for that call ([`PhotoDocument::bracketed`]).

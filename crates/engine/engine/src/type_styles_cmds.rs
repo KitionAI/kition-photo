@@ -736,8 +736,8 @@ macro_rules! style_specs {
 }
 
 pub fn specs() -> Vec<CommandSpec> {
-    let mut v = style_specs!(false, "type.characterStyle", "Character");
-    v.extend(style_specs!(true, "type.paragraphStyle", "Paragraph"));
+    let mut v = style_specs!(false, "text.characterStyle", "Character");
+    v.extend(style_specs!(true, "text.paragraphStyle", "Paragraph"));
     v
 }
 

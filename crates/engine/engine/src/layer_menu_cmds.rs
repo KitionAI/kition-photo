@@ -328,7 +328,7 @@ fn stack_mode(s: &mut Session, p: &Value, mode: Option<StackMode>) -> Result<Val
 macro_rules! stack_spec {
     ($id:literal, $label:literal, $mode:expr) => {
         CommandSpec {
-            id: concat!("layer.objectLayers.stackMode.", $id),
+            id: concat!("layer.stackMode.", $id),
             label: $label,
             menu: &["Layer", "Object Layers", "Stack Mode"],
             shortcut: None,

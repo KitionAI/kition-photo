@@ -1,4 +1,4 @@
-//! `type.*` commands: create and edit type (text) layers.
+//! `text.*` commands: create and edit type (text) layers.
 //!
 //! Text offsets in parameters and results are **character** indices (Unicode scalar values),
 //! so JSON clients never split a UTF-8 sequence. Sizes, leading, indents and spacing are in

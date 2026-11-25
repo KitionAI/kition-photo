@@ -30,7 +30,7 @@ fn scripts_parse_json_and_lines() {
     let a = parse_script(r#"[["file.new", {"width": 10}], {"command": "layer.flattenImage"}, "edit.undo"]"#).unwrap();
     assert_eq!(a.len(), 3);
     assert_eq!(a[0].1["width"], 10);
-    let b = parse_script("# make a doc\nfile.new {\"width\": 12, \"height\": 8}\n\nimage.imageRotation.90cw\n").unwrap();
+    let b = parse_script("# make a doc\nfile.new {\"width\": 12, \"height\": 8}\n\nimage.imageRotation.rotate90cw\n").unwrap();
     assert_eq!(b.len(), 2);
     assert_eq!(b[1].0, "image.imageRotation.rotate90cw");
     let c = parse_script(r#"{"kitionPhotoDroplet":1,"action":{"steps":[["file.new",{}]]}}"#).unwrap();
@@ -42,7 +42,7 @@ fn scripts_parse_json_and_lines() {
 fn browse_runs_a_script_file() {
     let dir = tmp("browse");
     let path = format!("{dir}/make.txt");
-    std::fs::write(&path, "file.new {\"width\": 30, \"height\": 20}\nimage.imageRotation.90cw\n").unwrap();
+    std::fs::write(&path, "file.new {\"width\": 30, \"height\": 20}\nimage.imageRotation.rotate90cw\n").unwrap();
     let mut s = Session::new();
     let r = s.execute("file.scripts.browse", json!({"path": path})).unwrap();
     assert_eq!(r["ok"], true);

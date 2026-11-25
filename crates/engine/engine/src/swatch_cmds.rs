@@ -1,4 +1,4 @@
-//! Swatches panel commands (`swatches.*`): add, delete, rename, reorder and group swatches, set
+//! Swatches panel commands (`swatch.*`): add, delete, rename, reorder and group swatches, set
 //! the foreground or background colour from one, restore the defaults, and import or export
 //! Photoshop `.aco` and Adobe Swatch Exchange `.ase` files.
 //!

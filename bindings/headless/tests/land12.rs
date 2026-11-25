@@ -109,7 +109,7 @@ async fn json_pattern_sources_keep_rename_and_deletion_reasons() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn json_text_style_ids_still_need_a_resource_identity_contract() {
-    for prefix in ["type.characterStyle", "type.paragraphStyle"] {
+    for prefix in ["text.characterStyle", "text.paragraphStyle"] {
         for deleted in [false, true] {
             let mut doc = PhotoDocument::create("art.kphoto", 32, 24).unwrap();
             let id = doc.execute(&format!("{prefix}.new"), json!({"name":"Style","fromSelection":false})).unwrap()["id"].clone();

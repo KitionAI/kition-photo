@@ -3,6 +3,9 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
 const scenarios = read('./cases.json')
 const inventory = read('../../parity/photo-status.json')
+// The inventory names commands as upstream does; the scenarios run the engine's ids.
+const engineIds = read('../../parity/photo-upstream-ids.json')
+const engineId = (command) => engineIds[command] ?? command
 const commands = new Map()
 for (const scenario of scenarios) {
   for (const { command, error } of scenario.steps) {
@@ -16,7 +19,7 @@ for (const scenario of scenarios) {
 const entries = Object.entries(inventory).map(([key, value]) => ({
   key,
   declaredStatus: value.status,
-  engineScenarios: key.startsWith('menu:') ? [...(commands.get(key.split('/').at(-1)) ?? [])] : [],
+  engineScenarios: key.startsWith('menu:') ? [...(commands.get(engineId(key.split('/').at(-1))) ?? [])] : [],
 }))
 const report = {
   note: 'engineScenarios proves that a command participates in a result-checked scenario. It does not prove every parameter, menu interaction, tool or dialog. Browser scenario mapping is in docs/testing/scenarios.md.',

@@ -198,7 +198,7 @@ fn agent_edits_text_by_position() {
     let dir = tmp("type-caret");
     let mut c = connect(&dir);
     tool(&mut c, "doc.new", json!({"width": 480, "height": 200, "background": "white"}));
-    let listed = tool(&mut c, "engine.commands", json!({"filter": "type."}));
+    let listed = tool(&mut c, "engine.commands", json!({"filter": "text."}));
     let ids: Vec<&str> = listed.as_array().unwrap().iter().filter_map(|c| c["id"].as_str()).collect();
     for id in ["text.hitTest", "text.caret", "text.navigate"] {
         assert!(ids.contains(&id), "engine.commands missing {id}: {ids:?}");
@@ -246,7 +246,7 @@ fn agent_edits_text_by_position() {
 fn agent_records_and_replays_an_action() {
     let dir = tmp("actions");
     let mut c = connect(&dir);
-    let listed = tool(&mut c, "engine.commands", json!({"filter": "actions."}));
+    let listed = tool(&mut c, "engine.commands", json!({"filter": "action."}));
     let ids: Vec<&str> = listed.as_array().unwrap().iter().filter_map(|item| item.get("id").and_then(Value::as_str)).collect();
     for id in ["action.list", "action.get", "action.record", "action.stop", "action.play", "action.delete"] {
         assert!(ids.contains(&id), "{id} missing from {ids:?}");

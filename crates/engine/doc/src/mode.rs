@@ -147,7 +147,7 @@ impl StackMode {
         StackMode::Variance,
     ];
 
-    /// The menu-id suffix (`layer.objectLayers.stackMode.<id>`).
+    /// The menu-id suffix (`layer.stackMode.<id>`).
     pub fn id(self) -> &'static str {
         match self {
             StackMode::Entropy => "entropy",

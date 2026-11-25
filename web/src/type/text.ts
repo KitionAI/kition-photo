@@ -1,6 +1,6 @@
 /**
  * The pure part of editing type on the canvas (plan 2026-11-24, stage 4): character offsets (the
- * engine's `type.*` commands count Unicode characters, JavaScript strings count UTF-16 units),
+ * engine's `text.*` commands count Unicode characters, JavaScript strings count UTF-16 units),
  * words and paragraphs, what a key does, where the selection's highlight goes, a paragraph box's
  * handles, and how presses count as double and triple clicks. No browser or engine here, so
  * `text.test.mjs` runs it under `node --test`.
