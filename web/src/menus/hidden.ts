@@ -71,7 +71,71 @@ export function hiddenReason(command: string): string | null {
   return null
 }
 
-/** Whether a catalog row is never shown on the web (`catalogTabs`'s `hidden`). */
+/** Whether a catalog row is never shown on the web. */
 export function isHiddenOnWeb(row: MenuRow) {
   return hiddenReason(row.command) != null
+}
+
+const PREFERENCES = 'The preferences pages are not built yet: the row would only add an empty history step.'
+const CUT = 'Needs a window of its own, cut for the launch (plan 2026-11-24, section 1).'
+const NO_GUIDES = 'The canvas does not draw guides yet (plan 2026-11-24, stage 7).'
+const VARIABLES = 'Variables need a data-set editor, not built yet; without one the engine refuses the row.'
+const MEASUREMENT = 'Measurement needs the Measurement Log panel, cut for the launch.'
+
+/**
+ * "…" rows a browser could run but the editor does not show yet, with why: a dialog-less run
+ * would apply defaults or fail with the engine's English error, and nothing useful can be asked
+ * for them yet (plan 2026-11-24, stage 1). Unlike `HIDDEN`, these rows stay `todo` in the parity
+ * status: they come back when their dialog or panel is built.
+ */
+const NOT_BUILT: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(
+    ['general', 'integrations', 'interface', 'workspace', 'tools', 'fileHandling', 'export', 'performance', 'scratchDisks', 'cursors', 'transparencyAndGamut', 'unitsAndRulers', 'guidesGridAndSlices', 'plugIns', 'type', 'enhancedControls', 'rawDefaults'].map((page) => [`edit.preferences.${page}`, PREFERENCES]),
+  ),
+  'file.export.exportPreferences': PREFERENCES,
+  'edit.keyboardShortcuts': 'The keyboard shortcut editor is not built yet (Help › Keyboard Shortcuts lists them).',
+  'edit.menus': 'The menu editor is not built yet; Customize hides and shows rows.',
+  'edit.toolbar': 'The toolbar editor is not built yet; Customize hides and shows tools.',
+  'edit.presets.presetManager': 'The preset manager is not built yet.',
+  'edit.presets.exportImportPresets': 'The preset manager is not built yet.',
+  'file.export.saveForWebLegacy': 'Writes files to a local folder; exporting through the host is not built yet.',
+  'file.scripts.scriptEventsManager': 'Scripts run from local files, which a browser editor cannot.',
+  'image.variables.define': VARIABLES,
+  'image.variables.dataSets': VARIABLES,
+  'image.applyDataSet': VARIABLES,
+  'image.analysis.setMeasurementScale': MEASUREMENT,
+  'image.analysis.selectDataPoints': MEASUREMENT,
+  'image.analysis.placeScaleMarker': MEASUREMENT,
+  'filter.filterGallery': CUT,
+  'filter.vanishingPoint': CUT,
+  'filter.liquify': CUT,
+  'filter.rawDevelop': CUT,
+  'filter.distort.displace': 'Needs a displacement map file, which the editor cannot pick yet; the engine refuses it without one.',
+  'view.newGuide': NO_GUIDES,
+  'view.newGuideLayout': NO_GUIDES,
+  // "…" rows whose values the generic dialog cannot ask (a file, a JSON map): without a dialog of their own they would run bare.
+  'layer.objectLayers.replaceContents': 'Needs a file picker for the new contents, not built yet.',
+  'layer.objectLayers.exportContents': 'Writes the contents to a local file; exporting through the host is not built yet.',
+  'layer.objectLayers.convertToLinked': 'Links the contents to a local file, which a browser editor cannot.',
+  'layer.videoLayers.replaceFootage': 'Video layers need the Timeline, cut for the launch.',
+  'layer.videoLayers.interpretFootage': 'Video layers need the Timeline, cut for the launch.',
+  'type.resolveMissingFonts': 'Needs a font-mapping dialog, not built yet.',
+  'layer.layerContentOptions': "Needs the fill layer's own dialog, not built yet; Properties edits a fill layer meanwhile.",
+  'image.trap': 'Needs a trap-width dialog, not built yet.',
+  'layer.new.artboardFromGroup': 'Needs the artboard dialog, not built yet.',
+}
+
+/** Why the menus leave out `command` until its dialog or panel is built, or null. */
+export function notBuiltReason(command: string): string | null {
+  return NOT_BUILT[command] ?? null
+}
+
+/** Whether the menus leave out `command`: never shown on the web, or not built yet. */
+export function isHiddenCommand(command: string) {
+  return hiddenReason(command) != null || notBuiltReason(command) != null
+}
+
+/** Whether the menus leave out a catalog row (`catalogTabs`'s `hidden`): never shown on the web, or not built yet. */
+export function isHiddenInMenus(row: MenuRow) {
+  return isHiddenCommand(row.command)
 }
