@@ -46,7 +46,7 @@ fn shape_create_every_kind_and_undo() {
         ];
         let before = doc(&s).layer_count();
         for (i, (p, area)) in cases.iter().enumerate() {
-            let r = s.execute("shape.create", p.clone()).unwrap();
+            let r = s.execute("shape.add", p.clone()).unwrap();
             let id = r["layer"].as_u64().unwrap();
             let sh = shape(&s, id);
             assert_eq!(sh.cache.as_ref().unwrap().format(), doc(&s).pixel_format());
@@ -74,7 +74,7 @@ fn shape_create_fill_stroke_and_composite() {
     let mut s = session(100, 100, 8);
     let r = s
         .execute(
-            "shape.create",
+            "shape.add",
             json!({"kind": "rect", "rect": [20, 20, 60, 60], "fill": "#ff0000", "stroke": {"width": 4, "color": "#0000ff", "align": "outside"}}),
         )
         .unwrap();
@@ -87,18 +87,18 @@ fn shape_create_fill_stroke_and_composite() {
     assert!(px(18, 50)[2] > 0.99 && px(18, 50)[0] < 0.01);
     assert!(px(10, 10)[1] > 0.99);
     // No fill: only the stroke.
-    let r = s.execute("shape.create", json!({"kind": "ellipse", "rect": [5, 5, 40, 40], "fill": null, "stroke": {"width": 2}})).unwrap();
+    let r = s.execute("shape.add", json!({"kind": "ellipse", "rect": [5, 5, 40, 40], "fill": null, "stroke": {"width": 2}})).unwrap();
     let sh = shape(&s, r["layer"].as_u64().unwrap());
     assert!(sh.fill.is_none());
     assert!((alpha_sum(&sh) - std::f64::consts::PI * 40.0 * 2.0).abs() < 3.0, "{}", alpha_sum(&sh));
-    assert!(s.execute("shape.create", json!({"kind": "rect"})).is_err());
-    assert!(s.execute("shape.create", json!({"kind": "blob", "rect": [0, 0, 1, 1]})).is_err());
+    assert!(s.execute("shape.add", json!({"kind": "rect"})).is_err());
+    assert!(s.execute("shape.add", json!({"kind": "blob", "rect": [0, 0, 1, 1]})).is_err());
 }
 
 #[test]
 fn shape_edit_live_params_and_undo() {
     let mut s = session(200, 200, 8);
-    let id = s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 50, 50]})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 50, 50]})).unwrap()["layer"].as_u64().unwrap();
     let r = s.execute("shape.edit", json!({"layer": id, "rect": [10, 10, 100, 50]})).unwrap();
     assert_eq!(r["bounds"], json!([10, 10, 100, 50]));
     assert!((alpha_sum(&shape(&s, id)) - 5000.0).abs() < 1.0);
@@ -136,8 +136,8 @@ fn shape_edit_live_params_and_undo() {
 #[test]
 fn shape_add_to_with_path_ops() {
     let mut s = session(100, 100, 8);
-    let id = s.execute("shape.create", json!({"kind": "rect", "rect": [0, 0, 60, 60]})).unwrap()["layer"].as_u64().unwrap();
-    let r = s.execute("shape.create", json!({"kind": "rect", "rect": [30, 30, 60, 60], "addTo": id, "op": "subtract"})).unwrap();
+    let id = s.execute("shape.add", json!({"kind": "rect", "rect": [0, 0, 60, 60]})).unwrap()["layer"].as_u64().unwrap();
+    let r = s.execute("shape.add", json!({"kind": "rect", "rect": [30, 30, 60, 60], "addTo": id, "op": "subtract"})).unwrap();
     assert_eq!(r["path"]["subpaths"][1]["op"], "subtract");
     assert!((alpha_sum(&shape(&s, id)) - (3600.0 - 900.0)).abs() < 1.0);
     s.execute("layer.combineShapes.intersectShapeAreas", json!({"layer": id})).unwrap();
@@ -154,7 +154,7 @@ fn shape_add_to_with_path_ops() {
 #[test]
 fn shape_rasterize_keeps_pixels() {
     let mut s = session(64, 64, 16);
-    let id = s.execute("shape.create", json!({"kind": "ellipse", "rect": [4, 4, 40, 30]})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("shape.add", json!({"kind": "ellipse", "rect": [4, 4, 40, 30]})).unwrap()["layer"].as_u64().unwrap();
     let before = shape(&s, id).cache.unwrap();
     let flat = kition_photo_compose::flatten(doc(&s));
     s.execute("layer.rasterize.shape", json!({"layer": id})).unwrap();
@@ -274,7 +274,7 @@ fn fill_and_stroke_path_on_pixel_layer() {
     assert!(surf.rgba(35, 35)[2] < 0.1);
     assert!(s.execute("path.stroke", json!({"tool": "airbrush"})).is_err());
     // Filling needs a pixel layer.
-    s.execute("shape.create", json!({"kind": "rect", "rect": [0, 0, 5, 5]})).unwrap();
+    s.execute("shape.add", json!({"kind": "rect", "rect": [0, 0, 5, 5]})).unwrap();
     assert!(s.execute("path.fill", json!({})).is_err());
 }
 
@@ -314,7 +314,7 @@ fn transform_work_saved_and_shape_paths() {
     assert_eq!(doc(&s).paths[0].path.subpaths[0].knots[0].anchor, Point::new(8.0, 10.0));
     s.execute("path.transform", json!({"name":"Saved","translateX":3,"translateY":-2})).unwrap();
     assert_eq!(doc(&s).paths[0].path.subpaths[0].knots[0].anchor, Point::new(11.0, 8.0));
-    let id = s.execute("shape.create", json!({"kind":"rect","rect":[10,10,20,20]})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("shape.add", json!({"kind":"rect","rect":[10,10,20,20]})).unwrap()["layer"].as_u64().unwrap();
     s.execute("path.transform", json!({"name":"layer","layer":id,"matrix":[1,0,0,1,5,0]})).unwrap();
     assert_eq!(shape(&s, id).path.subpaths[0].knots[0].anchor.x, 15.0);
     assert!(shape(&s, id).cache.is_some());
@@ -327,15 +327,14 @@ fn copy_and_paste_shape_fill_and_stroke() {
     assert!(!s.is_enabled("path.style.pasteFill"));
     assert!(s.execute("path.style.copyFill", json!({})).is_err());
     assert!(s.execute("path.style.pasteFill", json!({})).is_err());
-    let source =
-        s.execute("shape.create", json!({"kind":"rect","rect":[10,10,20,20],"fill":"#ff0000","stroke":{"width":3,"color":"#0000ff"}})).unwrap()["layer"]
-            .as_u64()
-            .unwrap();
+    let source = s.execute("shape.add", json!({"kind":"rect","rect":[10,10,20,20],"fill":"#ff0000","stroke":{"width":3,"color":"#0000ff"}})).unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     assert!(s.is_enabled("path.style.copyFill"));
     assert!(s.is_enabled("path.style.copyStroke"));
     s.execute("path.style.copyFill", json!({})).unwrap();
     s.execute("path.style.copyStroke", json!({})).unwrap();
-    let target = s.execute("shape.create", json!({"kind":"rect","rect":[40,40,20,20],"fill":"#00ff00"})).unwrap()["layer"].as_u64().unwrap();
+    let target = s.execute("shape.add", json!({"kind":"rect","rect":[40,40,20,20],"fill":"#00ff00"})).unwrap()["layer"].as_u64().unwrap();
     assert!(s.is_enabled("path.style.pasteFill"));
     assert!(s.is_enabled("path.style.pasteStroke"));
     s.execute("path.style.pasteFill", json!({})).unwrap();
@@ -395,7 +394,7 @@ fn rasterizing_a_vector_mask_keeps_what_the_masks_show() {
             if let Some((feather, density)) = pm {
                 s.execute("select.rect", json!({"x": 0, "y": 0, "width": 40, "height": 64})).unwrap();
                 s.execute("layer.layerMask.revealSelection", json!({})).unwrap();
-                s.execute("select.deselect", json!({})).unwrap();
+                s.execute("edit.deselectAll", json!({})).unwrap();
                 s.edit("mask settings", |doc, _| {
                     let m = doc.layer_mut(id).unwrap().mask.as_mut().unwrap();
                     (m.feather, m.density) = (feather, density);
@@ -471,14 +470,14 @@ fn vector_mask_commands_and_compositing() {
     s.undo();
     assert!(doc(&s).layer(LayerId(id)).unwrap().vector_mask.is_some());
     // Shape layers cannot take a separate vector mask.
-    s.execute("shape.create", json!({"kind": "rect", "rect": [0, 0, 10, 10]})).unwrap();
+    s.execute("shape.add", json!({"kind": "rect", "rect": [0, 0, 10, 10]})).unwrap();
     assert!(s.execute("layer.vectorMask.revealAll", json!({})).is_err());
 }
 
 #[test]
 fn translate_vectors_moves_shapes_and_masks() {
     let mut s = session(100, 100, 8);
-    let id = s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 20, 20]})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 20, 20]})).unwrap()["layer"].as_u64().unwrap();
     s.edit("Move", |d, _| {
         let snap = d.clone();
         let l = d.layer_mut(LayerId(id)).unwrap();
@@ -494,7 +493,7 @@ fn translate_vectors_moves_shapes_and_masks() {
 #[test]
 fn all_vector_commands_are_registered() {
     for id in [
-        "shape.create",
+        "shape.add",
         "shape.edit",
         "shape.info",
         "shape.rasterize",

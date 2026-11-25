@@ -37,7 +37,7 @@ fn fill_layers_show_their_fill_and_bounds() {
     run(&mut image, "select.rect", json!({ "x": 8, "y": 4, "width": 20, "height": 10 }));
     let masked = run(&mut image, "layer.newFillLayer.solidColor", json!({ "color": "#ff0000" }))["layer"].clone();
     assert_eq!(layer(&image, &masked)["bounds"], json!([8, 4, 20, 10]));
-    run(&mut image, "select.deselect", json!({}));
+    run(&mut image, "edit.deselectAll", json!({}));
     let path = json!({ "subpaths": [{ "knots": [[10, 20], [40, 20], [40, 30], [10, 30]] }] });
     let shaped = run(&mut image, "layer.newFillLayer.solidColor", json!({ "color": "#00ff00", "path": path }))["layer"].clone();
     assert_eq!(layer(&image, &shaped)["bounds"], json!([10, 20, 30, 10]));
@@ -47,12 +47,12 @@ fn fill_layers_show_their_fill_and_bounds() {
 fn shape_layers_show_their_fill_and_stroke() {
     let mut image = PhotoDocument::create("shapes.psd", 64, 48).unwrap();
     let made =
-        run(&mut image, "shape.create", json!({ "kind": "ellipse", "rect": [4, 4, 30, 20], "fill": "#ff0000", "stroke": { "width": 2, "color": "#0000ff" } }));
+        run(&mut image, "shape.add", json!({ "kind": "ellipse", "rect": [4, 4, 30, 20], "fill": "#ff0000", "stroke": { "width": 2, "color": "#0000ff" } }));
     let shown = layer(&image, &made["layer"]);
     assert_eq!(shown["shape"]["fill"], "#ff0000", "{shown}");
     assert_eq!(shown["shape"]["stroke"]["fill"], "#0000ff", "{shown}");
     assert_eq!(shown["shape"]["kind"], "ellipse", "{shown}");
-    assert_eq!(shown["bounds"], made["bounds"], "shape.create and inspect agree");
+    assert_eq!(shown["bounds"], made["bounds"], "shape.add and inspect agree");
 }
 
 #[test]
@@ -61,10 +61,10 @@ fn commands_answer_bounds_as_inspect_does() {
     // A render filter on a new layer.
     let drawn = run(&mut image, "filter.render.pictureFrame", json!({ "frame": "dots", "newLayer": true }));
     assert_eq!(drawn["bounds"], layer(&image, &drawn["layer"])["bounds"], "{drawn}");
-    // Type: type.create and type.info.
-    let typed = run(&mut image, "type.create", json!({ "x": 20, "y": 60, "text": "Bounds", "size": 24 }));
+    // Type: text.add and text.info.
+    let typed = run(&mut image, "text.add", json!({ "x": 20, "y": 60, "text": "Bounds", "size": 24 }));
     let shown = layer(&image, &typed["layer"]);
-    assert_eq!(typed["bounds"], shown["bounds"], "type.create {typed} vs inspect {shown}");
-    let info = run(&mut image, "type.info", json!({ "layer": typed["layer"] }));
-    assert_eq!(info["bounds"], shown["bounds"], "type.info vs inspect");
+    assert_eq!(typed["bounds"], shown["bounds"], "text.add {typed} vs inspect {shown}");
+    let info = run(&mut image, "text.info", json!({ "layer": typed["layer"] }));
+    assert_eq!(info["bounds"], shown["bounds"], "text.info vs inspect");
 }

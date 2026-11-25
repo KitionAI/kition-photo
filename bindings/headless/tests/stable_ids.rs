@@ -62,7 +62,7 @@ fn layered_psd() -> Vec<u8> {
         ("layer.new.group", json!({ "name": "Group" })),
         ("layer.new.layer", json!({ "name": "Inside" })),
         ("layer.newAdjustmentLayer.levels", json!({ "gamma": 1.4 })),
-        ("type.create", json!({ "text": "Hi", "x": 4, "y": 30, "size": 12, "color": "#000000", "name": "Title" })),
+        ("text.add", json!({ "text": "Hi", "x": 4, "y": 30, "size": 12, "color": "#000000", "name": "Title" })),
     ] {
         doc.execute(command, params).unwrap_or_else(|error| panic!("{command}: {error}"));
     }

@@ -49,7 +49,7 @@ fn rotate_arbitrary_grows_canvas_and_keeps_background() {
         let mut s = session(40, 20, depth, "rgb");
         s.execute("layer.new.layer", json!({})).unwrap();
         paint(&mut s, |x, y| if (15..25).contains(&x) && (5..15).contains(&y) { [1.0, 0.0, 0.0, 1.0] } else { [0.0; 4] });
-        s.execute("tools.setColors", json!({"background": "#00ff00"})).unwrap();
+        s.execute("tool.setColors", json!({"background": "#00ff00"})).unwrap();
         let r = s.execute("image.rotation.arbitrary", json!({"angle": 90, "direction": "cw"})).unwrap();
         assert_eq!((r["width"].as_u64(), r["height"].as_u64()), (Some(20), Some(40)));
         let d = doc(&s);

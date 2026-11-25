@@ -29,41 +29,41 @@ Commands by namespace (the part of the id before the first dot):
 
 | Namespace | Commands | Change the document | Open to the agent | Examples |
 | --- | ---: | ---: | ---: | --- |
-| `actions` | 7 | 1 | 7 | `actions.move`, `actions.list`, `actions.get` |
+| `actions` | 7 | 1 | 7 | `action.move`, `action.list`, `action.get` |
 | `brush` | 14 | 12 | 14 | `brush.presets.list`, `brush.presets.save`, `brush.presets.update` |
 | `channel` | 21 | 11 | 21 | `channel.new`, `channel.newSpot`, `channel.duplicate` |
 | `cloneSource` | 5 | 4 | 5 | `cloneSource.list`, `cloneSource.select`, `cloneSource.set` |
 | `color` | 1 | 1 | 1 | `color.profileMismatch` |
 | `command` | 1 | 0 | 1 | `command.list` |
 | `count` | 7 | 7 | 7 | `count.add`, `count.remove`, `count.move` |
-| `document` | 9 | 2 | 9 | `document.inspect`, `document.activate`, `document.move` |
+| `document` | 9 | 2 | 9 | `file.inspect`, `file.activate`, `file.move` |
 | `edit` | 76 | 46 | 76 | `edit.undo`, `edit.redo`, `edit.fill` |
 | `file` | 50 | 30 | 50 | `file.new`, `file.close`, `file.newFromClipboard` |
 | `filter` | 124 | 124 | 124 | `filter.blur.gaussianBlur`, `filter.blur.blur`, `filter.blur.blurMore` |
-| `gradient` | 12 | 10 | 12 | `gradient.fill.create`, `gradient.fill.set`, `gradient.fill.stop` |
+| `gradient` | 12 | 10 | 12 | `gradient.fill.add`, `gradient.fill.set`, `gradient.fill.stop` |
 | `history` | 3 | 3 | 3 | `history.goTo`, `history.deleteState`, `history.newDocument` |
-| `image` | 64 | 61 | 64 | `image.imageRotation.flipCanvasHorizontal`, `image.imageRotation.flipCanvasVertical`, `image.imageRotation.180` |
-| `jobs` | 2 | 0 | 2 | `jobs.list`, `jobs.cancel` |
+| `image` | 64 | 61 | 64 | `image.imageRotation.flipCanvasHorizontal`, `image.imageRotation.flipCanvasVertical`, `image.imageRotation.rotate180` |
+| `jobs` | 2 | 0 | 2 | `job.list`, `job.cancel` |
 | `layer` | 203 | 187 | 203 | `layer.new.layer`, `layer.new.group`, `layer.groupLayers` |
 | `layerComp` | 13 | 12 | 13 | `layerComp.new`, `layerComp.update`, `layerComp.apply` |
 | `measurementLog` | 3 | 2 | 3 | `measurementLog.list`, `measurementLog.delete`, `measurementLog.export` |
-| `notes` | 4 | 3 | 4 | `notes.add`, `notes.set`, `notes.delete` |
+| `notes` | 4 | 3 | 4 | `note.add`, `note.set`, `note.delete` |
 | `paint` | 25 | 25 | 25 | `paint.stroke`, `paint.setSymmetry`, `paint.symmetryFromPath` |
 | `path` | 19 | 17 | 19 | `path.list`, `path.info`, `path.set` |
 | `pattern` | 10 | 8 | 10 | `pattern.list`, `pattern.rename`, `pattern.delete` |
 | `plugin` | 5 | 1 | 5 | `plugin.list`, `plugin.install`, `plugin.remove` |
 | `prefs` | 3 | 0 | 3 | `prefs.get`, `prefs.set`, `prefs.reset` |
-| `select` | 34 | 5 | 34 | `select.all`, `select.deselect`, `select.inverse` |
+| `select` | 34 | 5 | 34 | `edit.selectAll`, `edit.deselectAll`, `select.inverse` |
 | `session` | 1 | 0 | 1 | `session.inspect` |
-| `shape` | 9 | 7 | 9 | `shape.create`, `shape.edit`, `shape.info` |
+| `shape` | 9 | 7 | 9 | `shape.add`, `shape.edit`, `shape.info` |
 | `slice` | 7 | 6 | 7 | `slice.new`, `slice.fromGuides`, `slice.set` |
 | `style` | 5 | 4 | 5 | `style.presets.list`, `style.presets.apply`, `style.presets.new` |
-| `swatches` | 12 | 11 | 12 | `swatches.list`, `swatches.add`, `swatches.delete` |
-| `timeline` | 7 | 6 | 7 | `timeline.create`, `timeline.delete`, `timeline.setFrame` |
+| `swatches` | 12 | 11 | 12 | `swatch.list`, `swatch.add`, `swatch.delete` |
+| `timeline` | 7 | 6 | 7 | `timeline.add`, `timeline.delete`, `timeline.setFrame` |
 | `tool` | 5 | 4 | 5 | `tool.presets.list`, `tool.presets.new`, `tool.presets.select` |
-| `tools` | 8 | 0 | 8 | `tools.setColors`, `tools.swapColors`, `tools.defaultColors` |
-| `type` | 59 | 52 | 59 | `type.create`, `type.edit`, `type.setStyle` |
-| `variables` | 1 | 0 | 1 | `variables.list` |
+| `tools` | 8 | 0 | 8 | `tool.setColors`, `tool.swapColors`, `tool.defaultColors` |
+| `type` | 59 | 52 | 59 | `text.add`, `text.edit`, `text.setStyle` |
+| `variables` | 1 | 0 | 1 | `variable.list` |
 | `view` | 23 | 10 | 23 | `view.newGuide`, `view.moveGuide`, `view.deleteGuide` |
 
 ### The image
@@ -79,7 +79,7 @@ Commands by namespace (the part of the id before the first dot):
 ### Addressing
 
 - **Pixels from the top-left of the canvas**, x right, y down. `select.rect { x, y, width, height }`
-  makes a rectangular selection; `type.create { x, y, … }` places text with `y` its baseline.
+  makes a rectangular selection; `text.add { x, y, … }` places text with `y` its baseline.
 - **Layer ids are valid only in the session that answered them.** A layer's `id` can change when the
   image is opened again, so the same layer may be `7` in one session and `3` in the next. Read ids
   from `photo_inspect` or `photo_check` in the same session before you use them, and never reuse an
@@ -205,11 +205,11 @@ schema says which.
 | `anchor` | `topLeft`, `top`, `topRight`, `left`, `center`, `right`, `bottomLeft`, `bottom`, `bottomRight` | `image.canvasSize` |
 | `blend` | `normal`, `darken`, `lighten`, `difference` | `cloneSource.overlay` |
 | `brushType` | `simple`, `lightRough`, `darkRough`, `wideSharp`, `wideBlurry`, `sparkle` | `filter.gallery.paintDaubs` |
-| `caps` | `normal`, `small`, `all` | `type.setStyle` |
+| `caps` | `normal`, `small`, `all` | `text.setStyle` |
 | `depthMode` | `random`, `levelBased` | `filter.stylize.extrude` |
 | `direction` | `up`, `down` | `layer.layerStyle.bevelEmboss` |
 | `direction` | `fromRight`, `fromLeft` | `filter.stylize.wind` |
-| `direction` | `auto`, `ltr`, `rtl` | `type.setStyle` |
+| `direction` | `auto`, `ltr`, `rtl` | `text.setStyle` |
 | `direction` | `cw`, `ccw` | `image.rotation.arbitrary` |
 | `fill` | `background`, `foreground`, `inverse`, `unaltered` | `filter.stylize.tiles` |
 | `fill` | `black`, `white`, `selection` | `channel.new` |
@@ -217,7 +217,7 @@ schema says which.
 | `flameShape` | `parallel`, `toCenter`, `spread`, `oval`, `pointed` | `filter.render.flame` |
 | `flameStyle` | `normal`, `violent`, `flat` | `filter.render.flame` |
 | `flameType` | `oneFlameAlongPath`, `multipleFlamesAlongPath`, `multipleFlamesPathDirections`, `multipleFlamesVariousLength`, `candleLight`, `multipleFlamesOneDirection` | `filter.render.flame` |
-| `format` | `aco`, `ase` | `swatches.import` |
+| `format` | `aco`, `ase` | `swatch.import` |
 | `format` | `same`, `jpg`, `png`, `tif`, `psd` | `file.automate.lensCorrection` |
 | `format` | `gif`, `png8`, `png24`, `jpeg`, `wbmp` | `file.export.saveForWebLegacy` |
 | `format` | `kphoto`, `psd`, `psb` | `file.package` |
@@ -227,15 +227,15 @@ schema says which.
 | `kind` | `color`, `opacity` | `gradient.fill.stop`, `gradient.presets.stop` |
 | `kind` | `dropShadow`, `innerShadow`, `outerGlow`, `innerGlow`, `stroke`, `colorOverlay`, `gradientOverlay`, `patternOverlay`, `satin`, `bevelEmboss` | `layer.layerStyle.replace` |
 | `kind` | `stroke`, `dropShadow`, `innerShadow`, `outerGlow`, `innerGlow`, `colorOverlay`, `gradientOverlay`, `patternOverlay`, `satin`, `bevelEmboss` | `layer.layerStyle.makeDefault` |
-| `kind` | `rect`, `roundedRect`, `ellipse`, `polygon`, `star`, `line`, `path` | `shape.create` |
-| `kind` | `process`, `global`, `spot` | `swatches.add` |
+| `kind` | `rect`, `roundedRect`, `ellipse`, `polygon`, `star`, `line`, `path` | `shape.add` |
+| `kind` | `process`, `global`, `spot` | `swatch.add` |
 | `kind` | `brushes`, `customShapes`, `patterns` | `edit.presets.presetManager` |
 | `kind` | `image`, `noImage`, `table` | `slice.set` |
 | `layout` | `auto`, `perspective`, `cylindrical`, `spherical`, `collage`, `reposition` | `file.automate.photomerge` |
 | `lightType` | `spot`, `point`, `infinite` | `filter.render.lightingEffects` |
 | `mode` | `replace`, `add`, `subtract`, `intersect` | `path.toSelection`, `select.colorRange`, `select.focusArea`, `select.lasso` and 6 more |
 | `mode` | `rigid`, `normal`, `distort` | `edit.pinWarp`, `layer.objectLayers.pinWarp` |
-| `mode` | `rgb`, `gray`, `cmyk`, `lab` | `document.presets.save`, `file.automate.contactSheetII` |
+| `mode` | `rgb`, `gray`, `cmyk`, `lab` | `file.presets.save`, `file.automate.contactSheetII` |
 | `mode` | `rgb`, `gray`, `grayscale`, `cmyk`, `lab` | `file.new` |
 | `mode` | `replace`, `toggle`, `range`, `add` | `layer.select` |
 | `mode` | `normal`, `horizontalOnly`, `verticalOnly` | `filter.distort.spherize` |
@@ -245,7 +245,7 @@ schema says which.
 | `mode` | `add`, `subtract`, `replace` | `select.quick` |
 | `mode` | `vertical`, `horizontal`, `dual`, `diagonal` | `paint.setSymmetry` |
 | `mode` | `hue`, `saturation`, `color`, `luminosity` | `paint.colorReplacement` |
-| `mode` | `append`, `replace` | `swatches.import` |
+| `mode` | `append`, `replace` | `swatch.import` |
 | `mode` | `source`, `destination` | `paint.patch` |
 | `mode` | `move`, `extend` | `paint.smartMove` |
 | `mode` | `desaturate`, `saturate` | `paint.sponge` |
@@ -259,23 +259,23 @@ schema says which.
 | `patternType` | `dot`, `circle`, `line` | `filter.gallery.halftonePattern` |
 | `preset` | `default`, `custom` | `image.analysis.setMeasurementScale` |
 | `quickExportFormat` | `png`, `jpg`, `gif`, `webp` | `file.export.exportPreferences` |
-| `resolutionUnit` | `in`, `cm` | `document.presets.save` |
+| `resolutionUnit` | `in`, `cm` | `file.presets.save` |
 | `shape` | `hexagon`, `triangle`, `square`, `pentagon`, `heptagon`, `octagon` | `filter.blur.lensBlur` |
 | `shape` | `circle`, `ring`, `square`, `diamond`, `triangle`, `hexagon`, `star`, `heart`, `cross` | `filter.blur.shapeBlur` |
 | `shape` | `round`, `ellipse`, `line`, `square`, `diamond`, `cross` | `image.mode.bitmap` |
 | `strokeDirection` | `rightDiagonal`, `horizontal`, `leftDiagonal`, `vertical` | `filter.gallery.graphicPen`, `filter.gallery.sprayedStrokes` |
-| `style` | `linear`, `radial`, `angle`, `reflected`, `diamond` | `gradient.fill.create`, `gradient.fill.set`, `gradient.presets.apply`, `layer.layerStyle.gradientOverlay` and 2 more |
+| `style` | `linear`, `radial`, `angle`, `reflected`, `diamond` | `gradient.fill.add`, `gradient.fill.set`, `gradient.presets.apply`, `layer.layerStyle.gradientOverlay` and 2 more |
 | `style` | `custom`, `none`, `arc`, `arcLower`, `arcUpper`, `arch`, `bulge`, `shellLower`, `shellUpper`, `flag`, `wave`, `fish`, `rise`, `fisheye`, `inflate`, `squeeze`, `twist` | `edit.transform.warp`, `layer.objectLayers.warp` |
 | `style` | `inner`, `outer`, `emboss`, `pillow`, `stroke` | `layer.layerStyle.bevelEmboss` |
 | `style` | `pondRipples`, `outFromCenter`, `aroundCenter` | `filter.distort.zigZag` |
-| `style` | `none`, `arc`, `arcLower`, `arcUpper`, `arch`, `bulge`, `shellLower`, `shellUpper`, `flag`, `wave`, `fish`, `rise`, `fisheye`, `inflate`, `squeeze`, `twist` | `type.warpText` |
+| `style` | `none`, `arc`, `arcLower`, `arcUpper`, `arch`, `bulge`, `shellLower`, `shellUpper`, `flag`, `wave`, `fish`, `rise`, `fisheye`, `inflate`, `squeeze`, `twist` | `text.warpText` |
 | `type` | `sine`, `triangle`, `square` | `filter.distort.wave` |
 | `type` | `fineDots`, `mediumDots`, `grainyDots`, `coarseDots`, `shortLines`, `mediumLines`, `longLines`, `shortStrokes`, `mediumStrokes`, `longStrokes` | `filter.pixelate.mezzotint` |
 | `type` | `blocks`, `pyramids` | `filter.stylize.extrude` |
 | `type` | `smart`, `createTexture`, `proximityMatch` | `paint.spotHealing` |
 | `type` | `duotone`, `monotone`, `tritone`, `quadtone` | `image.mode.duotone` |
 | `type` | `visibility`, `textReplacement`, `pixelReplacement` | `image.variables.define` |
-| `unit` | `px`, `in`, `cm`, `mm`, `pt`, `pica` | `document.presets.save` |
+| `unit` | `px`, `in`, `cm`, `mm`, `pt`, `pica` | `file.presets.save` |
 | `units` | `inches`, `cm`, `mm`, `pixels` | `file.automate.contactSheetII` |
 | `vignetteStyle` | `highlightPriority`, `colorPriority`, `paintOverlay` | `filter.rawDevelop` |
 
@@ -292,8 +292,8 @@ photo_run {
     { "command": "layer.new.layer", "params": { "name": "Badge" } },
     { "command": "select.rect", "params": { "x": 220, "y": 120, "width": 60, "height": 40 } },
     { "command": "edit.fill", "params": { "color": "#c0392b" } },
-    { "command": "select.deselect", "params": {} },
-    { "command": "type.create", "params": { "x": 40, "y": 170, "text": "Summer sale", "size": 20, "color": "#000000" } }
+    { "command": "edit.deselectAll", "params": {} },
+    { "command": "text.add", "params": { "x": 40, "y": 170, "text": "Summer sale", "size": 20, "color": "#000000" } }
   ]
 }
 ```
@@ -338,13 +338,13 @@ photo_run { "path": "hidden.psd", "steps": [{ "command": "layer.showLayers", "pa
 ## Pitfalls
 
 - **Select first.** `edit.fill` fills the selection, or the whole layer when nothing is selected.
-  Deselect (`select.deselect`) after the fill so the next command doesn't act on it.
+  Deselect (`edit.deselectAll`) after the fill so the next command doesn't act on it.
 - **New layers start empty.** `photo.empty-layer` (info) reports one with no pixels; fill it, or
   delete it with the diagnostic's fix (`layer.delete`).
 - **Hidden layers** are saved but not shown (`photo.hidden-layer`, fix `layer.showLayers`). Show one
   only when the person wants it visible.
 - **Off the canvas:** `photo.off-canvas` (warning) is a layer moved entirely outside the canvas.
-- **Text:** `type.create` uses Inter unless you give `font`. A font that isn't installed here is
+- **Text:** `text.add` uses Inter unless you give `font`. A font that isn't installed here is
   drawn with a substitute (`photo.font-substituted`, info); the file keeps the font name.
 - **Object layers** linked to a missing file show nothing (`photo.missing-object-source`, error);
   embedding or relinking needs the person's file.

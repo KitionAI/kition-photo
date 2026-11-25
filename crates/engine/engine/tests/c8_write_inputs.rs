@@ -11,7 +11,7 @@ fn image(depth: u32) -> Session {
     s.execute("layer.new.layer", json!({"name":"Upper"})).unwrap();
     s.execute("select.rect", json!({"x":20,"y":16,"width":16,"height":16})).unwrap();
     s.execute("edit.fill", json!({"color":"#cc3366"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s
 }
 
@@ -60,7 +60,7 @@ fn single_colour_channel_restriction_follows_the_layer_written() {
 
 #[test]
 fn clear_and_cut_keep_transparency_locked_alpha() {
-    for command in ["edit.clear", "edit.cut"] {
+    for command in ["edit.delete", "edit.cut"] {
         for depth in [8, 16, 32] {
             let mut s = image(depth);
             let id = s.active().unwrap().active_layer.unwrap();

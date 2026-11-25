@@ -17,7 +17,7 @@ fn session(mode: &str, depth: u32) -> Session {
 }
 
 fn pixel(s: &mut Session, x: i32, y: i32) -> [f32; 4] {
-    let v = s.execute("document.pixel", json!({"x": x, "y": y})).unwrap();
+    let v = s.execute("file.pixel", json!({"x": x, "y": y})).unwrap();
     let a: Vec<f32> = v.as_array().unwrap().iter().map(|c| c.as_f64().unwrap() as f32).collect();
     [a[0], a[1], a[2], a[3]]
 }
@@ -80,7 +80,7 @@ fn gradient_fill_layers_are_gray_in_a_grayscale_document() {
     let grey = |p: [f32; 4]| (p[0] - p[1]).abs() < 1e-4 && (p[1] - p[2]).abs() < 1e-4;
     let ways: [(&str, Value); 3] = [
         ("layer.newFillLayer.gradient", json!({"from": "#0000ff", "to": "#00ff00", "angle": 0})),
-        ("gradient.fill.create", json!({"from": [0, 16], "to": [64, 16]})),
+        ("gradient.fill.add", json!({"from": [0, 16], "to": [64, 16]})),
         ("gradient.presets.apply", json!({"preset": "Blue 01", "angle": 0})),
     ];
     for depth in [8, 16, 32] {
@@ -99,7 +99,7 @@ fn gradient_fill_layers_are_gray_in_a_grayscale_document() {
 #[test]
 fn gradient_edits_keep_colours_in_the_document_mode() {
     let mut s = session("cmyk", 8);
-    s.execute("gradient.fill.create", json!({"from": [0, 16], "to": [64, 16]})).unwrap();
+    s.execute("gradient.fill.add", json!({"from": [0, 16], "to": [64, 16]})).unwrap();
     s.execute("gradient.fill.set", json!({"stops": [[0, "#ff0000"], [1, "#0000ff"]]})).unwrap();
     assert_in_mode(&s, ColorMode::Cmyk, "gradient.fill.set");
     let start = pixel(&mut s, 0, 16);

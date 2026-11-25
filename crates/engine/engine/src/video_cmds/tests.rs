@@ -123,7 +123,7 @@ fn inspect_reports_video_layer() {
     write_png(&format!("{dir}/b.png"), 6, 4, "#00ff00");
     let mut s = session();
     s.execute("layer.videoLayers.newVideoLayerFromFile", json!({"path": dir})).unwrap();
-    let r = s.execute("document.inspect", json!({})).unwrap();
+    let r = s.execute("file.inspect", json!({})).unwrap();
     // Find any layer node carrying a "video" block.
     fn find_video(v: &serde_json::Value) -> Option<serde_json::Value> {
         if let Some(vid) = v.get("video") {
@@ -178,7 +178,7 @@ fn edits_to_a_frame_survive_scrubbing_and_render() {
 #[test]
 fn render_writer_progress_and_cancellation_leave_session_unchanged() {
     let mut s = session();
-    s.execute("timeline.create", json!({"duration": 4, "fps": 4})).unwrap();
+    s.execute("timeline.add", json!({"duration": 4, "fps": 4})).unwrap();
     let before = s.active().unwrap().doc.clone();
     for format in ["png", "gif"] {
         let mut names = Vec::new();

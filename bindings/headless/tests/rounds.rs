@@ -52,7 +52,7 @@ fn paint(id: u64, rect: [i32; 4], color: &str) -> Vec<(&'static str, Value)> {
         ("layer.select", json!({ "layer": id })),
         ("select.rect", json!({ "x": rect[0], "y": rect[1], "width": rect[2], "height": rect[3] })),
         ("edit.fill", json!({ "color": color })),
-        ("select.deselect", json!({})),
+        ("edit.deselectAll", json!({})),
     ]
 }
 

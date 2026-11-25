@@ -8,8 +8,8 @@ intent: >-
   its type), so the schema lacked the parameter and a call that passed it was refused as unknown:
   select.transformSelection (the warp keys), file.export.dataSetsAsFiles (`dataSets`),
   brush.presets.move, file.export.saveForWebLegacy (`width`, `height`), edit.checkSpelling
-  (`replace`), slice.new (the slice options), swatches.export, image.applyImage (the flat source
-  and mask keys) and type.setStyle (`align`).
+  (`replace`), slice.new (the slice options), swatch.export, image.applyImage (the flat source
+  and mask keys) and text.setStyle (`align`).
 layer: gate
 source:
   kind: issue

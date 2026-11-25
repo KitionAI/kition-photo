@@ -25,7 +25,7 @@ fn pixels(text: &str, style: Value) -> Vec<[u8; 4]> {
     for (key, value) in style.as_object().unwrap() {
         params[key] = value.clone();
     }
-    image.execute("type.create", params).unwrap();
+    image.execute("text.add", params).unwrap();
     image.render(0.0, 0.0, 1.0, 200, 80).unwrap().as_chunks::<4>().0.iter().map(|px| [px[0], px[1], px[2], px[3]]).collect()
 }
 

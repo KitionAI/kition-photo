@@ -79,7 +79,7 @@ async fn review_channel_pixels_are_held_without_holding_unrelated_layer_pixels()
             let mut doc = fixture_doc();
             doc.execute("select.rect", json!({ "x": 0, "y": 0, "width": 50, "height": 50 })).unwrap();
             doc.execute("select.saveSelection", json!({ "name": "Alpha" })).unwrap();
-            doc.execute("select.deselect", json!({})).unwrap();
+            doc.execute("edit.deselectAll", json!({})).unwrap();
             let f = fixture(doc);
             let (details, basis) = f.inspect().await;
             let id = ids_by_name(&details)["L0"];
@@ -326,22 +326,22 @@ async fn review_comp_and_style_definitions_are_held_beside_unrelated_metadata() 
         for relevant in [false, true] {
             let mut doc = fixture_doc();
             let key = if style {
-                doc.execute("type.create", json!({ "text": "Type", "x": 10, "y": 30, "size": 14 })).unwrap();
-                doc.execute("type.characterStyle.new", json!({ "name": "Style", "attrs": { "size": 20 }, "fromSelection": false })).unwrap()["id"].clone()
+                doc.execute("text.add", json!({ "text": "Type", "x": 10, "y": 30, "size": 14 })).unwrap();
+                doc.execute("text.characterStyle.new", json!({ "name": "Style", "attrs": { "size": 20 }, "fromSelection": false })).unwrap()["id"].clone()
             } else {
                 doc.execute("layerComp.new", json!({ "name": "Comp" })).unwrap()["comp"].clone()
             };
             let f = fixture(doc);
             let (_, basis) = f.inspect().await;
             let change = match (style, relevant) {
-                (true, true) => ("type.characterStyle.set", json!({ "id": key, "attrs": { "size": 30 } })),
+                (true, true) => ("text.characterStyle.set", json!({ "id": key, "attrs": { "size": 30 } })),
                 (true, false) => ("layerComp.new", json!({ "name": "Unrelated" })),
                 (false, true) => ("layerComp.rename", json!({ "comp": key, "name": "Changed" })),
-                (false, false) => ("type.characterStyle.new", json!({ "name": "Unrelated", "fromSelection": false })),
+                (false, false) => ("text.characterStyle.new", json!({ "name": "Unrelated", "fromSelection": false })),
             };
             f.colleague(&[change]);
             let (command, params) = if style {
-                ("type.characterStyle.rename", json!({ "id": key, "name": "Agent" }))
+                ("text.characterStyle.rename", json!({ "id": key, "name": "Agent" }))
             } else {
                 ("layerComp.rename", json!({ "comp": key, "name": "Agent" }))
             };

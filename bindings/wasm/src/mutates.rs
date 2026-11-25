@@ -39,7 +39,7 @@ const SELECTION_EDITS: &[&str] = &["select.toWorkPath", "select.convertToShape",
 /// Commands the engine does not journal that still change the document: playing an action runs
 /// others, and the frame animation's timeline, its current frame included, is in the replica.
 const UNJOURNALED_EDITS: &[&str] =
-    &["actions.play", "timeline.create", "timeline.delete", "timeline.setProps", "timeline.setFrame", "timeline.nextFrame", "timeline.previousFrame"];
+    &["action.play", "timeline.add", "timeline.delete", "timeline.setProps", "timeline.setFrame", "timeline.nextFrame", "timeline.previousFrame"];
 
 /// Whether running `spec` changes the document (`KitCommand::mutates`). The engine's `journal`
 /// also records commands that change only this person's state ([`PERSONAL_COMMANDS`]); `view.*`

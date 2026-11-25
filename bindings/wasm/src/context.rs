@@ -243,7 +243,7 @@ pub(crate) fn region_mask(st: &DocState, region: &Value) -> Result<Option<Surfac
     };
     let invert = region.get("invert").and_then(Value::as_bool).unwrap_or(false);
     match region {
-        Value::String(text) if text == "all" => run(&mut scratch, "select.all", json!({}))?,
+        Value::String(text) if text == "all" => run(&mut scratch, "edit.selectAll", json!({}))?,
         Value::Object(fields) => {
             let named: Vec<&String> = fields.keys().filter(|key| *key != "invert").collect();
             let [key] = named.as_slice() else {

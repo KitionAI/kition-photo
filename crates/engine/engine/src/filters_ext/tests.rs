@@ -265,7 +265,7 @@ fn relight_command_exists_and_toggles_with_document() {
     s.execute("file.new", json!({"width": 32, "height": 32})).unwrap();
     s.execute("layer.new.layer", json!({})).unwrap();
     assert!(s.is_enabled("filter.render.relight"));
-    s.execute("type.create", json!({"x": 8, "y": 16, "text": "Hi", "size": 12})).unwrap();
+    s.execute("text.add", json!({"x": 8, "y": 16, "text": "Hi", "size": 12})).unwrap();
     assert!(!s.is_enabled("filter.render.relight"));
 }
 

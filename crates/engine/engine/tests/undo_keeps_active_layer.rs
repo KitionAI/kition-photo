@@ -20,7 +20,7 @@ fn undoing_a_stroke_on_a_rasterized_shape_keeps_it_active() {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 64, "height": 64})).unwrap();
     let bg = s.active().unwrap().doc.layers[0].id;
-    let id = LayerId(s.execute("shape.create", json!({"kind": "ellipse", "rect": [4, 4, 40, 30]})).unwrap()["layer"].as_u64().unwrap());
+    let id = LayerId(s.execute("shape.add", json!({"kind": "ellipse", "rect": [4, 4, 40, 30]})).unwrap()["layer"].as_u64().unwrap());
     // Rasterize the shape layer while the Background is the active layer (Layers panel context
     // menu), then select the rasterized layer and paint on it.
     s.execute("layer.select", json!({"layer": bg.0})).unwrap();

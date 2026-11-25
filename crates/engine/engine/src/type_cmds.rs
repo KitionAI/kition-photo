@@ -33,7 +33,7 @@ fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
     EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
 }
 
-/// The `"box"` param of `type.create` and `type.edit`: `[x, y, w, h]` (finite numbers, positive
+/// The `"box"` param of `text.add` and `text.edit`: `[x, y, w, h]` (finite numbers, positive
 /// width and height). Anything else given as `box` is an error, never silently ignored: an agent
 /// that wrote `[w, h]` would otherwise get point text.
 fn box_param(cmd: &str, p: &Value) -> Result<Option<[f64; 4]>> {
@@ -441,7 +441,7 @@ pub fn refresh(doc: &Document, t: &mut TextLayer) {
     t.psd_raw = Some(Arc::new(kition_photo_text::psd::build_tysh(t, dpi, layout.bounds())));
 }
 
-/// Runs `f` on a type layer as one undo step. `f` may set an explicit layer name (`type.edit`'s
+/// Runs `f` on a type layer as one undo step. `f` may set an explicit layer name (`text.edit`'s
 /// `name`), which is applied in the same step; otherwise an auto-named layer follows its text.
 fn with_text_layer<R>(s: &mut Session, p: &Value, label: &str, f: impl FnOnce(&mut TextLayer, &Document, &mut Option<String>) -> Result<R>) -> Result<R> {
     let id = layer_id(s, p)?;
@@ -542,7 +542,7 @@ fn info(s: &Session, p: &Value) -> Result<Value> {
     }))
 }
 
-/// The `"antialias"` param of `type.create` and `type.edit`: `none|sharp|crisp|strong|smooth`
+/// The `"antialias"` param of `text.add` and `text.edit`: `none|sharp|crisp|strong|smooth`
 /// (anything else is Smooth, the default).
 fn antialias_param(p: &Value) -> Option<AntiAlias> {
     p.get("antialias").and_then(Value::as_str).map(|a| match a {
@@ -559,7 +559,7 @@ const CHAR_PARAMS: &str = r##""font":str,"fontStyle":str,"weight":100..900,"ital
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec {
-            id: "type.create",
+            id: "text.add",
             label: "New Type Layer",
             menu: &["Layer", "New"],
             shortcut: None,
@@ -571,10 +571,10 @@ pub fn specs() -> Vec<CommandSpec> {
                     None => Orientation::Horizontal,
                     Some(Value::String(value)) if value == "horizontal" => Orientation::Horizontal,
                     Some(Value::String(value)) if value == "vertical" => Orientation::Vertical,
-                    _ => return Err(bad("type.create", "orientation must be horizontal or vertical")),
+                    _ => return Err(bad("text.add", "orientation must be horizontal or vertical")),
                 };
-                check_kerning(p).map_err(|m| bad("type.create", m))?;
-                check_size_tracking(p).map_err(|m| bad("type.create", m))?;
+                check_kerning(p).map_err(|m| bad("text.add", m))?;
+                check_size_tracking(p).map_err(|m| bad("text.add", m))?;
                 let text = norm_text(p.get("text").and_then(Value::as_str).unwrap_or(""));
                 // Type › Save Default Type Styles sets the starting styles; the colour is always
                 // the foreground colour, as in Photoshop.
@@ -583,7 +583,7 @@ pub fn specs() -> Vec<CommandSpec> {
                 style.color = Color::rgba(fg[0], fg[1], fg[2], fg[3]);
                 apply_char_props(&mut style, p);
                 apply_para_props(&mut para, p);
-                let (shape, transform) = match box_param("type.create", p)? {
+                let (shape, transform) = match box_param("text.add", p)? {
                     Some([x, y, w, h]) => (TextShape::Box { x: 0.0, y: 0.0, width: w as f32, height: h as f32 }, Affine::translate(x, y)),
                     None => (TextShape::Point, Affine::translate(f32p(p, "x").unwrap_or(0.0).into(), f32p(p, "y").unwrap_or(0.0).into())),
                 };
@@ -610,7 +610,7 @@ pub fn specs() -> Vec<CommandSpec> {
             },
         },
         CommandSpec {
-            id: "type.edit",
+            id: "text.edit",
             label: "Edit Type",
             menu: &[],
             shortcut: None,
@@ -620,31 +620,31 @@ pub fn specs() -> Vec<CommandSpec> {
             run: |s, p| {
                 let id = layer_id(s, p)?;
                 let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-                let new_box = box_param("type.edit", p)?;
-                check_kerning(p).map_err(|m| bad("type.edit", m))?;
-                check_size_tracking(p).map_err(|m| bad("type.edit", m))?;
+                let new_box = box_param("text.edit", p)?;
+                check_kerning(p).map_err(|m| bad("text.edit", m))?;
+                check_size_tracking(p).map_err(|m| bad("text.edit", m))?;
                 if let Some(Value::Array(runs)) = p.get("runs") {
                     for (i, r) in runs.iter().enumerate() {
-                        check_kerning(r).map_err(|m| bad("type.edit", m))?;
+                        check_kerning(r).map_err(|m| bad("text.edit", m))?;
                         // Checked before anything changes, so a bad run leaves the layer untouched (#714).
                         let start = r.get("start").and_then(Value::as_u64).unwrap_or(0);
                         if let Some(end) = r.get("end").and_then(Value::as_u64)
                             && end < start
                         {
-                            return Err(bad("type.edit", format!("runs[{i}]: `end` ({end}) is before `start` ({start})")));
+                            return Err(bad("text.edit", format!("runs[{i}]: `end` ({end}) is before `start` ({start})")));
                         }
-                        check_size_tracking(r).map_err(|m| bad("type.edit", m))?;
+                        check_size_tracking(r).map_err(|m| bad("text.edit", m))?;
                     }
                 }
                 let kern_pair = match p.get("kernPair") {
                     None => None,
                     Some(k) => {
-                        let at = k.get("at").and_then(Value::as_u64).ok_or_else(|| bad("type.edit", "kernPair.at must be a caret position (character index)"))?;
+                        let at = k.get("at").and_then(Value::as_u64).ok_or_else(|| bad("text.edit", "kernPair.at must be a caret position (character index)"))?;
                         let by = k
                             .get("by")
                             .and_then(Value::as_f64)
                             .filter(|v| v.is_finite() && v.abs() <= KERN_MAX)
-                            .ok_or_else(|| bad("type.edit", "kernPair.by must be a number of 1/1000 em"))?;
+                            .ok_or_else(|| bad("text.edit", "kernPair.by must be a number of 1/1000 em"))?;
                         Some((at as usize, by))
                     }
                 };
@@ -655,7 +655,7 @@ pub fn specs() -> Vec<CommandSpec> {
                         // starting from what it shows now (its metrics/optical or manual value).
                         let n = t.text.chars().count();
                         if at == 0 || at >= n {
-                            return Err(bad("type.edit", "kernPair needs a caret between two characters"));
+                            return Err(bad("text.edit", "kernPair needs a caret between two characters"));
                         }
                         let a = byte_at(&t.text, at - 1);
                         let b = byte_at(&t.text, at);
@@ -663,7 +663,7 @@ pub fn specs() -> Vec<CommandSpec> {
                             let mut eng = kition_photo_text::shared().lock().unwrap_or_else(|e| e.into_inner());
                             eng.pair_kerning(t, doc.resolution_dpi, a)
                         }
-                        .ok_or_else(|| bad("type.edit", "no kerning pair at the caret (line break or line end)"))?;
+                        .ok_or_else(|| bad("text.edit", "no kerning pair at the caret (line break or line end)"))?;
                         let value = (f64::from(now.round()) + by).clamp(KERN_MIN, KERN_MAX) as f32;
                         style_range(t, a, b, &|st| {
                             st.kerning = Kerning::Off;
@@ -724,7 +724,7 @@ pub fn specs() -> Vec<CommandSpec> {
             },
         },
         CommandSpec {
-            id: "type.setStyle",
+            id: "text.setStyle",
             label: "Set Type Style",
             menu: &[],
             shortcut: None,
@@ -736,8 +736,8 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
             run: |s, p| {
                 let id = layer_id(s, p)?;
-                check_kerning(p).map_err(|m| bad("type.setStyle", m))?;
-                check_size_tracking(p).map_err(|m| bad("type.setStyle", m))?;
+                check_kerning(p).map_err(|m| bad("text.setStyle", m))?;
+                check_size_tracking(p).map_err(|m| bad("text.setStyle", m))?;
                 with_text_layer(s, p, "Set Type Style", |t, _, _| {
                     let (a, b) = range_param(&t.text, p);
                     let mut probe = CharStyle::default();
@@ -758,7 +758,7 @@ pub fn specs() -> Vec<CommandSpec> {
             },
         },
         CommandSpec {
-            id: "type.rasterize",
+            id: "text.rasterize",
             label: "Rasterize Type",
             menu: &["Layer", "Rasterize"],
             shortcut: None,
@@ -786,7 +786,7 @@ pub fn specs() -> Vec<CommandSpec> {
             },
         },
         CommandSpec {
-            id: "type.info",
+            id: "text.info",
             label: "Type Layer Info",
             menu: &[],
             shortcut: None,
@@ -796,7 +796,7 @@ pub fn specs() -> Vec<CommandSpec> {
             run: |s, p| info(s, p),
         },
         CommandSpec {
-            id: "type.fonts",
+            id: "text.fonts",
             label: "List Fonts",
             menu: &[],
             shortcut: None,
@@ -853,22 +853,22 @@ mod tests {
     fn absurd_type_size_and_tracking_are_rejected_as_bad_params() {
         let mut s = session();
         assert!(matches!(
-            s.execute("type.create", json!({"text": "abc", "size": 1e30})),
-            Err(EngineError::BadParams { cmd, .. }) if cmd == "type.create"
+            s.execute("text.add", json!({"text": "abc", "size": 1e30})),
+            Err(EngineError::BadParams { cmd, .. }) if cmd == "text.add"
         ));
 
-        let id = s.execute("type.create", json!({"text": "abc", "size": 12})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"text": "abc", "size": 12})).unwrap()["layer"].as_u64().unwrap();
         let before = text_layer(&s, id);
         for params in [json!({"layer": id, "tracking": 1e30}), json!({"layer": id, "runs": [{"start": 0, "end": 3, "tracking": 1e30}]})] {
             assert!(matches!(
-                s.execute("type.edit", params),
-                Err(EngineError::BadParams { cmd, .. }) if cmd == "type.edit"
+                s.execute("text.edit", params),
+                Err(EngineError::BadParams { cmd, .. }) if cmd == "text.edit"
             ));
             assert_eq!(text_layer(&s, id).runs, before.runs);
         }
         assert!(matches!(
-            s.execute("type.setStyle", json!({"layer": id, "tracking": 1e30})),
-            Err(EngineError::BadParams { cmd, .. }) if cmd == "type.setStyle"
+            s.execute("text.setStyle", json!({"layer": id, "tracking": 1e30})),
+            Err(EngineError::BadParams { cmd, .. }) if cmd == "text.setStyle"
         ));
         assert_eq!(text_layer(&s, id).runs, before.runs);
     }
@@ -878,7 +878,7 @@ mod tests {
     #[test]
     fn refreshing_type_layers_takes_no_history_step() {
         let mut s = session();
-        let id = LayerId(s.execute("type.create", json!({"text": "Hello", "size": 24})).unwrap()["layer"].as_u64().unwrap());
+        let id = LayerId(s.execute("text.add", json!({"text": "Hello", "size": 24})).unwrap()["layer"].as_u64().unwrap());
         let doc_id = s.active().unwrap().doc.id;
         // Stale pixels, and a document saved in this state.
         {
@@ -902,7 +902,7 @@ mod tests {
     #[test]
     fn create_renders_and_is_undoable() {
         let mut s = session();
-        let r = s.execute("type.create", json!({"x": 10, "y": 50, "text": "Hello", "size": 24, "color": "#ff0000"})).unwrap();
+        let r = s.execute("text.add", json!({"x": 10, "y": 50, "text": "Hello", "size": 24, "color": "#ff0000"})).unwrap();
         let id = r["layer"].as_u64().unwrap();
         let b = r["bounds"].as_array().unwrap();
         assert!(b[0].as_i64().unwrap() >= 9 && b[3].as_i64().unwrap() <= 56, "{b:?}");
@@ -939,15 +939,15 @@ mod tests {
     fn auto_name_follows_the_text() {
         // The Type tool's flow (#483): a placeholder, selected, then replaced by typing.
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 0, "y": 40, "text": "Lorem Ipsum", "coalesce": "k"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 40, "text": "Lorem Ipsum", "coalesce": "k"})).unwrap()["layer"].as_u64().unwrap();
         assert_eq!(layer_name_of(&s, id), "Lorem Ipsum");
-        s.execute("type.edit", json!({"layer": id, "replace": {"start": 0, "end": 11, "text": "H"}, "coalesce": "k"})).unwrap();
-        s.execute("type.edit", json!({"layer": id, "replace": {"start": 1, "end": 1, "text": "eading\nsecond line"}, "coalesce": "k"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "replace": {"start": 0, "end": 11, "text": "H"}, "coalesce": "k"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "replace": {"start": 1, "end": 1, "text": "eading\nsecond line"}, "coalesce": "k"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Heading");
         // Emptied, the name is the default one and keeps following.
-        s.execute("type.edit", json!({"layer": id, "text": ""})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": ""})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Type Layer");
-        s.execute("type.edit", json!({"layer": id, "text": "Title"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "Title"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Title");
         assert!(s.undo());
         assert_eq!(layer_name_of(&s, id), "Type Layer");
@@ -956,39 +956,39 @@ mod tests {
     #[test]
     fn auto_name_skips_leading_blank_lines() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 0, "y": 40, "text": "\n  \nHello\nworld"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 40, "text": "\n  \nHello\nworld"})).unwrap()["layer"].as_u64().unwrap();
         assert_eq!(layer_name_of(&s, id), "Hello");
-        s.execute("type.edit", json!({"layer": id, "replace": {"start": 0, "end": 0, "text": "\n"}})).unwrap();
-        s.execute("type.edit", json!({"layer": id, "text": "\n\nGoodbye"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "replace": {"start": 0, "end": 0, "text": "\n"}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "\n\nGoodbye"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Goodbye");
     }
 
     #[test]
     fn custom_name_survives_text_edits() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 0, "y": 40, "text": "Hello", "name": "Logo"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("type.edit", json!({"layer": id, "text": "Goodbye"})).unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 40, "text": "Hello", "name": "Logo"})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "Goodbye"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Logo");
         // Renamed after creation: kept too.
-        let id = s.execute("type.create", json!({"x": 0, "y": 80, "text": "Hello"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 80, "text": "Hello"})).unwrap()["layer"].as_u64().unwrap();
         s.execute("layer.renameLayer", json!({"layer": id, "name": "Caption"})).unwrap();
-        s.execute("type.edit", json!({"layer": id, "text": "Goodbye"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "Goodbye"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Caption");
         // A name given with the edit wins over the text.
-        s.execute("type.edit", json!({"layer": id, "text": "Again", "name": "Footer"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "Again", "name": "Footer"})).unwrap();
         assert_eq!(layer_name_of(&s, id), "Footer");
     }
 
     #[test]
     fn edit_with_name_is_one_undo_step_for_text_name_and_bounds() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 10, "y": 50, "text": "Before", "size": 20, "name": "Original"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 10, "y": 50, "text": "Before", "size": 20, "name": "Original"})).unwrap()["layer"].as_u64().unwrap();
         let layer = s.active().unwrap().doc.layer(LayerId(id)).unwrap();
         let before_bounds = text_layer(&s, id).cache.unwrap().content_bounds();
         assert_eq!(layer.name, "Original");
         let steps = s.active().unwrap().history.entries().len();
 
-        s.execute("type.edit", json!({"layer": id, "text": "A much longer edited title that wraps", "box": [10, 10, 50, 60], "name": "Renamed"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "text": "A much longer edited title that wraps", "box": [10, 10, 50, 60], "name": "Renamed"})).unwrap();
 
         let edited = s.active().unwrap().doc.layer(LayerId(id)).unwrap();
         let edited_bounds = text_layer(&s, id).cache.unwrap().content_bounds();
@@ -1007,24 +1007,24 @@ mod tests {
     #[test]
     fn edit_replace_keeps_styles() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 0, "y": 40, "text": "Hello world"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("type.setStyle", json!({"layer": id, "range": [6, 11], "fauxBold": true, "color": [0, 0, 1]})).unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 40, "text": "Hello world"})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("text.setStyle", json!({"layer": id, "range": [6, 11], "fauxBold": true, "color": [0, 0, 1]})).unwrap();
         let t = text_layer(&s, id);
         assert_eq!(t.runs.len(), 2);
         assert_eq!(t.runs[0].len, 6);
         assert!(t.runs[1].style.faux_bold);
         // Insert inside the bold word: inherits bold.
-        s.execute("type.edit", json!({"layer": id, "replace": {"start": 8, "end": 8, "text": "XX"}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "replace": {"start": 8, "end": 8, "text": "XX"}})).unwrap();
         let t = text_layer(&s, id);
         assert_eq!(t.text, "Hello woXXrld");
         assert_eq!(t.runs[1].len, 7);
         // Delete across the style boundary.
-        s.execute("type.edit", json!({"layer": id, "replace": {"start": 3, "end": 8, "text": ""}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "replace": {"start": 3, "end": 8, "text": ""}})).unwrap();
         let t = text_layer(&s, id);
         assert_eq!(t.text, "HelXXrld");
         assert_eq!(t.runs.iter().map(|r| r.len).collect::<Vec<_>>(), vec![3, 5]);
         // Whole-text replace with a multi-byte string.
-        let info = s.execute("type.edit", json!({"layer": id, "text": "Größe ✓\nzwei"})).unwrap();
+        let info = s.execute("text.edit", json!({"layer": id, "text": "Größe ✓\nzwei"})).unwrap();
         assert_eq!(info["lines"].as_array().unwrap().len(), 2);
         let t = text_layer(&s, id);
         assert_eq!(t.runs.iter().map(|r| r.len).sum::<usize>(), t.text.len());
@@ -1033,10 +1033,10 @@ mod tests {
     #[test]
     fn set_style_paragraph_and_box() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"box": [10, 10, 80, 80], "text": "one two three four five six seven", "size": 12})).unwrap()["layer"]
+        let id = s.execute("text.add", json!({"box": [10, 10, 80, 80], "text": "one two three four five six seven", "size": 12})).unwrap()["layer"]
             .as_u64()
             .unwrap();
-        let info = s.execute("type.setStyle", json!({"layer": id, "align": "center", "leading": 20})).unwrap();
+        let info = s.execute("text.setStyle", json!({"layer": id, "align": "center", "leading": 20})).unwrap();
         let lines = info["lines"].as_array().unwrap();
         assert!(lines.len() >= 3);
         let b0 = lines[0]["baseline"].as_f64().unwrap();
@@ -1049,8 +1049,8 @@ mod tests {
         let r = t.cache.as_ref().unwrap().content_bounds();
         assert!(r.x0 >= 9 && r.x1 <= 91, "{r:?}");
         // Convert to point text and move.
-        s.execute("type.edit", json!({"layer": id, "point": [5, 30]})).unwrap();
-        s.execute("type.edit", json!({"layer": id, "move": [10, 0]})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "point": [5, 30]})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "move": [10, 0]})).unwrap();
         let t = text_layer(&s, id);
         assert_eq!(t.shape, TextShape::Point);
         assert_eq!(t.transform.m[4], 15.0);
@@ -1059,15 +1059,15 @@ mod tests {
     #[test]
     fn rasterize_and_fonts() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 5, "y": 30, "text": "Raster"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("type.rasterize", json!({"layer": id})).unwrap();
+        let id = s.execute("text.add", json!({"x": 5, "y": 30, "text": "Raster"})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("text.rasterize", json!({"layer": id})).unwrap();
         let l = s.active().unwrap().doc.layer(LayerId(id)).unwrap();
         assert!(matches!(l.content, LayerContent::Raster(_)));
         assert!(l.surface().unwrap().content_bounds().width() > 10);
-        assert!(s.execute("type.edit", json!({"layer": id, "text": "x"})).is_err());
-        let fonts = s.execute("type.fonts", json!({})).unwrap();
+        assert!(s.execute("text.edit", json!({"layer": id, "text": "x"})).is_err());
+        let fonts = s.execute("text.fonts", json!({})).unwrap();
         assert!(fonts["families"].as_array().unwrap().iter().any(|f| f == "Inter"));
-        let faces = s.execute("type.fonts", json!({"family": "Inter"})).unwrap();
+        let faces = s.execute("text.fonts", json!({"family": "Inter"})).unwrap();
         assert!(!faces["faces"].as_array().unwrap().is_empty());
     }
 
@@ -1077,10 +1077,10 @@ mod tests {
     fn type_edits_damage_only_the_layer_and_coalesce() {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 3000, "height": 2000})).unwrap();
-        let id = s.execute("type.create", json!({"x": 100, "y": 100, "text": "Hi", "size": 20})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 100, "y": 100, "text": "Hi", "size": 20})).unwrap()["layer"].as_u64().unwrap();
         let steps = s.active().unwrap().history.entries().len();
         for k in 0..5 {
-            s.execute("type.setStyle", json!({"layer": id, "size": 30 + k * 10, "coalesce": "drag"})).unwrap();
+            s.execute("text.setStyle", json!({"layer": id, "size": 30 + k * 10, "coalesce": "drag"})).unwrap();
             let d = s.active().unwrap().last_damage.expect("damage rect");
             let r = text_layer(&s, id).cache.unwrap().content_bounds();
             assert!(d.intersect(&r) == r && d.width() <= 512 && d.height() <= 512, "{d:?} {r:?}");
@@ -1093,7 +1093,7 @@ mod tests {
     #[test]
     fn edit_rejects_a_reversed_runs_range() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 0, "y": 40, "text": "Hello world", "size": 20})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 40, "text": "Hello world", "size": 20})).unwrap()["layer"].as_u64().unwrap();
         let before = text_layer(&s, id).char_runs();
         let steps = s.active().unwrap().history.entries().len();
         for runs in [
@@ -1101,14 +1101,14 @@ mod tests {
             json!([{"start": 0, "end": 3, "fauxBold": true}, {"start": 8, "end": 7}]),
             json!([{"end": 0, "start": 1}]),
         ] {
-            let e = s.execute("type.edit", json!({"layer": id, "runs": runs})).unwrap_err();
+            let e = s.execute("text.edit", json!({"layer": id, "runs": runs})).unwrap_err();
             assert!(matches!(e, EngineError::BadParams { .. }) && e.to_string().contains("is before `start`"), "{e}");
         }
         // Nothing changed and nothing was recorded, not even the valid run before the bad one.
         assert_eq!(text_layer(&s, id).char_runs(), before);
         assert_eq!(s.active().unwrap().history.entries().len(), steps);
         // The same range the right way round still styles it.
-        s.execute("type.edit", json!({"layer": id, "runs": [{"start": 2, "end": 5, "fauxBold": true}]})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "runs": [{"start": 2, "end": 5, "fauxBold": true}]})).unwrap();
         let runs = text_layer(&s, id).char_runs();
         assert_eq!(runs.iter().map(|r| (r.len, r.style.faux_bold)).collect::<Vec<_>>(), [(2, false), (3, true), (6, false)]);
     }
@@ -1145,22 +1145,22 @@ mod tests {
         out
     }
 
-    /// #206: `type.edit {"kerning"}` over a range takes a number (manual, 1/1000 em) or a mode.
+    /// #206: `text.edit {"kerning"}` over a range takes a number (manual, 1/1000 em) or a mode.
     #[test]
     fn edit_sets_kerning_over_a_range() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 5, "y": 50, "text": "AVAT", "size": 30})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("type.edit", json!({"layer": id, "range": [0, 1], "kerning": 100})).unwrap();
-        s.execute("type.edit", json!({"layer": id, "range": [2, 4], "kerning": "optical"})).unwrap();
+        let id = s.execute("text.add", json!({"x": 5, "y": 50, "text": "AVAT", "size": 30})).unwrap()["layer"].as_u64().unwrap();
+        s.execute("text.edit", json!({"layer": id, "range": [0, 1], "kerning": 100})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "range": [2, 4], "kerning": "optical"})).unwrap();
         assert_eq!(kerning_of(&s, id), vec![(Kerning::Off, 100.0), (Kerning::Metrics, 0.0), (Kerning::Optical, 0.0), (Kerning::Optical, 0.0)]);
-        s.execute("type.edit", json!({"layer": id, "kerning": "metrics"})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "kerning": "metrics"})).unwrap();
         assert!(kerning_of(&s, id).iter().all(|k| *k == (Kerning::Metrics, 0.0)));
-        // Runs and setStyle take the same values; type.info reports them.
-        s.execute("type.edit", json!({"layer": id, "runs": [{"start": 1, "end": 2, "kerning": -50}]})).unwrap();
-        s.execute("type.setStyle", json!({"layer": id, "range": [3, 4], "kerning": "off"})).unwrap();
+        // Runs and setStyle take the same values; text.info reports them.
+        s.execute("text.edit", json!({"layer": id, "runs": [{"start": 1, "end": 2, "kerning": -50}]})).unwrap();
+        s.execute("text.setStyle", json!({"layer": id, "range": [3, 4], "kerning": "off"})).unwrap();
         assert_eq!(kerning_of(&s, id)[1], (Kerning::Off, -50.0));
         assert_eq!(kerning_of(&s, id)[3], (Kerning::Off, 0.0));
-        let info = s.execute("type.info", json!({"layer": id})).unwrap();
+        let info = s.execute("text.info", json!({"layer": id})).unwrap();
         assert_eq!(info["runs"][1]["style"]["kern"], json!(-50.0));
     }
 
@@ -1168,7 +1168,7 @@ mod tests {
     #[test]
     fn kerning_params_fail_gracefully() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 5, "y": 50, "text": "AV\nT", "size": 30})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 5, "y": 50, "text": "AV\nT", "size": 30})).unwrap()["layer"].as_u64().unwrap();
         let before = text_layer(&s, id);
         for p in [
             json!({"kerning": "tight"}),
@@ -1191,20 +1191,20 @@ mod tests {
         ] {
             let mut p = p;
             p["layer"] = json!(id);
-            assert!(s.execute("type.edit", p.clone()).is_err(), "{p}");
+            assert!(s.execute("text.edit", p.clone()).is_err(), "{p}");
         }
-        assert!(s.execute("type.setStyle", json!({"layer": id, "kerning": "tight"})).is_err());
+        assert!(s.execute("text.setStyle", json!({"layer": id, "kerning": "tight"})).is_err());
         assert_eq!(text_layer(&s, id).runs, before.runs);
-        // type.create rejects the same values and creates no layer (#994).
+        // text.add rejects the same values and creates no layer (#994).
         let layers = s.active().unwrap().doc.layer_count();
         for k in [json!("tight"), json!(1e9), json!(-5000), json!(true), json!([1])] {
             let p = json!({"x": 0, "y": 10, "text": "AV", "kerning": k});
-            assert!(s.execute("type.create", p.clone()).is_err(), "{p}");
+            assert!(s.execute("text.add", p.clone()).is_err(), "{p}");
         }
         assert_eq!(s.active().unwrap().doc.layer_count(), layers);
-        let id = s.execute("type.create", json!({"x": 0, "y": 10, "text": "AV", "kerning": "optical"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 10, "text": "AV", "kerning": "optical"})).unwrap()["layer"].as_u64().unwrap();
         assert!(kerning_of(&s, id).iter().all(|k| *k == (Kerning::Optical, 0.0)));
-        let id = s.execute("type.create", json!({"x": 0, "y": 10, "text": "AV", "kerning": -50})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 0, "y": 10, "text": "AV", "kerning": -50})).unwrap()["layer"].as_u64().unwrap();
         assert!(kerning_of(&s, id).iter().all(|k| *k == (Kerning::Off, -50.0)));
     }
 
@@ -1226,16 +1226,16 @@ mod tests {
             if bx {
                 p["box"] = json!([20, 20, 900, 1400]);
             }
-            let id = s.execute("type.create", p).unwrap()["layer"].as_u64().unwrap();
+            let id = s.execute("text.add", p).unwrap()["layer"].as_u64().unwrap();
             let n = 20;
             let t0 = std::time::Instant::now();
             for i in 0..n {
-                s.execute("type.edit", json!({"layer": id, "kernPair": {"at": 1 + i % 3, "by": 20}})).unwrap();
+                s.execute("text.edit", json!({"layer": id, "kernPair": {"at": 1 + i % 3, "by": 20}})).unwrap();
             }
             let per = t0.elapsed().as_secs_f64() * 1000.0 / f64::from(n);
             let t1 = std::time::Instant::now();
             for i in 0..n {
-                s.execute("type.setStyle", json!({"layer": id, "range": [1 + i % 3, 2 + i % 3], "tracking": i})).unwrap();
+                s.execute("text.setStyle", json!({"layer": id, "range": [1 + i % 3, 2 + i % 3], "tracking": i})).unwrap();
             }
             let base = t1.elapsed().as_secs_f64() * 1000.0 / f64::from(n);
             eprintln!("{name} ({} chars): kernPair {per:.2} ms/press; a plain style edit {base:.2} ms", text.chars().count());
@@ -1247,19 +1247,19 @@ mod tests {
     #[test]
     fn kern_pair_steps_from_the_shown_kerning() {
         let mut s = session();
-        let id = s.execute("type.create", json!({"x": 5, "y": 50, "text": "AVA", "size": 40, "font": "Inter"})).unwrap()["layer"].as_u64().unwrap();
+        let id = s.execute("text.add", json!({"x": 5, "y": 50, "text": "AVA", "size": 40, "font": "Inter"})).unwrap()["layer"].as_u64().unwrap();
         let metric = {
             let t = text_layer(&s, id);
             kition_photo_text::shared().lock().unwrap().pair_kerning(&t, 72.0, 0).unwrap()
         };
         assert!(metric < -10.0, "Inter kerns AV: {metric}");
         let steps = s.active().unwrap().history.entries().len();
-        s.execute("type.edit", json!({"layer": id, "kernPair": {"at": 1, "by": 20}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "kernPair": {"at": 1, "by": 20}})).unwrap();
         let k0 = kerning_of(&s, id)[0];
         assert_eq!(k0, (Kerning::Off, metric.round() + 20.0));
-        s.execute("type.edit", json!({"layer": id, "kernPair": {"at": 1, "by": 100}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "kernPair": {"at": 1, "by": 100}})).unwrap();
         assert_eq!(kerning_of(&s, id)[0].1, metric.round() + 120.0);
-        s.execute("type.edit", json!({"layer": id, "kernPair": {"at": 1, "by": -20}})).unwrap();
+        s.execute("text.edit", json!({"layer": id, "kernPair": {"at": 1, "by": -20}})).unwrap();
         assert_eq!(kerning_of(&s, id)[0].1, metric.round() + 100.0);
         // Other characters are untouched; each press is its own undoable step.
         assert_eq!(&kerning_of(&s, id)[1..], &[(Kerning::Metrics, 0.0), (Kerning::Metrics, 0.0)]);
@@ -1275,14 +1275,14 @@ mod tests {
             let mut s = session();
             let before = s.active().unwrap().history.entries().len();
             for orientation in [json!("diagonal"), json!(null), json!(true)] {
-                assert!(s.execute("type.create", json!({"text": "test", "orientation": orientation})).is_err());
+                assert!(s.execute("text.add", json!({"text": "test", "orientation": orientation})).is_err());
                 assert_eq!(s.active().unwrap().history.entries().len(), before);
             }
             let mut p = json!({"text": "test", "orientation": "vertical", "x": 20, "y": 20});
             if boxed {
                 p["box"] = json!([20, 20, 80, 60]);
             }
-            let id = s.execute("type.create", p).unwrap()["layer"].as_u64().unwrap();
+            let id = s.execute("text.add", p).unwrap()["layer"].as_u64().unwrap();
             let t = text_layer(&s, id);
             assert_eq!(t.orientation, Orientation::Vertical);
             assert_eq!(matches!(t.shape, TextShape::Box { .. }), boxed);

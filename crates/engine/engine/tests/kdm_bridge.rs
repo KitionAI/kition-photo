@@ -137,7 +137,7 @@ fn layer_commands_reproduce_in_a_second_session() {
         ("layer.new.group", json!({"name": "Group"})),
         ("layer.moveTo", json!({"layer": one.0, "target": 0, "position": "into"})),
         ("layer.new.layer", json!({"name": "In group"})),
-        ("layer.arrange.sendBackward", json!({})),
+        ("arrange.sendBackward", json!({})),
         ("layer.delete", json!({"layer": one.0})),
     ];
     let mut group = None;
@@ -224,9 +224,9 @@ fn selection_changes_write_nothing_to_the_replica() {
     let b = peer(&mut s);
     let version = s.version().unwrap();
     let hash = s.state_hash().unwrap();
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 10, "y": 10, "width": 50, "height": 40})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 5, "y": 5, "width": 20, "height": 20})).unwrap();
     assert_eq!(s.version().unwrap(), version, "no transaction");
     assert_eq!(s.state_hash().unwrap(), hash);
@@ -318,7 +318,7 @@ fn random_command(s: &mut Session, rng: &mut Rng) {
         3 => s.execute("layer.setProps", json!({"opacity": (rng.below(100) as f64) / 100.0})),
         4 => s.execute("layer.duplicate", json!({})),
         5 if layers.len() > 2 => s.execute("layer.delete", json!({})),
-        6 => s.execute("layer.arrange.bringForward", json!({})),
+        6 => s.execute("arrange.bringForward", json!({})),
         7 => match pick {
             Some((id, _)) => s.execute("layer.select", json!({"layer": id.0})),
             None => Ok(Value::Null),
@@ -469,7 +469,7 @@ fn frames(s: &Session, id: LayerId) -> Option<Vec<String>> {
 /// A three-frame video layer with paint on frames 0 and 1.
 fn video_session() -> (Session, LayerId) {
     let mut s = new_session();
-    s.execute("timeline.create", json!({"duration": 3, "fps": 12})).unwrap();
+    s.execute("timeline.add", json!({"duration": 3, "fps": 12})).unwrap();
     let id = LayerId(s.execute("layer.videoLayers.newBlankVideoLayer", json!({})).unwrap()["layer"].as_u64().unwrap());
     s.execute("paint.stroke", json!({"points": [[10, 10], [200, 100]], "size": 12, "color": "#ff0000"})).unwrap();
     s.execute("timeline.setFrame", json!({"frame": 1})).unwrap();
@@ -580,7 +580,7 @@ fn opening_a_document_makes_no_replica_until_it_is_edited() {
     let open = t.elapsed();
     assert!(s.active().unwrap().kdm().is_none(), "no replica yet");
     // Selecting writes nothing, so it makes none either.
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     assert!(s.active().unwrap().kdm().is_none());
     assert!(open < std::time::Duration::from_millis(100), "opening took {open:?}");
     // The sample PSD opens without one too.

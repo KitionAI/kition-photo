@@ -4,7 +4,7 @@
 //! Every document runs its commands through the automation engine's gate
 //! ([`kition_photo_automation::workspace::authorize_engine_step`]): commands that reach the file
 //! system on their own (an `.icc` path, a preferences section that names folders, plug-ins) are
-//! refused, including nested `actions.play` steps, and the ones it always refuses are not listed.
+//! refused, including nested `action.play` steps, and the ones it always refuses are not listed.
 //! File parameters are typed (`kition_photo_kit::files`), so the commands that take them are not
 //! offered to agents, and an agent's call (or anyone's but a person's) is refused them however it
 //! arrives. The host owns every file (`kition-headless` says so through `kition_kit::host`): the

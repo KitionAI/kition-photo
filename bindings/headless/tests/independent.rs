@@ -92,7 +92,7 @@ async fn a_crop_rests_on_the_canvas() {
 #[tokio::test(flavor = "multi_thread")]
 async fn a_note_by_index_rests_on_the_notes() {
     let mut doc = image_doc(FILE, LAYERS);
-    doc.execute("notes.add", json!({ "x": 10, "y": 10, "text": "first" })).unwrap();
+    doc.execute("note.add", json!({ "x": 10, "y": 10, "text": "first" })).unwrap();
     let bytes = doc.save_sealed(Some(FILE)).unwrap();
     for relevant in [true, false] {
         let f = Fixture::from_bytes(FILE, &bytes, kition_kits::tools::CallOptions::default());
@@ -100,11 +100,11 @@ async fn a_note_by_index_rests_on_the_notes() {
         let ids = ids_by_name(&details);
         if relevant {
             // Their note 0 goes and a note of theirs comes: index 0 names their note now.
-            f.colleague(&[("notes.delete", json!({ "index": 0 })), ("notes.add", json!({ "x": 90, "y": 90, "text": "theirs" }))]);
+            f.colleague(&[("note.delete", json!({ "index": 0 })), ("note.add", json!({ "x": 90, "y": 90, "text": "theirs" }))]);
         } else {
             f.colleague(&[("layer.setProps", json!({ "layer": ids["L0"], "opacity": 0.5 }))]);
         }
-        let result = f.call("run", json!({ "basis": basis, "steps": [step("notes.set", json!({ "index": 0, "text": "edited" }))] })).await;
+        let result = f.call("run", json!({ "basis": basis, "steps": [step("note.set", json!({ "index": 0, "text": "edited" }))] })).await;
         if relevant {
             conflict(&result, "the note at index 0 is another note now");
         } else {
@@ -123,7 +123,7 @@ async fn the_selected_layers_a_command_acts_on_are_held() {
         ("layer.select", json!({ "layer": top })),
         ("select.rect", json!({ "x": 0, "y": 0, "width": 4, "height": 4 })),
         ("edit.fill", json!({ "color": "#000000" })),
-        ("select.deselect", json!({})),
+        ("edit.deselectAll", json!({})),
     ];
     let (result, f, _) = after(&paint, "layer.duplicate", |_| json!({})).await;
     conflict(&result, "paint on the selected layer it duplicates");

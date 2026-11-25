@@ -261,7 +261,7 @@ fn flatten_all_layer_effects_and_masks() {
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let id = s.active().unwrap().active_layer.unwrap();
         s.edit("fx", |doc, _| {
             let l = doc.layer_mut(id).unwrap();
@@ -284,7 +284,7 @@ fn flatten_all_layer_effects_and_masks() {
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 20, "height": 40})).unwrap();
         s.execute("select.inverse", json!({})).unwrap();
         s.execute("layer.layerMask.revealSelection", json!({})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         assert!(composite(&s, 15, 15)[1] > 0.99 && composite(&s, 15, 15)[0] > 0.99, "white shows through the mask");
         let r = s.execute("file.scripts.flattenAllMasks", json!({})).unwrap();
         assert_eq!(r["flattened"], 1);
@@ -467,7 +467,7 @@ fn guide_layouts() {
     assert_eq!(s.execute("view.clearCanvasGuides", json!({})).unwrap()["cleared"], 4);
     assert!(doc(&s).guides.vertical.is_empty());
     assert!(!s.is_enabled("view.newGuidesFromShape"));
-    s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 20]})).unwrap();
+    s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 40, 20]})).unwrap();
     s.execute("view.newGuidesFromShape", json!({})).unwrap();
     let g = &doc(&s).guides;
     assert_eq!(g.vertical.iter().map(|g| g.position).collect::<Vec<_>>(), vec![10.0, 30.0, 50.0]);

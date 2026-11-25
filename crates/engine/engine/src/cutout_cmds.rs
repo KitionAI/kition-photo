@@ -216,12 +216,12 @@ mod tests {
         assert!(Session::new().execute(CMD, json!({})).is_err());
 
         let (mut s, _) = disc(8);
-        s.execute("type.create", json!({"text": "Hi", "size": 24, "x": 10, "y": 20})).unwrap();
+        s.execute("text.add", json!({"text": "Hi", "size": 24, "x": 10, "y": 20})).unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
 
         let (mut s, _) = disc(8);
-        s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
+        s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
 

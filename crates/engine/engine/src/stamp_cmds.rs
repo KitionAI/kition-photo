@@ -192,7 +192,7 @@ mod tests {
         s.execute("layer.new.layer", json!({"name": "Blue"})).unwrap();
         s.execute("select.rect", json!({"x": 16, "y": 16, "width": 32, "height": 32})).unwrap();
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let blue = s.active().unwrap().active_layer.unwrap();
         (s, bg, hidden, blue)
     }
@@ -349,7 +349,7 @@ mod tests {
             s.execute("select.rect", json!({"x": 500 * k, "y": 400 * k, "width": 3000, "height": 2000})).unwrap();
             s.execute("edit.fill", json!({"color": [0.2 * k as f32, 0.5, 0.8, 1.0]})).unwrap();
         }
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let t = std::time::Instant::now();
         s.execute("layer.stampVisible", json!({})).unwrap();
         println!("stampVisible 6000x4000, 4 layers: {:.0} ms", t.elapsed().as_secs_f64() * 1000.0);

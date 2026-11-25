@@ -130,7 +130,7 @@ pub struct JobEvent {
     pub outcome: JobOutcome,
 }
 
-/// A job's state for the UI, the control channel and MCP (`jobs.list`).
+/// A job's state for the UI, the control channel and MCP (`job.list`).
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JobInfo {
@@ -216,7 +216,7 @@ pub struct Jobs {
     running: Vec<Running>,
     /// Ended jobs not yet collected by [`Session::poll_jobs`].
     events: Vec<JobEvent>,
-    /// The last few ended jobs, for `jobs.list`.
+    /// The last few ended jobs, for `job.list`.
     recent: Vec<JobInfo>,
     /// Workers of cancelled jobs that may still be unwinding (native).
     #[cfg(not(target_arch = "wasm32"))]
@@ -562,7 +562,7 @@ impl Session {
         self.jobs.running.iter().map(Running::info).collect()
     }
 
-    /// Running jobs followed by the last few that ended (newest last), for `jobs.list`.
+    /// Running jobs followed by the last few that ended (newest last), for `job.list`.
     pub fn jobs_with_recent(&self) -> Vec<JobInfo> {
         self.jobs.recent.iter().cloned().chain(self.jobs()).collect()
     }
@@ -829,7 +829,7 @@ pub fn specs() -> Vec<crate::commands::CommandSpec> {
     use crate::commands::CommandSpec;
     vec![
         CommandSpec {
-            id: "jobs.list",
+            id: "job.list",
             label: "List Background Jobs",
             menu: &[],
             shortcut: None,
@@ -839,7 +839,7 @@ pub fn specs() -> Vec<crate::commands::CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "jobs.cancel",
+            id: "job.cancel",
             label: "Cancel Background Job",
             menu: &[],
             shortcut: None,
@@ -852,7 +852,7 @@ pub fn specs() -> Vec<crate::commands::CommandSpec> {
                     Ok(json!({"cancelled": n}))
                 }
                 Some(v) => {
-                    let id = v.as_u64().ok_or_else(|| EngineError::BadParams { cmd: "jobs.cancel".into(), msg: "`job` must be a job id".into() })?;
+                    let id = v.as_u64().ok_or_else(|| EngineError::BadParams { cmd: "job.cancel".into(), msg: "`job` must be a job id".into() })?;
                     if s.cancel_job(JobId(id)) { Ok(json!({"cancelled": 1})) } else { Err(EngineError::Other(format!("no running job {id}"))) }
                 }
             },

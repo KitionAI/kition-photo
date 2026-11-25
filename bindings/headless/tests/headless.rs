@@ -522,7 +522,7 @@ fn colour_parameters_take_hex_and_rgba() {
     let (mut b, folder) = backend(&root);
     let info = create(&mut b, &folder, "colours.psd");
     let id = info.id;
-    b.execute(&id, "select.all", Map::new(), Origin::Agent).unwrap();
+    b.execute(&id, "edit.selectAll", Map::new(), Origin::Agent).unwrap();
     for color in [json!("#c0392b"), json!([0.2, 0.4, 0.6, 1.0])] {
         let filled = b.execute(&id, "edit.fill", params(json!({ "contents": "color", "color": color.clone() })), Origin::Agent);
         assert!(filled.is_ok(), "edit.fill {color}: {:?}", filled.err());

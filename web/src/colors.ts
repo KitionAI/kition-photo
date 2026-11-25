@@ -9,7 +9,7 @@ export type PhotoColors = { foreground: string; background: string }
 export type Swatch = { name: string; hex: string }
 export type SwatchList = { groups: { name: string; swatches: Swatch[] }[] }
 
-/** Upstream's defaults (`tools.defaultColors`): black on white. */
+/** Upstream's defaults (`tool.defaultColors`): black on white. */
 const DEFAULTS: PhotoColors = { foreground: '#000000', background: '#ffffff' }
 
 /** The kit whose store keeps the colours (`kit:kit.photo:colors`) and the swatch library (`kit:kit.photo:swatches`). */
@@ -41,8 +41,8 @@ let saidLocal = false
 /**
  * The foreground and background colours and the swatch library. The engine's session holds them
  * (`session.tools`, `presets.swatches`), as upstream's does: colours are read with
- * `session.inspect` and written with `tools.setColors`, swapped and reset with `tools.swapColors`
- * and `tools.defaultColors`, swatches used, added, and deleted with `swatches.*`. None of these is
+ * `session.inspect` and written with `tool.setColors`, swapped and reset with `tool.swapColors`
+ * and `tool.defaultColors`, swatches used, added, and deleted with `swatches.*`. None of these is
  * a history step.
  *
  * Every Photo tab shares them through Kit UI's kit store, as upstream's one session does: a
@@ -63,7 +63,7 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
     onExternal: (next) => {
       writes.current += 1
       shown.current = next
-      void query('tools.setColors', { ...next })
+      void query('tool.setColors', { ...next })
     },
   })
   shown.current = colors
@@ -71,13 +71,13 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
   const [swatches, setSwatches] = useState<SwatchList | null>(null)
   /** The library's bytes as this session last had them, to tell another tab's change from ours. */
   const library = useRef<string | null>(null)
-  const readSwatches = useCallback(async () => setSwatches(await query<SwatchList>('swatches.list')), [query])
+  const readSwatches = useCallback(async () => setSwatches(await query<SwatchList>('swatch.list')), [query])
   /** A stored library into this session. */
   const takeSwatches = useCallback(
     async (data: string) => {
       if (data === library.current) return
       library.current = data
-      await query('swatches.import', { data, format: 'ase', mode: 'replace' })
+      await query('swatch.import', { data, format: 'ase', mode: 'replace' })
       await readSwatches()
     },
     [query, readSwatches],
@@ -109,7 +109,7 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
     library.current = null
     void (async () => {
       writes.current += 1
-      await query('tools.setColors', { ...shown.current })
+      await query('tool.setColors', { ...shown.current })
       const data = storedLibraryNow.current
       if (data) await takeSwatches(data)
       else await readSwatches()
@@ -133,7 +133,7 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
       writes.current += 1
       shown.current = { ...shown.current, ...patch }
       store(shown.current)
-      void query('tools.setColors', patch)
+      void query('tool.setColors', patch)
     },
     [query, store],
   )
@@ -154,7 +154,7 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
     async (id: string, params: Record<string, unknown>) => {
       const answer = await query(id, params)
       await readSwatches()
-      const exported = await query<{ data?: string }>('swatches.export', { format: 'ase' })
+      const exported = await query<{ data?: string }>('swatch.export', { format: 'ase' })
       if (typeof exported?.data === 'string') {
         library.current = exported.data
         if (storeLibrary(exported.data) === 'tooLarge' && !saidLocal) {
@@ -172,17 +172,17 @@ export function usePhotoColors(doc: unknown, revision: number, query: Query, say
       ...colors,
       set,
       /** X: the foreground and background trade places. */
-      swap: () => void command('tools.swapColors'),
+      swap: () => void command('tool.swapColors'),
       /** D: black on white. */
-      reset: () => void command('tools.defaultColors'),
+      reset: () => void command('tool.defaultColors'),
       /** The swatch library, by group (null until the session answers). */
       swatches,
       /** A swatch (its index across every group) becomes the foreground or the background. */
-      pickSwatch: (index: number, target: ColorTarget) => command('swatches.use', { index, target }),
+      pickSwatch: (index: number, target: ColorTarget) => command('swatch.use', { index, target }),
       /** Adds `color` as a new swatch (Photoshop names it). */
-      addSwatch: (color: string) => editLibrary('swatches.add', { color }),
+      addSwatch: (color: string) => editLibrary('swatch.add', { color }),
       /** Deletes the swatch at `index` across every group. */
-      deleteSwatch: (index: number) => editLibrary('swatches.delete', { index }),
+      deleteSwatch: (index: number) => editLibrary('swatch.delete', { index }),
     }),
     [colors, command, editLibrary, set, swatches],
   )

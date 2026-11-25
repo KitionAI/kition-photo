@@ -52,7 +52,7 @@ fn fade_with_blend_mode_and_invalidation() {
     assert!(s.execute("edit.fade", json!({})).is_err());
     // Queries don't.
     s.execute("edit.fill", json!({"color": "#00ff00"})).unwrap();
-    s.execute("document.inspect", json!({})).unwrap();
+    s.execute("file.inspect", json!({})).unwrap();
     assert!(s.is_enabled("edit.fade"));
     assert!(s.execute("edit.fade", json!({"mode": "nonsense"})).is_err());
 }
@@ -70,7 +70,7 @@ fn purge_commands() {
     // One step left to undo (the black fill is gone from history).
     assert!(s.undo());
     assert!(!s.undo());
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     s.execute("edit.copy", json!({})).unwrap();
     assert!(s.is_enabled("edit.purge.clipboard"));
     s.execute("edit.purge.clipboard", json!({})).unwrap();
@@ -213,7 +213,7 @@ fn delete_and_fill_selection_removes_the_object_in_one_step() {
     // Parameters are ignored, never a crash; nothing selected greys it out and refuses.
     let mut s = blob_session(8);
     assert!(s.execute("edit.deleteAndFillSelection", json!({"output": 7, "sampling": [1]})).is_ok());
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     assert!(!s.is_enabled("edit.deleteAndFillSelection"));
     assert!(s.execute("edit.deleteAndFillSelection", json!({})).is_err());
 }
@@ -234,7 +234,7 @@ fn smart_fill_outputs_and_sampling() {
     assert_eq!(s.active().unwrap().doc.layer(LayerId(r["layer"].as_u64().unwrap())).unwrap().name, "Background copy");
     assert!(s.execute("edit.smartFill", json!({"sampling": "custom"})).is_err());
     assert!(s.execute("edit.smartFill", json!({"output": "elsewhere"})).is_err());
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     assert!(!s.is_enabled("edit.smartFill"));
 }
 
@@ -374,8 +374,8 @@ fn find_matches_cases() {
 fn find_and_replace_across_type_layers() {
     let mut s = session(8);
     assert!(!s.is_enabled("edit.findAndReplaceText"));
-    s.execute("type.create", json!({"text": "Hello world", "x": 4, "y": 20, "size": 12})).unwrap();
-    s.execute("type.create", json!({"text": "world peace, World", "x": 4, "y": 40, "size": 12})).unwrap();
+    s.execute("text.add", json!({"text": "Hello world", "x": 4, "y": 20, "size": 12})).unwrap();
+    s.execute("text.add", json!({"text": "world peace, World", "x": 4, "y": 40, "size": 12})).unwrap();
     let r = s.execute("edit.findAndReplaceText", json!({"find": "world", "replace": "planet"})).unwrap();
     assert_eq!((r["count"].as_u64(), r["layers"].as_u64()), (Some(3), Some(2)));
     let texts: Vec<String> = s
@@ -406,7 +406,7 @@ fn find_and_replace_across_type_layers() {
 fn find_in_the_active_layer_finds_nothing_when_it_is_not_type() {
     // #703: `allLayers: false` with a raster layer active leaves nothing to search.
     let mut s = session(8);
-    let id = s.execute("type.create", json!({"text": "abc def", "x": 2, "y": 12})).unwrap()["layer"].as_u64().unwrap();
+    let id = s.execute("text.add", json!({"text": "abc def", "x": 2, "y": 12})).unwrap()["layer"].as_u64().unwrap();
     s.execute("layer.new.layer", json!({"name": "raster"})).unwrap();
     let steps = s.active().unwrap().history.entries().len();
     for action in ["find", "change", "changeFind"] {

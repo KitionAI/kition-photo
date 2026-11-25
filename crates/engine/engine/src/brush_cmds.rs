@@ -1,5 +1,5 @@
 //! Brush engine commands: the Brush/Pencil/Mixer Brush/Color Replacement tools, brush presets and
-//! the session brush (`tools.setBrush`). The UI's options bar and Brush Settings panel call these.
+//! the session brush (`tool.setBrush`). The UI's options bar and Brush Settings panel call these.
 //!
 //! Brushes are [`BrushSettings`] serialised as camelCase JSON; any command taking a `"brush"`
 //! object deep-merges it onto the session brush, so partial objects work
@@ -734,7 +734,7 @@ fn define_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 pub(crate) fn set_brush(s: &mut Session, p: &Value) -> Result<Value> {
-    let cmd = "tools.setBrush";
+    let cmd = "tool.setBrush";
     let mut b = s.tools.brush.clone();
     let mut picked = None;
     if let Some(name) = p.get("preset").and_then(Value::as_str) {
@@ -802,7 +802,7 @@ fn light_json(b: &BrushSettings, skip: (bool, bool, bool)) -> Value {
 }
 
 /// Fields of `new` that differ from `old`, nested objects diffed key by key: the minimal
-/// `tools.setBrush` `brush` patch that turns `old` into `new` (`{}` when nothing changed).
+/// `tool.setBrush` `brush` patch that turns `old` into `new` (`{}` when nothing changed).
 pub fn brush_patch(old: &BrushSettings, new: &BrushSettings) -> Value {
     let skip = (old.tip == new.tip, old.dual_brush.tip == new.dual_brush.tip, old.texture.pattern == new.texture.pattern);
     fn diff(a: &Value, b: &Value) -> Option<Value> {
@@ -830,12 +830,12 @@ pub fn brush_patch(old: &BrushSettings, new: &BrushSettings) -> Value {
     diff(&light_json(old, skip), &light_json(new, skip)).unwrap_or_else(|| json!({}))
 }
 
-/// Journal hook ([`Session::execute`]): consecutive `tools.setBrush` calls with the same
+/// Journal hook ([`Session::execute`]): consecutive `tool.setBrush` calls with the same
 /// `coalesce` key (one drag in the options bar or the Brush Settings panel) are one journal
 /// entry, the patch from the brush before the gesture to the brush now. Returns true when the
 /// call was folded into the previous entry.
 pub fn coalesce_journal(s: &mut Session, id: &str, params: &Value) -> bool {
-    if id != "tools.setBrush" {
+    if id != "tool.setBrush" {
         return false;
     }
     let Some(key) = params.get("coalesce").and_then(Value::as_str) else { return false };
@@ -900,7 +900,7 @@ pub fn specs() -> Vec<CommandSpec> {
         spec!("brush.presets.setCurrent", "Set Current Brush Preset", r##"{"name":string}"##, always, presets_set_current, true),
         spec!("brush.defineFromSelection", "Define Brush Preset…", r##"{"name":string}"##, has_selection_and_pixels, define_from_selection, true),
         spec!("brush.get", "Get Brush", "{}", always, |s, _| Ok(brush_json(&s.tools.brush)), false),
-        spec!("tools.setBrush", "Set Brush", r##"{"preset":name?,"reset":bool?,…BrushSettings fields (camelCase, deep-merged)}"##, always, set_brush, true),
+        spec!("tool.setBrush", "Set Brush", r##"{"preset":name?,"reset":bool?,…BrushSettings fields (camelCase, deep-merged)}"##, always, set_brush, true),
     ]
 }
 

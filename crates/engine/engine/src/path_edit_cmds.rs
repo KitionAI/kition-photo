@@ -217,7 +217,7 @@ mod tests {
         for depth in [8, 16, 32] {
             let mut s = Session::new();
             s.execute("file.new", json!({"width": 120, "height": 100, "depth": depth})).unwrap();
-            let id = s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 40], "fill": "#ff0000"})).unwrap()["layer"].as_u64().unwrap();
+            let id = s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 40, 40], "fill": "#ff0000"})).unwrap()["layer"].as_u64().unwrap();
             let r = s.execute("path.moveAnchors", json!({"name": "layer", "layer": id, "anchors": [[0, 1], [0, 2]], "move": [30, 0]})).unwrap();
             assert_eq!(anchor(&r, 1), [80.0, 10.0]);
             let st = s.active().unwrap();

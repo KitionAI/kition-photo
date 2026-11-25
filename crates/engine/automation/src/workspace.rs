@@ -200,7 +200,7 @@ pub fn authorize_engine_command(id: &str, params: &Value) -> Result<(), Automati
 }
 
 /// [`authorize_engine_command`] as the function pointer [`kition_photo_engine::Session::authorize`]
-/// stores. `actions.play` calls it for every nested step.
+/// stores. `action.play` calls it for every nested step.
 pub fn authorize_engine_step(id: &str, params: &Value) -> kition_photo_engine::Result<()> {
     authorize_engine_command(id, params).map_err(|e| kition_photo_engine::EngineError::Other(e.to_string()))
 }
@@ -253,12 +253,12 @@ fn preference_uses_ambient_filesystem(path: &str) -> bool {
 
 fn command_uses_ambient_path(id: &str, params: &Value) -> bool {
     match id {
-        "brush.presets.importAbr" | "gradient.presets.importGrd" | "plugin.install" | "swatches.import" => {
+        "brush.presets.importAbr" | "gradient.presets.importGrd" | "plugin.install" | "swatch.import" => {
             // `data` wins over `path` in these commands; any `path` without it reads the filesystem.
             params.get("data").is_none() && params.get("path").is_some()
         }
         // With a `path` the file is written there; without one the bytes come back as `data`.
-        "swatches.export" => params.get("path").is_some(),
+        "swatch.export" => params.get("path").is_some(),
         "plugin.reload" => true,
         _ => false,
     }
@@ -543,7 +543,7 @@ mod tests {
         assert!(authorize_engine_command("layer.setAdjustment", &serde_json::json!({"file": "outside.cube"})).is_err());
         assert!(authorize_engine_command("prefs.set", &serde_json::json!({"path": "colorSettings.workingRgb", "value": "outside.icc"})).is_err());
         assert!(authorize_engine_step("file.open", &serde_json::json!({})).is_err());
-        assert!(authorize_engine_step("actions.play", &serde_json::json!({})).is_ok());
+        assert!(authorize_engine_step("action.play", &serde_json::json!({})).is_ok());
     }
 
     #[test]
@@ -581,8 +581,8 @@ mod tests {
             ("plugin.reload", serde_json::json!({"path": "/outside/plugins"})),
             ("plugin.reload", serde_json::json!({})),
             ("plugin.install", serde_json::json!({"path": " "})),
-            ("swatches.import", serde_json::json!({"path": "/outside/set.aco"})),
-            ("swatches.export", serde_json::json!({"path": "/outside/set.ase"})),
+            ("swatch.import", serde_json::json!({"path": "/outside/set.aco"})),
+            ("swatch.export", serde_json::json!({"path": "/outside/set.ase"})),
         ] {
             assert!(authorize_engine_command(id, &params).is_err(), "{id}: {params}");
         }
@@ -590,8 +590,8 @@ mod tests {
             ("brush.presets.importAbr", serde_json::json!({"data": "QUJD"})),
             ("gradient.presets.importGrd", serde_json::json!({"data": "QUJD"})),
             ("plugin.install", serde_json::json!({"data": "QUJD"})),
-            ("swatches.import", serde_json::json!({"data": "QUJD"})),
-            ("swatches.export", serde_json::json!({"format": "ase"})),
+            ("swatch.import", serde_json::json!({"data": "QUJD"})),
+            ("swatch.export", serde_json::json!({"format": "ase"})),
         ] {
             assert!(authorize_engine_command(id, &params).is_ok(), "{id}: {params}");
         }
@@ -657,7 +657,7 @@ mod tests {
             id,
             "filter.blurGallery.pathBlur"
                 | "filter.render.flame"
-                | "shape.create"
+                | "shape.add"
                 | "shape.edit"
                 | "shape.info"
                 | "shape.presets.list"

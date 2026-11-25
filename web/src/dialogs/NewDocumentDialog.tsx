@@ -68,9 +68,9 @@ export function NewDocumentDialog({ colors, onClose }: { colors: { foreground: s
       else if (background === 'background') await engine.execute('edit.fill', { contents: 'color', color: colors.background })
       else if (background === 'transparent') {
         await engine.execute('layer.new.layerFromBackground', {})
-        await engine.execute('select.all', {})
-        await engine.execute('edit.clear', {})
-        await engine.execute('select.deselect', {})
+        await engine.execute('edit.selectAll', {})
+        await engine.execute('edit.delete', {})
+        await engine.execute('edit.deselectAll', {})
       }
       const path = await host.exportFile(file, await engine.save())
       toast('success', t('dialog.created', { path }))

@@ -302,7 +302,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       const x = Math.floor(shownView.x + (clientX - box.left) / (shownView.zoom || 1))
       const y = Math.floor(shownView.y + (clientY - box.top) / (shownView.zoom || 1))
       if (x < 0 || y < 0 || x >= size.width || y >= size.height) return Promise.resolve(null)
-      return query<number[]>('document.sampleColor', { x, y, size: 'point', sampleLayer: 'all' }).then((rgba) =>
+      return query<number[]>('file.sampleColor', { x, y, size: 'point', sampleLayer: 'all' }).then((rgba) =>
         Array.isArray(rgba) && rgba.length >= 3 ? rgbToHex(rgba.slice(0, 3).map((value) => value * 255) as [number, number, number]) : null,
       )
     },
@@ -724,7 +724,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     const key = sessionKey()
     const font = pendingTypeFont(doc)
     const create = (choice: Partial<ToolOptions> = {}) => generation === toolGenerationNow.current
-      ? run('type.create', { x: Math.round(draft.x), y: Math.round(draft.y), text, color: fg, orientation: draft.orientation, ...toolParams('Type', { ...options, ...choice }), coalesce: key })
+      ? run('text.add', { x: Math.round(draft.x), y: Math.round(draft.y), text, color: fg, orientation: draft.orientation, ...toolParams('Type', { ...options, ...choice }), coalesce: key })
       : Promise.resolve(null)
     // A font selection is an editing intent even before metadata answers. Capture its result
     // for this draft; later option changes still belong to the next draft (UI38).
@@ -776,7 +776,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     return saving
   }
 
-  /** The layer id a `type.create` answered (its JSON), or null. */
+  /** The layer id a `text.add` answered (its JSON), or null. */
   const createdLayer = (result: string | null): number | null => {
     try {
       const layer = result ? (JSON.parse(result) as { layer?: unknown }).layer : null
@@ -807,14 +807,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   /** Chooses the Type tool for a layer's orientation, then edits it (the Move tool's double click, a Layers thumbnail's). */
   const editLayerText = async (layer: number, select: (length: number) => TextRange) => {
     if (editor.host.readOnly) return
-    const info = await query<{ text: string; orientation: string }>('type.info', { layer })
+    const info = await query<{ text: string; orientation: string }>('text.info', { layer })
     if (!info || typeof info.text !== 'string') return
     const next: PhotoToolId = info.orientation === 'Vertical' ? 'VerticalType' : 'Type'
     if (next !== tool) await chooseToolNow.current(next)
     await startEditing(layer, select(Array.from(info.text).length))
   }
   editTextAtNow.current = async (pointer) => {
-    const hit = await query<{ layer: number; index: number }>('type.hitTest', { x: pointer.x, y: pointer.y })
+    const hit = await query<{ layer: number; index: number }>('text.hitTest', { x: pointer.x, y: pointer.y })
     if (typeof hit?.layer === 'number') await editLayerText(hit.layer, () => [hit.index, hit.index])
   }
   const typeEditingApi = useMemo<TypeEditing>(() => ({ target: typeSession.target, editLayer: (layer) => void editLayerTextNow.current(layer, (length) => [0, length]) }), [typeSession])
@@ -823,7 +823,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   /** A new paragraph box dragged out: an empty paragraph layer, edited at once (removed if left empty). */
   const placeParagraph = async (box: [number, number, number, number], orientation: 'horizontal' | 'vertical', navigation: number) => {
     const key = sessionKey()
-    const result = await run('type.create', { box, text: '', color: colorsNow.current.foreground, orientation, ...toolParams('Type', optionsNow.current), coalesce: key })
+    const result = await run('text.add', { box, text: '', color: colorsNow.current.foreground, orientation, ...toolParams('Type', optionsNow.current), coalesce: key })
     const layer = createdLayer(result)
     if (layer == null || navigation !== textNavigation.current) return
     await typeSession.start({ layer, created: true, key, select: [0, 0] })
@@ -848,7 +848,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     void (async () => {
       if (!(await finished) || navigation !== textNavigation.current) return
       // A Shift-press makes new text even over type (Photoshop's way to start text on text).
-      const hit = !pointer.shift && !editor.host.readOnly ? await query<{ layer: number; index: number }>('type.hitTest', { x: pointer.x, y: pointer.y }) : null
+      const hit = !pointer.shift && !editor.host.readOnly ? await query<{ layer: number; index: number }>('text.hitTest', { x: pointer.x, y: pointer.y }) : null
       if (navigation !== textNavigation.current) return
       if (typeof hit?.layer === 'number') {
         onType = true

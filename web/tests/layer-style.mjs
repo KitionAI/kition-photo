@@ -44,7 +44,7 @@ try {
   const inspect = () => page.evaluate(async () => window.devHost.connection().ai.inspect())
   const details = async () => (await inspect()).details
   const agent = async (command, params = {}) => (await page.evaluate(async ([name, values]) => window.devHost.connection().ai.run([{ command: name, params: values }], false), [command, params])).completed[0]?.result
-  const sample = async (x, y) => (await agent('document.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).slice(0, 3).map((value) => Math.round(value * 255))
+  const sample = async (x, y) => (await agent('file.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).slice(0, 3).map((value) => Math.round(value * 255))
   const near = (a, b, tolerance = 10) => a.every((value, index) => Math.abs(value - b[index]) <= tolerance)
   const layerOf = async (id) => (await details()).layers.find((layer) => layer.id === id)
   /** A fingerprint of the picture on the canvas (every 7th byte, hashed). */

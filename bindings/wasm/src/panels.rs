@@ -342,9 +342,9 @@ mod tests {
     #[test]
     fn thumbnails_type_and_shape_layers_with_or_without_their_render_cache() {
         let mut doc = PhotoDocument::create("new.psd", 200, 100).unwrap();
-        doc.execute("type.create", json!({ "x": 10, "y": 70, "text": "Kition", "size": 60, "color": "#000000" })).unwrap();
+        doc.execute("text.add", json!({ "x": 10, "y": 70, "text": "Kition", "size": 60, "color": "#000000" })).unwrap();
         let text = active(&doc);
-        doc.execute("shape.create", json!({ "kind": "rect", "rect": [120, 20, 60, 60], "fill": "#0000ff" })).unwrap();
+        doc.execute("shape.add", json!({ "kind": "rect", "rect": [120, 20, 60, 60], "fill": "#0000ff" })).unwrap();
         let shape = active(&doc);
         for id in [text, shape] {
             assert!(pixels(&doc.layer_thumbnail(id, 64).unwrap()).any(|p| p[3] > 0), "layer {id} shows at once");

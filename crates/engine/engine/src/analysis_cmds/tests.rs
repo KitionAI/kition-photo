@@ -86,8 +86,8 @@ fn features_area_perimeter_circularity() {
 fn record_selection_rows_respect_scale_and_data_points() {
     for depth in [8, 16, 32] {
         let mut s = session(64, 48, depth);
-        s.execute("select.all", json!({})).unwrap_or_default();
-        s.execute("select.deselect", json!({})).unwrap_or_default();
+        s.execute("edit.selectAll", json!({})).unwrap_or_default();
+        s.execute("edit.deselectAll", json!({})).unwrap_or_default();
         // Two separate rectangles.
         s.execute("select.rect", json!({"x": 4, "y": 4, "width": 10, "height": 10})).unwrap();
         s.execute("select.rect", json!({"x": 30, "y": 20, "width": 20, "height": 5, "mode": "add"})).unwrap();
@@ -159,7 +159,7 @@ fn straighten_layer_and_image() {
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 10, "y": 28, "width": 60, "height": 4})).unwrap();
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap_or_default();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("image.analysis.rulerTool", json!({"start": [10, 30], "end": [70, 25]})).unwrap();
     let before = s.active().unwrap().history.past_len();
     let r = s.execute("image.analysis.straightenLayer", json!({})).unwrap();

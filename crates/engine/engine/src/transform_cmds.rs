@@ -514,7 +514,7 @@ mod tests {
     #[test]
     fn type_layers_transform_as_vectors() {
         let mut s = session();
-        let r = s.execute("type.create", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
+        let r = s.execute("text.add", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
         let id = r["layer"].as_u64().unwrap();
         let w0 = active_bounds(&s).width();
         s.execute("edit.transform", json!({"layer": id, "matrix": [2, 0, 0, 2, -10, -50]})).unwrap();
@@ -531,7 +531,7 @@ mod tests {
     fn shapes_move_and_transform_as_vectors() {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 200, "height": 200})).unwrap();
-        s.execute("shape.create", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
+        s.execute("shape.add", json!({"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"})).unwrap();
         s.execute("layer.translate", json!({"dx": 30, "dy": 5})).unwrap();
         assert_eq!(active_bounds(&s), Rect::new(40, 15, 80, 35));
         s.execute("edit.transform", json!({"matrix": [2, 0, 0, 2, -40, -15]})).unwrap();
@@ -542,7 +542,7 @@ mod tests {
     #[test]
     fn type_moves_with_the_move_command() {
         let mut s = session();
-        s.execute("type.create", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
+        s.execute("text.add", json!({"x": 10, "y": 50, "text": "Hi", "size": 20})).unwrap();
         let b0 = active_bounds(&s);
         s.execute("layer.translate", json!({"dx": 20, "dy": 10})).unwrap();
         let b1 = active_bounds(&s);

@@ -68,7 +68,7 @@ fn mode_name(v: Option<LayerMaskView>) -> &'static str {
     }
 }
 
-/// The view as JSON (`{"layer","mode"}`, or `null` when off); part of `document.inspect`.
+/// The view as JSON (`{"layer","mode"}`, or `null` when off); part of `file.inspect`.
 pub fn view_json(st: &DocState) -> Value {
     match current(st) {
         Some(v) => json!({"layer": v.layer.0, "mode": mode_name(Some(v))}),

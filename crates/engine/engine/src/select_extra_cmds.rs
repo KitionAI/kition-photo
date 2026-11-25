@@ -393,6 +393,6 @@ mod hang_tests {
         let r = s.execute("select.transformSelection", json!({"dx": 1e5, "dy": -1e5, "scaleX": 300.0}));
         assert!(r.is_ok(), "far transform returns without hanging: {r:?}");
         // The document is still usable.
-        assert!(s.execute("select.all", json!({})).is_ok());
+        assert!(s.execute("edit.selectAll", json!({})).is_ok());
     }
 }

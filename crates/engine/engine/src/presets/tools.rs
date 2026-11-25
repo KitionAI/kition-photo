@@ -3,7 +3,7 @@
 //! The engine doesn't know the shell's options-bar fields, so a preset's `options` are opaque
 //! JSON that the frontend writes and reads back (the desktop shell stores its `ToolOptions` under
 //! `"toolOptions"`). Two keys the engine understands itself: `"brush"` (brush settings, applied
-//! to the session brush like `tools.setBrush`) and `"foreground"` (Include Color).
+//! to the session brush like `tool.setBrush`) and `"foreground"` (Include Color).
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -108,7 +108,7 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
         .cloned()
         .ok_or_else(|| bad(CMD, format!("no tool preset \"{name}\" (see tool.presets.list)")))?;
     if let Some(b) = t.options.get("brush").filter(|b| b.is_object()) {
-        super::call(s, "tools.setBrush", json!({"brush": b}))?;
+        super::call(s, "tool.setBrush", json!({"brush": b}))?;
     }
     if let Some(c) = t.options.get("foreground").and_then(Value::as_array).filter(|a| a.len() >= 3) {
         let v: Vec<f32> = c.iter().map(|x| x.as_f64().unwrap_or(0.0) as f32).collect();

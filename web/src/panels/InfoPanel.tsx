@@ -8,7 +8,7 @@ import { byteOf, cmykOf, formatLength, type RulerUnits } from './readouts'
  * Upstream's Info panel (`panels.rs` `info_panel`): the colour under the pointer in R, G, B and
  * C, M, Y, K (upstream's naive device CMYK, in percent), the pointer's position and the
  * selection's size in the ruler unit (Preferences › Units & Rulers), and the document's size in
- * pixels. The colour is the composite's pixel (`document.sampleColor` at the pixel's centre),
+ * pixels. The colour is the composite's pixel (`file.sampleColor` at the pixel's centre),
  * asked at most once per animation frame and never while an answer is pending, and kept per pixel
  * and image revision as upstream keeps `info_sample`; the last answer shows until the next one
  * comes. The pointer is reported however it moves over the canvas (a gesture, Space or the Hand
@@ -36,7 +36,7 @@ export function InfoPanel({ info, pointer }: { info: PhotoInfo; pointer: Live<Do
       if (pending.current === doc) return
       pending.current = doc
       const asked = key
-      void query<number[]>('document.sampleColor', { x: inside.x + 0.5, y: inside.y + 0.5 }).then((rgba) => {
+      void query<number[]>('file.sampleColor', { x: inside.x + 0.5, y: inside.y + 0.5 }).then((rgba) => {
         if (pending.current === doc) pending.current = null
         if (documentNow.current !== doc) return
         if (rgba) setSample({ doc, key: asked, rgba })

@@ -22,7 +22,7 @@ const PHOTO_PRIMARY: Record<string, readonly string[]> = {
   Edit: ['edit.undo', 'edit.redo', 'edit.fill', 'edit.stroke', 'edit.transform.again', 'edit.transform.flipHorizontal'],
   Image: ['image.imageSize', 'image.canvasSize', 'image.crop', 'image.trim', 'image.autoTone', 'image.autoContrast', 'image.autoColor', 'image.adjustments.levels', 'image.adjustments.curves', 'image.adjustments.hueSaturation'],
   Layer: ['layer.new.layer', 'layer.new.layerViaCopy', 'layer.duplicate', 'layer.delete', 'layer.mergeDown', 'layer.mergeVisible', 'layer.flattenImage'],
-  Select: ['select.all', 'select.deselect', 'select.inverse', 'select.colorRange', 'select.subject', 'select.modify.feather', 'select.transformSelection'],
+  Select: ['edit.selectAll', 'edit.deselectAll', 'select.inverse', 'select.colorRange', 'select.subject', 'select.modify.feather', 'select.transformSelection'],
   Filter: ['filter.lastFilter', 'filter.blur.gaussianBlur', 'filter.sharpen.unsharpMask', 'filter.noise.addNoise', 'filter.noise.reduceNoise', 'filter.liquify'],
   View: ['kit:view.zoomIn', 'kit:view.zoomOut', 'kit:view.fitOnScreen', 'kit:view.actualPixels'],
 }

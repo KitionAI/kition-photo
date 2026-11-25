@@ -411,10 +411,10 @@ fn live_from_params(cmd: &str, kind: &str, p: &Value, prev: Option<&LiveShape>) 
     })
 }
 
-/// The path `shape.create` draws for live-shape params `p` (the Shape tools preview it while dragging).
+/// The path `shape.add` draws for live-shape params `p` (the Shape tools preview it while dragging).
 pub fn shape_path(p: &Value) -> Result<Path> {
     let kind = p.get("kind").and_then(Value::as_str).unwrap_or("rect");
-    Ok(vector::shapes::live_path(&live_from_params("shape.create", kind, p, None)?))
+    Ok(vector::shapes::live_path(&live_from_params("shape.add", kind, p, None)?))
 }
 
 pub(crate) fn live_kind(l: &LiveShape) -> &'static str {
@@ -548,7 +548,7 @@ fn default_name(kind: &str) -> &'static str {
 }
 
 fn shape_create(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "shape.create";
+    const CMD: &str = "shape.add";
     let kind = p.get("kind").and_then(Value::as_str).unwrap_or("rect");
     let (path, live) = if kind == "path" {
         let v = p.get("path").ok_or_else(|| bad(CMD, "kind \"path\" needs `path`"))?;
@@ -1288,7 +1288,7 @@ pub fn specs() -> Vec<CommandSpec> {
     let fill = r##""fill":"#rrggbb"|[r,g,b,a]|{"gradient":{"stops":[[t,"#hex"]],"angle":deg,"scale":%,"style":"linear|radial|angle|reflected|diamond","reverse":bool}}|{"pattern":name}|null (no fill)"##;
     vec![
         spec!(
-            "shape.create",
+            "shape.add",
             "New Shape Layer",
             ["Layer", "New"],
             leak(format!(

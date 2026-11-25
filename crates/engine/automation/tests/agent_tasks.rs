@@ -2,7 +2,7 @@
 //! (roadmap M11 DoD), the [`Headless`] that the headless kit (`bindings/headless`) serves.
 //!
 //! Each task uses only the session's requests (`doc.*`, `engine.execute`) the way an agent would,
-//! and checks the outcome through `doc.inspect`, `document.pixel` or the exported files, never
+//! and checks the outcome through `doc.inspect`, `file.pixel` or the exported files, never
 //! engine internals.
 
 use std::io::Write;
@@ -30,7 +30,7 @@ fn inspect(c: &mut Headless) -> Value {
 
 /// Composite RGBA at (x, y), whatever envelope `engine.execute` wraps the result in.
 fn pixel(c: &mut Headless, x: i32, y: i32) -> Vec<f64> {
-    let v = run(c, "document.pixel", json!({"x": x, "y": y}));
+    let v = run(c, "file.pixel", json!({"x": x, "y": y}));
     let arr = if v.is_array() { v } else { v.get("result").cloned().unwrap_or(v) };
     arr.as_array().unwrap_or_else(|| panic!("pixel: {arr}")).iter().map(|x| x.as_f64().unwrap()).collect()
 }
@@ -76,7 +76,7 @@ fn agent_completes_ten_scripted_tasks() {
 
     // 1. Make a title card: type layer with a drop shadow, exported as PNG.
     tool(&mut c, "doc.new", json!({"width": 200, "height": 120, "background": "white"}));
-    run(&mut c, "type.create", json!({"x": 20, "y": 70, "text": "Hello", "size": 36}));
+    run(&mut c, "text.add", json!({"x": 20, "y": 70, "text": "Hello", "size": 36}));
     run(&mut c, "layer.layerStyle.dropShadow", json!({"distance": 4, "size": 3}));
     let doc = inspect(&mut c);
     let t = top_layer(&doc);
@@ -121,7 +121,7 @@ fn agent_completes_ten_scripted_tasks() {
 
     // 5. Selection → layer mask: an elliptical reveal on a red layer.
     run(&mut c, "layer.new.layer", json!({"name": "Red"}));
-    run(&mut c, "select.all", json!({}));
+    run(&mut c, "edit.selectAll", json!({}));
     run(&mut c, "edit.fill", json!({"color": "#ff0000"}));
     run(&mut c, "select.rect", json!({"x": 16, "y": 12, "width": 32, "height": 24, "ellipse": true}));
     run(&mut c, "layer.layerMask.revealSelection", json!({}));
@@ -130,18 +130,18 @@ fn agent_completes_ten_scripted_tasks() {
     let outside = pixel(&mut c, 1, 1);
     assert!(inside[0] > 0.99 && inside[1] < 0.01, "task 5: centre is red {inside:?}");
     assert!(outside[0] < 0.1, "task 5: corner shows the photo {outside:?}");
-    run(&mut c, "select.deselect", json!({}));
+    run(&mut c, "edit.deselectAll", json!({}));
 
     // 6. Save a selection to a channel and load it back.
     run(&mut c, "select.rect", json!({"x": 4, "y": 6, "width": 20, "height": 10}));
     run(&mut c, "select.saveSelection", json!({"name": "Keep"}));
-    run(&mut c, "select.deselect", json!({}));
+    run(&mut c, "edit.deselectAll", json!({}));
     assert_eq!(inspect(&mut c)["hasSelection"], false, "task 6");
     run(&mut c, "select.loadSelection", json!({"channel": "Keep"}));
     let doc = inspect(&mut c);
     assert_eq!(doc["selectionBounds"], json!([4, 6, 20, 10]), "task 6: {}", doc["selectionBounds"]);
     assert_eq!(doc["channels"]["alpha"][0]["name"], "Keep", "task 6");
-    run(&mut c, "select.deselect", json!({}));
+    run(&mut c, "edit.deselectAll", json!({}));
     tool(&mut c, "doc.close", json!({}));
 
     // 7. Lay out three swatches and align their left edges.
@@ -151,7 +151,7 @@ fn agent_completes_ten_scripted_tasks() {
         run(&mut c, "select.rect", json!({"x": x, "y": 10 + 25 * i as i32, "width": 20, "height": 15}));
         run(&mut c, "edit.fill", json!({"color": "#3366cc"}));
     }
-    run(&mut c, "select.deselect", json!({}));
+    run(&mut c, "edit.deselectAll", json!({}));
     run(&mut c, "select.allLayers", json!({}));
     run(&mut c, "layer.align.leftEdges", json!({}));
     let doc = inspect(&mut c);
@@ -192,7 +192,7 @@ fn agent_completes_ten_scripted_tasks() {
 }
 
 /// Click just after "Big", insert a word, then bold through the end of the line. Geometry comes
-/// from `type.hitTest` / `type.caret` / `type.navigate`; the edit is the existing `type.edit`.
+/// from `text.hitTest` / `text.caret` / `text.navigate`; the edit is the existing `text.edit`.
 #[test]
 fn agent_edits_text_by_position() {
     let dir = tmp("type-caret");
@@ -200,37 +200,37 @@ fn agent_edits_text_by_position() {
     tool(&mut c, "doc.new", json!({"width": 480, "height": 200, "background": "white"}));
     let listed = tool(&mut c, "engine.commands", json!({"filter": "type."}));
     let ids: Vec<&str> = listed.as_array().unwrap().iter().filter_map(|c| c["id"].as_str()).collect();
-    for id in ["type.hitTest", "type.caret", "type.navigate"] {
+    for id in ["text.hitTest", "text.caret", "text.navigate"] {
         assert!(ids.contains(&id), "engine.commands missing {id}: {ids:?}");
     }
 
-    run(&mut c, "type.create", json!({"x": 40, "y": 90, "text": "Big Sale", "size": 48}));
+    run(&mut c, "text.add", json!({"x": 40, "y": 90, "text": "Big Sale", "size": 48}));
     let before = inspect(&mut c)["history"].as_array().unwrap().len();
     // The caret after "Big" and the caret after the following space. A quarter of the way is
     // the left half of that space, which hit-tests as the caret after "Big".
-    let after_big = run(&mut c, "type.caret", json!({"index": 3}));
-    let after_space = run(&mut c, "type.caret", json!({"index": 4}));
+    let after_big = run(&mut c, "text.caret", json!({"index": 3}));
+    let after_space = run(&mut c, "text.caret", json!({"index": 4}));
     let seg = after_big["segment"].as_array().unwrap();
     let (x3, y0, y1) = (seg[0][0].as_f64().unwrap(), seg[0][1].as_f64().unwrap(), seg[1][1].as_f64().unwrap());
     let x4 = after_space["segment"][0][0].as_f64().unwrap();
     assert!(x4 > x3 + 0.5, "space should have width, caret x {x3} -> {x4}");
-    let hit = run(&mut c, "type.hitTest", json!({"x": x3 + 0.25 * (x4 - x3), "y": (y0 + y1) / 2.0}));
+    let hit = run(&mut c, "text.hitTest", json!({"x": x3 + 0.25 * (x4 - x3), "y": (y0 + y1) / 2.0}));
     assert_eq!(hit["index"].as_u64(), Some(3), "{hit}");
     assert_eq!(hit["inside"], true, "{hit}");
     let quiet = inspect(&mut c)["history"].as_array().unwrap().len();
     assert_eq!(quiet, before, "caret queries are not history steps");
 
-    run(&mut c, "type.edit", json!({"replace": {"start": hit["index"], "end": hit["index"], "text": " Summer"}}));
-    let info = run(&mut c, "type.info", json!({}));
+    run(&mut c, "text.edit", json!({"replace": {"start": hit["index"], "end": hit["index"], "text": " Summer"}}));
+    let info = run(&mut c, "text.info", json!({}));
     assert_eq!(info["text"], "Big Summer Sale", "{info}");
 
-    let end = run(&mut c, "type.navigate", json!({"index": 0, "move": "lineEnd"}));
+    let end = run(&mut c, "text.navigate", json!({"index": 0, "move": "lineEnd"}));
     let n = info["text"].as_str().unwrap().chars().count() as u64;
     assert_eq!(end["index"].as_u64(), Some(n), "{end}");
     // "Summer" starts one character after the insertion caret (the space in " Summer").
     let summer = hit["index"].as_u64().unwrap() + 1;
-    run(&mut c, "type.setStyle", json!({"range": [summer, end["index"]], "fauxBold": true}));
-    let info = run(&mut c, "type.info", json!({}));
+    run(&mut c, "text.setStyle", json!({"range": [summer, end["index"]], "fauxBold": true}));
+    let info = run(&mut c, "text.info", json!({}));
     assert_eq!(info["text"], "Big Summer Sale");
     let bold = info["runs"].as_array().unwrap().iter().find(|r| r["style"]["faux_bold"] == true);
     let bold = bold.unwrap_or_else(|| panic!("no bold run in {info}"));
@@ -248,24 +248,24 @@ fn agent_records_and_replays_an_action() {
     let mut c = connect(&dir);
     let listed = tool(&mut c, "engine.commands", json!({"filter": "actions."}));
     let ids: Vec<&str> = listed.as_array().unwrap().iter().filter_map(|item| item.get("id").and_then(Value::as_str)).collect();
-    for id in ["actions.list", "actions.get", "actions.record", "actions.stop", "actions.play", "actions.delete"] {
+    for id in ["action.list", "action.get", "action.record", "action.stop", "action.play", "action.delete"] {
         assert!(ids.contains(&id), "{id} missing from {ids:?}");
     }
 
     run(&mut c, "file.new", json!({"width": 32, "height": 32, "background": "white"}));
-    run(&mut c, "actions.record", json!({"name": "Red"}));
+    run(&mut c, "action.record", json!({"name": "Red"}));
     run(&mut c, "layer.new.layer", json!({}));
     run(&mut c, "select.rect", json!({"x": 0, "y": 0, "width": 8, "height": 8}));
     run(&mut c, "edit.fill", json!({"color": "#ff0000"}));
-    let stopped = run(&mut c, "actions.stop", json!({}));
+    let stopped = run(&mut c, "action.stop", json!({}));
     assert_eq!(stopped["steps"], 3, "{stopped}");
-    let got = run(&mut c, "actions.get", json!({"action": "Red"}));
+    let got = run(&mut c, "action.get", json!({"action": "Red"}));
     assert_eq!(got["steps"][0][0], "layer.new.layer");
     assert_eq!(got["steps"][1][0], "select.rect");
     assert_eq!(got["steps"][2][0], "edit.fill");
 
     run(&mut c, "file.new", json!({"width": 32, "height": 32, "background": "white"}));
-    let played = run(&mut c, "actions.play", json!({"action": "Red"}));
+    let played = run(&mut c, "action.play", json!({"action": "Red"}));
     assert_eq!(played["ran"], 3, "{played}");
     assert!(played.get("failed").is_none(), "{played}");
     let px = pixel(&mut c, 2, 2);
@@ -284,7 +284,7 @@ fn agent_play_refuses_a_recorded_file_open() {
         name: "Open".into(),
         steps: vec![("file.open".into(), json!({"path": "/etc/passwd"})), ("layer.new.layer".into(), json!({}))],
     });
-    let played = run(&mut c, "actions.play", json!({"action": "Open"}));
+    let played = run(&mut c, "action.play", json!({"action": "Open"}));
     assert_eq!(played["ran"], 0, "{played}");
     assert_eq!(played["failed"]["step"], 0, "{played}");
     assert_eq!(played["failed"]["id"], "file.open", "{played}");

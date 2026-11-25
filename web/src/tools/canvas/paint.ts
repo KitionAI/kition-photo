@@ -138,7 +138,7 @@ export function eyedropperGesture(env: PhotoToolEnv, start: KitPointer): KitGest
   let asked = 0
   const sample = (pointer: KitPointer) => {
     const mine = ++asked
-    void env.query<number[]>('document.sampleColor', { x: Math.floor(pointer.x), y: Math.floor(pointer.y), ...toolParams('Eyedropper', env.options) }).then((rgba) => {
+    void env.query<number[]>('file.sampleColor', { x: Math.floor(pointer.x), y: Math.floor(pointer.y), ...toolParams('Eyedropper', env.options) }).then((rgba) => {
       if (rgba && mine === asked) env.pick([0, 1, 2].map((channel) => Math.round(rgba[channel] * 255)) as [number, number, number], false)
     })
   }
@@ -226,7 +226,7 @@ export function gradientTool(env: PhotoToolEnv): KitTool {
     id: 'Gradient',
     cursor: 'crosshair',
     begin: (start, { overlay }) => {
-      const command = env.options.gradientClassic ? 'paint.gradient' : 'gradient.fill.create'
+      const command = env.options.gradientClassic ? 'paint.gradient' : 'gradient.fill.add'
       const params = (end: KitPointer) => ({ from: [start.x, start.y], to: [end.x, end.y], ...toolParams('Gradient', env.options) })
       let live: LivePreview | null = null
       let shownAt = 0

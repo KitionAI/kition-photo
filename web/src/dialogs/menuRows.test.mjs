@@ -71,7 +71,7 @@ function paintedDocument() {
   const doc = sdk.PhotoDocument.create('Untitled', 64, 64)
   for (const [command, params] of [
     ['layer.new.layer', {}],
-    ['select.all', {}],
+    ['edit.selectAll', {}],
     ['edit.fill', { contents: 'foreground' }],
     ['select.saveSelection', { name: 'Alpha 1' }],
   ])

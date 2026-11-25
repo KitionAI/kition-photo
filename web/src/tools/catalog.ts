@@ -97,9 +97,9 @@ const SECTIONS = [
       ['SliceSelect', 'C', SquareMousePointer, 'slice.set'],
     ],
     [
-      ['Eyedropper', 'I', Pipette, 'document.sampleColor'],
+      ['Eyedropper', 'I', Pipette, 'file.sampleColor'],
       ['Ruler', 'I', Ruler, 'image.analysis.rulerTool'],
-      ['Note', 'I', MessageSquare, 'notes.add'],
+      ['Note', 'I', MessageSquare, 'note.add'],
       ['Count', 'I', CircleDot, 'count.add'],
     ],
   ],
@@ -140,19 +140,19 @@ const SECTIONS = [
   [
     [['Pen', 'P', PenTool, 'path.set']],
     [
-      ['Type', 'T', Type, 'type.create'],
-      ['VerticalType', 'T', Type, 'type.create'],
+      ['Type', 'T', Type, 'text.add'],
+      ['VerticalType', 'T', Type, 'text.add'],
     ],
     [
       ['PathSelection', 'A', MousePointer2, 'path.transform'],
       ['DirectSelection', 'A', MousePointer, 'path.moveAnchors'],
     ],
     [
-      ['Rectangle', 'U', RectangleHorizontal, 'shape.create'],
-      ['EllipseShape', 'U', Circle, 'shape.create'],
-      ['Triangle', 'U', Triangle, 'shape.create'],
-      ['Polygon', 'U', Pentagon, 'shape.create'],
-      ['Line', 'U', Slash, 'shape.create'],
+      ['Rectangle', 'U', RectangleHorizontal, 'shape.add'],
+      ['EllipseShape', 'U', Circle, 'shape.add'],
+      ['Triangle', 'U', Triangle, 'shape.add'],
+      ['Polygon', 'U', Pentagon, 'shape.add'],
+      ['Line', 'U', Slash, 'shape.add'],
       ['CustomShape', 'U', Shapes, 'shape.presets.place'],
     ],
   ],

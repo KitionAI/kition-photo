@@ -1,7 +1,7 @@
 //! Photoshop's brush keys (#626): `[` / `]` step the brush size and ⇧[ / ⇧] the hardness. Photoshop
 //! has no menu item for them but lists them in Edit › Keyboard Shortcuts › Tools ("Decrease Brush
 //! Size"…); here they are ordinary commands with default shortcuts, so they can be rebound,
-//! recorded and driven by agents. Each one is a `tools.setBrush` on the session brush.
+//! recorded and driven by agents. Each one is a `tool.setBrush` on the session brush.
 
 use serde_json::{Value, json};
 
@@ -42,10 +42,10 @@ macro_rules! key_cmd {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        key_cmd!("tools.decreaseBrushSize", "Decrease Brush Size", "[", |s, _| size(s, false)),
-        key_cmd!("tools.increaseBrushSize", "Increase Brush Size", "]", |s, _| size(s, true)),
-        key_cmd!("tools.decreaseBrushHardness", "Decrease Brush Hardness", "Shift+[", |s, _| hardness(s, false)),
-        key_cmd!("tools.increaseBrushHardness", "Increase Brush Hardness", "Shift+]", |s, _| hardness(s, true)),
+        key_cmd!("tool.decreaseBrushSize", "Decrease Brush Size", "[", |s, _| size(s, false)),
+        key_cmd!("tool.increaseBrushSize", "Increase Brush Size", "]", |s, _| size(s, true)),
+        key_cmd!("tool.decreaseBrushHardness", "Decrease Brush Hardness", "Shift+[", |s, _| hardness(s, false)),
+        key_cmd!("tool.increaseBrushHardness", "Increase Brush Hardness", "Shift+]", |s, _| hardness(s, true)),
     ]
 }
 
@@ -69,19 +69,19 @@ mod tests {
     #[test]
     fn commands_step_the_session_brush_and_journal() {
         let mut s = Session::new();
-        s.execute("tools.setBrush", json!({"brush": {"size": 40, "hardness": 0.5}})).unwrap();
-        s.execute("tools.increaseBrushSize", json!({})).unwrap();
+        s.execute("tool.setBrush", json!({"brush": {"size": 40, "hardness": 0.5}})).unwrap();
+        s.execute("tool.increaseBrushSize", json!({})).unwrap();
         assert_eq!(s.tools.brush.size, 50.0);
-        s.execute("tools.decreaseBrushSize", Value::Null).unwrap();
+        s.execute("tool.decreaseBrushSize", Value::Null).unwrap();
         assert_eq!(s.tools.brush.size, 40.0);
-        s.execute("tools.increaseBrushHardness", json!({})).unwrap();
+        s.execute("tool.increaseBrushHardness", json!({})).unwrap();
         assert_eq!(s.tools.brush.hardness, 0.75);
-        s.execute("tools.decreaseBrushHardness", json!({"junk": [1, 2]})).unwrap();
+        s.execute("tool.decreaseBrushHardness", json!({"junk": [1, 2]})).unwrap();
         assert_eq!(s.tools.brush.hardness, 0.5);
-        assert_eq!(s.journal.last().map(|(id, _)| id.as_str()), Some("tools.decreaseBrushHardness"));
+        assert_eq!(s.journal.last().map(|(id, _)| id.as_str()), Some("tool.decreaseBrushHardness"));
         // They need no document and are bindable under Tools.
         let sc = |id| crate::commands::find(id).and_then(|c| c.shortcut);
-        assert_eq!(sc("tools.decreaseBrushSize"), Some("["));
-        assert_eq!(sc("tools.increaseBrushHardness"), Some("Shift+]"));
+        assert_eq!(sc("tool.decreaseBrushSize"), Some("["));
+        assert_eq!(sc("tool.increaseBrushHardness"), Some("Shift+]"));
     }
 }

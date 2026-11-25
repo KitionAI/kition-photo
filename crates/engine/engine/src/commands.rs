@@ -414,7 +414,7 @@ fn build() -> Vec<CommandSpec> {
             has_pixel_or_channel,
             crate::fill_cmds::fill
         ),
-        cmd!("edit.clear", "Clear", ["Edit"], Some("Delete"), "{}", has_pixel_layer, |s, p| {
+        cmd!("edit.delete", "Clear", ["Edit"], Some("Delete"), "{}", has_pixel_layer, |s, p| {
             let id = layer_param(s, p)?;
             let bg = s.tools.background;
             s.edit("Clear", |doc, _| {
@@ -425,7 +425,7 @@ fn build() -> Vec<CommandSpec> {
             Ok(Value::Null)
         }),
         // Select
-        cmd!("select.all", "All", ["Select"], Some("Cmd+A"), "{}", has_doc, |s, _| {
+        cmd!("edit.selectAll", "All", ["Select"], Some("Cmd+A"), "{}", has_doc, |s, _| {
             s.edit("Select All", |doc, _| {
                 let mut m = Surface::new(kition_photo_color::PixelFormat::GRAY8);
                 m.fill_rect(doc.bounds(), &[1.0]);
@@ -434,7 +434,7 @@ fn build() -> Vec<CommandSpec> {
             })?;
             Ok(Value::Null)
         }),
-        cmd!("select.deselect", "Deselect", ["Select"], Some("Cmd+D"), "{}", has_selection, |s, _| {
+        cmd!("edit.deselectAll", "Deselect", ["Select"], Some("Cmd+D"), "{}", has_selection, |s, _| {
             s.edit("Deselect", |doc, _| {
                 doc.selection = None;
                 Ok(())
@@ -679,20 +679,16 @@ fn build() -> Vec<CommandSpec> {
                 Ok(Value::Null)
             }
         ),
-        cmd!("layer.arrange.bringForward", "Bring Forward", ["Layer", "Arrange"], Some("Cmd+]"), r##"{"layer":id?}"##, has_layer, |s, p| arrange(s, p, 1)),
-        cmd!("layer.arrange.sendBackward", "Send Backward", ["Layer", "Arrange"], Some("Cmd+["), r##"{"layer":id?}"##, has_layer, |s, p| arrange(s, p, -1)),
-        cmd!("layer.arrange.bringToFront", "Bring to Front", ["Layer", "Arrange"], Some("Cmd+Shift+]"), r##"{"layer":id?}"##, has_layer, |s, p| arrange(
+        cmd!("arrange.bringForward", "Bring Forward", ["Layer", "Arrange"], Some("Cmd+]"), r##"{"layer":id?}"##, has_layer, |s, p| arrange(s, p, 1)),
+        cmd!("arrange.sendBackward", "Send Backward", ["Layer", "Arrange"], Some("Cmd+["), r##"{"layer":id?}"##, has_layer, |s, p| arrange(s, p, -1)),
+        cmd!("arrange.bringToFront", "Bring to Front", ["Layer", "Arrange"], Some("Cmd+Shift+]"), r##"{"layer":id?}"##, has_layer, |s, p| arrange(
             s,
             p,
             i32::MAX
         )),
-        cmd!("layer.arrange.sendToBack", "Send to Back", ["Layer", "Arrange"], Some("Cmd+Shift+["), r##"{"layer":id?}"##, has_layer, |s, p| arrange(
-            s,
-            p,
-            i32::MIN
-        )),
+        cmd!("arrange.sendToBack", "Send to Back", ["Layer", "Arrange"], Some("Cmd+Shift+["), r##"{"layer":id?}"##, has_layer, |s, p| arrange(s, p, i32::MIN)),
         cmd!(
-            "layer.createClippingMask",
+            "layer.addClippingMask",
             "Create Clipping Mask",
             ["Layer"],
             Some("Cmd+Alt+G"),
@@ -861,13 +857,13 @@ fn build() -> Vec<CommandSpec> {
         cmd!("image.imageRotation.flipCanvasVertical", "Flip Canvas Vertical", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
             turn(s, "Flip Canvas Vertical", crate::canvas_geom::Turn::FlipVertical)
         }),
-        cmd!("image.imageRotation.180", "180°", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
+        cmd!("image.imageRotation.rotate180", "180°", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
             turn(s, "Rotate Canvas", crate::canvas_geom::Turn::Rotate180)
         }),
-        cmd!("image.imageRotation.90cw", "90° Clockwise", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
+        cmd!("image.imageRotation.rotate90cw", "90° Clockwise", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
             turn(s, "Rotate Canvas", crate::canvas_geom::Turn::Cw90)
         }),
-        cmd!("image.imageRotation.90ccw", "90° Counter Clockwise", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
+        cmd!("image.imageRotation.rotate90ccw", "90° Counter Clockwise", ["Image", "Image Rotation"], None, "{}", has_doc, |s, _| {
             turn(s, "Rotate Canvas", crate::canvas_geom::Turn::Ccw90)
         }),
         cmd!("image.adjustments.desaturate", "Desaturate", ["Image", "Adjustments"], Some("Cmd+Shift+U"), "{}", has_pixel_layer, |s, _| {
@@ -894,16 +890,16 @@ fn build() -> Vec<CommandSpec> {
             has_paintable,
             crate::brush_cmds::paint_stroke
         ),
-        cmd!("tools.setColors", "Set Colors", [], None, r##"{"foreground":"#rrggbb"?,"background":"#rrggbb"?}"##, always, |s, p| {
+        cmd!("tool.setColors", "Set Colors", [], None, r##"{"foreground":"#rrggbb"?,"background":"#rrggbb"?}"##, always, |s, p| {
             s.tools.foreground = color_param(p, "foreground", s.tools.foreground);
             s.tools.background = color_param(p, "background", s.tools.background);
             Ok(Value::Null)
         }),
-        cmd!("tools.swapColors", "Switch Foreground and Background Colors", [], Some("X"), "{}", always, |s, _| {
+        cmd!("tool.swapColors", "Switch Foreground and Background Colors", [], Some("X"), "{}", always, |s, _| {
             std::mem::swap(&mut s.tools.foreground, &mut s.tools.background);
             Ok(Value::Null)
         }),
-        cmd!("tools.defaultColors", "Default Foreground and Background Colors", [], Some("D"), "{}", always, |s, _| {
+        cmd!("tool.defaultColors", "Default Foreground and Background Colors", [], Some("D"), "{}", always, |s, _| {
             s.tools.foreground = [0.0, 0.0, 0.0, 1.0];
             s.tools.background = [1.0, 1.0, 1.0, 1.0];
             Ok(Value::Null)
@@ -920,7 +916,7 @@ fn build() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "document.inspect",
+            id: "file.inspect",
             label: "Inspect Document",
             menu: &[],
             shortcut: None,
@@ -929,7 +925,7 @@ fn build() -> Vec<CommandSpec> {
             run: |s, p| {
                 let d = match p.get("document") {
                     Some(v) => {
-                        let i = v.as_u64().and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad("document.inspect", "`document` must be an index"))?;
+                        let i = v.as_u64().and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad("file.inspect", "`document` must be an index"))?;
                         s.documents().get(i).ok_or_else(|| EngineError::Other(format!("no document at index {i}")))?
                     }
                     None => s.active().ok_or(EngineError::NoDocument)?,
@@ -939,21 +935,21 @@ fn build() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "document.activate",
+            id: "file.activate",
             label: "Activate Document",
             menu: &[],
             shortcut: None,
             params: r##"{"document":index}"##,
             enabled: has_doc,
             run: |s, p| {
-                let i = p.get("document").and_then(Value::as_u64).ok_or_else(|| bad("document.activate", "missing `document`"))?;
-                let idx = usize::try_from(i).map_err(|_| bad("document.activate", "`document` out of range"))?;
+                let i = p.get("document").and_then(Value::as_u64).ok_or_else(|| bad("file.activate", "missing `document`"))?;
+                let idx = usize::try_from(i).map_err(|_| bad("file.activate", "`document` out of range"))?;
                 if s.set_active(idx) { Ok(Value::Null) } else { Err(EngineError::Other(format!("no document at index {idx}"))) }
             },
             journal: false,
         },
         CommandSpec {
-            id: "document.move",
+            id: "file.move",
             label: "Move Document",
             menu: &[],
             shortcut: None,
@@ -961,14 +957,13 @@ fn build() -> Vec<CommandSpec> {
             enabled: has_doc,
             run: |s, p| {
                 let index = |key: &str| {
-                    p.get(key)
-                        .map(|v| v.as_u64().and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad("document.move", format!("`{key}` must be a tab index"))))
+                    p.get(key).map(|v| v.as_u64().and_then(|v| usize::try_from(v).ok()).ok_or_else(|| bad("file.move", format!("`{key}` must be a tab index"))))
                 };
                 let from = match index("document") {
                     Some(i) => i?,
                     None => s.active_index().ok_or(EngineError::NoDocument)?,
                 };
-                let to = index("to").ok_or_else(|| bad("document.move", "missing `to`"))??;
+                let to = index("to").ok_or_else(|| bad("file.move", "missing `to`"))??;
                 let to = s.move_document(from, to).ok_or(EngineError::NoDocument)?;
                 Ok(json!({"document": to}))
             },
@@ -996,14 +991,14 @@ fn build() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "document.pixel",
+            id: "file.pixel",
             label: "Read Composite Pixel",
             menu: &[],
             shortcut: None,
             params: r##"{"x":i32,"y":i32}"##,
             enabled: has_doc,
             run: |s, p| {
-                let coord = |k: &str| i32::try_from(int(p, k).unwrap_or(0)).map_err(|_| bad("document.pixel", format!("{k} must fit in 32 bits")));
+                let coord = |k: &str| i32::try_from(int(p, k).unwrap_or(0)).map_err(|_| bad("file.pixel", format!("{k} must fit in 32 bits")));
                 let (x, y) = (coord("x")?, coord("y")?);
                 let d = s.active().ok_or(EngineError::NoDocument)?;
                 // At i32::MAX the 1x1 rect saturates to empty: a pixel that far out is transparent.

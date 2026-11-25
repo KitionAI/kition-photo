@@ -408,7 +408,7 @@ export function MeasureBar() {
             <span className="photo-options-label">{phrase('Color:')}</span>
             <ColorWell value={o.noteColor} label={bare(phrase('Color:'))} onChange={(noteColor) => set({ noteColor })} testId="photo-option-noteColor" />
           </Opt>
-          {button('clearAll', phrase('Clear All'), 'notes.delete', { all: true })}
+          {button('clearAll', phrase('Clear All'), 'note.delete', { all: true })}
         </>
       )
     case 'Slice':

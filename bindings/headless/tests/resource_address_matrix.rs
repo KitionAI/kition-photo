@@ -50,7 +50,7 @@ fn fixture() -> Vec<u8> {
         for (command, p) in [
             ("channel.new", json!({"name":format!("C{i}")})),
             ("layerComp.new", json!({"name":format!("C{i}")})),
-            ("notes.add", json!({"x":i*24,"y":8,"author":format!("C{i}"),"text":"Before","open":false})),
+            ("note.add", json!({"x":i*24,"y":8,"author":format!("C{i}"),"text":"Before","open":false})),
             ("slice.new", json!({"rect":[i*24,8,16,16],"name":format!("C{i}")})),
             ("view.newGuide", json!({"orientation":"vertical","position":i*24})),
         ] {
@@ -217,7 +217,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
             Form::PathName => ("path.rename", json!({"name":"C1","to":"Mine"})),
             Form::CompId => ("layerComp.rename", json!({"comp":engine.layer_comps[1].id,"name":"Mine"})),
             Form::CompName => ("layerComp.rename", json!({"comp":"C1","name":"Mine"})),
-            Form::NoteIndex => ("notes.set", json!({"index":1,"color":"#ff0000"})),
+            Form::NoteIndex => ("note.set", json!({"index":1,"color":"#ff0000"})),
             Form::SliceId => ("slice.set", json!({"slice":engine.slices.list[1].id,"url":"Mine"})),
             Form::GuideIndex => ("view.moveGuide", json!({"orientation":"vertical","index":1,"position":32})),
         };

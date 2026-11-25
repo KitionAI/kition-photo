@@ -320,7 +320,7 @@ fn create_layer_splits_effects_and_keeps_the_look() {
     let id = active(&s).id;
     let before = kition_photo_compose::flatten(doc(&s));
     let n0 = doc(&s).layers.len();
-    let r = s.execute("layer.layerStyle.createLayer", json!({})).unwrap();
+    let r = s.execute("layer.layerStyle.convertToLayer", json!({})).unwrap();
     assert_eq!(r["layers"], json!(2));
     let d = doc(&s);
     assert_eq!(d.layers.len(), n0 + 2);
@@ -331,7 +331,7 @@ fn create_layer_splits_effects_and_keeps_the_look() {
     let after = kition_photo_compose::flatten(d);
     let worst = before.px.iter().zip(&after.px).map(|(a, b)| (0..4).map(|c| (a[c] - b[c]).abs()).fold(0.0, f32::max)).fold(0.0, f32::max);
     assert!(worst < 3.0 / 255.0, "composite changed by {}", worst * 255.0);
-    assert!(!s.is_enabled("layer.layerStyle.createLayer"));
+    assert!(!s.is_enabled("layer.layerStyle.convertToLayer"));
     s.execute("edit.undo", json!({})).unwrap();
     assert_eq!(doc(&s).layers.len(), n0);
 }
@@ -396,11 +396,11 @@ fn stack_modes_render_from_the_nested_layers() {
         _ => panic!(),
     };
     assert!(at(&s, 3, 3)[0] > 0.9, "normal composite shows the top frame");
-    s.execute("layer.objectLayers.stackMode.median", json!({})).unwrap();
+    s.execute("layer.stackMode.median", json!({})).unwrap();
     assert!((at(&s, 3, 3)[0] - 0.4).abs() < 2.0 / 255.0, "median removes the outlier");
-    s.execute("layer.objectLayers.stackMode.maximum", json!({})).unwrap();
+    s.execute("layer.stackMode.maximum", json!({})).unwrap();
     assert!(at(&s, 3, 3)[0] > 0.99);
-    s.execute("layer.objectLayers.stackMode.range", json!({})).unwrap();
+    s.execute("layer.stackMode.range", json!({})).unwrap();
     assert!(at(&s, 10, 10)[0] < 1.0 / 255.0);
     for m in StackMode::ALL {
         s.execute(&format!("layer.objectLayers.stackMode.{}", m.id()), json!({})).unwrap();
@@ -409,17 +409,17 @@ fn stack_modes_render_from_the_nested_layers() {
             _ => panic!(),
         }
     }
-    s.execute("layer.objectLayers.stackMode.none", json!({})).unwrap();
+    s.execute("layer.stackMode.none", json!({})).unwrap();
     assert!(at(&s, 3, 3)[0] > 0.9);
     // The stack mode survives .kphoto.
-    s.execute("layer.objectLayers.stackMode.mean", json!({})).unwrap();
+    s.execute("layer.stackMode.mean", json!({})).unwrap();
     let bytes = kition_photo_format::save_to_bytes(doc(&s), &Default::default()).unwrap();
     let back = kition_photo_format::load_from_bytes(&bytes).unwrap();
     match &back.layers[0].content {
         LayerContent::Smart(sm) => assert_eq!(sm.stack_mode, Some(StackMode::Mean)),
         _ => panic!(),
     }
-    assert!(!session(8, "rgb").is_enabled("layer.objectLayers.stackMode.mean"));
+    assert!(!session(8, "rgb").is_enabled("layer.stackMode.mean"));
 }
 
 #[test]
@@ -436,7 +436,7 @@ fn stack_mode_rejects_sources_without_visible_layers() {
         s.execute("layer.objectLayers.saveContents", json!({})).unwrap();
         s.execute("file.close", json!({})).unwrap();
 
-        let err = s.execute("layer.objectLayers.stackMode.mean", json!({})).unwrap_err();
+        let err = s.execute("layer.stackMode.mean", json!({})).unwrap_err();
         assert!(err.to_string().contains("no visible layers"), "{err}");
         match &active(&s).content {
             LayerContent::Smart(sm) => assert_eq!(sm.stack_mode, None, "failed edit must roll back"),
@@ -521,7 +521,7 @@ fn load_files_into_stack_as_object_layer_then_median() {
     s.execute("file.scripts.loadFilesIntoStack", json!({"paths": paths, "createObjectLayer": true})).unwrap();
     assert_eq!(doc(&s).layers.len(), 1);
     assert!(matches!(doc(&s).layers[0].content, LayerContent::Smart(_)));
-    s.execute("layer.objectLayers.stackMode.median", json!({})).unwrap();
+    s.execute("layer.stackMode.median", json!({})).unwrap();
     let px = kition_photo_compose::render(doc(&s), Rect::from_xywh(2, 2, 1, 1)).px[0];
     assert!((px[0] - 0.2).abs() < 2.0 / 255.0, "{px:?}");
     let _ = std::fs::remove_dir_all(&dir);

@@ -59,7 +59,7 @@ fn any_other_command_drops_it_and_undo_puts_it_back() {
     assert!(floating(st).is_none() && alpha(&st.doc, id, 12, 12) == 1.0 && st.history.past_len() == steps);
     // Float again, then deselect: dropped first (where it was shown), then deselected.
     s.execute("select.float", json!({"dx": 20, "dy": 0})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let st = s.active().unwrap();
     assert!(st.doc.selection.is_none() && floating(st).is_none());
     assert!(alpha(&st.doc, id, 12, 12) == 0.0 && alpha(&st.doc, id, 35, 20) == 1.0);
@@ -70,7 +70,7 @@ fn needs_a_selection_and_an_unlocked_pixel_layer() {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 20, "height": 20})).unwrap();
     assert!(!s.is_enabled("select.float"), "no selection");
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     assert!(s.is_enabled("select.float"), "the Background's selected pixels move");
     s.execute("layer.new.layer", json!({})).unwrap();
     assert!(s.is_enabled("select.float"));

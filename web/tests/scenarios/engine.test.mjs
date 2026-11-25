@@ -43,19 +43,19 @@ for (const orientation of ['horizontal', 'vertical']) {
     const withoutFont = cold.PhotoDocument.create('Missing.psd', 128, 160)
     let missing
     try {
-      execute(withoutFont, 'type.create', params)
+      execute(withoutFont, 'text.add', params)
       missing = snapshot(withoutFont)
     } finally { withoutFont.free() }
 
     assert.ok(cold.addFont(readFileSync(font)) > 0, 'The first CJK font registration must succeed')
     const doc = cold.PhotoDocument.create('Chinese.psd', 128, 160)
     try {
-      execute(doc, 'type.create', params)
+      execute(doc, 'text.add', params)
       const fallback = snapshot(doc)
-      const originalStyle = execute(doc, 'type.info')
+      const originalStyle = execute(doc, 'text.info')
       assert.equal(originalStyle.text, text)
       assert.equal(originalStyle.runs[0].style.font_family, 'Inter')
-      execute(doc, 'type.setStyle', { font: 'Droid Sans Fallback' })
+      execute(doc, 'text.setStyle', { font: 'Droid Sans Fallback' })
       const artifacts = new URL(`../../test-results/engine/SC12-${orientation}/`, import.meta.url)
       mkdirSync(artifacts, { recursive: true })
       writeFileSync(new URL('missing.png', artifacts), missing.png)
@@ -64,14 +64,14 @@ for (const orientation of ['horizontal', 'vertical']) {
       assert.ok(!Buffer.from(fallback.pixels).equals(Buffer.from(missing.pixels)), 'First registration must replace missing-glyph rendering')
       same(doc, fallback, true)
       execute(doc, 'edit.undo')
-      assert.deepEqual(execute(doc, 'type.info'), originalStyle)
+      assert.deepEqual(execute(doc, 'text.info'), originalStyle)
       same(doc, fallback)
       const reopened = cold.PhotoDocument.open('Chinese.psd', doc.save('Chinese.psd'))
       try {
         same(reopened, fallback)
-        assert.equal(execute(reopened, 'type.info').text, text)
-        execute(reopened, 'type.edit', { text: '明天见' })
-        assert.equal(execute(reopened, 'type.info').text, '明天见')
+        assert.equal(execute(reopened, 'text.info').text, text)
+        execute(reopened, 'text.edit', { text: '明天见' })
+        assert.equal(execute(reopened, 'text.info').text, '明天见')
       } finally { reopened.free() }
     } finally { doc.free() }
   })

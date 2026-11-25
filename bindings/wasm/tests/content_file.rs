@@ -64,9 +64,9 @@ fn layer(answer: &Value) -> u64 {
 /// name; answers it and its type layer.
 fn image_with_history() -> (PhotoDocument, u64) {
     let mut doc = PhotoDocument::create(FILE, 96, 64).unwrap();
-    let title = layer(&doc.execute("type.create", json!({ "x": 4, "y": 20, "text": "Kept", "size": 12 })).unwrap());
-    doc.execute("type.edit", json!({ "layer": title, "text": format!("Kept{TYPED_THEN_DELETED}") })).unwrap();
-    doc.execute("type.edit", json!({ "layer": title, "text": "Kept" })).unwrap();
+    let title = layer(&doc.execute("text.add", json!({ "x": 4, "y": 20, "text": "Kept", "size": 12 })).unwrap());
+    doc.execute("text.edit", json!({ "layer": title, "text": format!("Kept{TYPED_THEN_DELETED}") })).unwrap();
+    doc.execute("text.edit", json!({ "layer": title, "text": "Kept" })).unwrap();
     let gone = layer(&doc.execute("layer.new.layer", json!({ "name": DELETED_LAYER })).unwrap());
     doc.execute("layer.delete", json!({ "layer": gone })).unwrap();
     let renamed = layer(&doc.execute("layer.new.layer", json!({ "name": OVERWRITTEN })).unwrap());
@@ -130,7 +130,7 @@ fn a_file_opened_without_a_store_is_the_same_document_and_edits() {
     assert_eq!(back.doc_id(), doc.doc_id());
     assert_eq!(back.layer_object_ids(), doc.layer_object_ids(), "the same object ids");
     assert_eq!(version(&mut back), version(&mut doc), "the same version: the seal is the session's");
-    back.execute("type.edit", json!({ "layer": title, "text": "Edited" })).unwrap();
+    back.execute("text.edit", json!({ "layer": title, "text": "Edited" })).unwrap();
     back.execute("layer.new.layer", json!({ "name": "New" })).unwrap();
     let saved = host_save(&mut back);
     let again = PhotoDocument::open(FILE, &saved).unwrap();
@@ -146,7 +146,7 @@ fn a_replica_from_the_file_and_one_with_the_whole_history_converge() {
     full.mark_saved();
     let mut file = PhotoDocument::open(FILE, &bytes).unwrap();
     full.execute("layer.new.layer", json!({ "name": "Full" })).unwrap();
-    file.execute("type.edit", json!({ "layer": title, "text": "From the file" })).unwrap();
+    file.execute("text.edit", json!({ "layer": title, "text": "From the file" })).unwrap();
     for _ in 0..4 {
         let (to_file, to_full) = (full.export_changes(&file.version().unwrap()).unwrap(), file.export_changes(&full.version().unwrap()).unwrap());
         let (blobs_full, blobs_file) = (full.blobs().unwrap(), file.blobs().unwrap());
@@ -207,7 +207,7 @@ fn a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state() {
     doc.mark_saved();
     // Elsewhere, from the file alone: an edit, a new layer, a save.
     let mut elsewhere = PhotoDocument::open(FILE, &bytes).unwrap();
-    elsewhere.execute("type.edit", json!({ "layer": title, "text": "Elsewhere" })).unwrap();
+    elsewhere.execute("text.edit", json!({ "layer": title, "text": "Elsewhere" })).unwrap();
     elsewhere.execute("layer.new.layer", json!({ "name": "New" })).unwrap();
     let edited = host_save(&mut elsewhere);
     let mut opened = PhotoDocument::open_with_replica(FILE, &edited, &stored, &blobs).unwrap();

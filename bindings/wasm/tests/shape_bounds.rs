@@ -22,7 +22,7 @@ fn shape(kind: &str, colour: &str) -> (PhotoDocument, Value, Value) {
     if kind == "roundedRect" {
         params["radii"] = json!(40);
     }
-    let made = run(&mut image, "shape.create", params);
+    let made = run(&mut image, "shape.add", params);
     let layer = made["layer"].clone();
     (image, layer, made)
 }
@@ -38,7 +38,7 @@ fn shape_bounds_are_the_shape() {
         // A subtracted circle sticking out on either side cuts, but adds no width.
         for rect in [json!([740, 500, 80, 80]), json!([180, 500, 80, 80])] {
             let (mut image, layer, _) = shape(kind, "#e2466b");
-            let cut = run(&mut image, "shape.create", json!({ "kind": "ellipse", "rect": rect, "addTo": layer, "op": "subtract" }));
+            let cut = run(&mut image, "shape.add", json!({ "kind": "ellipse", "rect": rect, "addTo": layer, "op": "subtract" }));
             assert_eq!(cut["bounds"], json!([200, 300, 600, 600]), "{kind} less {rect}: {}", cut["bounds"]);
             assert_eq!(bounds_of(&image, &layer), json!([200, 300, 600, 600]), "{kind} less {rect}");
         }

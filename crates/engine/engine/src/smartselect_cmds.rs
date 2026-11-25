@@ -379,11 +379,11 @@ mod tests {
     #[test]
     fn quick_selection_subtract_from_select_all_and_enhance() {
         let mut s = two_regions(8);
-        s.execute("select.all", json!({})).unwrap();
+        s.execute("edit.selectAll", json!({})).unwrap();
         s.execute("select.quick", json!({"points": [[100, 30], [110, 70]], "size": 10, "mode": "subtract"})).unwrap();
         assert!(cov(&s, 10, 50) >= 0.99);
         assert!(cov(&s, 120, 20) < 0.01 && cov(&s, 70, 90) < 0.01);
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("select.quick", json!({"points": [[20, 50]], "size": 8, "enhanceEdge": true})).unwrap();
         assert!(cov(&s, 10, 10) >= 0.5 && cov(&s, 100, 50) < 0.5);
     }
@@ -487,7 +487,7 @@ mod tests {
         assert!(px[0] > orig[0] + 0.05 && px[2] < orig[2] - 0.05, "{px:?} vs {orig:?}");
         s.execute("edit.undo", json!({})).unwrap();
         assert!(s.execute("select.edgeRefine", json!({"output": "bogus"})).is_err());
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         assert!(!s.is_enabled("select.edgeRefine"));
     }
 

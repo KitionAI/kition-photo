@@ -32,7 +32,7 @@ fn scripts_parse_json_and_lines() {
     assert_eq!(a[0].1["width"], 10);
     let b = parse_script("# make a doc\nfile.new {\"width\": 12, \"height\": 8}\n\nimage.imageRotation.90cw\n").unwrap();
     assert_eq!(b.len(), 2);
-    assert_eq!(b[1].0, "image.imageRotation.90cw");
+    assert_eq!(b[1].0, "image.imageRotation.rotate90cw");
     let c = parse_script(r#"{"kitionPhotoDroplet":1,"action":{"steps":[["file.new",{}]]}}"#).unwrap();
     assert_eq!(c.len(), 1);
     assert!(parse_script("file.new {bad json").is_err());
@@ -50,7 +50,7 @@ fn browse_runs_a_script_file() {
     assert_eq!((d.size.width, d.size.height), (20, 30));
     assert!(s.execute("file.scripts.browse", json!({"script": "no.such.command"})).is_err());
     // A failing step stops the script and is reported.
-    let r = s.execute("file.scripts.browse", json!({"steps": [["layer.delete", {"layer": 999_999}], ["image.imageRotation.90cw", {}]]})).unwrap();
+    let r = s.execute("file.scripts.browse", json!({"steps": [["layer.delete", {"layer": 999_999}], ["image.imageRotation.rotate90cw", {}]]})).unwrap();
     assert_eq!(r["results"].as_array().unwrap().len(), 1);
 }
 
@@ -58,7 +58,10 @@ fn browse_runs_a_script_file() {
 fn script_events_fire_on_new_and_close() {
     let mut s = Session::new();
     let r = s
-        .execute("file.scripts.scriptEventsManager", json!({"add": {"event": "newDocument", "steps": [["image.imageRotation.90cw", {}]], "name": "Rotate"}}))
+        .execute(
+            "file.scripts.scriptEventsManager",
+            json!({"add": {"event": "newDocument", "steps": [["image.imageRotation.rotate90cw", {}]], "name": "Rotate"}}),
+        )
         .unwrap();
     assert_eq!(r["enabled"], true);
     assert_eq!(r["bindings"].as_array().unwrap().len(), 1);
@@ -90,8 +93,8 @@ fn droplets_are_written_and_run() {
     let path = format!("{dir}/Rotate");
     let r = s
         .execute(
-            "file.automate.createDroplet",
-            json!({"path": path, "steps": [["image.imageRotation.90cw", {}]], "format": "png", "output": format!("{dir}/out")}),
+            "file.automate.addDroplet",
+            json!({"path": path, "steps": [["image.imageRotation.rotate90cw", {}]], "format": "png", "output": format!("{dir}/out")}),
         )
         .unwrap();
     let dp = r["path"].as_str().unwrap().to_string();
@@ -110,7 +113,7 @@ fn droplets_are_written_and_run() {
     assert_eq!(r["files"].as_array().unwrap().len(), inputs.len(), "{r}");
     let out = kition_photo_codecs::decode(&std::fs::read(format!("{dir}/out/img0.png")).unwrap()).unwrap();
     assert_eq!(out.dimensions(), (20, 40));
-    assert!(s.execute("file.automate.createDroplet", json!({"path": path, "steps": [["bogus", {}]]})).is_err());
+    assert!(s.execute("file.automate.addDroplet", json!({"path": path, "steps": [["bogus", {}]]})).is_err());
 }
 
 #[test]

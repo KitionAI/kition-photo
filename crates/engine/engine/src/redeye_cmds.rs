@@ -373,7 +373,7 @@ mod tests {
         let err = s.execute("paint.redEye", json!({"x": 8, "y": 8})).unwrap_err().to_string();
         assert!(err.to_ascii_lowercase().contains("locked"), "{err}");
         let mut s = session(64, 64, 8, "rgb");
-        s.execute("type.create", json!({"x": 8, "y": 24, "text": "Hi", "size": 12})).unwrap();
+        s.execute("text.add", json!({"x": 8, "y": 24, "text": "Hi", "size": 12})).unwrap();
         assert!(!s.is_enabled("paint.redEye"));
         assert!(s.execute("paint.redEye", json!({"x": 8, "y": 8})).is_err());
     }

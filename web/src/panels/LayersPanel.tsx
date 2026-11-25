@@ -114,7 +114,7 @@ function menuEntries(layer: PhotoLayer, multi: boolean, hasSelection: boolean): 
           ['Delete Layer Mask', 'layer.layerMask.delete'],
         ] as [string, string][])
       : [['Add Layer Mask', addMaskCommand(hasSelection, false)] as [string, string]]),
-    layer.clipped ? ['Release Clipping Mask', 'layer.releaseClippingMask'] : ['Create Clipping Mask', 'layer.createClippingMask'],
+    layer.clipped ? ['Release Clipping Mask', 'layer.releaseClippingMask'] : ['Create Clipping Mask', 'layer.addClippingMask'],
     null,
     ['Link Layers', 'layer.linkLayers'],
     ['Select Linked Layers', 'layer.selectLinkedLayers'],
@@ -255,7 +255,7 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
       event.preventDefault()
       event.stopPropagation()
       if (event.altKey) {
-        if (active) void run(event.key === 'ArrowUp' ? 'layer.arrange.bringForward' : 'layer.arrange.sendBackward', {})
+        if (active) void run(event.key === 'ArrowUp' ? 'arrange.bringForward' : 'arrange.sendBackward', {})
         focusActive.current = true
         return
       }

@@ -223,11 +223,11 @@ fn a_running_job_locks_its_document_but_not_others() {
     assert!(s.disabled_reason("filter.blur.gaussianBlur").unwrap().contains("still running"));
     assert!(!s.undo(), "undo waits for the job");
     // Queries and document-independent commands still run.
-    s.execute("jobs.list", json!({})).unwrap();
+    s.execute("job.list", json!({})).unwrap();
     // A new document is free to edit while the first one is busy.
     s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
     s.execute("layer.new.layer", json!({})).unwrap();
-    let r = s.execute("jobs.list", json!({})).unwrap();
+    let r = s.execute("job.list", json!({})).unwrap();
     assert_eq!(r["jobs"][0]["id"], json!(id.0));
     // The result applies to its own document, and the active document stays the new one.
     gate.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -302,11 +302,11 @@ fn closing_the_document_cancels_its_job() {
 fn jobs_cancel_command_and_bad_params() {
     let mut s = session(1600, 1200);
     let id = job(s.start("filter.blur.gaussianBlur", json!({"radius": 80})).unwrap());
-    assert!(s.execute("jobs.cancel", json!({"job": "x"})).is_err());
-    assert!(s.execute("jobs.cancel", json!({"job": 999})).is_err());
-    s.execute("jobs.cancel", json!({"job": id.0})).unwrap();
+    assert!(s.execute("job.cancel", json!({"job": "x"})).is_err());
+    assert!(s.execute("job.cancel", json!({"job": 999})).is_err());
+    s.execute("job.cancel", json!({"job": id.0})).unwrap();
     assert_eq!(wait_event(&mut s, id).outcome, JobOutcome::Cancelled);
-    assert_eq!(s.execute("jobs.cancel", json!({})).unwrap()["cancelled"], 0);
+    assert_eq!(s.execute("job.cancel", json!({})).unwrap()["cancelled"], 0);
 }
 
 #[test]
@@ -331,7 +331,7 @@ fn smart_fill_and_scale_run_as_jobs() {
     assert!(matches!(e.outcome, JobOutcome::Done(_)), "{e:?}");
     assert_eq!(pixels(&s), pixels(&inline), "same fill as the synchronous command");
 
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let id = job(s.start("edit.smartScale", json!({"width": 120})).unwrap());
     let e = wait_event(&mut s, id);
     let JobOutcome::Done(v) = &e.outcome else { panic!("{e:?}") };

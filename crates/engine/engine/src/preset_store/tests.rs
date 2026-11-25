@@ -299,10 +299,10 @@ fn corrupt_and_oversized_files_are_skipped_with_a_warning() {
     // Full tips load when a brush is used (#1843): the broken one fails then, not at start.
     assert!(kition_photo_paint::presets::find(&t.tools.presets, "Lost").is_some());
     let before = t.tools.brush.clone();
-    let e = t.execute("tools.setBrush", json!({"preset": "Lost"})).unwrap_err().to_string();
+    let e = t.execute("tool.setBrush", json!({"preset": "Lost"})).unwrap_err().to_string();
     assert!(e.contains(&h), "{e}");
     assert_eq!(t.tools.brush, before, "a failed pick leaves the brush alone");
-    t.execute("tools.setBrush", json!({"preset": "Good"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Good"})).unwrap();
     // The broken files are left alone for the user (never deleted by a sync).
     t.execute("brush.presets.save", json!({"name": "Another"})).unwrap();
     let files = dir.files();
@@ -446,13 +446,13 @@ fn reopening_a_library_decodes_no_tips_and_using_a_brush_decodes_only_its_own() 
 
     // Using one brush decodes exactly its tip; painting and picking it again reuse it.
     t.execute("file.new", json!({"width": 64, "height": 64, "background": "white"})).unwrap();
-    t.execute("tools.setBrush", json!({"preset": "Big 3"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 3"})).unwrap();
     let TipShape::Stored(r) = &t.tools.brush.tip else { panic!("the brush keeps its stored tip") };
     assert_eq!(r.full.as_deref(), Some(&tip8(side, side, 3)), "the tool paints with the full tip");
     assert_eq!(cache(&t).decodes, 1);
     t.execute("paint.stroke", json!({"points": [[10, 10], [50, 50]], "brush": {"size": 30}})).unwrap();
     t.execute("paint.stroke", json!({"points": [[10, 50], [50, 10]], "preset": "Big 3"})).unwrap();
-    t.execute("tools.setBrush", json!({"preset": "Big 3"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 3"})).unwrap();
     assert_eq!((cache(&t).decodes, cache(&t).tips), (1, 1));
     // Picking a preset never loads the library's other tips, and the library stays light.
     assert!(user(&t).iter().all(|p| matches!(&p.brush.tip, TipShape::Stored(r) if !r.is_loaded())));
@@ -470,21 +470,21 @@ fn the_decoded_tip_cache_stays_within_its_budget() {
     let one = 256 * 256 * 2;
     t.preset_store.as_ref().unwrap().set_tip_cache_limit(one * 2 + 1);
     for i in 0..6 {
-        t.execute("tools.setBrush", json!({"preset": format!("Big {i}")})).unwrap();
+        t.execute("tool.setBrush", json!({"preset": format!("Big {i}")})).unwrap();
         let c = cache(&t);
         assert!(c.bytes <= c.limit && c.tips <= 2, "{c:?}");
     }
     assert_eq!(cache(&t).decodes, 6);
     // The two most recently used stay: picking them again decodes nothing.
-    t.execute("tools.setBrush", json!({"preset": "Big 4"})).unwrap();
-    t.execute("tools.setBrush", json!({"preset": "Big 5"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 4"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 5"})).unwrap();
     assert_eq!(cache(&t).decodes, 6);
-    t.execute("tools.setBrush", json!({"preset": "Big 0"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 0"})).unwrap();
     assert_eq!(cache(&t).decodes, 7);
     // A budget below one tip still loads it (the brush in use holds its own reference).
     t.preset_store.as_ref().unwrap().set_tip_cache_limit(0);
     assert_eq!(cache(&t).tips, 0);
-    t.execute("tools.setBrush", json!({"preset": "Big 1"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Big 1"})).unwrap();
     assert!(matches!(&t.tools.brush.tip, TipShape::Stored(r) if r.is_loaded()));
 }
 
@@ -503,25 +503,25 @@ fn missing_corrupt_or_unknown_tips_fail_when_used_without_panicking() {
     let k0 = key(&t, "Big 0");
     mem.remove(&tip_file(&k0)).unwrap();
     let before = t.tools.brush.clone();
-    assert!(t.execute("tools.setBrush", json!({"preset": "Big 0"})).is_err());
+    assert!(t.execute("tool.setBrush", json!({"preset": "Big 0"})).is_err());
     assert!(t.execute("paint.stroke", json!({"points": [[1, 1], [9, 9]], "preset": "Big 0"})).is_err());
     assert_eq!(t.tools.brush, before);
     // Corrupt, or a different bitmap under the same name.
     let k1 = key(&t, "Big 1");
     mem.write(&tip_file(&k1), b"PCTIP1\x08garbage").unwrap();
-    assert!(t.execute("tools.setBrush", json!({"preset": "Big 1"})).is_err());
+    assert!(t.execute("tool.setBrush", json!({"preset": "Big 1"})).is_err());
     let k2 = key(&t, "Big 2");
     mem.write(&tip_file(&k2), &encode_tip(&tip8(10, 10, 0))).unwrap();
-    let e = t.execute("tools.setBrush", json!({"preset": "Big 2"})).unwrap_err().to_string();
+    let e = t.execute("tool.setBrush", json!({"preset": "Big 2"})).unwrap_err().to_string();
     assert!(e.contains("expected 64×64"), "{e}");
     // Exporting a library whose tip is gone is an error too, not a file with a hole.
     assert!(t.execute("edit.presets.exportImportPresets", json!({"action": "export"})).is_err());
     // A stored reference the store doesn't know, or with no store at all.
     let stray = json!({"tip": {"stored": {"key": "../../etc/passwd", "width": 4, "height": 4,
         "preview": {"width": 1, "height": 1, "data": [1.0]}}}});
-    assert!(t.execute("tools.setBrush", json!({"brush": stray})).is_err());
+    assert!(t.execute("tool.setBrush", json!({"brush": stray})).is_err());
     let mut headless = Session::new();
-    assert!(headless.execute("tools.setBrush", json!({"brush": stray})).is_err());
+    assert!(headless.execute("tool.setBrush", json!({"brush": stray})).is_err());
     assert!(headless.execute("brush.presets.list", json!({"full": true})).is_ok());
 }
 
@@ -557,7 +557,7 @@ fn a_store_without_previews_makes_them_once_and_then_loads_lazily() {
     assert!(t.attach_preset_store(open(Box::new(mem.clone()))).is_empty());
     assert_eq!(mem.list().unwrap(), files);
     assert_eq!(user(&t), user(&s));
-    t.execute("tools.setBrush", json!({"preset": "Old A"})).unwrap();
+    t.execute("tool.setBrush", json!({"preset": "Old A"})).unwrap();
     assert_eq!(t.tools.brush.tip.bitmap(), Some(&tips[0]));
     assert_eq!(t.tools.brush.texture.pattern.bitmap(), Some(&tips[1]));
     assert_eq!(cache(&t).decodes, 2);

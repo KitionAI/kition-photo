@@ -102,7 +102,7 @@ fn flattens_layers_and_keeps_alpha_channels() {
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 4, "height": 4})).unwrap();
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
     s.execute("select.saveSelection", json!({})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let alpha = doc(&s).channels.len();
     assert_eq!(alpha, 1);
     s.execute("image.mode.multichannel", json!({})).unwrap();

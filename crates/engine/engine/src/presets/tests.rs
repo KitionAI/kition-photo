@@ -111,7 +111,7 @@ fn preset_stop_edits_the_current_gradient() {
     assert!(px[0] > 0.9 && px[1] < 0.1, "{px:?}");
     // A "foreground" stop stays live: repaint after changing the foreground picks it up.
     s.execute("gradient.presets.stop", json!({"action": "color", "index": 0, "color": "foreground"})).unwrap();
-    s.execute("tools.setColors", json!({"foreground": "#0000ff"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#0000ff"})).unwrap();
     s.execute("paint.gradient", json!({"from": [0, 0], "to": [63, 0]})).unwrap();
     let px = layer_px(&s, 0, 10);
     assert!(px[2] > 0.9 && px[0] < 0.1, "{px:?}");
@@ -466,7 +466,7 @@ fn shapes_place_as_shape_layers() {
 #[test]
 fn custom_shapes_join_the_shapes_panel() {
     let mut s = session(8);
-    s.execute("shape.create", json!({"kind": "star", "rect": [0, 0, 30, 30]})).unwrap();
+    s.execute("shape.add", json!({"kind": "star", "rect": [0, 0, 30, 30]})).unwrap();
     s.execute("edit.defineCustomShape", json!({"name": "My Star"})).unwrap();
     let v = s.execute("shape.presets.list", json!({})).unwrap();
     let last = v["groups"].as_array().unwrap().last().unwrap().clone();
@@ -487,9 +487,9 @@ fn custom_shapes_join_the_shapes_panel() {
 #[test]
 fn tool_presets_save_filter_select() {
     let mut s = Session::new();
-    s.execute("tools.setBrush", json!({"size": 77.0})).unwrap();
+    s.execute("tool.setBrush", json!({"size": 77.0})).unwrap();
     s.execute("tool.presets.new", json!({"name": "Seventy Seven", "tool": "brush", "includeColor": true, "options": {"toolOptions": {"x": 1}}})).unwrap();
-    s.execute("tools.setBrush", json!({"size": 5.0})).unwrap();
+    s.execute("tool.setBrush", json!({"size": 5.0})).unwrap();
     s.tools.foreground = [1.0, 0.0, 0.0, 1.0];
     let v = s.execute("tool.presets.list", json!({"tool": "eraser"})).unwrap();
     assert!(v["presets"].as_array().unwrap().iter().all(|p| p["tool"] == "eraser"));

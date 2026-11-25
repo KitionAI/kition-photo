@@ -78,7 +78,7 @@ fn load_selection_operations_and_invert() {
     let mut s = session();
     rect(&mut s, 0, 0, 20, 20, "replace");
     s.execute("select.saveSelection", json!({})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("select.loadSelection", json!({"channel": 0})).unwrap();
     assert_eq!((sel_at(&s, 5, 5), sel_at(&s, 25, 5)), (1.0, 0.0));
     s.execute("select.loadSelection", json!({"channel": 0, "invert": true})).unwrap();
@@ -105,7 +105,7 @@ fn load_transparency_mask_and_composite() {
     s.execute("file.new", json!({"width": 20, "height": 10, "background": "transparent"})).unwrap();
     rect(&mut s, 0, 0, 5, 10, "replace");
     s.execute("edit.fill", json!({"color": "#ffffff"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("select.loadSelection", json!({"channel": "transparency"})).unwrap();
     assert_eq!((sel_at(&s, 2, 2), sel_at(&s, 10, 2)), (1.0, 0.0));
     // Composite luminosity: white = selected; transparent over nothing = black.
@@ -217,7 +217,7 @@ fn painting_filtering_and_adjusting_into_an_alpha_channel() {
         assert_eq!(chan(&s, 1, 26, 10), 0.0, "outside the selection untouched");
         // Explicit targets work without targeting the channel.
         s.execute("channel.target", json!({"channel": "composite"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("paint.bucket", json!({"x": 1, "y": 1, "color": "#ffffff", "target": {"channel": 1}, "tolerance": 0})).unwrap();
         assert_eq!(chan(&s, 1, 1, 1), 1.0);
         assert!(s.execute("paint.stroke", json!({"points": [[1, 1]], "target": {"channel": 9}})).is_err());
@@ -397,7 +397,7 @@ fn calculations_results() {
     s.execute("select.saveSelection", json!({})).unwrap();
     rect(&mut s, 10, 0, 20, 20, "replace");
     s.execute("select.saveSelection", json!({})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     // Multiply = intersection of the two masks.
     let r = s.execute("image.calculations", json!({"source1": {"channel": 0}, "source2": {"channel": 1}, "blending": "multiply", "name": "X"})).unwrap();
     let i = r["channel"].as_u64().unwrap() as usize;
@@ -495,7 +495,7 @@ fn image_size_and_rotate_carry_channels_and_quick_mask() {
     rect(&mut s, 0, 0, 10, 20, "replace");
     s.execute("select.saveSelection", json!({})).unwrap();
     s.execute("select.editInQuickMaskMode", json!({})).unwrap();
-    s.execute("image.imageRotation.180", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate180", json!({})).unwrap();
     s.execute("image.mode.bits16", json!({})).unwrap();
     let d = doc(&s);
     assert_eq!(d.channels[0].surface.format().sample, SampleType::U16);

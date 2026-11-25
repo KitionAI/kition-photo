@@ -38,7 +38,7 @@ fn successful_save_identity_is_not_undone_or_redone() {
 }
 
 fn px(s: &mut Session, x: i32, y: i32) -> Vec<f32> {
-    serde_json::from_value(s.execute("document.pixel", json!({"x": x, "y": y})).unwrap()).unwrap()
+    serde_json::from_value(s.execute("file.pixel", json!({"x": x, "y": y})).unwrap()).unwrap()
 }
 
 #[test]
@@ -48,7 +48,7 @@ fn document_pixel_at_the_coordinate_limits() {
     assert_eq!(px(&mut s, i32::MAX, 0), vec![0.0; 4]);
     assert_eq!(px(&mut s, i32::MIN, i32::MAX), vec![0.0; 4]);
     // Values beyond i32 used to wrap around onto the canvas (2^32 read column 0).
-    let e = s.execute("document.pixel", json!({"x": 1i64 << 32, "y": 0})).unwrap_err();
+    let e = s.execute("file.pixel", json!({"x": 1i64 << 32, "y": 0})).unwrap_err();
     assert!(matches!(e, EngineError::BadParams { .. }), "{e}");
 }
 
@@ -209,7 +209,7 @@ fn adjustment_layers_change_composite() {
     let mut s = session_with_doc();
     s.execute("layer.newAdjustmentLayer.invert", json!({})).unwrap();
     assert_eq!(px(&mut s, 3, 3), vec![0.0, 0.0, 0.0, 1.0]);
-    let doc = s.execute("document.inspect", json!({})).unwrap();
+    let doc = s.execute("file.inspect", json!({})).unwrap();
     assert_eq!(doc["layers"][0]["kind"], "Adjustment");
     assert_eq!(doc["layers"][0]["name"], "Invert 1");
     s.execute("layer.setProps", json!({"visible": false})).unwrap();
@@ -388,7 +388,7 @@ fn paint_stroke_and_selection() {
     assert!(r["damage"][2].as_i64().unwrap() > 0);
     assert_eq!(px(&mut s, 10, 20), vec![0.0, 0.0, 1.0, 1.0]);
     assert_eq!(px(&mut s, 50, 20), vec![1.0, 1.0, 1.0, 1.0], "outside selection stays white");
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("paint.stroke", json!({"points": [[4, 30], [60, 30]], "size": 6, "erase": false})).unwrap();
     assert_eq!(px(&mut s, 50, 30), vec![0.0, 0.0, 0.0, 1.0], "foreground is black");
 }
@@ -396,7 +396,7 @@ fn paint_stroke_and_selection() {
 #[test]
 fn marquee_dragged_past_the_canvas_stops_at_its_edge() {
     let mut s = session_with_doc(); // 64 × 48
-    let bounds = |s: &mut Session| s.execute("document.inspect", json!({})).unwrap()["selectionBounds"].clone();
+    let bounds = |s: &mut Session| s.execute("file.inspect", json!({})).unwrap()["selectionBounds"].clone();
     s.execute("select.rect", json!({"x": -20, "y": 10, "width": 200, "height": 100})).unwrap();
     assert_eq!(bounds(&mut s), json!([0, 10, 64, 38]));
     s.execute("select.rect", json!({"x": -30, "y": -30, "width": 200, "height": 200, "ellipse": true})).unwrap();
@@ -459,7 +459,7 @@ fn undo_and_redo_restore_the_targeted_layers() {
     assert_eq!(target(&s), (new, vec![new]));
     // A multi-layer target comes back too: a step taken with both layers selected...
     select(&mut s, bg, "add");
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     s.execute("layer.new.layer", json!({})).unwrap();
     assert!(s.undo());
     assert_eq!(target(&s), (bg, vec![bg, new]));
@@ -478,13 +478,13 @@ fn selection_modes() {
     let mut s = session_with_doc();
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
     s.execute("select.rect", json!({"x": 20, "y": 0, "width": 10, "height": 10, "mode": "add"})).unwrap();
-    let b = s.execute("document.inspect", json!({})).unwrap()["selectionBounds"].clone();
+    let b = s.execute("file.inspect", json!({})).unwrap()["selectionBounds"].clone();
     assert_eq!(b, json!([0, 0, 30, 10]));
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10, "mode": "subtract"})).unwrap();
-    assert_eq!(s.execute("document.inspect", json!({})).unwrap()["selectionBounds"], json!([20, 0, 10, 10]));
+    assert_eq!(s.execute("file.inspect", json!({})).unwrap()["selectionBounds"], json!([20, 0, 10, 10]));
     s.execute("select.inverse", json!({})).unwrap();
-    s.execute("select.all", json!({})).unwrap();
-    assert_eq!(s.execute("document.inspect", json!({})).unwrap()["selectionBounds"], json!([0, 0, 64, 48]));
+    s.execute("edit.selectAll", json!({})).unwrap();
+    assert_eq!(s.execute("file.inspect", json!({})).unwrap()["selectionBounds"], json!([0, 0, 64, 48]));
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 20, "height": 20, "ellipse": true})).unwrap();
 }
 
@@ -498,7 +498,7 @@ fn fill_clear_and_masks() {
     assert_eq!(px(&mut s, 5, 5), vec![1.0, 1.0, 1.0, 1.0]);
     s.execute("layer.layerMask.delete", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
-    s.execute("edit.clear", json!({})).unwrap();
+    s.execute("edit.delete", json!({})).unwrap();
     assert_eq!(px(&mut s, 5, 5), vec![1.0, 1.0, 1.0, 1.0]);
     assert_eq!(px(&mut s, 20, 20), vec![0.0, 1.0, 0.0, 1.0]);
 }
@@ -509,10 +509,10 @@ fn clipping_and_merge_and_flatten() {
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 48})).unwrap();
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
-    s.execute("layer.createClippingMask", json!({})).unwrap();
+    s.execute("layer.addClippingMask", json!({})).unwrap();
     assert_eq!(px(&mut s, 5, 5), vec![0.0, 0.0, 1.0, 1.0]);
     assert_eq!(px(&mut s, 30, 5), vec![1.0, 1.0, 1.0, 1.0]);
     s.execute("layer.mergeDown", json!({})).unwrap();
@@ -536,7 +536,7 @@ fn clipping_masks_apply_to_every_selected_layer() {
     }
     let clipped = |s: &Session| ids.iter().map(|id| s.active().unwrap().doc.layer(LayerId(*id)).unwrap().clipped).collect::<Vec<_>>();
     let steps = s.active().unwrap().history.past_len();
-    let r = s.execute("layer.createClippingMask", json!({})).unwrap();
+    let r = s.execute("layer.addClippingMask", json!({})).unwrap();
     assert_eq!(r["layers"], json!([ids[1], ids[2]]));
     assert_eq!(clipped(&s), [false, true, true], "the lowest selected layer is the base");
     assert_eq!(s.active().unwrap().history.past_len(), steps + 1);
@@ -547,7 +547,7 @@ fn clipping_masks_apply_to_every_selected_layer() {
     // A `layer` param still acts on that layer alone.
     s.execute("layer.releaseClippingMask", json!({"layer": ids[2]})).unwrap();
     assert_eq!(clipped(&s), [false, true, false]);
-    assert!(s.execute("layer.createClippingMask", json!({"layer": 999_999})).is_err());
+    assert!(s.execute("layer.addClippingMask", json!({"layer": 999_999})).is_err());
 }
 
 #[test]
@@ -556,12 +556,12 @@ fn arrange_and_group() {
     let a = s.execute("layer.new.layer", json!({"name": "A"})).unwrap()["layer"].as_u64().unwrap();
     s.execute("layer.new.layer", json!({"name": "B"})).unwrap();
     s.execute("layer.select", json!({"layer": a})).unwrap();
-    s.execute("layer.arrange.bringToFront", json!({})).unwrap();
+    s.execute("arrange.bringToFront", json!({})).unwrap();
     let names: Vec<String> = s.active().unwrap().doc.layers.iter().map(|l| l.name.clone()).collect();
     assert_eq!(names, ["Background", "B", "A"]);
-    assert!(s.execute("layer.arrange.bringForward", json!({})).is_err());
+    assert!(s.execute("arrange.bringForward", json!({})).is_err());
     s.execute("layer.groupLayers", json!({})).unwrap();
-    let doc = s.execute("document.inspect", json!({})).unwrap();
+    let doc = s.execute("file.inspect", json!({})).unwrap();
     assert_eq!(doc["layers"][0]["kind"], "Group");
     assert_eq!(doc["layers"][0]["children"][0]["name"], "A");
 }
@@ -572,18 +572,18 @@ fn canvas_flips_and_rotation() {
     s.execute("file.new", json!({"width": 10, "height": 4})).unwrap();
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 2, "height": 1})).unwrap();
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("image.imageRotation.flipCanvasHorizontal", json!({})).unwrap();
     assert_eq!(px(&mut s, 9, 0), vec![1.0, 0.0, 0.0, 1.0]);
     assert_eq!(px(&mut s, 0, 0), vec![1.0, 1.0, 1.0, 1.0]);
     s.execute("image.imageRotation.flipCanvasVertical", json!({})).unwrap();
     assert_eq!(px(&mut s, 9, 3), vec![1.0, 0.0, 0.0, 1.0]);
-    s.execute("image.imageRotation.90cw", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate90cw", json!({})).unwrap();
     let d = &s.active().unwrap().doc;
     assert_eq!((d.size.width, d.size.height), (4, 10));
     assert_eq!(px(&mut s, 0, 9), vec![1.0, 0.0, 0.0, 1.0]);
-    s.execute("image.imageRotation.90ccw", json!({})).unwrap();
-    s.execute("image.imageRotation.180", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate90ccw", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate180", json!({})).unwrap();
     assert_eq!(px(&mut s, 0, 0), vec![1.0, 0.0, 0.0, 1.0]);
 }
 
@@ -603,7 +603,7 @@ fn image_rotation_rotates_every_layer_not_just_the_active_one() {
     s.execute("layer.new.layer", json!({})).unwrap(); // a different, empty active layer
     assert_ne!(s.active().unwrap().active_layer.unwrap(), dotted, "active layer is not the dotted one");
 
-    s.execute("image.imageRotation.180", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate180", json!({})).unwrap();
 
     // The non-active layer's content rotated too: (2,2)..(4,4) in 20x10 → (16,6)..(18,8).
     let st = s.active().unwrap();
@@ -617,10 +617,10 @@ fn image_rotation_rotates_every_layer_not_just_the_active_one() {
 #[test]
 fn fill_layers_and_colors() {
     let mut s = session_with_doc();
-    s.execute("tools.setColors", json!({"foreground": "#112233"})).unwrap();
-    s.execute("tools.swapColors", json!({})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#112233"})).unwrap();
+    s.execute("tool.swapColors", json!({})).unwrap();
     assert_eq!(s.tools.foreground, [1.0, 1.0, 1.0, 1.0]);
-    s.execute("tools.defaultColors", json!({})).unwrap();
+    s.execute("tool.defaultColors", json!({})).unwrap();
     s.execute("layer.newFillLayer.solidColor", json!({"color": "#ff00ff"})).unwrap();
     assert_eq!(px(&mut s, 1, 1), vec![1.0, 0.0, 1.0, 1.0]);
     s.execute("layer.newFillLayer.gradient", json!({"from": "#000000", "to": "#ffffff", "angle": 0})).unwrap();
@@ -722,7 +722,7 @@ fn group_effect_maps_follow_child_visibility_and_opacity() {
 #[test]
 fn journal_records_mutations_only() {
     let mut s = session_with_doc();
-    s.execute("document.inspect", json!({})).unwrap();
+    s.execute("file.inspect", json!({})).unwrap();
     s.execute("layer.new.layer", json!({"name": "x"})).unwrap();
     let ids: Vec<&str> = s.journal.iter().map(|(id, _)| id.as_str()).collect();
     assert_eq!(ids, ["file.new", "layer.new.layer"]);
@@ -749,7 +749,7 @@ fn translate_moves_pixels_and_respects_locks() {
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 0, "y": 0, "width": 4, "height": 4})).unwrap();
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("layer.translate", json!({"dx": 10, "dy": 5})).unwrap();
     assert_eq!(px(&mut s, 11, 6), vec![1.0, 0.0, 0.0, 1.0]);
     assert_eq!(px(&mut s, 1, 1), vec![1.0, 1.0, 1.0, 1.0]);
@@ -783,7 +783,7 @@ fn edits_that_change_no_pixels_report_empty_damage() {
     assert_eq!(s.active().unwrap().last_damage, Some(kition_photo_geom::Rect::EMPTY));
     s.execute("select.inverse", json!({})).unwrap();
     assert_eq!(s.active().unwrap().last_damage, Some(kition_photo_geom::Rect::EMPTY));
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     assert_eq!(s.active().unwrap().last_damage, Some(kition_photo_geom::Rect::EMPTY));
     // A new empty layer draws nothing either (#1771); filling it does recomposite.
     s.execute("layer.new.layer", json!({})).unwrap();
@@ -796,7 +796,7 @@ fn edits_that_change_no_pixels_report_empty_damage() {
 fn same_pixels_ignores_the_selection_but_not_layers() {
     let mut s = session_with_doc();
     let a = s.active().unwrap().doc.clone();
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     let b = s.active().unwrap().doc.clone();
     assert!(layer_multi_cmds::same_pixels(&a, &b));
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
@@ -816,8 +816,8 @@ fn integer_params_accept_json_floats() {
     // UIs send coordinates as floats (e.g. 12.0); every integer parameter must accept them.
     let mut s = session_with_doc();
     s.execute("select.rect", json!({"x": 1.0, "y": 2.0, "width": 10.0, "height": 5.4})).unwrap();
-    assert_eq!(s.execute("document.inspect", json!({})).unwrap()["selectionBounds"], json!([1, 2, 10, 5]));
-    let px: Vec<f32> = serde_json::from_value(s.execute("document.pixel", json!({"x": 3.0, "y": 3.0})).unwrap()).unwrap();
+    assert_eq!(s.execute("file.inspect", json!({})).unwrap()["selectionBounds"], json!([1, 2, 10, 5]));
+    let px: Vec<f32> = serde_json::from_value(s.execute("file.pixel", json!({"x": 3.0, "y": 3.0})).unwrap()).unwrap();
     assert_eq!(px, vec![1.0, 1.0, 1.0, 1.0]);
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("layer.translate", json!({"dx": 2.0, "dy": -1.0})).unwrap();
@@ -879,7 +879,7 @@ fn move_to_reorders_and_nests() {
     assert_eq!(names(&s), ["Background", "B", "A", "G"]);
     s.execute("layer.moveTo", json!({"layer": a, "target": g, "position": "into"})).unwrap();
     assert_eq!(names(&s), ["Background", "B", "G"]);
-    assert_eq!(s.execute("document.inspect", json!({})).unwrap()["layers"][0]["children"][0]["name"], "A");
+    assert_eq!(s.execute("file.inspect", json!({})).unwrap()["layers"][0]["children"][0]["name"], "A");
     // groups can't go into themselves
     assert!(s.execute("layer.moveTo", json!({"layer": g, "target": a, "position": "into"})).is_err());
     // one undo step
@@ -914,8 +914,8 @@ fn move_to_copy_places_a_duplicate_in_one_step() {
     s.execute("layer.moveTo", json!({"layer": b, "target": a, "position": "below", "copy": true})).unwrap();
     assert_eq!(names(&s), ["Background", "B copy", "A", "B", "A copy", "G"]);
     s.execute("layer.moveTo", json!({"layer": a, "target": g, "position": "into", "copy": true})).unwrap();
-    // `document.inspect` lists the top of the stack first; "A copy" is taken, so this is "A copy 2".
-    assert_eq!(s.execute("document.inspect", json!({})).unwrap()["layers"][0]["children"][0]["name"], "A copy 2");
+    // `file.inspect` lists the top of the stack first; "A copy" is taken, so this is "A copy 2".
+    assert_eq!(s.execute("file.inspect", json!({})).unwrap()["layers"][0]["children"][0]["name"], "A copy 2");
     // A group can be copied beside itself, but not into itself.
     s.execute("layer.moveTo", json!({"layer": g, "target": g, "position": "above", "copy": true})).unwrap();
     assert_eq!(names(&s).last().map(String::as_str), Some("G copy"));
@@ -1080,14 +1080,14 @@ fn coalesced_edits_share_one_history_step() {
 fn type_edit_rerenders_cache_to_new_text() {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 800, "height": 400})).unwrap();
-    let r = s.execute("type.create", json!({"x": 50, "y": 200, "text": "Lorem Ipsum", "size": 48, "coalesce": "k"})).unwrap();
+    let r = s.execute("text.add", json!({"x": 50, "y": 200, "text": "Lorem Ipsum", "size": 48, "coalesce": "k"})).unwrap();
     let id = r["layer"].as_u64().unwrap();
     let width = |s: &Session| {
         let st = s.active().unwrap();
         st.doc.layer(kition_photo_doc::LayerId(id)).unwrap().surface().unwrap().content_bounds().width()
     };
     let w0 = width(&s);
-    s.execute("type.edit", json!({"layer": id, "replace": {"start": 0, "end": 11, "text": "Kition Photo"}, "coalesce": "k"})).unwrap();
+    s.execute("text.edit", json!({"layer": id, "replace": {"start": 0, "end": 11, "text": "Kition Photo"}, "coalesce": "k"})).unwrap();
     let w1 = width(&s);
     assert!(w0 > 150 && w1 > 150, "cache widths {w0} → {w1}");
 }
@@ -1245,12 +1245,12 @@ fn move_document_reorders_tabs_and_keeps_the_active_one() {
     assert_eq!(names(&s), first);
     assert_eq!(s.active_index(), Some(0));
     // The command (for the UI, agents and scripts) moves the active document by default.
-    assert_eq!(s.execute("document.move", json!({"to": 2})).unwrap(), json!({"document": 2}));
+    assert_eq!(s.execute("file.move", json!({"to": 2})).unwrap(), json!({"document": 2}));
     assert_eq!(names(&s), [first[1].clone(), first[2].clone(), first[0].clone()]);
-    assert_eq!(s.execute("document.move", json!({"document": 2, "to": 0})).unwrap(), json!({"document": 0}));
+    assert_eq!(s.execute("file.move", json!({"document": 2, "to": 0})).unwrap(), json!({"document": 0}));
     assert_eq!(names(&s), first);
     for bad in [json!({}), json!({"to": -1}), json!({"to": "1"}), json!({"document": 3, "to": 0}), json!({"document": 1.5, "to": 0})] {
-        assert!(s.execute("document.move", bad.clone()).is_err(), "{bad}");
+        assert!(s.execute("file.move", bad.clone()).is_err(), "{bad}");
     }
     assert_eq!(names(&s), first);
 }
@@ -1268,7 +1268,7 @@ fn adjustment_layer_disabled_diagnostics_use_grammatical_article() {
     assert!(err_equalize.contains("an Adjustment layer"), "expected 'an Adjustment layer', got: {err_equalize}");
     assert!(!err_equalize.contains("a Adjustment layer"), "found 'a Adjustment layer': {err_equalize}");
 
-    let err_clear = s.execute("edit.clear", json!({})).unwrap_err().to_string();
+    let err_clear = s.execute("edit.delete", json!({})).unwrap_err().to_string();
     assert!(err_clear.contains("an Adjustment layer"), "expected 'an Adjustment layer', got: {err_clear}");
     assert!(!err_clear.contains("a Adjustment layer"), "found 'a Adjustment layer': {err_clear}");
 }
@@ -1279,12 +1279,12 @@ fn document_inspect_and_activate_invalid_index() {
     s.execute("file.new", json!({"width": 2, "height": 2, "name": "first"})).unwrap();
     s.execute("file.new", json!({"width": 2, "height": 2, "name": "second"})).unwrap();
 
-    assert!(s.execute("document.inspect", json!({})).is_ok());
-    assert!(s.execute("document.inspect", json!({"document": 0})).is_ok());
+    assert!(s.execute("file.inspect", json!({})).is_ok());
+    assert!(s.execute("file.inspect", json!({"document": 0})).is_ok());
 
-    let err = s.execute("document.inspect", json!({"document": 9})).unwrap_err();
+    let err = s.execute("file.inspect", json!({"document": 9})).unwrap_err();
     assert_eq!(err.to_string(), "no document at index 9");
 
-    let err_act = s.execute("document.activate", json!({"document": 9})).unwrap_err();
+    let err_act = s.execute("file.activate", json!({"document": 9})).unwrap_err();
     assert_eq!(err_act.to_string(), "no document at index 9");
 }

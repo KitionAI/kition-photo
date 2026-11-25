@@ -173,7 +173,7 @@ export const PANEL_CONTROLS: KitUiItem[] = [
   ...[
     ['list', 'Swatches'],
     ['new', 'Create new swatch'],
-    ['delete', 'swatches.delete'],
+    ['delete', 'swatch.delete'],
   ].map(([id, label]) => ({ id: `control:swatches.${id}`, label, parent: 'panel:swatches' })),
   ...[
     ['preview', 'Navigator'],

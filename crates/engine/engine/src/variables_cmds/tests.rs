@@ -65,8 +65,8 @@ fn define_apply_visibility_and_text() {
     assert!(doc(&s).layer(badge).unwrap().visible);
     assert_eq!(text_of(&s, title), "Old");
 
-    // document.inspect surfaces the variables for agents.
-    let insp = s.execute("document.inspect", json!({})).unwrap();
+    // file.inspect surfaces the variables for agents.
+    let insp = s.execute("file.inspect", json!({})).unwrap();
     assert_eq!(insp["variables"]["defs"].as_array().unwrap().len(), 2);
     assert_eq!(insp["variables"]["dataSets"][0], "A");
 
@@ -156,7 +156,7 @@ fn csv_import_preserves_unicode_headers_names_and_text() {
         .unwrap();
         let r = s.execute("file.import.variableDataSets", json!({"path": csv, "delimiter": delimiter})).unwrap();
         assert_eq!(r["imported"], 2);
-        let rows = s.execute("variables.list", json!({})).unwrap();
+        let rows = s.execute("variable.list", json!({})).unwrap();
         assert_eq!(rows["dataSets"][0]["name"], "Набор 日本語");
         assert_eq!(rows["dataSets"][0]["values"][1]["variable"], "заголовок café");
         assert_eq!(rows["dataSets"][1]["values"][1]["value"], text);
@@ -187,7 +187,7 @@ fn csv_import_preserves_unicode_pixel_paths() {
     s.execute("image.variables.define", json!({"defs": [{"name": "фото", "layer": photo.0, "type": "pixelReplacement", "method": "conform"}]})).unwrap();
     std::fs::write(&csv, format!("DataSet,фото\nсиний,\"{png}\"\n")).unwrap();
     s.execute("file.import.variableDataSets", json!({"path": csv})).unwrap();
-    let rows = s.execute("variables.list", json!({})).unwrap();
+    let rows = s.execute("variable.list", json!({})).unwrap();
     assert_eq!(rows["dataSets"][0]["values"][0]["value"], png);
     s.execute("image.applyDataSet", json!({"name": "синий"})).unwrap();
     let pixel = doc(&s).layer(photo).unwrap().surface().unwrap().pixel(32, 24);
@@ -272,9 +272,9 @@ fn pixel_replacement_changes_the_layer() {
     )
     .unwrap();
     // Before: grey.
-    let before = s.execute("document.pixel", json!({"x": 32, "y": 24})).unwrap();
+    let before = s.execute("file.pixel", json!({"x": 32, "y": 24})).unwrap();
     s.execute("image.applyDataSet", json!({"name": "blue"})).unwrap();
-    let after = s.execute("document.pixel", json!({"x": 32, "y": 24})).unwrap();
+    let after = s.execute("file.pixel", json!({"x": 32, "y": 24})).unwrap();
     assert_ne!(before, after, "pixel layer content changed");
     // Blue dominates.
     let rgba = after["rgba"].as_array().cloned().unwrap_or_default();
@@ -291,7 +291,7 @@ fn applied_text_is_rendered_in_the_document_and_in_exports() {
     // text vanished from the canvas and from every exported file (#990).
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 200, "height": 60, "background": "white"})).unwrap();
-    let id = s.execute("type.create", json!({"x": 4, "y": 40, "text": "HELLO", "size": 32, "color": "#000000"})).unwrap()["layer"].clone();
+    let id = s.execute("text.add", json!({"x": 4, "y": 40, "text": "HELLO", "size": 32, "color": "#000000"})).unwrap()["layer"].clone();
     let dark = |d: &Document| kition_photo_compose::render(d, d.bounds()).px.iter().filter(|p| p[0] < 0.5).count();
     assert!(dark(doc(&s)) > 0);
     s.execute("image.variables.define", json!({"defs": [{"name": "headline", "layer": id, "type": "textReplacement"}]})).unwrap();

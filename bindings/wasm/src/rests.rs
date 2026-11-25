@@ -34,10 +34,10 @@ fn inserts_at_active(command: &str) -> bool {
             "layer.new.layer"
                 | "layer.new.group"
                 | "layer.stampVisible"
-                | "type.create"
-                | "shape.create"
+                | "text.add"
+                | "shape.add"
                 | "shape.presets.place"
-                | "gradient.fill.create"
+                | "gradient.fill.add"
                 | "gradient.presets.apply"
                 | "pattern.presets.apply"
                 | "file.placeEmbedded"
@@ -66,7 +66,7 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
     const SHAPE_PATH: &[&str] = &["kind", "data", "text", "extra"];
     const INSERT: &[&str] = &["kind", "clipped"];
     if inserts_at_active(command) {
-        // `shape.create` with `addTo` adds to that shape layer instead.
+        // `shape.add` with `addTo` adds to that shape layer instead.
         return (Some(INSERT), true);
     }
     match command {
@@ -98,17 +98,17 @@ pub fn layer_fields(command: &str, params: &Value) -> (Fields, bool) {
         _ if command.starts_with("layer.vectorMask.") => (Some(VECTOR_MASK), false),
         _ if command.starts_with("layer.editableFilter.") || command.starts_with("layer.objectLayers.stackMode.") => (Some(&["kind", "data", "text"]), false),
         "layer.setAdjustment" | "gradient.fill.set" | "gradient.fill.stop" | "gradient.fill.get" => (Some(&["kind", "data", "text"]), false),
-        "layer.fill.solidColor.set" => (Some(&["kind", "locks", "data", "text"]), false),
+        "layer.fill.setSolidColor" => (Some(&["kind", "locks", "data", "text"]), false),
         _ if command.starts_with("layer.combineShapes.") || command == "shape.edit" => (Some(CONTENT), false),
         _ if command.starts_with("path.") && params.get("name").and_then(Value::as_str) == Some("layer") => (Some(SHAPE_PATH), false),
-        "type.edit"
-        | "type.setStyle"
-        | "type.insertText"
-        | "type.warpText"
-        | "type.convertToParagraphText"
-        | "type.convertToPointText"
-        | "type.loadDefaultTypeStyles"
-        | "type.pasteLoremIpsum" => (Some(CONTENT), false),
+        "text.edit"
+        | "text.setStyle"
+        | "text.insertText"
+        | "text.warpText"
+        | "text.convertToParagraphText"
+        | "text.convertToPointText"
+        | "text.loadDefaultTypeStyles"
+        | "text.pasteLoremIpsum" => (Some(CONTENT), false),
         _ if command.starts_with("type.antiAlias.") || command.starts_with("type.orientation.") || command.starts_with("type.openType.") => {
             (Some(CONTENT), false)
         }
@@ -130,7 +130,7 @@ fn selected_fields(command: &str) -> Option<(Fields, bool)> {
         "layer.lockLayers" => (Some(&["locks"]), false),
         "layer.linkLayers" => (Some(&["extra.link_group"]), false),
         "layer.setLabelColor" => (Some(&["extra.label"]), false),
-        "layer.createClippingMask" | "layer.releaseClippingMask" => (Some(&["clipped"]), true),
+        "layer.addClippingMask" | "layer.releaseClippingMask" => (Some(&["clipped"]), true),
         "layer.translate" => return None,
         _ if command.starts_with("layer.align.") || command.starts_with("layer.distribute.") => return None,
         _ if crate::acts::reads_of(command).selection => (None, !crate::acts::position_independent(command)),
@@ -156,7 +156,7 @@ fn premise(id: LayerId, fields: Fields, positions: bool) -> Premise {
 pub fn layer_premise(command: &str, params: &Value, id: LayerId) -> Option<Premise> {
     let named_path = params.get("name").and_then(Value::as_str).is_some_and(|name| name != "layer");
     let on_a_path = matches!(command, "path.transform" | "path.moveAnchors" | "path.moveHandle" | "path.bendSegment" | "path.convertPoint");
-    if (command == "shape.create" && params.get("addTo").is_some()) || (on_a_path && named_path) || command == "type.saveDefaultTypeStyles" {
+    if (command == "shape.add" && params.get("addTo").is_some()) || (on_a_path && named_path) || command == "text.saveDefaultTypeStyles" {
         return None;
     }
     let (fields, positions) = layer_fields(command, params);
@@ -285,9 +285,9 @@ fn samples_composite(command: &str, params: &Value) -> bool {
             | "file.scripts.flattenAllMasks"
             | "file.scripts.deleteAllEmptyLayers"
             | "file.automate.cropAndStraightenPhotos"
-            | "type.updateAllTextLayers"
-            | "type.replaceAllMissingFonts"
-            | "type.resolveMissingFonts"
+            | "text.updateAllTextLayers"
+            | "text.replaceAllMissingFonts"
+            | "text.resolveMissingFonts"
             | "edit.findAndReplaceText"
     ) || (command == "filter.vanishingPoint" && params.get("newLayer").and_then(Value::as_bool) == Some(true))
 }

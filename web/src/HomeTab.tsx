@@ -115,8 +115,8 @@ export function HomeTab({ tool, onTool }: { tool: PhotoToolId; onTool: (id: Phot
           <HomeTool id="QuickSelection" tool={tool} onTool={onTool} size="small" />
         </RibbonStack>
         <RibbonMenu icon={SquareDashedMousePointer} label={p('Select')} size="large" testId="photo-home-select" primary>
-          <CommandItem onRun={invoke} command="select.all" />
-          <CommandItem onRun={invoke} command="select.deselect" />
+          <CommandItem onRun={invoke} command="edit.selectAll" />
+          <CommandItem onRun={invoke} command="edit.deselectAll" />
           <CommandItem onRun={invoke} command="select.inverse" />
           <MenuSeparator />
           <CommandItem onRun={invoke} command="select.subject" />

@@ -437,7 +437,7 @@ pub fn specs() -> Vec<CommandSpec> {
             hdr_toning
         ),
         CommandSpec {
-            id: "image.adjustments.colorLookup.list",
+            id: "image.adjustments.listColorLookups",
             label: "List Color Lookup Looks",
             menu: &[],
             shortcut: None,

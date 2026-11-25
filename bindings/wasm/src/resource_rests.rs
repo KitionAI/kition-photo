@@ -27,7 +27,7 @@ pub fn under(doc: &Document, command: &str, p: &Value) -> Option<Under> {
             // The clipping path follows the rename.
             Some(contents_under(&["~pathContents"], vec!["docState.clipping_path"]))
         }
-        "notes.set" => {
+        "note.set" => {
             p.get("index")?.as_u64()?;
             Some(contents_under(&["~noteContents"], NONE.to_vec()))
         }
@@ -145,13 +145,13 @@ pub(crate) fn resource_covered(address: &Address<'_>, key: &str, assigned: &[&st
     })
 }
 
-/// The place an address command (`notes.set`, `layerComp.rename`, `path.rename`,
+/// The place an address command (`note.set`, `layerComp.rename`, `path.rename`,
 /// `view.moveGuide`) names, told from the image's stored lists now (`contents`: the derived
 /// contents by name, and `guides`, the guides as a list per axis).
 pub(crate) fn address_covered(command: &str, p: &Value, asks: &[CoveredAsk], contents: &Value) -> Option<CoveredAt> {
     let index = || p.get("index").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok());
     match command {
-        "notes.set" => {
+        "note.set" => {
             let mut assigned: Vec<&str> = ["text", "author", "color"].into_iter().filter(|field| p.get(*field).is_some()).collect();
             if p.get("x").is_some() || p.get("y").is_some() {
                 assigned.extend(["position", "popup"]);

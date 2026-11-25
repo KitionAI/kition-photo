@@ -10,7 +10,7 @@ fn session(mode: &str, depth: u32) -> Session {
     s.execute("file.new", json!({"width": 64, "height": 48, "mode": mode, "depth": depth})).unwrap();
     s.execute("select.rect", json!({"x": 10, "y": 10, "width": 20, "height": 20, "antiAlias": false})).unwrap();
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s
 }
 
@@ -62,7 +62,7 @@ fn magic_eraser_options() {
     let mut s = session("rgb", 8);
     s.execute("select.rect", json!({"x": 40, "y": 10, "width": 10, "height": 10, "antiAlias": false})).unwrap();
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let mut a = s;
     a.execute("paint.magicEraser", json!({"x": 20, "y": 20, "contiguous": true, "antiAlias": false})).unwrap();
     assert_eq!(alpha(&a, 20, 20), 0.0);
@@ -82,7 +82,7 @@ fn magic_eraser_options() {
         let mut s = session("rgb", 8);
         s.execute("select.rect", json!({"x": 0, "y": 40, "width": 64, "height": 8, "antiAlias": false})).unwrap();
         s.execute("edit.fill", json!({"color": "#e6e6e6"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("paint.magicEraser", json!({"x": 2, "y": 2, "tolerance": tol, "antiAlias": false})).unwrap();
         assert_eq!(alpha(&s, 5, 44) == 0.0, gone, "tolerance {tol}");
     }
@@ -103,7 +103,7 @@ fn magic_eraser_samples_all_layers_and_paints_background_under_a_transparency_lo
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 0, "y": 14, "width": 64, "height": 4, "antiAlias": false})).unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let id = s.active().unwrap().active_layer.unwrap();
         s.edit("opacity", |doc, _| {
             doc.layer_mut(id).unwrap().opacity = 0.5;
@@ -125,7 +125,7 @@ fn magic_eraser_samples_all_layers_and_paints_background_under_a_transparency_lo
     let mut s = session("rgb", 8);
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-    s.execute("tools.setColors", json!({"background": "#00ff00"})).unwrap();
+    s.execute("tool.setColors", json!({"background": "#00ff00"})).unwrap();
     let id = s.active().unwrap().active_layer.unwrap();
     s.edit("lock", |doc, _| {
         doc.layer_mut(id).unwrap().locks.transparency = true;
@@ -195,7 +195,7 @@ fn background_eraser_options() {
     assert_eq!(alpha(&s, 20, 20), 0.0);
     // Protect Foreground Color (black) keeps the square even under continuous sampling.
     let mut s = session("rgb", 8);
-    s.execute("tools.setColors", json!({"foreground": "#000000"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#000000"})).unwrap();
     s.execute(
         "paint.backgroundEraser",
         json!({"points": [[4, 20], [40, 20]], "size": 16, "hardness": 1, "limits": "discontiguous", "tolerance": 10, "protectForegroundColor": true}),
@@ -205,7 +205,7 @@ fn background_eraser_options() {
     assert_eq!(alpha(&s, 6, 20), 0.0);
     // Background swatch: with a black swatch only the square goes.
     let mut s = session("rgb", 8);
-    s.execute("tools.setColors", json!({"background": "#000000"})).unwrap();
+    s.execute("tool.setColors", json!({"background": "#000000"})).unwrap();
     s.execute(
         "paint.backgroundEraser",
         json!({"points": [[4, 20], [40, 20]], "size": 16, "hardness": 1, "sampling": "backgroundSwatch", "limits": "discontiguous", "tolerance": 10}),
@@ -249,7 +249,7 @@ fn bench_magic_eraser_24mp() {
     s.execute("file.new", json!({"width": 6000, "height": 4000})).unwrap();
     s.execute("select.rect", json!({"x": 1500, "y": 1000, "width": 3000, "height": 2000, "ellipse": true})).unwrap();
     s.execute("edit.fill", json!({"color": "#204080"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     for (label, p) in [
         ("contiguous, background (~19 MP)", json!({"x": 10, "y": 10})),
         ("non-contiguous", json!({"x": 10, "y": 10, "contiguous": false})),

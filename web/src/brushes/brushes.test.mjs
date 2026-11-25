@@ -9,7 +9,7 @@ test("Brush Settings shows the engine's brush in degrees and percent", () => {
   assert.deepEqual(settingsOf(null), { angle: 0, roundness: 100, spacing: 25, spacingEnabled: true, shapeDynamics: false, sizeJitter: 0, transfer: false, opacityJitter: 0 })
 })
 
-test('a field becomes the patch tools.setBrush takes; a jitter switches its section on', () => {
+test('a field becomes the patch tool.setBrush takes; a jitter switches its section on', () => {
   assert.deepEqual(settingsPatch('angle', 200), { angle: 180 })
   assert.deepEqual(settingsPatch('roundness', 25), { roundness: 0.25 })
   assert.deepEqual(settingsPatch('spacing', 50), { spacing: 0.5, spacingEnabled: true })

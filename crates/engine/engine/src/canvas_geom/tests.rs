@@ -35,9 +35,9 @@ fn mixed(depth: u64, mode: &str) -> Session {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": W, "height": H, "depth": depth, "mode": mode})).unwrap();
     paint(&mut s, |x, y| [x as f32 / W as f32, y as f32 / H as f32, 0.3, 1.0]);
-    s.execute("type.create", json!({"x": 4, "y": 16, "text": "Fj", "size": 14, "color": "#102080"})).unwrap();
-    s.execute("shape.create", json!({"kind": "rect", "rect": [40, 4, 18, 9], "fill": "#ff8800"})).unwrap();
-    s.execute("shape.create", json!({"kind": "ellipse", "rect": [6, 24, 12, 10], "fill": "#00aa44"})).unwrap();
+    s.execute("text.add", json!({"x": 4, "y": 16, "text": "Fj", "size": 14, "color": "#102080"})).unwrap();
+    s.execute("shape.add", json!({"kind": "rect", "rect": [40, 4, 18, 9], "fill": "#ff8800"})).unwrap();
+    s.execute("shape.add", json!({"kind": "ellipse", "rect": [6, 24, 12, 10], "fill": "#00aa44"})).unwrap();
     s.execute("layer.new.layer", json!({})).unwrap();
     paint(&mut s, |x, y| if (28..60).contains(&x) && (18..38).contains(&y) { [0.9, 0.1, 0.6, 1.0] } else { [0.0; 4] });
     s.execute("path.set", json!({"path": {"subpaths": [{"knots": [[30, 20], [58, 22], [36, 37]]}]}})).unwrap();
@@ -56,9 +56,9 @@ fn command(t: Turn) -> &'static str {
     match t {
         Turn::FlipHorizontal => "image.imageRotation.flipCanvasHorizontal",
         Turn::FlipVertical => "image.imageRotation.flipCanvasVertical",
-        Turn::Rotate180 => "image.imageRotation.180",
-        Turn::Cw90 => "image.imageRotation.90cw",
-        Turn::Ccw90 => "image.imageRotation.90ccw",
+        Turn::Rotate180 => "image.imageRotation.rotate180",
+        Turn::Cw90 => "image.imageRotation.rotate90cw",
+        Turn::Ccw90 => "image.imageRotation.rotate90ccw",
     }
 }
 
@@ -140,7 +140,7 @@ fn turns_at_every_depth_and_mode() {
 #[test]
 fn turns_map_guides_paths_slices_and_live_shapes() {
     let mut s = mixed(8, "rgb");
-    s.execute("image.imageRotation.90cw", json!({})).unwrap();
+    s.execute("image.imageRotation.rotate90cw", json!({})).unwrap();
     let d = doc(&s);
     assert_eq!((d.size.width, d.size.height), (H, W));
     // A vertical guide at x=10 becomes a horizontal one at y=10; a horizontal one at y=5 becomes
@@ -265,7 +265,7 @@ fn arbitrary_rotation_moves_marks_and_unlinked_vector_masks() {
     assert_eq!(d.slices.list[0].rect, map_rect(&a, before.slices.list[0].rect));
     // 90° arbitrary == 90° clockwise for the composite.
     let mut s2 = mixed(8, "rgb");
-    s2.execute("image.imageRotation.90cw", json!({})).unwrap();
+    s2.execute("image.imageRotation.rotate90cw", json!({})).unwrap();
     let (mean, big) = diff(&kition_photo_compose::flatten(d).px, &kition_photo_compose::flatten(doc(&s2)).px);
     assert!(mean < 3.0 / 255.0 && big < 0.02, "mean {mean} big {big}");
 }

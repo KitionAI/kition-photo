@@ -14,7 +14,7 @@ use serde_json::Value;
 
 /// `(command, parameter, why it names no layer of this image)`.
 const NOT_LAYERS: &[(&str, &str, &str)] = &[
-    ("layer.fill.solidColor.set", "document", "an open document's index, to reject a stale dialog"),
+    ("layer.fill.setSolidColor", "document", "an open document's index, to reject a stale dialog"),
     ("file.export.layerCompsToFiles", "comps", "layer comp ids (not offered to agents: it writes files)"),
     ("file.export.artboardsToFiles", "artboards", "not offered to agents: it writes files"),
     ("file.export.artboardsToPdf", "artboards", "not offered to agents: it writes files"),
@@ -92,16 +92,16 @@ const IN_DOC_STATE: &[(&str, &[&str])] = &[
     (
         "id",
         &[
-            "type.characterStyle.delete",
-            "type.characterStyle.duplicate",
-            "type.characterStyle.redefine",
-            "type.characterStyle.rename",
-            "type.characterStyle.set",
-            "type.paragraphStyle.delete",
-            "type.paragraphStyle.duplicate",
-            "type.paragraphStyle.redefine",
-            "type.paragraphStyle.rename",
-            "type.paragraphStyle.set",
+            "text.characterStyle.delete",
+            "text.characterStyle.duplicate",
+            "text.characterStyle.redefine",
+            "text.characterStyle.rename",
+            "text.characterStyle.set",
+            "text.paragraphStyle.delete",
+            "text.paragraphStyle.duplicate",
+            "text.paragraphStyle.redefine",
+            "text.paragraphStyle.rename",
+            "text.paragraphStyle.set",
         ],
     ),
 ];

@@ -12,9 +12,9 @@ export type Range = readonly [number, number]
 export type Point = { x: number; y: number }
 /** Four corners in document pixels, clockwise from the start of the line's top. */
 export type Quad = readonly [Point, Point, Point, Point]
-/** An affine transform as `type.info` reports it: x' = a·x + c·y + e, y' = b·x + d·y + f. */
+/** An affine transform as `text.info` reports it: x' = a·x + c·y + e, y' = b·x + d·y + f. */
 export type Affine = readonly [number, number, number, number, number, number]
-/** One laid-out line as `type.info` reports it (line space: along the line, then across it). */
+/** One laid-out line as `text.info` reports it (line space: along the line, then across it). */
 export type Line = { start: number; end: number; baseline: number; x0: number; x1: number; ascent: number; descent: number }
 
 /** The characters of `text` (code points, as the engine counts them). */
@@ -257,7 +257,7 @@ export function resizeBox(box: Box, handle: BoxHandle, to: Point): Box {
 }
 
 /**
- * `type.edit`'s `box` for text-space box `box` of a layer with transform `m`: the document point
+ * `text.edit`'s `box` for text-space box `box` of a layer with transform `m`: the document point
  * the box's top left goes to, and its size (the engine keeps the transform's turn and scale).
  */
 export function boxParam(m: Affine, box: Box): [number, number, number, number] {
@@ -265,14 +265,14 @@ export function boxParam(m: Affine, box: Box): [number, number, number, number] 
   return [origin.x, origin.y, box.width, box.height]
 }
 
-/** A paragraph box from `type.info`'s `shape` (`{ Box: {…} }`), or null for point text. */
+/** A paragraph box from `text.info`'s `shape` (`{ Box: {…} }`), or null for point text. */
 export function boxOf(shape: unknown): Box | null {
   const box = (shape as { Box?: Partial<Box> } | null)?.Box
   if (!box || ![box.x, box.y, box.width, box.height].every((value) => typeof value === 'number' && Number.isFinite(value))) return null
   return { x: box.x!, y: box.y!, width: box.width!, height: box.height! }
 }
 
-/** A text-space rectangle from two document points of a drag, for `type.create`'s `box`. */
+/** A text-space rectangle from two document points of a drag, for `text.add`'s `box`. */
 export function dragBox(from: Point, to: Point): [number, number, number, number] {
   const x = Math.round(Math.min(from.x, to.x))
   const y = Math.round(Math.min(from.y, to.y))

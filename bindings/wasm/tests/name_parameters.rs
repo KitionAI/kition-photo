@@ -117,7 +117,7 @@ fn every_resolved_name_parameter_is_declared() {
             "layer.layerStyle.replace" => {
                 names.extend(["effects[].params.pattern", "effects[].params.texture", "effects[].fx.PatternOverlay.name", "effects[].fx.PatternOverlay.id"])
             }
-            "shape.create" | "shape.edit" => names.extend(["fill.pattern", "stroke.fill.pattern"]),
+            "shape.add" | "shape.edit" => names.extend(["fill.pattern", "stroke.fill.pattern"]),
             "pattern.export" => names.push("patterns"),
             "style.presets.apply" => names.extend(["preset", "group"]),
             "style.presets.edit" | "pattern.presets.edit" => names.extend(["preset", "group", "to"]),

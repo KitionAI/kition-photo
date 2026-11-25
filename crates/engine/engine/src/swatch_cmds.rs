@@ -71,7 +71,7 @@ fn name_param(p: &Value, k: &str, cmd: &str) -> Result<Option<String>> {
 fn locate(s: &Session, p: &Value, cmd: &str) -> Result<(usize, usize)> {
     let groups = &s.presets.swatches;
     if let Some(name) = str_param(p, "swatch") {
-        return find(groups, name, str_param(p, "group")).ok_or_else(|| bad(cmd, format!("no swatch \"{name}\" (see swatches.list)")));
+        return find(groups, name, str_param(p, "group")).ok_or_else(|| bad(cmd, format!("no swatch \"{name}\" (see swatch.list)")));
     }
     if let Some(i) = p.get("index") {
         let i = i.as_u64().ok_or_else(|| bad(cmd, "`index` must be a non-negative integer"))?;
@@ -127,7 +127,7 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.add";
+    const CMD: &str = "swatch.add";
     let color = match p.get("color") {
         None | Some(Value::Null) => {
             let f = s.tools.foreground;
@@ -183,14 +183,14 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn delete(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.delete";
+    const CMD: &str = "swatch.delete";
     let mut targets: Vec<(usize, usize)> = match p.get("swatch") {
         Some(Value::Array(a)) => {
             let ix = index_by_name(&s.presets.swatches, str_param(p, "group"));
             let mut v = Vec::with_capacity(a.len().min(MAX_SWATCHES));
             for n in a {
                 let name = n.as_str().ok_or_else(|| bad(CMD, "`swatch` names must be strings"))?;
-                v.push(*ix.get(name).ok_or_else(|| bad(CMD, format!("no swatch \"{name}\" (see swatches.list)")))?);
+                v.push(*ix.get(name).ok_or_else(|| bad(CMD, format!("no swatch \"{name}\" (see swatch.list)")))?);
             }
             v
         }
@@ -214,7 +214,7 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.rename";
+    const CMD: &str = "swatch.rename";
     let (gi, ii) = locate(s, p, CMD)?;
     let to = name_param(p, "name", CMD)?.ok_or_else(|| bad(CMD, "missing `name`"))?;
     let groups = &mut s.presets.swatches;
@@ -227,7 +227,7 @@ fn rename(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn move_swatch(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.move";
+    const CMD: &str = "swatch.move";
     let (gi, ii) = locate(s, p, CMD)?;
     let ti = match name_param(p, "to", CMD)? {
         Some(t) => group_of(s, &t, CMD)?,
@@ -248,7 +248,7 @@ fn move_swatch(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn new_group(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.newGroup";
+    const CMD: &str = "swatch.newGroup";
     if s.presets.swatches.len() >= MAX_GROUPS {
         return Err(bad(CMD, "too many swatch groups"));
     }
@@ -279,7 +279,7 @@ fn new_group(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn rename_group(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.renameGroup";
+    const CMD: &str = "swatch.renameGroup";
     let g = name_param(p, "group", CMD)?.ok_or_else(|| bad(CMD, "missing `group`"))?;
     let to = name_param(p, "name", CMD)?.ok_or_else(|| bad(CMD, "missing `name`"))?;
     let i = group_of(s, &g, CMD)?;
@@ -292,7 +292,7 @@ fn rename_group(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn delete_group(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.deleteGroup";
+    const CMD: &str = "swatch.deleteGroup";
     let g = name_param(p, "group", CMD)?.ok_or_else(|| bad(CMD, "missing `group`"))?;
     let keep = match p.get("keepSwatches") {
         None | Some(Value::Null) => false,
@@ -317,7 +317,7 @@ fn delete_group(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn use_swatch(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.use";
+    const CMD: &str = "swatch.use";
     let (gi, ii) = locate(s, p, CMD)?;
     let target = str_param(p, "target").unwrap_or("foreground");
     let sw = s.presets.swatches[gi].items[ii].clone();
@@ -332,7 +332,7 @@ fn use_swatch(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn reset(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.reset";
+    const CMD: &str = "swatch.reset";
     let append = match p.get("append") {
         None | Some(Value::Null) => false,
         Some(v) => v.as_bool().ok_or_else(|| bad(CMD, "`append` must be true or false"))?,
@@ -570,7 +570,7 @@ pub fn write_file(groups: &[Group<Swatch>], format: Format) -> std::result::Resu
 }
 
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.import";
+    const CMD: &str = "swatch.import";
     let (bytes, stem) = crate::preset_import_cmds::file_bytes(p, CMD, ".aco or .ase file")?;
     let format = match str_param(p, "format") {
         Some(f) => Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?,
@@ -621,7 +621,7 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn export(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "swatches.export";
+    const CMD: &str = "swatch.export";
     let path = str_param(p, "path");
     let format = match str_param(p, "format") {
         Some(f) => Format::parse(f).ok_or_else(|| bad(CMD, format!("unknown format `{f}` (aco|ase)")))?,
@@ -672,7 +672,7 @@ pub fn specs() -> Vec<CommandSpec> {
     let target = r##""swatch":name (or "index":n across all groups),"group":name? (narrows the name lookup)"##;
     vec![
         CommandSpec {
-            id: "swatches.list",
+            id: "swatch.list",
             label: "Swatches",
             menu: &[],
             shortcut: None,
@@ -682,7 +682,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "swatches.add",
+            id: "swatch.add",
             label: "New Swatch…",
             menu: &[],
             shortcut: None,
@@ -694,7 +694,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.delete",
+            id: "swatch.delete",
             label: "Delete Swatch",
             menu: &[],
             shortcut: None,
@@ -704,7 +704,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.rename",
+            id: "swatch.rename",
             label: "Rename Swatch…",
             menu: &[],
             shortcut: None,
@@ -714,7 +714,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.move",
+            id: "swatch.move",
             label: "Move Swatch",
             menu: &[],
             shortcut: None,
@@ -724,7 +724,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.newGroup",
+            id: "swatch.newGroup",
             label: "New Swatch Group…",
             menu: &[],
             shortcut: None,
@@ -734,7 +734,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.renameGroup",
+            id: "swatch.renameGroup",
             label: "Rename Swatch Group…",
             menu: &[],
             shortcut: None,
@@ -744,7 +744,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.deleteGroup",
+            id: "swatch.deleteGroup",
             label: "Delete Swatch Group",
             menu: &[],
             shortcut: None,
@@ -754,7 +754,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.use",
+            id: "swatch.use",
             label: "Use Swatch",
             menu: &[],
             shortcut: None,
@@ -766,7 +766,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.reset",
+            id: "swatch.reset",
             label: "Reset Swatches",
             menu: &[],
             shortcut: None,
@@ -776,7 +776,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.import",
+            id: "swatch.import",
             label: "Import Swatches…",
             menu: &[],
             shortcut: None,
@@ -786,7 +786,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "swatches.export",
+            id: "swatch.export",
             label: "Export Swatches…",
             menu: &[],
             shortcut: None,

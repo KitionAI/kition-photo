@@ -156,7 +156,7 @@ Opened `poster.psd`: 1200 x 800 px, Rgb, 8-bit, 9 layers
   …
 
 > photo_run {"path":"poster.psd","steps":[
-    {"command":"type.edit","params":{"layer":"Discount","text":"-40%"}},
+    {"command":"text.edit","params":{"layer":"Discount","text":"-40%"}},
     {"command":"shape.edit","params":{"layer":"Badge","fill":"#2e7d5b"}}]}
 Ran 2 commands on `poster.psd` (saved): 1200 x 800 px, Rgb, 8-bit, 9 layers Changes: objects 2 changed.
 

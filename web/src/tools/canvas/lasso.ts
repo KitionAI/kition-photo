@@ -25,7 +25,7 @@ export function lassoGesture(id: PhotoToolId, env: PhotoToolEnv, start: KitPoint
       if (x !== last[0] || y !== last[1]) points.push([x, y])
       const mode = selectionModeFor(id, env.options.selectionMode, start)
       if (points.length < 3) {
-        if (mode === 'replace' || mode === 'intersect') void env.run('select.deselect', {}, NO_REPAINT)
+        if (mode === 'replace' || mode === 'intersect') void env.run('edit.deselectAll', {}, NO_REPAINT)
         else overlay.clear()
       } else void env.run('select.lasso', { points, mode, ...toolParams('Lasso', env.options), ...(feather === undefined ? {} : { feather }) }, NO_REPAINT)
     },

@@ -1,12 +1,12 @@
 /**
  * The brush picker's and Brush Settings' arithmetic (plan 2026-11-24, stage 5): the engine's brush
- * (`brush.get`, what `tools.setBrush` answers) as the fields show it, a field's change as the patch
- * `tools.setBrush` takes, a picked preset's tip as the options bar's values, and the stroke a
+ * (`brush.get`, what `tool.setBrush` answers) as the fields show it, a field's change as the patch
+ * `tool.setBrush` takes, a picked preset's tip as the options bar's values, and the stroke a
  * preset's thumbnail draws. Pure, so `node --test` checks it.
  *
  * The options bar keeps the brush's size, hardness, mode, opacity, flow, smoothing and pressure
  * toggles (every stroke sends them); the engine keeps the rest of the brush (its tip, spacing,
- * angle, roundness and dynamics), which Brush Settings edits with `tools.setBrush`.
+ * angle, roundness and dynamics), which Brush Settings edits with `tool.setBrush`.
  */
 
 type Dynamic = { jitter?: number; control?: string; minimum?: number }
@@ -54,7 +54,7 @@ export function settingsOf(brush: EngineBrush | null | undefined): BrushSettings
   }
 }
 
-/** The `tools.setBrush` patch for one field's new value; a jitter switches its section on, as Photoshop's does. */
+/** The `tool.setBrush` patch for one field's new value; a jitter switches its section on, as Photoshop's does. */
 export function settingsPatch(field: keyof BrushSettings, value: number | boolean): Record<string, unknown> {
   const number = typeof value === 'number' ? value : 0
   switch (field) {

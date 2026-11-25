@@ -50,7 +50,7 @@ try {
   const agent = async (command, params = {}) => (await page.evaluate(async ([name, values]) => window.devHost.connection().ai.run([{ command: name, params: values }], false), [command, params])).completed[0]?.result
   const hex = (rgba) => `#${rgba.slice(0, 3).map((value) => Math.round(value * 255).toString(16).padStart(2, '0')).join('')}`
   const engineForeground = async () => hex((await agent('session.inspect')).foreground)
-  const sample = async (x, y) => (await agent('document.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).slice(0, 3).map((value) => Math.round(value * 255))
+  const sample = async (x, y) => (await agent('file.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).slice(0, 3).map((value) => Math.round(value * 255))
   const near = (a, b, tolerance = 12) => a.every((value, index) => Math.abs(value - b[index]) <= tolerance)
   const rgbOf = (text) => [1, 3, 5].map((index) => parseInt(text.slice(index, index + 2), 16))
   const view = async () => {

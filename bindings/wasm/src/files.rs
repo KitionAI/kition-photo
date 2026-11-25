@@ -10,8 +10,8 @@ pub const FILES: &[FileParam] = &[
     FileParam::read("image.adjustments.colorLookup", "file", &["cube", "3dl", "look"]),
     FileParam::read("brush.presets.importAbr", "path", &["abr"]),
     FileParam::read("gradient.presets.importGrd", "path", &["grd"]),
-    FileParam::read("swatches.import", "path", &["aco", "ase"]),
-    FileParam::create("swatches.export", "path", &["aco", "ase"]),
+    FileParam::read("swatch.import", "path", &["aco", "ase"]),
+    FileParam::create("swatch.export", "path", &["aco", "ase"]),
     FileParam::create("file.saveACopy", "path", &[]),
     FileParam::read("file.openAs", "path", &[]),
     FileParam::read("file.placeEmbedded", "path", &[]),
@@ -38,7 +38,7 @@ pub const FILES: &[FileParam] = &[
     FileParam::create("file.export.saveForWebLegacy", "path", &[]),
     FileParam::create("file.export.quickExport", "path", &[]),
     FileParam::folder("file.generate.imageAssets", "dir"),
-    FileParam::create("file.automate.createDroplet", "path", &["pcdroplet"]),
+    FileParam::create("file.automate.addDroplet", "path", &["pcdroplet"]),
     FileParam::read("file.scripts.browse", "path", &[]),
     FileParam::folder("file.package", "dir"),
     FileParam::create("file.export.pathsToIllustrator", "path", &["ai"]),
@@ -52,7 +52,7 @@ pub const FILES: &[FileParam] = &[
 /// Refuses `command` for anyone but a person (an agent, a script's or the host's batch; the
 /// engine's [`kition_photo_engine::Session::agent_gate`], KHP A28, A29): it names files or folders
 /// by path, and a kit works only on its workspace's files, through its host. Whoever runs it
-/// (directly, inside `model.batch`, or as a step of `actions.play` or a script) is refused alike.
+/// (directly, inside `model.batch`, or as a step of `action.play` or a script) is refused alike.
 pub fn refuse_for_agent(command: &str, _params: &serde_json::Value) -> kition_photo_engine::Result<()> {
     if FILES.iter().any(|file| file.command == command) {
         return Err(kition_photo_engine::EngineError::Other(format!(
@@ -94,7 +94,7 @@ mod tests {
         ("layer.newAdjustmentLayer.colorLookup", "path"),
         ("filter.blurGallery.pathBlur", "paths"),
         ("filter.render.flame", "path"),
-        ("shape.create", "path"),
+        ("shape.add", "path"),
         ("shape.edit", "path"),
         ("shape.presets.new", "path"),
         ("path.set", "path"),

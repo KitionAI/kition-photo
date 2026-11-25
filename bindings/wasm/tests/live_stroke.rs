@@ -20,7 +20,7 @@ fn image() -> (PhotoDocument, u64, u64) {
         doc.execute("select.rect", json!({ "x": x, "y": y, "width": 80, "height": 50 })).unwrap();
         doc.execute("edit.fill", json!({ "color": color })).unwrap();
     }
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
     let ink = doc.execute("layer.new.layer", json!({ "name": "Ink" })).unwrap()["layer"].as_u64().unwrap();
     (doc, paint, ink)
 }

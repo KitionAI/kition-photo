@@ -203,7 +203,7 @@ pub(crate) fn load(value: Value) -> Vec<DocumentPreset> {
 }
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "document.presets.save";
+    const CMD: &str = "file.presets.save";
     let name = checked_name(req_str(p, "name", CMD)?).map_err(|e| bad(CMD, e))?;
     if s.presets.documents.iter().any(|pr| pr.name.eq_ignore_ascii_case(&name)) {
         return Err(bad(CMD, format!("A preset named \"{name}\" already exists; choose another name")));
@@ -220,14 +220,14 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn get(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "document.presets.get";
+    const CMD: &str = "file.presets.get";
     let name = req_str(p, "name", CMD)?;
     let preset = s.presets.documents.iter().find(|pr| pr.name.eq_ignore_ascii_case(name)).ok_or_else(|| bad(CMD, "No such document preset"))?;
     Ok(json!({"preset":preset,"params":preset.settings.command_params()}))
 }
 
 fn delete(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "document.presets.delete";
+    const CMD: &str = "file.presets.delete";
     let name = req_str(p, "name", CMD)?;
     let index = s.presets.documents.iter().position(|pr| pr.name.eq_ignore_ascii_case(name)).ok_or_else(|| bad(CMD, "No such document preset"))?;
     s.presets.documents.remove(index);
@@ -238,7 +238,7 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec {
-            id: "document.presets.list",
+            id: "file.presets.list",
             label: "List Document Presets",
             menu: &[],
             shortcut: None,
@@ -248,7 +248,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "document.presets.get",
+            id: "file.presets.get",
             label: "Get Document Preset",
             menu: &[],
             shortcut: None,
@@ -258,7 +258,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: false,
         },
         CommandSpec {
-            id: "document.presets.save",
+            id: "file.presets.save",
             label: "Save Document Preset",
             menu: &[],
             shortcut: None,
@@ -268,7 +268,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "document.presets.delete",
+            id: "file.presets.delete",
             label: "Delete Document Preset",
             menu: &[],
             shortcut: None,
@@ -290,7 +290,7 @@ mod tests {
     }
 
     fn saved(s: &mut Session, name: &str, settings: Value) -> Value {
-        s.execute("document.presets.save", json!({"name":name,"settings":settings})).unwrap()["preset"].clone()
+        s.execute("file.presets.save", json!({"name":name,"settings":settings})).unwrap()["preset"].clone()
     }
 
     fn reload(s: &Session) -> Session {
@@ -313,7 +313,7 @@ mod tests {
                 let mut next = reload(&s);
                 assert_eq!(next.presets.documents, s.presets.documents);
                 let rev = next.prefs.rev();
-                let selected = next.execute("document.presets.get", json!({"name":"product SQUARE"})).unwrap();
+                let selected = next.execute("file.presets.get", json!({"name":"product SQUARE"})).unwrap();
                 assert_eq!(selected["preset"], preset);
                 assert!(next.documents().is_empty(), "save/get do not create a document");
                 assert_eq!(next.prefs.rev(), rev, "queries do not dirty preferences");
@@ -344,10 +344,10 @@ mod tests {
             saved(&mut s, "Background", json!({"width":4,"height":4,"background":background,"depth":32}));
             let mut s = reload(&s);
             s.tools.background = [1.0, 0.0, 1.0, 1.0];
-            let p = s.execute("document.presets.get", json!({"name":"Background"})).unwrap();
+            let p = s.execute("file.presets.get", json!({"name":"Background"})).unwrap();
             assert_eq!(p["preset"]["settings"]["background"], background);
             s.execute("file.new", p["params"].clone()).unwrap();
-            let pixel = s.execute("document.pixel", json!({"x":0,"y":0})).unwrap();
+            let pixel = s.execute("file.pixel", json!({"x":0,"y":0})).unwrap();
             let rgba = pixel.as_array().unwrap();
             for (actual, expected) in rgba.iter().zip(expected) {
                 assert!((actual.as_f64().unwrap() - expected).abs() < 0.001, "{background}: {pixel}");
@@ -362,13 +362,13 @@ mod tests {
         saved(&mut s, "Keep me", settings());
         let mut s = reload(&s);
         let rev = s.prefs.rev();
-        s.execute("document.presets.delete", json!({"name":" delete ME "})).unwrap();
+        s.execute("file.presets.delete", json!({"name":" delete ME "})).unwrap();
         assert!(s.prefs.rev() > rev);
         let mut s = reload(&s);
-        assert_eq!(s.execute("document.presets.list", json!({})).unwrap()["presets"].as_array().unwrap().len(), 1);
+        assert_eq!(s.execute("file.presets.list", json!({})).unwrap()["presets"].as_array().unwrap().len(), 1);
         assert_eq!(s.presets.documents[0].name, "Keep me");
-        assert!(s.execute("document.presets.get", json!({"name":"Delete me"})).is_err());
-        assert!(s.execute("document.presets.delete", json!({"name":"Delete me"})).is_err());
+        assert!(s.execute("file.presets.get", json!({"name":"Delete me"})).is_err());
+        assert!(s.execute("file.presets.delete", json!({"name":"Delete me"})).is_err());
     }
 
     #[test]
@@ -418,7 +418,7 @@ mod tests {
         let before = s.prefs_value();
         let rev = s.prefs.rev();
         for name in ["", " \t\n ", "Keep me", " keep ME ", &"x".repeat(256)] {
-            assert!(s.execute("document.presets.save", json!({"name":name,"settings":config})).is_err());
+            assert!(s.execute("file.presets.save", json!({"name":name,"settings":config})).is_err());
         }
         for (key, bad) in [
             ("width", json!(0)),
@@ -439,10 +439,10 @@ mod tests {
         ] {
             let mut config = settings();
             config[key] = bad;
-            assert!(s.execute("document.presets.save", json!({"name":"Bad","settings":config})).is_err(), "{key}");
+            assert!(s.execute("file.presets.save", json!({"name":"Bad","settings":config})).is_err(), "{key}");
         }
         for p in [json!({}), Value::Null, json!({"name":12}), json!({"name":"Bad","settings":[]})] {
-            assert!(s.execute("document.presets.save", p).is_err());
+            assert!(s.execute("file.presets.save", p).is_err());
         }
         assert_eq!(s.prefs_value(), before);
         assert_eq!(s.prefs.rev(), rev);

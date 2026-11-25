@@ -25,7 +25,7 @@ fn ink(style: Value) -> f64 {
     for (key, value) in style.as_object().unwrap() {
         params[key] = value.clone();
     }
-    image.execute("type.create", params).unwrap();
+    image.execute("text.add", params).unwrap();
     let rgba = image.render(0.0, 0.0, 1.0, 360, 90).unwrap();
     rgba.as_chunks::<4>().0.iter().map(|px| 255.0 - f64::from(px[0])).sum()
 }

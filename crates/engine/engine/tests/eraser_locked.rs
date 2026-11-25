@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 fn doc(mode: &str, depth: u32) -> Session {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 40, "height": 30, "mode": mode, "depth": depth})).unwrap();
-    s.execute("tools.setColors", json!({"foreground": "#000000", "background": "#ff0000"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#000000", "background": "#ff0000"})).unwrap();
     s
 }
 

@@ -683,7 +683,7 @@ mod tests {
             for (w, resample) in [(60, "bicubic"), (41, "lanczos"), (15, "bilinear"), (77, "preserveDetails")] {
                 let mut s = Session::new();
                 s.execute("file.new", json!({"width": 30, "height": 20, "depth": depth, "background": "#336699"})).unwrap();
-                s.execute("select.all", json!({})).unwrap();
+                s.execute("edit.selectAll", json!({})).unwrap();
                 s.execute("image.imageSize", json!({"width": w, "resample": resample})).unwrap();
                 let d = doc(&s);
                 let flat = kition_photo_compose::flatten(d);
@@ -740,7 +740,7 @@ mod tests {
     fn nearest_neighbor_reduction_keeps_source_values() {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        s.execute("tools.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
+        s.execute("tool.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
         for y in 0..8 {
             for x in 0..8 {
                 if (x + y) % 2 == 0 {
@@ -749,7 +749,7 @@ mod tests {
                 }
             }
         }
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let st = s.active().unwrap();
         let before = st.doc.layers[0].surface().unwrap().rgba(0, 0);
         assert!(before[0] < 0.01, "setup: (0,0) should be black, got {before:?}");
@@ -818,7 +818,7 @@ mod tests {
             s.execute("select.rect", json!({"x": x, "y": y, "width": 1, "height": 1})).unwrap();
             s.execute("edit.fill", json!({"color": c})).unwrap();
         }
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s
     }
 
@@ -930,7 +930,7 @@ mod tests {
         ];
         for p in bad {
             let mut s = marked("rgb", 8);
-            s.execute("select.all", json!({})).unwrap();
+            s.execute("edit.selectAll", json!({})).unwrap();
             let before = doc(&s).clone();
             let past = s.active().unwrap().history.past_len();
             assert!(s.execute("image.crop", p.clone()).is_err(), "{p}");

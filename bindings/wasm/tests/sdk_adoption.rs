@@ -9,7 +9,7 @@ fn reread_keeps_active_selection_and_agent_history() {
     live.execute("layer.select", json!({"layer":layer})).unwrap();
     live.mark_saved();
     let mut fresh = PhotoDocument::open("reread.kphoto", &live.save_sealed(None).unwrap()).unwrap();
-    fresh.execute("notes.add", json!({"text":"outside","x":1,"y":2})).unwrap();
+    fresh.execute("note.add", json!({"text":"outside","x":1,"y":2})).unwrap();
     fresh.carry_replica_objects(&live).unwrap();
     fresh.restore_editor_state(&live.editor_state()).unwrap();
     assert!(live.reconcile_reread(&fresh).unwrap());

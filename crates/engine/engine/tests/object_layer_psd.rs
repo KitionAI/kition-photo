@@ -107,7 +107,7 @@ fn object_layers_and_filters_survive_psd() {
         s.execute("filter.blur.gaussianBlur", json!({"radius": 2})).unwrap();
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 40, "height": 64})).unwrap();
         s.execute("filter.noise.addNoise", json!({"amount": 20, "seed": 3, "distribution": "gaussian"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("layer.editableFilter.blendingOptions", json!({"opacity": 0.5, "blend": "screen"})).unwrap();
         s.execute("filter.stylize.emboss", json!({"angle": 120, "height": 2, "amount": 80})).unwrap();
         s.execute("layer.editableFilter.setVisible", json!({"index": 2, "visible": false})).unwrap();
@@ -191,7 +191,7 @@ fn raw_develop_psd_filters_survive_re_editing_native_save_and_undo() {
             }),
         )
         .unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("filter.blur.gaussianBlur", json!({"radius": 2})).unwrap();
         let before = s.active().unwrap().doc.clone();
         let out = kition_photo_io::export(&before, "psd", &Default::default()).unwrap();
@@ -305,7 +305,7 @@ fn editable_filters_survive_psd_in_every_colour_model() {
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 4, "y": 4, "width": 20, "height": 12})).unwrap();
         s.execute("edit.fill", json!({"color": "#c83c28"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("layer.objectLayers.convertToObjectLayer", json!({})).unwrap();
         s.execute("filter.blur.gaussianBlur", json!({"radius": 1.5})).unwrap();
         let doc = s.active().unwrap().doc.clone();
@@ -346,7 +346,7 @@ fn photoshop_samples() {
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 10, "y": 8, "width": 50, "height": 40})).unwrap();
         s.execute("edit.fill", json!({"color": "#c83c28"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let tag = format!("{mode}{depth}");
         keep(&format!("plain-{tag}.psd"), &kition_photo_io::export(&s.active().unwrap().doc, "psd", &Default::default()).unwrap().bytes);
         s.execute("layer.objectLayers.convertToObjectLayer", json!({})).unwrap();

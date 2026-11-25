@@ -41,9 +41,9 @@ fn new_layers_made_with_a_group_active_go_into_the_group() {
 fn every_kind_of_new_layer_goes_into_the_active_group() {
     let mut image = PhotoDocument::create("kinds.psd", 64, 64).unwrap();
     let group = id(&run(&mut image, "layer.new.group", json!({ "name": "Kinds" })));
-    run(&mut image, "shape.create", json!({ "kind": "rect", "rect": [4, 4, 10, 10], "name": "Shape" }));
+    run(&mut image, "shape.add", json!({ "kind": "rect", "rect": [4, 4, 10, 10], "name": "Shape" }));
     run(&mut image, "layer.select", json!({ "layer": group }));
-    run(&mut image, "type.create", json!({ "x": 4, "y": 30, "text": "Hi", "name": "Type" }));
+    run(&mut image, "text.add", json!({ "x": 4, "y": 30, "text": "Hi", "name": "Type" }));
     run(&mut image, "layer.select", json!({ "layer": group }));
     run(&mut image, "layer.newFillLayer.solidColor", json!({ "color": "#336699" }));
     run(&mut image, "layer.select", json!({ "layer": group }));

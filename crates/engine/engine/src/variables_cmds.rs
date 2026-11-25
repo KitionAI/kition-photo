@@ -433,7 +433,7 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| export_as_files(s, p)
         ),
         CommandSpec {
-            id: "variables.list",
+            id: "variable.list",
             label: "List Variables",
             menu: &[],
             shortcut: None,

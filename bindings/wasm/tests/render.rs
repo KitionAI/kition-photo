@@ -18,7 +18,7 @@ fn image() -> (PhotoDocument, u64, u64) {
         let id = doc.execute("layer.new.layer", json!({ "name": name })).unwrap()["layer"].as_u64().unwrap();
         doc.execute("select.rect", json!({ "x": rect[0], "y": rect[1], "width": rect[2], "height": rect[3] })).unwrap();
         doc.execute("edit.fill", json!({ "color": color })).unwrap();
-        doc.execute("select.deselect", json!({})).unwrap();
+        doc.execute("edit.deselectAll", json!({})).unwrap();
         id
     };
     let a = layer(&mut doc, "A", [10, 10, 40, 30], "#ff0000");
@@ -73,7 +73,7 @@ fn the_view_is_the_calls_not_the_editors_and_nothing_changes() {
     let (revision, dirty) = (doc.revision(), doc.dirty());
     doc.set_context(&CallContext { on: vec![json!(b)], part: None, time: None }).unwrap();
     doc.execute("select.rect", json!({ "x": 0, "y": 0, "width": 5, "height": 5 })).unwrap();
-    doc.execute("tools.setColors", json!({ "foreground": "#00ff00" })).unwrap();
+    doc.execute("tool.setColors", json!({ "foreground": "#00ff00" })).unwrap();
     let revision_after_editor = doc.revision();
     let second = doc.execute("file.render", call).unwrap();
     assert_eq!(first, second, "the same bytes");

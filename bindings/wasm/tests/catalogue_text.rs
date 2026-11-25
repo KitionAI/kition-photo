@@ -34,7 +34,7 @@ fn only_effect_commands_are_described_as_setting_an_effect() {
 #[test]
 fn the_unknown_parameter_error_lists_parameters_only() {
     let mut image = PhotoDocument::create("type.psd", 100, 100).unwrap();
-    let error = image.execute("type.create", json!({ "x": 1, "y": 20, "text": "a", "bogusKey": 1 })).unwrap_err();
+    let error = image.execute("text.add", json!({ "x": 1, "y": 20, "text": "a", "bogusKey": 1 })).unwrap_err();
     assert!(error.contains("`bogusKey`") && error.contains("`orientation`") && error.contains("`antialias`"), "{error}");
     for value in ["horizontal", "vertical", "smooth", "sharp", "left", "justify"] {
         assert!(!error.contains(&format!("`{value}`")), "lists the value {value} as a parameter: {error}");

@@ -1,6 +1,6 @@
 //! Command-level round trips: a new document is edited only with engine commands, each edit is
 //! checked, then the document is saved as PSD, reopened, and compared whole: the inspected
-//! document, every type layer's text and style (`type.info`), and the composite's pixels. A second
+//! document, every type layer's text and style (`text.info`), and the composite's pixels. A second
 //! save of the reopened file must reopen the same again.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -48,7 +48,7 @@ fn lasting(doc: &mut PhotoDocument) -> Value {
         .unwrap()
         .iter()
         .filter(|layer| layer["kind"] == "Type")
-        .map(|layer| run(doc, "type.info", json!({ "layer": layer["id"] })))
+        .map(|layer| run(doc, "text.info", json!({ "layer": layer["id"] })))
         .collect();
     let mut types = Value::Array(types);
     engine_data_precision(&mut types);
@@ -183,9 +183,9 @@ fn masks_and_clipping_survive_save_and_reopen() {
     let base = painted(&mut doc, "Base", "#22aa44");
     run(&mut doc, "select.rect", json!({ "x": 10, "y": 8, "width": 30, "height": 20 }));
     run(&mut doc, "layer.layerMask.revealSelection", json!({ "layer": base }));
-    run(&mut doc, "select.deselect", json!({}));
+    run(&mut doc, "edit.deselectAll", json!({}));
     let clipped = painted(&mut doc, "Clipped", "#ffcc00");
-    run(&mut doc, "layer.createClippingMask", json!({ "layer": clipped }));
+    run(&mut doc, "layer.addClippingMask", json!({ "layer": clipped }));
     let state = inspect(&doc);
     assert_eq!(layer(&state, "Base")["hasMask"], true);
     assert_eq!(layer(&state, "Clipped")["clipped"], true);
@@ -195,9 +195,9 @@ fn masks_and_clipping_survive_save_and_reopen() {
 #[test]
 fn type_layers_survive_save_and_reopen() {
     let mut doc = new_doc();
-    run(&mut doc, "type.create", json!({ "text": "Kition 中文 ✓", "x": 4, "y": 30, "size": 14, "color": "#aa2200", "name": "Title" }));
+    run(&mut doc, "text.add", json!({ "text": "Kition 中文 ✓", "x": 4, "y": 30, "size": 14, "color": "#aa2200", "name": "Title" }));
     let title = active(&doc);
-    let info = run(&mut doc, "type.info", json!({ "layer": title }));
+    let info = run(&mut doc, "text.info", json!({ "layer": title }));
     assert!(info.to_string().contains("Kition 中文 ✓"), "{info}");
     assert_eq!(layer(&inspect(&doc), "Title")["kind"], "Type");
     assert_round_trip(&mut doc);

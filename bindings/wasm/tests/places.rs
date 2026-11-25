@@ -17,7 +17,7 @@ fn image() -> (PhotoDocument, u64, u64, u64) {
         let id = doc.execute("layer.new.layer", json!({ "name": name })).unwrap()["layer"].as_u64().unwrap();
         doc.execute("select.rect", json!({ "x": rect[0], "y": rect[1], "width": rect[2], "height": rect[3] })).unwrap();
         doc.execute("edit.fill", json!({ "color": color })).unwrap();
-        doc.execute("select.deselect", json!({})).unwrap();
+        doc.execute("edit.deselectAll", json!({})).unwrap();
         id
     };
     let a = layer(&mut doc, "A", [10, 10, 100, 100], "#ff0000");
@@ -236,7 +236,7 @@ fn review_command_object_roles_follow_the_implementation() {
             assert!(command.objects.contains(&path), "{id}: missing {path}");
         }
     }
-    for id in ["cloneSource.select", "color.profileMismatch", "document.activate", "image.adjustments.hdrToning"] {
+    for id in ["cloneSource.select", "color.profileMismatch", "file.activate", "image.adjustments.hdrToning"] {
         let command = commands.iter().find(|c| c.id == id).unwrap();
         assert!(!command.reads.contains(&kition_kit::EditorState::Active), "{id} does not read the active layer");
         assert_eq!(command.targets, None, "{id} has no layer target");
@@ -264,8 +264,8 @@ fn review_doc_state_inputs_have_member_premises_even_without_an_active_target() 
         ("edit.fill", json!({ "layer": a, "contents": "pattern", "pattern": "Bubbles" }), "~patternContents"),
         ("layer.newFillLayer.pattern", json!({ "pattern": "Bubbles" }), "~patternContents"),
         ("layerComp.apply", json!({ "comp": 1 }), "comps"),
-        ("type.characterStyle.apply", json!({ "layer": a, "id": 1 }), "docState.text_styles"),
-        ("type.paragraphStyle.set", json!({ "id": 1, "attrs": { "size": 12 } }), "docState.text_styles"),
+        ("text.characterStyle.apply", json!({ "layer": a, "id": 1 }), "docState.text_styles"),
+        ("text.paragraphStyle.set", json!({ "id": 1, "attrs": { "size": 12 } }), "docState.text_styles"),
     ] {
         let under = doc.under(command, &params).unwrap().unwrap_or_else(|| panic!("{command}: no premises"));
         // A stored pattern is held through the covers, the rest as fields of the image.

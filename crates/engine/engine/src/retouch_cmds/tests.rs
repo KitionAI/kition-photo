@@ -327,7 +327,7 @@ fn smudge_moves_colour_along_the_stroke() {
         assert!(g(36) < 0.6, "depth {depth}: red dragged right ({})", g(36));
         assert!(g(36) < g(65));
         assert!(rgba(&s, 36, 2)[1] > 0.99, "off-stroke untouched");
-        s.execute("tools.setColors", json!({"foreground": "#0000ff"})).unwrap();
+        s.execute("tool.setColors", json!({"foreground": "#0000ff"})).unwrap();
         s.execute("paint.smudge", json!({"points": [[80, 25], [95, 25]], "size": 6, "hardness": 100, "fingerPainting": true})).unwrap();
         assert!(rgba(&s, 81, 25)[0] < 0.7, "finger painting lays down the foreground colour");
     }

@@ -90,7 +90,7 @@ fn use_brushes(s: &mut Session, count: usize) {
     s.execute("file.new", json!({"width": 800, "height": 600})).unwrap();
     let t = Instant::now();
     for (i, n) in names.iter().enumerate() {
-        s.execute("tools.setBrush", json!({"preset": n})).unwrap();
+        s.execute("tool.setBrush", json!({"preset": n})).unwrap();
         let y = 50.0 + i as f64 * 40.0;
         s.execute("paint.stroke", json!({"points": [[50.0, y], [400.0, y], [700.0, y + 20.0]], "brush": {"size": 60.0}})).unwrap();
     }

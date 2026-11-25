@@ -14,7 +14,7 @@ fn two_docs(w: u32, h: u32, depth: u32) -> (Session, LayerId) {
     let paint = LayerId(s.execute("layer.new.layer", json!({"name": "paint"})).unwrap()["layer"].as_u64().unwrap());
     s.execute("select.rect", json!({"x": 4, "y": 6, "width": 10, "height": 10})).unwrap();
     s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("file.new", json!({"width": 60, "height": 50})).unwrap();
     s.set_active(0);
     (s, paint)

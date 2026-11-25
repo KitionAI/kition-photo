@@ -59,7 +59,7 @@ impl Gen {
         let colour = format!("#{:02x}{:02x}{:02x}", (i * 47 % 256), (i * 91 % 256), (i * 23 % 256));
         let id = match i % 17 {
             3 => {
-                let v = self.run("type.create", json!({"x": x, "y": y + 40, "text": format!("Headline {i}: Autumn collection"), "size": 36, "name": name}));
+                let v = self.run("text.add", json!({"x": x, "y": y + 40, "text": format!("Headline {i}: Autumn collection"), "size": 36, "name": name}));
                 v.get("layer").and_then(Value::as_u64).unwrap_or_else(|| self.active())
             }
             7 => {
@@ -69,7 +69,7 @@ impl Gen {
                 id
             }
             11 => {
-                self.run("shape.create", json!({"kind": "roundedRect", "rect": [x, y, 220, 90], "fill": colour, "name": name}));
+                self.run("shape.add", json!({"kind": "roundedRect", "rect": [x, y, 220, 90], "fill": colour, "name": name}));
                 self.active()
             }
             14 => {
@@ -80,7 +80,7 @@ impl Gen {
                 self.run("layer.new.layer", json!({"name": name}));
                 self.run("select.rect", json!({"x": x, "y": y, "width": 180 + i % 5 * 40, "height": 120 + i % 3 * 30}));
                 self.run("edit.fill", json!({"contents": "color", "color": colour}));
-                self.run("select.deselect", json!({}));
+                self.run("edit.deselectAll", json!({}));
                 self.active()
             }
         };

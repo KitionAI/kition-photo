@@ -34,7 +34,7 @@ try {
   // A rectangle in the middle of the image, on a layer of its own: a press at the canvas's centre
   // lands on its pixels.
   const { width, height } = await details()
-  const made = await runAgent('shape.create', { kind: 'rect', rect: [Math.round(width / 3), Math.round(height / 3), Math.round(width / 3), Math.round(height / 3)], fill: '#2a9d8f' })
+  const made = await runAgent('shape.add', { kind: 'rect', rect: [Math.round(width / 3), Math.round(height / 3), Math.round(width / 3), Math.round(height / 3)], fill: '#2a9d8f' })
   const target = made.completed[0].result.layer
   await until('the rectangle layer exists', async () => (await layerOf(target)) != null)
   const background = (await details()).layers.find((layer) => layer.name === 'Background')

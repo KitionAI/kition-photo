@@ -1253,7 +1253,7 @@ pub fn specs() -> Vec<CommandSpec> {
         }),
         spec!("layer.mergeLayers", "Merge Layers", &["Layer"], Some("Cmd+E"), "{} (one layer selected: Merge Down)", has_layer, |s, _| merge_layers(s)),
         spec!("layer.new.groupFromLayers", "Group from Layers…", &["Layer", "New"], None, r##"{"name":str?}"##, has_layer, group_layers),
-        spec!("layer.arrange.reverse", "Reverse", &["Layer", "Arrange"], None, "{}", two_plus, |s, _| reverse(s)),
+        spec!("arrange.reverse", "Reverse", &["Layer", "Arrange"], None, "{}", two_plus, |s, _| reverse(s)),
         spec!(
             "layer.lockLayers",
             "Lock Layers…",
@@ -2121,7 +2121,7 @@ mod tests {
         assert!(doc(&s).layer(b).unwrap().locks.position && !doc(&s).layer(c).unwrap().locks.position);
         // Reverse a, b, c.
         select_all(&mut s, &[a, b, c]);
-        s.execute("layer.arrange.reverse", json!({})).unwrap();
+        s.execute("arrange.reverse", json!({})).unwrap();
         assert_eq!(doc(&s).layers.iter().skip(1).map(|l| l.id).collect::<Vec<_>>(), vec![c, b, a]);
         assert_eq!(s.active().unwrap().history.entries().last().map(|e| e.as_str()), Some("Reverse"));
     }
@@ -2132,7 +2132,7 @@ mod tests {
         let a = rect_layer(&mut s, Rect::new(0, 0, 5, 5));
         let b = rect_layer(&mut s, Rect::new(0, 0, 5, 5));
         select_all(&mut s, &[a, b]);
-        let v = s.execute("document.inspect", json!({})).unwrap();
+        let v = s.execute("file.inspect", json!({})).unwrap();
         assert_eq!(v["selectedLayers"], json!([a.0, b.0]));
         assert_eq!(v["layers"][0]["selected"], true);
     }

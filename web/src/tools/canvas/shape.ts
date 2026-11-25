@@ -2,7 +2,7 @@ import type { KitTool } from '@kition/sdk/editor'
 import { shapeStyle } from '../options'
 import { HIT_RADIUS, NO_REPAINT, SOFT_EDGE, clickTool, dashed, ellipseOutline, lineDrag, rectArea, rectDrag, tracePath, tracePolyline, type PathData, type PathKnot, type PhotoToolEnv } from './common'
 
-/** What each shape tool asks `shape.create` for, beyond its box, fill, and stroke (upstream's `shape_geometry`). */
+/** What each shape tool asks `shape.add` for, beyond its box, fill, and stroke (upstream's `shape_geometry`). */
 function kind(id: string, env: PhotoToolEnv): Record<string, unknown> {
   const o = env.options
   if (id === 'Rectangle') return o.radius > 0 ? { kind: 'roundedRect', radii: [o.radius, o.radius, o.radius, o.radius] } : { kind: 'rect' }
@@ -27,7 +27,7 @@ export function shapeTool(id: string, env: PhotoToolEnv): KitTool {
       // The engine owns stroke bounds, including miter joins that extend beyond half the width.
       const damage = appearance.stroke ? null : rectArea(area, SOFT_EDGE)
       if (id === 'CustomShape') void env.run('shape.presets.place', { preset: env.options.customShape, rect, keepAspect: start.shift, ...appearance }, damage)
-      else void env.run('shape.create', { ...kind(id, env), rect, ...appearance }, damage)
+      else void env.run('shape.add', { ...kind(id, env), rect, ...appearance }, damage)
     },
     { square: true, outline: id === 'EllipseShape' ? ellipseOutline : undefined, fill: () => (env.options.shapeFill ? env.foreground : null) },
   )
@@ -45,7 +45,7 @@ export function lineTool(env: PhotoToolEnv): KitTool {
       dy = length * Math.sin(angle)
     }
     if (Math.hypot(dx, dy) < 1) return
-    void env.run('shape.create', { kind: 'line', from: [start.x, start.y], to: [start.x + dx, start.y + dy], weight: Math.max(1, env.options.weight), ...shapeStyle(env.options, env.foreground, env.background) })
+    void env.run('shape.add', { kind: 'line', from: [start.x, start.y], to: [start.x + dx, start.y + dy], weight: Math.max(1, env.options.weight), ...shapeStyle(env.options, env.foreground, env.background) })
   })
 }
 
@@ -93,7 +93,7 @@ export function penTool(env: PhotoToolEnv): KitTool {
       if (env.options.penMode === 'shape') {
         const style = shapeStyle(env.options, env.foreground, env.background)
         const open = { fill: null, stroke: { width: Math.max(1, env.options.strokeWidth), color: env.foreground } }
-        return env.run('shape.create', { kind: 'path', path, ...(closed ? style : open) })
+        return env.run('shape.add', { kind: 'path', path, ...(closed ? style : open) })
       }
       return env.run('path.set', { name: 'work', path }, NO_REPAINT)
     },

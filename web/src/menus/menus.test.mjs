@@ -145,7 +145,7 @@ test('hides commands that need a local file system or the host', () => {
 
 test("draws the engine's commands upstream's catalog lacks, where upstream draws them", () => {
   const commands = PHOTO_MENUS.map((item) => item.command)
-  const engineOnly = ['layer.mergeDown', 'layer.releaseClippingMask', 'filter.other.colorToAlpha', 'filter.render.relight', 'type.antiAlias.none', 'layer.objectLayers.stackMode.none', 'file.newFromClipboard', 'type.create', 'shape.create', 'type.rasterize', 'shape.rasterize', 'layer.vectorMask.add', 'layer.vectorMask.fromPath', 'plugin.install']
+  const engineOnly = ['layer.mergeDown', 'layer.releaseClippingMask', 'filter.other.colorToAlpha', 'filter.render.relight', 'text.antiAlias.none', 'layer.stackMode.none', 'file.newFromClipboard', 'text.add', 'shape.add', 'text.rasterize', 'shape.rasterize', 'layer.vectorMask.add', 'layer.vectorMask.fromPath', 'plugin.install']
   for (const command of engineOnly) assert.equal(at(command).length, 1, command)
   // Upstream's PLACE_AFTER: right after the catalog row they belong next to.
   assert.equal(commands.indexOf('file.newFromClipboard'), commands.indexOf('file.new') + 1)
@@ -156,7 +156,7 @@ test("draws the engine's commands upstream's catalog lacks, where upstream draws
     const path = PHOTO_MENUS[index].path.join('/')
     return PHOTO_MENUS.slice(index + 1).every((item) => item.path.join('/') !== path || engineOnly.includes(item.command))
   }
-  for (const command of ['layer.mergeDown', 'filter.other.colorToAlpha', 'type.antiAlias.none', 'layer.vectorMask.fromPath']) assert.equal(last(command), true, command)
+  for (const command of ['layer.mergeDown', 'filter.other.colorToAlpha', 'text.antiAlias.none', 'layer.vectorMask.fromPath']) assert.equal(last(command), true, command)
   assert.deepEqual(at('filter.other.colorToAlpha')[0].path, ['Filter', 'Other'])
   // Upstream's own shell rows (its Help links and themes) stay out.
   assert.equal(commands.some((command) => command.startsWith('help.') || command.startsWith('window.theme.')), false)

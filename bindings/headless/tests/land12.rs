@@ -46,7 +46,7 @@ async fn rectangle_guard_compares_the_addressed_pixels_inside_a_tile() {
         f.colleague(&[
             ("select.rect", json!({"x":rect[0],"y":rect[1],"width":rect[2],"height":rect[3]})),
             ("edit.fill", json!({"layer":id,"color":"#000000"})),
-            ("select.deselect", json!({})),
+            ("edit.deselectAll", json!({})),
         ]);
         let before = std::fs::read(f.file()).unwrap();
         let params = json!({"layer":id,"color":"#00ff00","region":{"rect":[70,70,40,40]}});

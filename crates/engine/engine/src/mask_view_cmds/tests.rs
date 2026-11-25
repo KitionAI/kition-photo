@@ -10,13 +10,13 @@ fn session() -> (Session, u64, u64) {
     s.execute("edit.fill", json!({"contents": "color", "color": "#ff0000"})).unwrap();
     s.execute("select.rect", json!({"x": 20, "y": 0, "width": 20, "height": 20})).unwrap();
     s.execute("layer.layerMask.revealSelection", json!({})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let st = s.active_mut().unwrap();
     st.saved_revision = st.revision;
     (s, masked, bg)
 }
 
-/// The view as `document.inspect` reports it.
+/// The view as `file.inspect` reports it.
 fn view(s: &Session) -> Value {
     crate::inspect::document(s.active().unwrap())["layerMaskView"].clone()
 }
@@ -125,7 +125,7 @@ fn load_selection_from_a_vector_mask() {
     let b = s.active().unwrap().doc.selection.as_ref().unwrap().content_bounds();
     assert_eq!((b.x0, b.y0, b.width(), b.height()), (4, 4, 12, 12), "the path's shape, even when disabled");
     // ⌘⌥: subtract, ⌘⇧⌥: intersect.
-    s.execute("select.all", json!({})).unwrap();
+    s.execute("edit.selectAll", json!({})).unwrap();
     s.execute("select.loadSelection", json!({"channel": "vectorMask", "operation": "subtract"})).unwrap();
     let sel = s.active().unwrap().doc.selection.clone().unwrap();
     assert!(sel.sample_channel(10, 10, 0) < 0.01 && sel.sample_channel(30, 10, 0) > 0.99);

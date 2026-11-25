@@ -15,13 +15,13 @@ fn colour_pattern(s: &mut Session) -> String {
     s.execute("edit.fill", json!({"contents": "color", "color": "#2040e0"})).unwrap();
     s.execute("select.inverse", json!({})).unwrap();
     s.execute("edit.fill", json!({"contents": "color", "color": "#e0d020"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let r = s.execute("edit.definePattern", json!({"name": "Blue Yellow"})).unwrap();
     r["pattern"].as_str().unwrap().to_string()
 }
 
 fn pixel(s: &mut Session, x: i32, y: i32) -> [f32; 4] {
-    let v = s.execute("document.pixel", json!({"x": x, "y": y})).unwrap();
+    let v = s.execute("file.pixel", json!({"x": x, "y": y})).unwrap();
     let a: Vec<f32> = v.as_array().unwrap().iter().map(|c| c.as_f64().unwrap() as f32).collect();
     [a[0], a[1], a[2], a[3]]
 }

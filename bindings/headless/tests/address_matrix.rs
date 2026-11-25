@@ -139,7 +139,7 @@ fn edits(change: Change, id: u64, target: u64, scope: usize) -> Vec<(&'static st
                 ("layer.select", json!({"layer":id})),
                 ("select.rect", json!({"x":x,"y":y,"width":8,"height":8})),
                 ("edit.fill", json!({"color":"#123456"})),
-                ("select.deselect", json!({})),
+                ("edit.deselectAll", json!({})),
             ]
         }
         Mask => vec![("layer.layerMask.hideAll", json!({"layer":id}))],

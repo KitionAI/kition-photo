@@ -643,7 +643,7 @@ fn rasterize_one(s: &mut Session, id: LayerId, only: Option<&str>, key: &str) ->
     let Some(kind) = kind_of(s, id).filter(|k| only.is_none_or(|o| o == *k)) else { return Ok(false) };
     match kind {
         "type" => {
-            s.execute("type.rasterize", json!({"layer": id.0, "coalesce": key}))?;
+            s.execute("text.rasterize", json!({"layer": id.0, "coalesce": key}))?;
         }
         "shape" => {
             s.execute("layer.rasterize.shape", json!({"layer": id.0, "coalesce": key}))?;
@@ -954,7 +954,7 @@ mod tests {
         let m = active(&s).mask.as_ref().unwrap();
         assert!((m.density - 0.4).abs() < 1e-6 && (m.feather - 3.5).abs() < 1e-6);
         assert_eq!(s.active().unwrap().history.past_len(), past + 1);
-        let inspected = s.execute("document.inspect", json!({})).unwrap();
+        let inspected = s.execute("file.inspect", json!({})).unwrap();
         let layer = inspected["layers"].as_array().unwrap().iter().find(|l| l["hasMask"] == true).unwrap().clone();
         assert_eq!((layer["maskDensity"].as_f64(), layer["maskFeather"].as_f64()), (Some(40.0), Some(3.5)));
         // Only what is given changes; bad values are refused and change nothing.
@@ -1214,7 +1214,7 @@ mod tests {
         for depth in [8, 16, 32] {
             for (loc, w, inside) in [("inside", 3, 3), ("center", 3, 2), ("center", 1, 1)] {
                 let mut s = session(depth);
-                s.execute("select.all", json!({})).unwrap();
+                s.execute("edit.selectAll", json!({})).unwrap();
                 s.execute("edit.stroke", json!({"width": w, "color": "#ff0000", "location": loc})).unwrap();
                 // 40 × 30 canvas: k px in from each side, in the middle of the side.
                 for name in ["left", "right", "top", "bottom"] {
@@ -1307,7 +1307,7 @@ mod tests {
         let mut s = session(8);
         assert!(!s.is_enabled("select.reselect"));
         s.execute("select.rect", json!({"x": 2, "y": 3, "width": 5, "height": 6})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         assert!(doc(&s).selection.is_none());
         s.execute("select.reselect", json!({})).unwrap();
         assert_eq!(doc(&s).selection.as_ref().unwrap().content_bounds(), Rect::new(2, 3, 7, 9));
@@ -1348,7 +1348,7 @@ mod tests {
     fn paste_into_masks_to_the_selection() {
         let mut s = session(8);
         paint_square(&mut s, Rect::new(0, 0, 10, 10), [1.0, 0.0, 0.0, 1.0]);
-        s.execute("select.all", json!({})).unwrap();
+        s.execute("edit.selectAll", json!({})).unwrap();
         s.execute("edit.copy", json!({})).unwrap();
         let steps = s.active().unwrap().history.past_len();
         s.execute("select.rect", json!({"x": 20, "y": 10, "width": 8, "height": 8})).unwrap();

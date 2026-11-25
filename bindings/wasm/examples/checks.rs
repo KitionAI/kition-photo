@@ -18,7 +18,7 @@ fn image() -> Result<Session, String> {
     // Something to see: a filled rectangle on the background.
     session.execute("select.rect", json!({ "x": 40, "y": 40, "width": 160, "height": 100 })).map_err(|error| error.to_string())?;
     session.execute("edit.fill", json!({ "color": "#1f4e8c" })).map_err(|error| error.to_string())?;
-    session.execute("select.deselect", json!({})).map_err(|error| error.to_string())?;
+    session.execute("edit.deselectAll", json!({})).map_err(|error| error.to_string())?;
     Ok(session)
 }
 
@@ -45,7 +45,7 @@ fn fixtures() -> Result<Vec<(&'static str, Session)>, String> {
     run(&mut hidden, "layer.new.layer", json!({ "name": "Badge" }))?;
     run(&mut hidden, "select.rect", json!({ "x": 220, "y": 120, "width": 60, "height": 40 }))?;
     run(&mut hidden, "edit.fill", json!({ "color": "#c0392b" }))?;
-    run(&mut hidden, "select.deselect", json!({}))?;
+    run(&mut hidden, "edit.deselectAll", json!({}))?;
     top(&mut hidden)?.visible = false;
     out.push(("check-hidden-layer.psd", hidden));
 
@@ -53,7 +53,7 @@ fn fixtures() -> Result<Vec<(&'static str, Session)>, String> {
     run(&mut off_canvas, "layer.new.layer", json!({ "name": "Stray" }))?;
     run(&mut off_canvas, "select.rect", json!({ "x": 10, "y": 10, "width": 30, "height": 30 }))?;
     run(&mut off_canvas, "edit.fill", json!({ "color": "#27ae60" }))?;
-    run(&mut off_canvas, "select.deselect", json!({}))?;
+    run(&mut off_canvas, "edit.deselectAll", json!({}))?;
     if let LayerContent::Raster(surface) = &top(&mut off_canvas)?.content {
         let moved = surface.translated(900, 0, surface.content_bounds());
         top(&mut off_canvas)?.content = LayerContent::Raster(moved);
@@ -61,12 +61,12 @@ fn fixtures() -> Result<Vec<(&'static str, Session)>, String> {
     out.push(("check-off-canvas.psd", off_canvas));
 
     let mut empty_text = image()?;
-    let made = run(&mut empty_text, "type.create", json!({ "x": 20, "y": 30, "text": "Title", "size": 18, "color": "#000000" }))?;
-    run(&mut empty_text, "type.edit", json!({ "layer": made["layer"], "text": "" }))?;
+    let made = run(&mut empty_text, "text.add", json!({ "x": 20, "y": 30, "text": "Title", "size": 18, "color": "#000000" }))?;
+    run(&mut empty_text, "text.edit", json!({ "layer": made["layer"], "text": "" }))?;
     out.push(("check-empty-text.kphoto", empty_text));
 
     let mut substituted = image()?;
-    run(&mut substituted, "type.create", json!({ "x": 20, "y": 30, "text": "Title", "size": 18, "color": "#000000", "font": "No Such Font Family 42" }))?;
+    run(&mut substituted, "text.add", json!({ "x": 20, "y": 30, "text": "Title", "size": 18, "color": "#000000", "font": "No Such Font Family 42" }))?;
     out.push(("check-font-substituted.kphoto", substituted));
 
     // An object layer linked to a picture that is gone: placed from a file that is then removed.

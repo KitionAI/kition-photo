@@ -1,8 +1,8 @@
-//! Headless caret geometry for type layers: `type.hitTest`, `type.caret`, `type.navigate`.
+//! Headless caret geometry for type layers: `text.hitTest`, `text.caret`, `text.navigate`.
 //!
 //! Queries (`journal: false`, no history step). Positions are document pixels, so an agent never
-//! touches text space; offsets are character indices, the same unit as `type.edit` and
-//! `type.setStyle`. The Type tool calls the same word, line and hit-test helpers.
+//! touches text space; offsets are character indices, the same unit as `text.edit` and
+//! `text.setStyle`. The Type tool calls the same word, line and hit-test helpers.
 
 use kition_photo_doc::{Affine, Document, LayerContent, LayerId};
 use kition_photo_geom::{Point, Rect};
@@ -107,7 +107,7 @@ fn topmost(doc: &Document, x: f64, y: f64) -> Option<Frame> {
         doc.walk().into_iter().filter(|(_, _, l)| l.visible && matches!(l.content, LayerContent::Text(_))).map(|(_, _, l)| l.id).collect();
     ids.reverse();
     ids.into_iter().find_map(|id| {
-        let f = frame(doc, id, "type.hitTest").ok()?;
+        let f = frame(doc, id, "text.hitTest").ok()?;
         f.contains(x, y).then_some(f)
     })
 }
@@ -130,7 +130,7 @@ fn column(layout: &TextLayout, aff: Affine, text: &str, index: usize, doc_x: Opt
 }
 
 fn hit_test(s: &Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "type.hitTest";
+    const CMD: &str = "text.hitTest";
     let x = req_f64(p, "x", CMD)?;
     let y = req_f64(p, "y", CMD)?;
     let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
@@ -147,7 +147,7 @@ fn hit_test(s: &Session, p: &Value) -> Result<Value> {
 }
 
 fn caret(s: &Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "type.caret";
+    const CMD: &str = "text.caret";
     let index = req_index(p, "index", CMD)?;
     let id = resolve_layer(s, p, CMD)?;
     let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
@@ -162,7 +162,7 @@ fn caret(s: &Session, p: &Value) -> Result<Value> {
 }
 
 fn navigate(s: &Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "type.navigate";
+    const CMD: &str = "text.navigate";
     let index = req_index(p, "index", CMD)?;
     let mov = p.get("move").and_then(Value::as_str).ok_or_else(|| bad(CMD, "missing `move`"))?;
     let doc_x = opt_f64(p, "x", CMD)?;
@@ -192,7 +192,7 @@ fn navigate(s: &Session, p: &Value) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec {
-            id: "type.hitTest",
+            id: "text.hitTest",
             label: "Hit-Test Type",
             menu: &[],
             shortcut: None,
@@ -202,7 +202,7 @@ pub fn specs() -> Vec<CommandSpec> {
             run: |s, p| hit_test(s, p),
         },
         CommandSpec {
-            id: "type.caret",
+            id: "text.caret",
             label: "Type Caret",
             menu: &[],
             shortcut: None,
@@ -212,7 +212,7 @@ pub fn specs() -> Vec<CommandSpec> {
             run: |s, p| caret(s, p),
         },
         CommandSpec {
-            id: "type.navigate",
+            id: "text.navigate",
             label: "Navigate Type",
             menu: &[],
             shortcut: None,
@@ -235,7 +235,7 @@ mod tests {
     }
 
     fn create(s: &mut Session, p: Value) -> u64 {
-        s.execute("type.create", p).unwrap()["layer"].as_u64().unwrap()
+        s.execute("text.add", p).unwrap()["layer"].as_u64().unwrap()
     }
 
     fn u(v: &Value, k: &str) -> u64 {
@@ -245,18 +245,18 @@ mod tests {
     /// Caret midpoint hit-tests back to the same character. `inside` is asserted for axis-aligned
     /// type; a rotation can land an edge caret a fraction of a pixel outside the line box.
     fn round_trip(s: &mut Session, id: u64, check_inside: bool) {
-        let info = s.execute("type.info", json!({"layer": id})).unwrap();
+        let info = s.execute("text.info", json!({"layer": id})).unwrap();
         let text = info["text"].as_str().unwrap();
         let lines = info["lines"].as_array().unwrap();
         let n = text.chars().count();
         for i in 0..=n {
-            let c = s.execute("type.caret", json!({"layer": id, "index": i})).unwrap();
+            let c = s.execute("text.caret", json!({"layer": id, "index": i})).unwrap();
             assert_eq!(u(&c, "index"), i as u64, "{text:?} caret {i}: {c}");
             let seg = c["segment"].as_array().unwrap();
             let x = (seg[0][0].as_f64().unwrap() + seg[1][0].as_f64().unwrap()) / 2.0;
             let y = (seg[0][1].as_f64().unwrap() + seg[1][1].as_f64().unwrap()) / 2.0;
             assert!(x.is_finite() && y.is_finite(), "{c}");
-            let h = s.execute("type.hitTest", json!({"layer": id, "x": x, "y": y})).unwrap();
+            let h = s.execute("text.hitTest", json!({"layer": id, "x": x, "y": y})).unwrap();
             assert_eq!(u(&h, "index"), i as u64, "{text:?} index {i} at ({x}, {y}) -> {h}");
             assert_eq!(h["line"], c["line"], "{text:?} index {i}");
             assert_eq!(u(&h, "layer"), id);
@@ -275,7 +275,7 @@ mod tests {
 
     #[test]
     fn commands_are_registered_queries() {
-        for id in ["type.hitTest", "type.caret", "type.navigate"] {
+        for id in ["text.hitTest", "text.caret", "text.navigate"] {
             let spec = crate::command_specs().iter().find(|c| c.id == id).unwrap_or_else(|| panic!("missing {id}"));
             assert!(!spec.journal, "{id}");
             assert!(spec.menu.is_empty(), "{id}");
@@ -289,7 +289,7 @@ mod tests {
         round_trip(&mut s, point, true);
 
         let para = create(&mut s, json!({"box": [15, 20, 64, 180], "text": "one two three four six seven eight nine", "size": 16}));
-        let nlines = s.execute("type.info", json!({"layer": para})).unwrap()["lines"].as_array().unwrap().len();
+        let nlines = s.execute("text.info", json!({"layer": para})).unwrap()["lines"].as_array().unwrap().len();
         assert!(nlines >= 2, "paragraph should wrap, got {nlines} lines");
         round_trip(&mut s, para, true);
 
@@ -297,11 +297,11 @@ mod tests {
         let ang = 0.55_f64;
         let scale = 1.35;
         let (sn, cs) = ang.sin_cos();
-        s.execute("type.edit", json!({"layer": turned, "transform": [cs * scale, sn * scale, -sn * scale, cs * scale, 130.0, 80.0]})).unwrap();
+        s.execute("text.edit", json!({"layer": turned, "transform": [cs * scale, sn * scale, -sn * scale, cs * scale, 130.0, 80.0]})).unwrap();
         round_trip(&mut s, turned, false);
 
         let vert = create(&mut s, json!({"x": 200, "y": 30, "text": "Abc\nDef", "size": 20}));
-        s.execute("type.orientation.vertical", json!({"layer": vert})).unwrap();
+        s.execute("text.orientation.vertical", json!({"layer": vert})).unwrap();
         round_trip(&mut s, vert, false);
     }
 
@@ -310,7 +310,7 @@ mod tests {
         if let Some(x) = x {
             p["x"] = json!(x);
         }
-        u(&s.execute("type.navigate", p).unwrap(), "index")
+        u(&s.execute("text.navigate", p).unwrap(), "index")
     }
 
     #[test]
@@ -330,12 +330,12 @@ mod tests {
         assert_eq!(go(&mut s, id, 4, "lineStart", None), 0);
         assert_eq!(go(&mut s, id, 4, "lineEnd", None), 15);
 
-        // A newline is not part of either word; line edges agree with type.info.
+        // A newline is not part of either word; line edges agree with text.info.
         let id = create(&mut s, json!({"x": 20, "y": 120, "text": "hello\nworld", "size": 18}));
         assert_eq!(go(&mut s, id, 0, "wordNext", None), 5);
         assert_eq!(go(&mut s, id, 5, "wordNext", None), 11);
         assert_eq!(go(&mut s, id, 6, "wordPrev", None), 0);
-        let info = s.execute("type.info", json!({"layer": id})).unwrap();
+        let info = s.execute("text.info", json!({"layer": id})).unwrap();
         let lines = info["lines"].as_array().unwrap();
         assert_eq!(lines.len(), 2, "{lines:?}");
         let (l0s, l0e) = (lines[0]["start"].as_u64().unwrap(), lines[0]["end"].as_u64().unwrap());
@@ -351,12 +351,12 @@ mod tests {
 
         // Repeated line moves keep the document x of the original column.
         let id = create(&mut s, json!({"x": 24, "y": 200, "text": "WWWWWW\nI", "size": 28}));
-        let info = s.execute("type.info", json!({"layer": id})).unwrap();
+        let info = s.execute("text.info", json!({"layer": id})).unwrap();
         let lines = info["lines"].as_array().unwrap();
         let end0 = lines[0]["end"].as_u64().unwrap();
         let (start1, end1) = (lines[1]["start"].as_u64().unwrap(), lines[1]["end"].as_u64().unwrap());
         assert!(end1 > start1, "{lines:?}");
-        let caret0 = s.execute("type.caret", json!({"layer": id, "index": 0})).unwrap();
+        let caret0 = s.execute("text.caret", json!({"layer": id, "index": 0})).unwrap();
         let x = caret0["segment"][0][0].as_f64().unwrap();
         assert_eq!(go(&mut s, id, end0 as usize, "lineNext", Some(x)), start1);
         assert_eq!(go(&mut s, id, end0 as usize, "lineNext", None), end1);
@@ -366,9 +366,9 @@ mod tests {
         let steps = s.active().unwrap().history.entries().len();
         let rev = s.active().unwrap().revision;
         let journal = s.journal.len();
-        s.execute("type.hitTest", json!({"layer": id, "x": x, "y": caret0["segment"][0][1]})).unwrap();
-        s.execute("type.caret", json!({"layer": id, "index": 1})).unwrap();
-        s.execute("type.navigate", json!({"layer": id, "index": 0, "move": "end"})).unwrap();
+        s.execute("text.hitTest", json!({"layer": id, "x": x, "y": caret0["segment"][0][1]})).unwrap();
+        s.execute("text.caret", json!({"layer": id, "index": 1})).unwrap();
+        s.execute("text.navigate", json!({"layer": id, "index": 0, "move": "end"})).unwrap();
         assert_eq!(s.active().unwrap().history.entries().len(), steps);
         assert_eq!(s.active().unwrap().revision, rev);
         assert_eq!(s.journal.len(), journal);
@@ -379,26 +379,26 @@ mod tests {
         let mut s = session();
         let lower = create(&mut s, json!({"x": 50, "y": 80, "text": "AAAA", "size": 36}));
         let upper = create(&mut s, json!({"x": 50, "y": 80, "text": "BBBB", "size": 36}));
-        let c = s.execute("type.caret", json!({"layer": upper, "index": 1})).unwrap();
+        let c = s.execute("text.caret", json!({"layer": upper, "index": 1})).unwrap();
         let x = (c["segment"][0][0].as_f64().unwrap() + c["segment"][1][0].as_f64().unwrap()) / 2.0;
         let y = (c["segment"][0][1].as_f64().unwrap() + c["segment"][1][1].as_f64().unwrap()) / 2.0;
-        let hit = s.execute("type.hitTest", json!({"x": x, "y": y})).unwrap();
+        let hit = s.execute("text.hitTest", json!({"x": x, "y": y})).unwrap();
         assert_eq!(u(&hit, "layer"), upper);
         assert_eq!(hit["inside"], true);
         s.execute("layer.setProps", json!({"layer": upper, "visible": false})).unwrap();
-        let hit = s.execute("type.hitTest", json!({"x": x, "y": y})).unwrap();
+        let hit = s.execute("text.hitTest", json!({"x": x, "y": y})).unwrap();
         assert_eq!(u(&hit, "layer"), lower);
         // A named hidden layer is still queried.
-        let hit = s.execute("type.hitTest", json!({"layer": upper, "x": x, "y": y})).unwrap();
+        let hit = s.execute("text.hitTest", json!({"layer": upper, "x": x, "y": y})).unwrap();
         assert_eq!(u(&hit, "layer"), upper);
-        assert!(s.execute("type.hitTest", json!({"x": -40.0, "y": -40.0})).is_err());
+        assert!(s.execute("text.hitTest", json!({"x": -40.0, "y": -40.0})).is_err());
 
         let empty = create(&mut s, json!({"x": 10, "y": 40, "text": "", "size": 18}));
-        let c = s.execute("type.caret", json!({"layer": empty, "index": 0})).unwrap();
+        let c = s.execute("text.caret", json!({"layer": empty, "index": 0})).unwrap();
         assert_eq!(u(&c, "index"), 0);
         let x = c["segment"][0][0].as_f64().unwrap();
         let y = (c["segment"][0][1].as_f64().unwrap() + c["segment"][1][1].as_f64().unwrap()) / 2.0;
-        let hit = s.execute("type.hitTest", json!({"layer": empty, "x": x, "y": y})).unwrap();
+        let hit = s.execute("text.hitTest", json!({"layer": empty, "x": x, "y": y})).unwrap();
         assert_eq!(u(&hit, "index"), 0);
         for mov in ["wordNext", "wordPrev", "lineNext", "linePrev", "lineStart", "lineEnd", "start", "end"] {
             assert_eq!(go(&mut s, empty, 0, mov, None), 0, "{mov}");
@@ -408,9 +408,9 @@ mod tests {
     #[test]
     fn bad_params_are_errors() {
         let mut bare = Session::new();
-        assert!(matches!(bare.execute("type.hitTest", json!({"x": 0, "y": 0})), Err(EngineError::Disabled(..))));
-        assert!(matches!(bare.execute("type.caret", json!({"index": 0})), Err(EngineError::Disabled(..))));
-        assert!(matches!(bare.execute("type.navigate", json!({"index": 0, "move": "end"})), Err(EngineError::Disabled(..))));
+        assert!(matches!(bare.execute("text.hitTest", json!({"x": 0, "y": 0})), Err(EngineError::Disabled(..))));
+        assert!(matches!(bare.execute("text.caret", json!({"index": 0})), Err(EngineError::Disabled(..))));
+        assert!(matches!(bare.execute("text.navigate", json!({"index": 0, "move": "end"})), Err(EngineError::Disabled(..))));
 
         let mut s = session();
         let id = create(&mut s, json!({"x": 10, "y": 40, "text": "Hi", "size": 20}));
@@ -419,24 +419,24 @@ mod tests {
             Err(EngineError::BadParams { .. }) => {}
             other => panic!("{cmd} -> {other:?}"),
         };
-        bad(&mut s, "type.hitTest", json!({}));
-        bad(&mut s, "type.hitTest", json!({"x": "1", "y": 2}));
-        bad(&mut s, "type.hitTest", json!({"layer": id, "x": 1}));
-        bad(&mut s, "type.hitTest", json!({"layer": "nope", "x": 1, "y": 2}));
-        bad(&mut s, "type.hitTest", json!({"layer": pixel, "x": 1, "y": 2}));
-        bad(&mut s, "type.caret", json!({"layer": id}));
-        bad(&mut s, "type.caret", json!({"layer": id, "index": -1}));
-        bad(&mut s, "type.caret", json!({"layer": id, "index": 1.5}));
-        bad(&mut s, "type.caret", json!({"layer": id, "index": 99}));
-        bad(&mut s, "type.caret", json!({"layer": pixel, "index": 0}));
-        bad(&mut s, "type.navigate", json!({"layer": id, "index": 0}));
-        bad(&mut s, "type.navigate", json!({"layer": id, "index": 0, "move": "left"}));
-        bad(&mut s, "type.navigate", json!({"layer": id, "index": 9, "move": "end"}));
-        bad(&mut s, "type.navigate", json!({"layer": id, "index": 0, "move": "lineNext", "x": "no"}));
-        bad(&mut s, "type.navigate", json!({"layer": pixel, "index": 0, "move": "start"}));
-        assert!(matches!(s.execute("type.caret", json!({"layer": 9_999_999, "index": 0})), Err(EngineError::NoLayer(_))));
+        bad(&mut s, "text.hitTest", json!({}));
+        bad(&mut s, "text.hitTest", json!({"x": "1", "y": 2}));
+        bad(&mut s, "text.hitTest", json!({"layer": id, "x": 1}));
+        bad(&mut s, "text.hitTest", json!({"layer": "nope", "x": 1, "y": 2}));
+        bad(&mut s, "text.hitTest", json!({"layer": pixel, "x": 1, "y": 2}));
+        bad(&mut s, "text.caret", json!({"layer": id}));
+        bad(&mut s, "text.caret", json!({"layer": id, "index": -1}));
+        bad(&mut s, "text.caret", json!({"layer": id, "index": 1.5}));
+        bad(&mut s, "text.caret", json!({"layer": id, "index": 99}));
+        bad(&mut s, "text.caret", json!({"layer": pixel, "index": 0}));
+        bad(&mut s, "text.navigate", json!({"layer": id, "index": 0}));
+        bad(&mut s, "text.navigate", json!({"layer": id, "index": 0, "move": "left"}));
+        bad(&mut s, "text.navigate", json!({"layer": id, "index": 9, "move": "end"}));
+        bad(&mut s, "text.navigate", json!({"layer": id, "index": 0, "move": "lineNext", "x": "no"}));
+        bad(&mut s, "text.navigate", json!({"layer": pixel, "index": 0, "move": "start"}));
+        assert!(matches!(s.execute("text.caret", json!({"layer": 9_999_999, "index": 0})), Err(EngineError::NoLayer(_))));
         // A point on the named layer but outside its text still returns a caret, marked outside.
-        let far = s.execute("type.hitTest", json!({"layer": id, "x": 390, "y": 290})).unwrap();
+        let far = s.execute("text.hitTest", json!({"layer": id, "x": 390, "y": 290})).unwrap();
         assert_eq!(far["inside"], false);
         assert!(u(&far, "index") <= 2);
     }

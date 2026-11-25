@@ -382,7 +382,7 @@ const LUT_LIMIT = 32 * 1024 * 1024
  */
 function ColorLookupSettings({ lookup, params, set }: { lookup: string; params: Params; set: Set }) {
   const { phrase, t } = useKitEditor()
-  const looks = useEngineQuery<{ id: string; label: string }[]>('image.adjustments.colorLookup.list') ?? []
+  const looks = useEngineQuery<{ id: string; label: string }[]>('image.adjustments.listColorLookups') ?? []
   const files = useHostPick()
   const current = lookup ? (looks.find((look) => look.label === lookup)?.id ?? 'custom') : 'none'
   const load = async () => {

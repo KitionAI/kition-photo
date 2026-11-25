@@ -46,13 +46,13 @@ impl Headless {
 
     /// Create a session for an explicit local CLI invocation. The CLI caller,
     /// not a remote automation client, supplies these host paths. Nested
-    /// `actions.play` steps are not re-checked: this caller is already trusted.
+    /// `action.play` steps are not re-checked: this caller is already trusted.
     pub fn trusted_local() -> Self {
         Self { session: Session::new(), writers: HashMap::new(), filesystem: Filesystem::TrustedLocal }
     }
 
     /// Create an automation session with capability-scoped file access.
-    /// Each step of `actions.play` is checked with [`authorize_engine_step`].
+    /// Each step of `action.play` is checked with [`authorize_engine_step`].
     pub fn with_workspace(workspace: AuthorizedWorkspace) -> Self {
         untrusted(Filesystem::Workspace(workspace))
     }
@@ -234,7 +234,7 @@ impl Headless {
 
     /// Run a command; with `wait` false, a job-capable command (filters, Smart Fill,
     /// Photomerge, …) runs in the background and this returns `{"job": id}` at once (poll with
-    /// `jobs.list`, stop with `jobs.cancel`). Other commands finish before returning either way.
+    /// `job.list`, stop with `job.cancel`). Other commands finish before returning either way.
     pub fn command_start(&mut self, id: &str, params: Value, wait: bool) -> Result<Value, AutomationError> {
         let params = if params.is_null() { json!({}) } else { params };
         if !matches!(&self.filesystem, Filesystem::TrustedLocal) {

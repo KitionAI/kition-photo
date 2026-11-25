@@ -400,7 +400,7 @@ mod tests {
     #[test]
     fn every_constant_contents() {
         let mut s = session();
-        s.execute("tools.setColors", json!({"foreground": [1.0, 0.0, 0.0, 1.0], "background": [0.0, 0.0, 1.0, 1.0]})).unwrap();
+        s.execute("tool.setColors", json!({"foreground": [1.0, 0.0, 0.0, 1.0], "background": [0.0, 0.0, 1.0, 1.0]})).unwrap();
         for (c, want) in [
             ("foreground", [1.0, 0.0, 0.0, 1.0]),
             ("background", [0.0, 0.0, 1.0, 1.0]),
@@ -423,7 +423,7 @@ mod tests {
         let mut s = session();
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 20, "height": 30})).unwrap();
         s.execute(CMD, json!({"contents": "white"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         // Preserve Transparency: the empty right half stays empty.
         s.execute(CMD, json!({"contents": "black", "opacity": 50, "preserveTransparency": true})).unwrap();
         assert!(close(px(&s, 5, 5), [0.5, 0.5, 0.5, 1.0]), "{:?}", px(&s, 5, 5));
@@ -496,7 +496,7 @@ mod tests {
         time(&mut s, "colour 50% multiply", json!({"opacity": 50, "mode": "multiply"}));
         s.execute("select.rect", json!({"x": 100, "y": 100, "width": 5000, "height": 3000})).unwrap();
         time(&mut s, "colour, 15 MP rectangle selection", json!({}));
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         // The old per-pixel f32 path, for comparison.
         let st = s.active().unwrap();
         let mut surf = st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap().clone();
@@ -523,7 +523,7 @@ mod tests {
             assert!(s.execute(CMD, p.clone()).is_err(), "{p}");
         }
         // Everything selected leaves nothing to sample from.
-        s.execute("select.all", json!({})).unwrap();
+        s.execute("edit.selectAll", json!({})).unwrap();
         assert!(s.execute(CMD, json!({"contents": "smart"})).is_err());
         // Out-of-range opacity is clamped.
         s.execute(CMD, json!({"contents": "white", "opacity": 1e300})).unwrap();

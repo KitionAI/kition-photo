@@ -86,10 +86,10 @@ try {
       before = now
     }
   }
-  // The person's Select › Deselect (an agent's select.deselect keeps to the agent's own selection).
+  // The person's Select › Deselect (an agent's edit.deselectAll keeps to the agent's own selection).
   const deselect = async () => {
     await kit.getByTestId('photo-menu-Select').click()
-    await kit.getByTestId('photo-cmd-select.deselect').click()
+    await kit.getByTestId('photo-cmd-edit.deselectAll').click()
     await until(async () => !(await details()).hasSelection, 40)
     await workspace.focus()
   }
@@ -205,10 +205,10 @@ try {
   await kit.getByTestId('photo-tool-Move').click()
   await workspace.focus()
   const floatHistory = await history()
-  const before = (await runAgent('document.sampleColor', { x: 400, y: 300, size: 'point', sampleLayer: 'current' })).completed[0].result
+  const before = (await runAgent('file.sampleColor', { x: 400, y: 300, size: 'point', sampleLayer: 'current' })).completed[0].result
   await drag([140, 120], [440, 320])
   await settle()
-  const after = (await runAgent('document.sampleColor', { x: 400, y: 300, size: 'point', sampleLayer: 'current' })).completed[0].result
+  const after = (await runAgent('file.sampleColor', { x: 400, y: 300, size: 'point', sampleLayer: 'current' })).completed[0].result
   const last = (await details()).history.at(-1)
   step('with a selection, Move drags the selected pixels (one step), even on the Background', (await history()) === floatHistory + 1 && JSON.stringify(before) !== JSON.stringify(after), `${JSON.stringify(before)} -> ${JSON.stringify(after)}; ${JSON.stringify(last)}`)
   await page.keyboard.press(`${await primaryKey()}+z`)

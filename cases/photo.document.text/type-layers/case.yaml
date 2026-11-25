@@ -10,7 +10,7 @@ intent: >-
 layer: gate
 source:
   kind: synthetic
-  from: "bindings/wasm/tests/document_text.rs (type.create), conformance/check-font-substituted.kphoto"
+  from: "bindings/wasm/tests/document_text.rs (text.add), conformance/check-font-substituted.kphoto"
   license: Apache-2.0
 input: []
 steps:

@@ -81,7 +81,7 @@ fn pair(name: &'static str) -> Pair {
                 ("layer.new.layer", json!({"name":format!("L{i}")})),
                 ("select.rect", json!({"x":8+i*24,"y":12+i*8,"width":16,"height":24})),
                 ("edit.fill", json!({"color":"#dd3344"})),
-                ("select.deselect", json!({})),
+                ("edit.deselectAll", json!({})),
             ],
         );
     }
@@ -98,9 +98,9 @@ fn pair(name: &'static str) -> Pair {
     };
     match name {
         "layer.mergeVisible" | "layer.flattenImage" | "layer.stampVisible" => out.params = json!({}),
-        "layer.createClippingMask" | "layer.releaseClippingMask" => {
+        "layer.addClippingMask" | "layer.releaseClippingMask" => {
             if name == "layer.releaseClippingMask" {
-                doc.execute("layer.createClippingMask", json!({"layer":target})).unwrap();
+                doc.execute("layer.addClippingMask", json!({"layer":target})).unwrap();
             }
             out.refuse = false;
         }
@@ -127,7 +127,7 @@ fn pair(name: &'static str) -> Pair {
                 ("layer.select", json!({"layer":target})),
                 ("select.rect", json!({"x":96,"y":36,"width":3,"height":3})),
                 ("edit.fill", json!({"color":"#0000ff"})),
-                ("select.deselect", json!({})),
+                ("edit.deselectAll", json!({})),
             ];
         }
         "layer.align.leftEdges" | "layer.distribute.horizontally" => {
@@ -145,7 +145,7 @@ fn pair(name: &'static str) -> Pair {
             if channel {
                 doc.execute("select.rect", json!({"x":20,"y":10,"width":24,"height":24})).unwrap();
                 doc.execute("select.saveSelection", json!({"name":"Source"})).unwrap();
-                doc.execute("select.deselect", json!({})).unwrap();
+                doc.execute("edit.deselectAll", json!({})).unwrap();
                 out.change = vec![("channel.rename", json!({"channel":"Source","name":"Changed"}))];
             }
             let source = if channel { json!({"channel":"Source"}) } else { json!({"layer":source,"channel":"red"}) };
@@ -158,13 +158,13 @@ fn pair(name: &'static str) -> Pair {
             }
         }
         "character style" | "paragraph style" => {
-            let layer = doc.execute("type.create", json!({"text":"C8","x":10,"y":40,"size":12})).unwrap()["layer"].clone();
+            let layer = doc.execute("text.add", json!({"text":"C8","x":10,"y":40,"size":12})).unwrap()["layer"].clone();
             let paragraph = name == "paragraph style";
-            let new = if paragraph { "type.paragraphStyle.new" } else { "type.characterStyle.new" };
+            let new = if paragraph { "text.paragraphStyle.new" } else { "text.characterStyle.new" };
             let id = doc.execute(new, json!({"name":"Named","fromSelection":false,"attrs":{"size":24}})).unwrap()["id"].clone();
-            out.command = if paragraph { "type.paragraphStyle.apply" } else { "type.characterStyle.apply" };
+            out.command = if paragraph { "text.paragraphStyle.apply" } else { "text.characterStyle.apply" };
             out.params = json!({"layer":layer,"id":id});
-            out.change = vec![(if paragraph { "type.paragraphStyle.set" } else { "type.characterStyle.set" }, json!({"id":id,"attrs":{"size":32}}))];
+            out.change = vec![(if paragraph { "text.paragraphStyle.set" } else { "text.characterStyle.set" }, json!({"id":id,"attrs":{"size":32}}))];
         }
         "stored pattern" => {
             doc.execute("layer.newFillLayer.pattern", json!({"pattern":"Checkerboard"})).unwrap();
@@ -201,7 +201,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
         "layer.mergeVisible",
         "layer.flattenImage",
         "layer.stampVisible",
-        "layer.createClippingMask",
+        "layer.addClippingMask",
         "layer.releaseClippingMask",
         "layer.newAdjustmentLayer.invert",
         "selection.fill",
@@ -230,7 +230,7 @@ async fn matrix(waiting: bool) -> (usize, usize, usize, usize, usize, usize, usi
             let f = Fixture::from_bytes(FILE, &pair.bytes, CallOptions::default());
             let (_, basis) = f.inspect().await;
             let label = format!("{}/{related}", pair.name);
-            let unrelated = vec![("notes.add", json!({"x":1,"y":1,"text":"Colleague"}))];
+            let unrelated = vec![("note.add", json!({"x":1,"y":1,"text":"Colleague"}))];
             f.colleague(if related { &pair.change } else { &unrelated });
             let before = std::fs::read(f.file()).unwrap();
             let expected = if related && pair.refuse {

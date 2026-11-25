@@ -85,7 +85,7 @@ function makeEditor(page) {
     }, { to, width: doc.width, height: doc.height })
     await page.mouse.up()
   }
-  const sample = async (x, y) => (await run('document.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).map((value) => Math.round(value * 255))
+  const sample = async (x, y) => (await run('file.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).map((value) => Math.round(value * 255))
   const color = async (x, y, rgba) => {
     // Check the display first: sampling via an agent command can trigger a full repaint.
     await expect.poll(async () => {
@@ -124,7 +124,7 @@ function makeEditor(page) {
 
 const layer = (name = 'Artwork') => ({ command: 'layer.new.layer', params: { name } })
 const fill = (color) => ({ command: 'edit.fill', params: { color } })
-const shape = { command: 'shape.create', params: { kind: 'rect', rect: [16, 16, 96, 64], fill: '#ff0000', name: 'Banner' } }
+const shape = { command: 'shape.add', params: { kind: 'rect', rect: [16, 16, 96, 64], fill: '#ff0000', name: 'Banner' } }
 
 test('UI01 / SC05: draw, undo, redo and save a brush stroke', async ({ editor: e }) => {
   await e.open('Scenario.psd', [layer('Ink')])
@@ -206,11 +206,11 @@ test('UI05 / SC01, SC06: compose a poster with Chinese editable text', async ({ 
   } else await field.fill('极光')
   await field.press('Enter')
   await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(1)
-  expect(await e.run('type.info')).toMatchObject({ text: '极光' })
+  expect(await e.run('text.info')).toMatchObject({ text: '极光' })
   await e.reopen()
   const typeLayer = (await e.state()).layers.find((item) => item.kind === 'Type')
   await e.kit.getByTestId(`photo-layer-${typeLayer.id}`).click()
-  expect(await e.run('type.info')).toMatchObject({ text: '极光' })
+  expect(await e.run('text.info')).toMatchObject({ text: '极光' })
 })
 
 test('UI06 / SC08: rasterization cancel is lossless, confirm paints, undo restores shape', async ({ editor: e }) => {
@@ -276,7 +276,7 @@ for (const [key, isComposing, keyCode] of [['Enter', true, 13], ['Escape', true,
     await field.fill('极光')
     await field.press('Enter')
     await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(1)
-    expect(await e.run('type.info')).toMatchObject({ text: '极光' })
+    expect(await e.run('text.info')).toMatchObject({ text: '极光' })
     await e.reopen()
   })
 }
@@ -391,7 +391,7 @@ test('UI14: a brush stroke includes the final release position', async ({ editor
 })
 
 test('UI15: moving a layer uses the final release position', async ({ editor: e }) => {
-  await e.open('Scenario.psd', [{ command: 'shape.create', params: { kind: 'rect', rect: [24, 24, 24, 24], fill: '#ff0000' } }])
+  await e.open('Scenario.psd', [{ command: 'shape.add', params: { kind: 'rect', rect: [24, 24, 24, 24], fill: '#ff0000' } }])
   await e.kit.getByTestId('photo-tool-Move').click()
   await e.sparseDrag([32, 32], [64, 48])
   await e.color(36, 36, [255, 255, 255, 255])
@@ -408,8 +408,8 @@ test('UI15: moving a layer uses the final release position', async ({ editor: e 
 for (const linked of [false, true]) {
   test(`UI16: moving ${linked ? 'linked' : 'selected'} layers repaints every moved layer`, async ({ editor: e }) => {
     await e.open('Scenario.psd', [
-      { command: 'shape.create', params: { kind: 'rect', rect: [16, 16, 16, 16], fill: '#0000ff', name: 'Blue' } },
-      { command: 'shape.create', params: { kind: 'rect', rect: [80, 16, 16, 16], fill: '#ff0000', name: 'Red' } },
+      { command: 'shape.add', params: { kind: 'rect', rect: [16, 16, 16, 16], fill: '#0000ff', name: 'Blue' } },
+      { command: 'shape.add', params: { kind: 'rect', rect: [80, 16, 16, 16], fill: '#ff0000', name: 'Red' } },
     ])
     const doc = await e.state()
     const blue = doc.layers.find((item) => item.name === 'Blue').id
@@ -874,7 +874,7 @@ for (const commit of ['Enter', 'toolbar']) {
           for (const send of window.textGate.pending) send()
         }
         Worker.prototype.postMessage = function (message, ...args) {
-          if (message?.request?.method === 'execute' && message.request.command === 'type.create') {
+          if (message?.request?.method === 'execute' && message.request.command === 'text.add') {
             window.textGate.requests++
             window.textGate.pending.push(() => post.call(this, message, ...args))
           } else post.call(this, message, ...args)
@@ -905,7 +905,7 @@ for (const commit of ['Enter', 'toolbar']) {
       if (nextAction === 'edit another field') await e.kit.getByTestId('photo-redo').click()
       else await e.redo()
       await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(1)
-      expect(await e.run('type.info')).toMatchObject({ text: 'One pending title' })
+      expect(await e.run('text.info')).toMatchObject({ text: 'One pending title' })
       await e.reopen()
     })
   }
@@ -938,7 +938,7 @@ for (const tool of ['Type', 'VerticalType']) {
       } else {
         await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(1)
         const verify = async () => {
-          const info = await e.run('type.info')
+          const info = await e.run('text.info')
           expect(info).toMatchObject({ text: 'Keep this draft', orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
           expect(info.runs[0].style.size_pt).toBe(route === 'direct' ? 48 : 30)
           return info
@@ -970,9 +970,9 @@ for (const tool of ['Type', 'VerticalType']) {
 
 for (const tool of ['Type', 'VerticalType']) {
   test(`UI38: ${tool} pending text options never restyle the previously selected title`, async ({ editor: e }) => {
-    await e.open('Scenario.psd', [{ command: 'type.create', params: { x: 8, y: 20, text: 'Existing title', size: 18 } }])
+    await e.open('Scenario.psd', [{ command: 'text.add', params: { x: 8, y: 20, text: 'Existing title', size: 18 } }])
     const originalId = (await e.state()).activeLayer
-    const original = await e.run('type.info', { layer: originalId })
+    const original = await e.run('text.info', { layer: originalId })
     if (tool === 'VerticalType') await e.kit.getByTestId('photo-tool-Type').click({ button: 'right' })
     await e.kit.getByTestId(`photo-tool-${tool}`).click()
     await e.click(24, 50)
@@ -990,7 +990,7 @@ for (const tool of ['Type', 'VerticalType']) {
         for (const send of pending.splice(0)) send()
       } }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.create') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.add') {
           window.optionsGate.requests++
           pending.push(() => post.call(this, message, ...args))
         } else post.call(this, message, ...args)
@@ -1006,14 +1006,14 @@ for (const tool of ['Type', 'VerticalType']) {
     } finally { await surface.evaluate(() => window.optionsGate.release()) }
     const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
     await expect.poll(async () => (await texts()).length).toBe(2)
-    expect(await e.run('type.info', { layer: originalId }), 'Editing options while text is pending must not mutate the older title').toEqual(original)
+    expect(await e.run('text.info', { layer: originalId }), 'Editing options while text is pending must not mutate the older title').toEqual(original)
     const pendingId = (await texts()).find((item) => item.id !== originalId).id
     const content = { text: 'Pending title', orientation: tool === 'Type' ? 'Horizontal' : 'Vertical', transform: [1, 0, 0, 1, 24, 50], runs: [{ style: { size_pt: 30 } }] }
-    expect(await e.run('type.info', { layer: pendingId })).toMatchObject(content)
+    expect(await e.run('text.info', { layer: pendingId })).toMatchObject(content)
     // The option change must not add a hidden history step to the older layer.
     await e.kit.getByTestId('photo-undo').click()
     await expect.poll(async () => (await texts()).length).toBe(1)
-    expect(await e.run('type.info', { layer: originalId })).toEqual(original)
+    expect(await e.run('text.info', { layer: originalId })).toEqual(original)
     await e.kit.getByTestId('photo-redo').click()
     await expect.poll(async () => (await texts()).length).toBe(2)
     await e.click(70, 80)
@@ -1022,11 +1022,11 @@ for (const tool of ['Type', 'VerticalType']) {
     await field.press('Enter')
     await expect.poll(async () => (await texts()).length).toBe(3)
     const nextId = (await texts()).find((item) => item.id !== originalId && item.id !== pendingId).id
-    expect(await e.run('type.info', { layer: nextId })).toMatchObject({ text: 'Next title', runs: [{ style: { size_pt: 42 } }] })
+    expect(await e.run('text.info', { layer: nextId })).toMatchObject({ text: 'Next title', runs: [{ style: { size_pt: 42 } }] })
     const bytes = await e.saved()
     const saved = sdk.PhotoDocument.open('Scenario.psd', bytes)
     try {
-      const infos = engineInspect(saved).layers.filter((item) => item.kind === 'Type').map((item) => engineExecute(saved, 'type.info', { layer: item.id }))
+      const infos = engineInspect(saved).layers.filter((item) => item.kind === 'Type').map((item) => engineExecute(saved, 'text.info', { layer: item.id }))
       expect(infos).toHaveLength(3)
       expect(infos.find((item) => item.text === 'Existing title').runs).toEqual(original.runs)
       expect(infos.find((item) => item.text === 'Pending title')).toMatchObject(content)
@@ -1075,7 +1075,7 @@ for (const cancel of ['Escape', 'toolbar']) {
       const bytes = Buffer.from(await e.page.evaluate(() => [...new Uint8Array(window.devHost.files.get('Scenario.psd').bytes)]))
       const saved = sdk.PhotoDocument.open('Scenario.psd', bytes)
       try {
-        const titles = engineInspect(saved).layers.filter((item) => item.kind === 'Type').map((item) => engineExecute(saved, 'type.info', { layer: item.id }).text).sort()
+        const titles = engineInspect(saved).layers.filter((item) => item.kind === 'Type').map((item) => engineExecute(saved, 'text.info', { layer: item.id }).text).sort()
         expect(titles).toEqual([...expected].sort())
       } finally { saved.free() }
       return bytes
@@ -1168,7 +1168,7 @@ for (const history of ['undo', 'redo']) {
       try {
         const titles = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
         expect(titles).toHaveLength(history === 'undo' ? 0 : 1)
-        if (titles.length) expect(engineExecute(saved, 'type.info', { layer: titles[0].id })).toMatchObject({ text: 'History title', transform: [1, 0, 0, 1, 24, 50] })
+        if (titles.length) expect(engineExecute(saved, 'text.info', { layer: titles[0].id })).toMatchObject({ text: 'History title', transform: [1, 0, 0, 1, 24, 50] })
       } finally { saved.free() }
       expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 2)
       if (history === 'undo') { await e.redo(); await expect.poll(async () => (await texts()).length).toBe(1); await e.undo() }
@@ -1215,7 +1215,7 @@ for (const tool of ['Type', 'VerticalType']) {
         expect(await e.page.evaluate(async () => (await window.devHost.connection().ai.inspect()).dirty)).toBe(true)
         const texts = (await e.state()).layers.filter((item) => item.kind === 'Type')
         expect(texts).toHaveLength(1)
-        expect(await e.run('type.info', { layer: texts[0].id })).toMatchObject({ text: 'Keep after write failure', transform: [1, 0, 0, 1, 24, 50], orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
+        expect(await e.run('text.info', { layer: texts[0].id })).toMatchObject({ text: 'Keep after write failure', transform: [1, 0, 0, 1, 24, 50], orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
       } finally { await e.page.evaluate(() => window.failedWrite.restore()) }
       await e.kit.getByTestId('photo-save').click()
       await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(original.version + 1)
@@ -1225,7 +1225,7 @@ for (const tool of ['Type', 'VerticalType']) {
       try {
         const texts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
         expect(texts).toHaveLength(1)
-        expect(engineExecute(saved, 'type.info', { layer: texts[0].id }).text).toBe('Keep after write failure')
+        expect(engineExecute(saved, 'text.info', { layer: texts[0].id }).text).toBe('Keep after write failure')
       } finally { saved.free() }
       await e.kit.getByTestId('photo-undo').click()
       await expect.poll(async () => (await e.state()).layers.filter((item) => item.kind === 'Type').length).toBe(0)
@@ -1283,7 +1283,7 @@ for (const next of ['draft save', 'committed save', 'committed without save']) {
     try {
       const texts = engineInspect(first).layers.filter((item) => item.kind === 'Type')
       expect(texts).toHaveLength(1)
-      expect(engineExecute(first, 'type.info', { layer: texts[0].id }).text).toBe('First write')
+      expect(engineExecute(first, 'text.info', { layer: texts[0].id }).text).toBe('First write')
     } finally { first.free() }
     if (next === 'committed without save') {
       await expect(e.kit.getByTestId('photo-save')).toBeEnabled()
@@ -1300,7 +1300,7 @@ for (const next of ['draft save', 'committed save', 'committed without save']) {
     try {
       const texts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
       expect(texts).toHaveLength(2)
-      const content = texts.map((item) => engineExecute(saved, 'type.info', { layer: item.id })).map(({ text, transform }) => ({ text, transform })).sort((a, b) => a.text.localeCompare(b.text))
+      const content = texts.map((item) => engineExecute(saved, 'text.info', { layer: item.id })).map(({ text, transform }) => ({ text, transform })).sort((a, b) => a.text.localeCompare(b.text))
       expect(content).toEqual([{ text: 'First write', transform: [1, 0, 0, 1, 24, 50] }, { text: 'Second write', transform: [1, 0, 0, 1, 90, 80] }])
     } finally { saved.free() }
     expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 2)
@@ -1333,7 +1333,7 @@ for (const tool of ['Type', 'VerticalType']) {
       try {
         const texts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
         expect(texts, 'The first toolbar write must include the draft').toHaveLength(1)
-        expect(engineExecute(saved, 'type.info', { layer: texts[0].id })).toMatchObject(content)
+        expect(engineExecute(saved, 'text.info', { layer: texts[0].id })).toMatchObject(content)
       } finally { saved.free() }
       await expect(field).toHaveCount(0)
       await expect(save).toBeDisabled()
@@ -1344,7 +1344,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await e.kit.getByTestId('photo-redo').click()
       await expect.poll(async () => (await texts()).length).toBe(1)
       await e.reopen('Scenario.psd', bytes)
-      expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+      expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
     })
   }
 }
@@ -1360,12 +1360,12 @@ for (const tool of ['Type', 'VerticalType']) {
     await e.kit.getByTestId('photo-option-fontSize').locator('input').click()
     const before = await e.state()
     const version = await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)
-    await e.page.evaluate(() => window.devHost.configure({ disable: ['command:type.create'], hide: ['action:redo'] }))
+    await e.page.evaluate(() => window.devHost.configure({ disable: ['command:text.add'], hide: ['action:redo'] }))
     await expect(e.kit.getByTestId('photo-redo')).toHaveCount(0)
     const save = e.kit.getByTestId('photo-save')
     await expect(save).toBeEnabled()
     await save.click()
-    await expect(e.kit.getByRole('alert')).toContainText('type.create')
+    await expect(e.kit.getByRole('alert')).toContainText('text.add')
     await expect(field).toHaveValue('Retry toolbar save')
     await expect(save).toBeEnabled()
     expect(await e.state()).toEqual(before)
@@ -1381,7 +1381,7 @@ for (const tool of ['Type', 'VerticalType']) {
     try {
       const texts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
       expect(texts).toHaveLength(1)
-      expect(engineExecute(saved, 'type.info', { layer: texts[0].id })).toMatchObject({ text: 'Retry toolbar save', orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
+      expect(engineExecute(saved, 'text.info', { layer: texts[0].id })).toMatchObject({ text: 'Retry toolbar save', orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
     } finally { saved.free() }
     await e.reopen('Scenario.psd', bytes)
   })
@@ -1425,7 +1425,7 @@ test('UI34: toolbar Save waits for text and shares repeated save shortcuts', asy
       for (const send of window.toolbarSaveGate.pending) send()
     }
     Worker.prototype.postMessage = function (message, ...args) {
-      if (message?.request?.method === 'execute' && message.request.command === 'type.create') {
+      if (message?.request?.method === 'execute' && message.request.command === 'text.add') {
         window.toolbarSaveGate.requests++
         window.toolbarSaveGate.pending.push(() => post.call(this, message, ...args))
       } else post.call(this, message, ...args)
@@ -1452,7 +1452,7 @@ test('UI34: toolbar Save waits for text and shares repeated save shortcuts', asy
   try {
     const texts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
     expect(texts).toHaveLength(1)
-    expect(engineExecute(saved, 'type.info', { layer: texts[0].id })).toMatchObject({ text: 'One toolbar write' })
+    expect(engineExecute(saved, 'text.info', { layer: texts[0].id })).toMatchObject({ text: 'One toolbar write' })
   } finally { saved.free() }
   expect(await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
   await e.reopen('Scenario.psd', bytes)
@@ -1482,7 +1482,7 @@ for (const latest of ['tool switch', 'new canvas draft']) {
         for (const send of window.textIntentGate.pending) send()
       }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.create') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.add') {
           window.textIntentGate.requests++
           window.textIntentGate.pending.push(() => post.call(this, message, ...args))
         } else post.call(this, message, ...args)
@@ -1517,7 +1517,7 @@ for (const latest of ['tool switch', 'new canvas draft']) {
     }
     const titles = []
     for (const item of await texts()) {
-      const info = await e.run('type.info', { layer: item.id })
+      const info = await e.run('text.info', { layer: item.id })
       titles.push({ text: info.text, transform: info.transform })
     }
     expect(titles.sort((a, b) => a.text.localeCompare(b.text))).toEqual([
@@ -1547,13 +1547,13 @@ for (const tool of ['Type', 'VerticalType']) {
       const before = await e.state()
       const version = await e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)
       // Reject the real command at the host policy boundary; hiding Redo confirms config arrival.
-      await e.page.evaluate(() => window.devHost.configure({ disable: ['command:type.create'], hide: ['action:redo'] }))
+      await e.page.evaluate(() => window.devHost.configure({ disable: ['command:text.add'], hide: ['action:redo'] }))
       await expect(e.kit.getByTestId('photo-redo')).toHaveCount(0)
       if (trigger === 'Enter') await e.page.keyboard.press('Enter')
       else if (trigger === 'save shortcut') await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
       else if (trigger === 'tool switch') await e.kit.getByTestId('photo-tool-Brush').click()
       else await e.click(90, 80)
-      await expect(e.kit.getByRole('alert')).toContainText('type.create')
+      await expect(e.kit.getByRole('alert')).toContainText('text.add')
       await expect(field, 'A rejected command must preserve the editable text draft').toHaveValue('Preserve this text')
       await expect(e.kit.getByTestId(`photo-tool-${tool}`)).toHaveAttribute('aria-pressed', 'true')
       if (trigger === 'Enter' || trigger === 'save shortcut') await expect(field).toBeFocused()
@@ -1574,21 +1574,21 @@ for (const tool of ['Type', 'VerticalType']) {
       const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
       await expect.poll(async () => (await texts()).length).toBe(1)
       const content = { text: 'Preserve this text recovered', transform: [1, 0, 0, 1, 24, 50], orientation: tool === 'Type' ? 'Horizontal' : 'Vertical', runs: [{ style: { size_pt: 30 } }] }
-      expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+      expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
       await expect.poll(() => e.page.evaluate(async () => (await window.devHost.connection().ai.inspect()).dirty)).toBe(false)
       const bytes = Buffer.from(await e.page.evaluate(() => [...new Uint8Array(window.devHost.files.get('Scenario.psd').bytes)]))
       const saved = sdk.PhotoDocument.open('Scenario.psd', bytes)
       try {
         const layers = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
         expect(layers).toHaveLength(1)
-        expect(engineExecute(saved, 'type.info', { layer: layers[0].id })).toMatchObject(content)
+        expect(engineExecute(saved, 'text.info', { layer: layers[0].id })).toMatchObject(content)
       } finally { saved.free() }
       await e.undo()
       await expect.poll(async () => (await texts()).length).toBe(0)
       await e.redo()
       await expect.poll(async () => (await texts()).length).toBe(1)
       await e.reopen('Scenario.psd', bytes)
-      expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+      expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
     })
   }
 }
@@ -1619,20 +1619,20 @@ for (const tool of ['Type', 'VerticalType']) {
       try {
         const savedTexts = engineInspect(saved).layers.filter((item) => item.kind === 'Type')
         expect(savedTexts).toHaveLength(expected)
-        if (expected) expect(engineExecute(saved, 'type.info', { layer: savedTexts[0].id })).toMatchObject(content)
+        if (expected) expect(engineExecute(saved, 'text.info', { layer: savedTexts[0].id })).toMatchObject(content)
       } finally { saved.free() }
       if (expected) {
-        expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+        expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
         // One history step, with focus restored so the shortcut needs no extra click.
         await e.undo()
         await expect.poll(async () => (await texts()).length).toBe(0)
         await e.redo()
         await expect.poll(async () => (await texts()).length).toBe(1)
-        expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+        expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
       } else expect((await e.state()).revision).toBe(before.revision)
       await e.reopen('Scenario.psd', bytes)
       expect(await texts()).toHaveLength(expected)
-      if (expected) expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject(content)
+      if (expected) expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject(content)
     })
   }
 }
@@ -1662,14 +1662,14 @@ for (const policy of ['hide', 'disable']) {
     await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBe(version + 1)
     await expect(field).toHaveCount(0)
-    expect(await e.run('type.info')).toMatchObject({ text: 'Keep typing' })
+    expect(await e.run('text.info')).toMatchObject({ text: 'Keep typing' })
   })
 }
 
 for (const tool of ['Type', 'VerticalType']) {
   for (const gesture of ['pan', 'zoom']) {
     test(`UI31: ${tool} draft follows a wheel ${gesture} without changing its document anchor`, async ({ editor: e }) => {
-      await e.open('Scenario.psd', [{ command: 'shape.create', params: { kind: 'rect', rect: [24, 50, 32, 58], fill: '#ff0000', name: 'Anchor marker' } }])
+      await e.open('Scenario.psd', [{ command: 'shape.add', params: { kind: 'rect', rect: [24, 50, 32, 58], fill: '#ff0000', name: 'Anchor marker' } }])
       const before = await e.state()
       const surface = e.kit.getByTestId('kit-canvas-surface')
       // Observe the rendered document, independently of the input's positioning code.
@@ -1720,7 +1720,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await expect(field).toHaveCount(0)
       const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
       await expect.poll(async () => (await texts()).length).toBe(1)
-      const checkText = async () => expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject({ text: 'Draft retained', transform: [1, 0, 0, 1, 24, 50], orientation: tool === 'Type' ? 'Horizontal' : 'Vertical', runs: [{ style: { size_pt: 48 } }] })
+      const checkText = async () => expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject({ text: 'Draft retained', transform: [1, 0, 0, 1, 24, 50], orientation: tool === 'Type' ? 'Horizontal' : 'Vertical', runs: [{ style: { size_pt: 48 } }] })
       await checkText()
       await e.undo()
       await expect.poll(async () => (await texts()).length).toBe(0)
@@ -1758,7 +1758,7 @@ for (const tool of ['Type', 'VerticalType']) {
       const readTitles = async () => {
         const titles = []
         for (const item of (await e.state()).layers.filter((item) => item.kind === 'Type')) {
-          const info = await e.run('type.info', { layer: item.id })
+          const info = await e.run('text.info', { layer: item.id })
           titles.push({ text: info.text, transform: info.transform, size: info.runs[0].style.size_pt, orientation: info.orientation })
         }
         return titles.sort((a, b) => a.text.localeCompare(b.text))
@@ -1803,16 +1803,16 @@ for (const mode of ['menus', 'line', 'classic']) {
       if (mode !== 'menus' || await tab.getAttribute('aria-expanded') !== 'true') await tab.click()
     }
     await openMenu('Select')
-    const all = e.kit.getByTestId('photo-cmd-select.all')
+    const all = e.kit.getByTestId('photo-cmd-edit.selectAll')
     await expect(all, 'Common commands must be directly available in Single line').toBeVisible()
     await all.click()
     await expect.poll(async () => (await e.state()).selectionBounds).toEqual([0, 0, 128, 96])
     await openMenu('Select')
-    const deselect = e.kit.getByTestId('photo-cmd-select.deselect')
-    await e.page.evaluate(() => window.devHost.configure({ disable: ['command:select.deselect'] }))
+    const deselect = e.kit.getByTestId('photo-cmd-edit.deselectAll')
+    await e.page.evaluate(() => window.devHost.configure({ disable: ['command:edit.deselectAll'] }))
     await expect(deselect).toBeDisabled()
     expect((await e.state()).selectionBounds).toEqual([0, 0, 128, 96])
-    await e.page.evaluate(() => window.devHost.configure({ hide: ['command:select.all'] }))
+    await e.page.evaluate(() => window.devHost.configure({ hide: ['command:edit.selectAll'] }))
     await expect(all).toHaveCount(0)
     await expect(deselect).toBeEnabled()
     await deselect.click()
@@ -2123,13 +2123,13 @@ for (const tool of ['Type', 'VerticalType']) {
       await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBeGreaterThan(version)
       const texts = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
       await expect.poll(async () => (await texts()).length).toBe(1)
-      expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject({ text: `${title} restored`, orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
+      expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject({ text: `${title} restored`, orientation: tool === 'Type' ? 'Horizontal' : 'Vertical' })
       await e.undo()
       await expect.poll(async () => (await texts()).length).toBe(0)
       await e.redo()
       await expect.poll(async () => (await texts()).length).toBe(1)
       await e.reopen()
-      expect(await e.run('type.info', { layer: (await texts())[0].id })).toMatchObject({ text: `${title} restored` })
+      expect(await e.run('text.info', { layer: (await texts())[0].id })).toMatchObject({ text: `${title} restored` })
     })
   }
 }
@@ -2266,7 +2266,7 @@ for (const draft of ['crop', 'rasterize']) {
     }
     // A real file-stamp change reloads the engine in the existing iframe and App.
     // Opening through the picker replaces the whole iframe and would miss stale UI state.
-    const bytes = createFixture('Scenario.psd', [{ command: 'shape.create', params: { ...shape.params, fill: '#0000ff', name: 'Replacement' } }])
+    const bytes = createFixture('Scenario.psd', [{ command: 'shape.add', params: { ...shape.params, fill: '#0000ff', name: 'Replacement' } }])
     await e.page.evaluate((bytes) => {
       const old = window.devHost.files.get('Scenario.psd')
       window.devHost.files.set('Scenario.psd', { bytes: new Uint8Array(bytes).buffer, version: old.version + 1 })
@@ -2292,7 +2292,7 @@ for (const draft of ['crop', 'rasterize']) {
 
 for (const controls of ['options', 'properties', 'cross controls']) {
   test(`UI52: ${controls} keep the latest font when an earlier family query finishes last`, async ({ editor: e }) => {
-    await e.open('Scenario.psd', [{ command: 'type.create', params: { x: 12, y: 40, text: 'Latest font wins', font: 'Inter', size: 22 } }], 'en-US', 'classic')
+    await e.open('Scenario.psd', [{ command: 'text.add', params: { x: 12, y: 40, text: 'Latest font wins', font: 'Inter', size: 22 } }], 'en-US', 'classic')
     await e.kit.getByTestId('photo-tool-Type').click()
     const id = (await e.state()).activeLayer
     const options = e.kit.getByTestId('photo-option-font')
@@ -2309,7 +2309,7 @@ for (const controls of ['options', 'properties', 'cross controls']) {
         for (const send of sends.splice(0)) send()
       } }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.fonts' && message.request.params.family === 'JetBrains Mono') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.fonts' && message.request.params.family === 'JetBrains Mono') {
           if (!listened.has(this)) {
             listened.add(this)
             this.addEventListener('message', (event) => { if (ids.delete(event.data.id)) window.fontGate.replies++ })
@@ -2324,25 +2324,25 @@ for (const controls of ['options', 'properties', 'cross controls']) {
       await first.selectOption('JetBrains Mono')
       await expect.poll(() => surface.evaluate(() => window.fontGate.held)).toBeGreaterThan(0)
       await second.selectOption('Droid Sans Fallback')
-      await expect.poll(async () => (await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
+      await expect.poll(async () => (await e.run('text.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
     } finally { await surface.evaluate(() => window.fontGate.release()) }
     await expect.poll(() => surface.evaluate(() => window.fontGate.replies === window.fontGate.held)).toBe(true)
     await surface.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-    expect((await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
+    expect((await e.run('text.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
     await expect(options).toHaveValue('Droid Sans Fallback')
     await expect(properties).toHaveValue('Droid Sans Fallback')
     await e.kit.getByTestId('photo-undo').click()
-    await expect.poll(async () => (await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('Inter')
+    await expect.poll(async () => (await e.run('text.info', { layer: id })).runs[0].style.font_family).toBe('Inter')
     await e.kit.getByTestId('photo-redo').click()
-    await expect.poll(async () => (await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
+    await expect.poll(async () => (await e.run('text.info', { layer: id })).runs[0].style.font_family).toBe('Droid Sans Fallback')
     await e.reopen()
-    expect((await e.run('type.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('Droid Sans Fallback')
+    expect((await e.run('text.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('Droid Sans Fallback')
   })
 }
 
 for (const control of ['options', 'properties']) {
   test(`UI53: a pending ${control} font lookup cannot restyle an externally reloaded document`, async ({ editor: e }) => {
-    const makeTitle = (text) => [{ command: 'type.create', params: { x: 12, y: 40, text, font: 'Inter', size: 22 } }]
+    const makeTitle = (text) => [{ command: 'text.add', params: { x: 12, y: 40, text, font: 'Inter', size: 22 } }]
     await e.open('Scenario.psd', makeTitle('Original title'), 'en-US', 'classic')
     await e.kit.getByTestId('photo-tool-Type').click()
     const select = e.kit.getByTestId(control === 'options' ? 'photo-option-font' : 'photo-props-type-font')
@@ -2352,7 +2352,7 @@ for (const control of ['options', 'properties']) {
       const post = Worker.prototype.postMessage
       window.reloadFontGate = { held: false, restore: () => { Worker.prototype.postMessage = post } }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.fonts' && message.request.params.family === 'JetBrains Mono') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.fonts' && message.request.params.family === 'JetBrains Mono') {
           window.reloadFontGate.held = true
           // The old engine's disposal must settle this pending query without applying it.
         } else post.call(this, message, ...args)
@@ -2366,17 +2366,17 @@ for (const control of ['options', 'properties']) {
         window.devHost.files.set('Scenario.psd', { bytes: new Uint8Array(bytes).buffer, version: old.version + 1 })
       }, [...createFixture('Scenario.psd', makeTitle('Replacement title'))])
       await expect.poll(async () => {
-        try { return (await e.run('type.info', { layer: (await e.state()).activeLayer })).text } catch { return null }
+        try { return (await e.run('text.info', { layer: (await e.state()).activeLayer })).text } catch { return null }
       }).toBe('Replacement title')
     } finally { await surface.evaluate(() => window.reloadFontGate.restore()) }
     await surface.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-    expect((await e.run('type.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('Inter')
+    expect((await e.run('text.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('Inter')
     await expect(select).toHaveValue('Inter')
     await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
     await select.selectOption('JetBrains Mono')
-    await expect.poll(async () => (await e.run('type.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('JetBrains Mono')
+    await expect.poll(async () => (await e.run('text.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('JetBrains Mono')
     await e.reopen()
-    expect((await e.run('type.info', { layer: (await e.state()).activeLayer })).text).toBe('Replacement title')
+    expect((await e.run('text.info', { layer: (await e.state()).activeLayer })).text).toBe('Replacement title')
   })
 }
 
@@ -2482,7 +2482,7 @@ async function holdRedSample(e) {
       for (const send of sends.splice(0)) send()
     } }
     Worker.prototype.postMessage = function (message, ...args) {
-      if (message?.request?.method === 'execute' && message.request.command === 'document.sampleColor' && message.request.params.x === 32) {
+      if (message?.request?.method === 'execute' && message.request.command === 'file.sampleColor' && message.request.params.x === 32) {
         if (!listened.has(this)) {
           listened.add(this)
           this.addEventListener('message', (event) => { if (ids.delete(event.data.id)) window.sampleGate.replies++ })
@@ -2657,7 +2657,7 @@ for (const tool of ['Type', 'VerticalType']) {
           for (const send of sends.splice(0)) send()
         } }
         Worker.prototype.postMessage = function (message, ...args) {
-          if (message?.request?.method === 'execute' && message.request.command === 'type.fonts' && message.request.params.family === 'JetBrains Mono') {
+          if (message?.request?.method === 'execute' && message.request.command === 'text.fonts' && message.request.params.family === 'JetBrains Mono') {
             window.draftFontGate.held = true
             sends.push(() => post.call(this, message, ...args))
           } else post.call(this, message, ...args)
@@ -2671,7 +2671,7 @@ for (const tool of ['Type', 'VerticalType']) {
       } finally { await surface.evaluate(() => window.draftFontGate.release()) }
       const titles = async () => (await e.state()).layers.filter((item) => item.kind === 'Type')
       await expect.poll(async () => (await titles()).length).toBe(1)
-      const info = await e.run('type.info', { layer: (await titles())[0].id })
+      const info = await e.run('text.info', { layer: (await titles())[0].id })
       expect(info).toMatchObject({ text: 'Pending font', orientation: tool === 'Type' ? 'Horizontal' : 'Vertical', runs: [{ style: { font_family: 'JetBrains Mono' } }] })
       if (route === 'Save') {
         await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBeGreaterThan(version)
@@ -2682,7 +2682,7 @@ for (const tool of ['Type', 'VerticalType']) {
       await e.kit.getByTestId('photo-redo').click()
       await expect.poll(async () => (await titles()).length).toBe(1)
       await e.reopen()
-      expect((await e.run('type.info', { layer: (await titles())[0].id })).runs[0].style.font_family).toBe('JetBrains Mono')
+      expect((await e.run('text.info', { layer: (await titles())[0].id })).runs[0].style.font_family).toBe('JetBrains Mono')
     })
   }
 }
@@ -2702,7 +2702,7 @@ for (const interruption of ['permission restoration', 'document replacement']) {
         for (const send of sends.splice(0)) if (!discard) send()
       } }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.fonts' && message.request.params.family === 'JetBrains Mono') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.fonts' && message.request.params.family === 'JetBrains Mono') {
           window.cancelFontGate.held = true
           sends.push(() => post.call(this, message, ...args))
         } else post.call(this, message, ...args)
@@ -2734,7 +2734,7 @@ for (const interruption of ['permission restoration', 'document replacement']) {
     await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
     const titles = (await e.state()).layers.filter((item) => item.kind === 'Type')
     expect(titles).toHaveLength(1)
-    expect(await e.run('type.info', { layer: titles[0].id })).toMatchObject({ text: 'Retained font draft', runs: [{ style: { font_family: 'JetBrains Mono' } }] })
+    expect(await e.run('text.info', { layer: titles[0].id })).toMatchObject({ text: 'Retained font draft', runs: [{ style: { font_family: 'JetBrains Mono' } }] })
     const bytes = Buffer.from(await e.page.evaluate(() => [...new Uint8Array(window.devHost.files.get('Scenario.psd').bytes)]))
     await e.reopen('Scenario.psd', bytes)
   })
@@ -2742,7 +2742,7 @@ for (const interruption of ['permission restoration', 'document replacement']) {
 
 for (const control of ['options', 'properties']) {
   test(`UI64: Save waits for an existing title's pending ${control} font choice`, async ({ editor: e }) => {
-    await e.open('Scenario.psd', [{ command: 'type.create', params: { x: 16, y: 48, text: 'Saved font choice', font: 'Inter', size: 24 } }], 'en-US', 'classic')
+    await e.open('Scenario.psd', [{ command: 'text.add', params: { x: 16, y: 48, text: 'Saved font choice', font: 'Inter', size: 24 } }], 'en-US', 'classic')
     await e.kit.getByTestId('photo-tool-Type').click()
     const id = (await e.state()).activeLayer
     const select = e.kit.getByTestId(control === 'options' ? 'photo-option-font' : 'photo-props-type-font')
@@ -2756,7 +2756,7 @@ for (const control of ['options', 'properties']) {
         for (const send of sends.splice(0)) send()
       } }
       Worker.prototype.postMessage = function (message, ...args) {
-        if (message?.request?.method === 'execute' && message.request.command === 'type.fonts' && message.request.params.family === 'JetBrains Mono') {
+        if (message?.request?.method === 'execute' && message.request.command === 'text.fonts' && message.request.params.family === 'JetBrains Mono') {
           window.savedFontGate.held = true
           sends.push(() => post.call(this, message, ...args))
         } else post.call(this, message, ...args)
@@ -2768,11 +2768,11 @@ for (const control of ['options', 'properties']) {
       await e.kit.locator('.kui-row[tabindex="-1"]').focus()
       await e.page.keyboard.press(await shortcut(e.page, 'ControlOrMeta+s'))
     } finally { await surface.evaluate(() => window.savedFontGate.release()) }
-    await expect.poll(async () => (await e.run('type.info', { layer: id })).runs[0].style.font_family).toBe('JetBrains Mono')
+    await expect.poll(async () => (await e.run('text.info', { layer: id })).runs[0].style.font_family).toBe('JetBrains Mono')
     await expect.poll(() => e.page.evaluate(() => window.devHost.files.get('Scenario.psd').version)).toBeGreaterThan(version)
     await expect(e.kit.getByTestId('photo-save')).toBeDisabled()
     const bytes = Buffer.from(await e.page.evaluate(() => [...new Uint8Array(window.devHost.files.get('Scenario.psd').bytes)]))
     await e.reopen('Scenario.psd', bytes)
-    expect((await e.run('type.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('JetBrains Mono')
+    expect((await e.run('text.info', { layer: (await e.state()).activeLayer })).runs[0].style.font_family).toBe('JetBrains Mono')
   })
 }

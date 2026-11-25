@@ -34,14 +34,14 @@ function fakeEngine(text = 'Hello') {
     run: async (command, params) => {
       calls.push([command, params])
       await null
-      if (command === 'type.edit') {
+      if (command === 'text.edit') {
         const { start, end, text: insert } = params.replace
         const chars = Array.from(state.text)
         state.text = [...chars.slice(0, start), insert, ...chars.slice(end)].join('')
         edit(params)
         return JSON.stringify(info())
       }
-      if (command === 'type.setStyle') {
+      if (command === 'text.setStyle') {
         state.styles.push(params)
         edit(params)
         return JSON.stringify(info())
@@ -57,22 +57,22 @@ function fakeEngine(text = 'Hello') {
     query: async (command, params) => {
       calls.push([command, params])
       await null
-      if (command === 'type.info') return info()
-      if (command === 'type.caret') {
+      if (command === 'text.info') return info()
+      if (command === 'text.caret') {
         const before = Array.from(state.text).slice(0, params.index).join('')
         const line = before.split('\n').length - 1
         const x = 100 + Array.from(before.split('\n').pop()).length * 10
         return { index: params.index, line, segment: [[x, 200 + 5 + line * 30], [x, 200 + 25 + line * 30]] }
       }
-      if (command === 'type.hitTest') return { layer: 7, index: Math.max(0, Math.round((params.x - 100) / 10)), inside: true }
-      if (command === 'type.navigate') return { index: params.move === 'lineStart' ? 0 : Array.from(state.text).length }
+      if (command === 'text.hitTest') return { layer: 7, index: Math.max(0, Math.round((params.x - 100) / 10)), inside: true }
+      if (command === 'text.navigate') return { index: params.move === 'lineStart' ? 0 : Array.from(state.text).length }
       return null
     },
   }
   return engine
 }
 
-const edits = (engine) => engine.calls.filter(([command]) => command === 'type.edit' || command === 'type.setStyle')
+const edits = (engine) => engine.calls.filter(([command]) => command === 'text.edit' || command === 'text.setStyle')
 
 test('every command of one session carries its key: the session is one history step', async () => {
   const engine = fakeEngine('Hello')
@@ -148,7 +148,7 @@ test('a style goes to the selected range in the session step; with no range to t
   await session.start({ layer: 7, select: [6, 11] })
   const target = session.target.get()
   assert.deepEqual(target.range, [6, 11])
-  await target.run('type.setStyle', { color: '#ff0000', range: target.range })
+  await target.run('text.setStyle', { color: '#ff0000', range: target.range })
   assert.deepEqual(engine.state.styles[0], { layer: 7, color: '#ff0000', range: [6, 11], coalesce: session.historyKey })
   session.key({ key: 'ArrowRight', shift: false, alt: false, meta: false, ctrl: false }, true)
   await session.settled()

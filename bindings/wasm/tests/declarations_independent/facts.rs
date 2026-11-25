@@ -342,7 +342,7 @@ pub(super) fn compare(doc: &mut PhotoDocument, roles: &[(&str, u64)], rows: &[Ro
                 "path.rename" if under.covers.as_ref().is_some_and(|c| c.fields.iter().any(|f| f == "~pathContents")) => {
                     add(&mut holds, "image", &format!("~pathContents[name={}].name", params["name"]));
                 }
-                "notes.set" => {
+                "note.set" => {
                     let index = &params["index"];
                     for (param, fields) in
                         [("text", &["text"][..]), ("author", &["author"]), ("color", &["color"]), ("x", &["position", "popup"]), ("y", &["position", "popup"])]

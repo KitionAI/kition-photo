@@ -13,7 +13,7 @@
 //! lands where it can be seen. A folder beside them (`outside/`) holds this test's sentinel files,
 //! which the agent names by path: directly, inside `model.batch` (no origin, an agent's, a claimed
 //! person's), through the kit's own documents (`PhotoDocument::execute_as` as an agent and as a
-//! person, the `actions.play` dispatcher, editable filter parameters, the object model's layer
+//! person, the `action.play` dispatcher, editable filter parameters, the object model's layer
 //! properties) and from document files that link to them.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
@@ -96,7 +96,7 @@ fn holds(bytes: &[u8], needle: &[u8]) -> bool {
 /// A 16 x 16 PNG of one colour, made by this kit's engine (not hosted: the test's own process).
 fn png(rgb: [u8; 3]) -> Vec<u8> {
     let mut doc = PhotoDocument::create("pixel.png", 16, 16).unwrap();
-    doc.execute("select.all", json!({})).unwrap();
+    doc.execute("edit.selectAll", json!({})).unwrap();
     doc.execute("edit.fill", json!({ "color": format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2]) })).unwrap();
     doc.save(Some("pixel.png")).unwrap()
 }
@@ -107,7 +107,7 @@ fn basic_psd() -> Vec<u8> {
     doc.execute("layer.new.layer", json!({ "name": "Ink" })).unwrap();
     doc.execute("select.rect", json!({ "x": 4, "y": 4, "width": 10, "height": 10 })).unwrap();
     doc.execute("edit.fill", json!({ "color": "#3060c0" })).unwrap();
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
     doc.save(Some("basic.psd")).unwrap()
 }
 
@@ -345,7 +345,7 @@ fn act(root: &Path) -> Vec<String> {
     }
 
     // Commands that name files or folders, with paths outside the workspace: directly, inside
-    // model.batch (no origin, the agent's, a claimed person's), and through actions.play.
+    // model.batch (no origin, the agent's, a claimed person's), and through action.play.
     let folder = outside.to_string_lossy().into_owned();
     let mut named: Vec<(String, Value)> = hostile_calls(&at("made"));
     named.extend(hostile_calls(&at("secret.png")));
@@ -380,8 +380,8 @@ fn act(root: &Path) -> Vec<String> {
             continue;
         }
         let _ = agent.run(&id, command, value.clone());
-        let _ = agent.run(&id, "actions.play", json!({ "steps": [{ "command": command, "params": value }] }));
-        let _ = agent.run(&id, "actions.play", actions(command, value));
+        let _ = agent.run(&id, "action.play", json!({ "steps": [{ "command": command, "params": value }] }));
+        let _ = agent.run(&id, "action.play", actions(command, value));
     }
     // A Color Lookup editable filter whose parameters name a LUT outside the workspace: set by the
     // agent, or stored in the file.
@@ -417,10 +417,10 @@ fn act(root: &Path) -> Vec<String> {
             if role == "agent" && answer.is_ok() && kition_photo_kit::files::FILES.iter().any(|file| file.command == command) {
                 wrong.push(format!("execute_as ran `{command}` for an agent, a command that names files"));
             }
-            let answer = doc.execute_as("actions.play", json!({ "steps": [{ "command": command, "params": value }] }), &origin);
-            agent.answers.push(format!("{role} actions.play {command}: {answer:?}"));
+            let answer = doc.execute_as("action.play", json!({ "steps": [{ "command": command, "params": value }] }), &origin);
+            agent.answers.push(format!("{role} action.play {command}: {answer:?}"));
             if role == "agent" && answer.is_ok() && kition_photo_kit::files::FILES.iter().any(|file| file.command == command) {
-                wrong.push(format!("actions.play ran `{command}` as a step for an agent, a command that names files"));
+                wrong.push(format!("action.play ran `{command}` as a step for an agent, a command that names files"));
             }
         }
         // Every engine command with no parameters.

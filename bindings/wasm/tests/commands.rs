@@ -45,9 +45,9 @@ fn keys_of_once_unreadable_entries_are_parameters() {
         ("file.export.saveForWebLegacy", &["width", "height", "percent", "resample"]),
         ("edit.checkSpelling", &["start", "end", "word", "replace"]),
         ("slice.new", &["rect", "x", "y", "width", "height", "name", "kind", "horizontalAlign", "verticalAlign", "outsets"]),
-        ("swatches.export", &["format", "path"]),
+        ("swatch.export", &["format", "path"]),
         ("image.applyImage", &["sourceDocument", "sourceLayer", "sourceChannel", "sourceInvert", "maskDocument", "maskLayer", "maskChannel", "maskInvert"]),
-        ("type.setStyle", &["align", "firstLineIndent"]),
+        ("text.setStyle", &["align", "firstLineIndent"]),
     ] {
         let command = commands.iter().find(|command| command.id == id).unwrap_or_else(|| panic!("no command {id}"));
         let schema = command.schema.as_ref().and_then(|schema| schema.as_object()).unwrap_or_else(|| panic!("{id}: no schema"));

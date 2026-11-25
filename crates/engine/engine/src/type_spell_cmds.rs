@@ -6,7 +6,7 @@
 //! or adds words to the dictionary; the UI's dialog drives the same actions. Offsets are
 //! character indices.
 //!
-//! `type.insertText` inserts a string (a glyph) into a type layer at a character position or
+//! `text.insertText` inserts a string (a glyph) into a type layer at a character position or
 //! over a range.
 
 use std::collections::HashSet;
@@ -193,7 +193,7 @@ fn check_spelling(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn insert_text(s: &mut Session, p: &Value) -> Result<Value> {
-    let cmd = "type.insertText";
+    let cmd = "text.insertText";
     let id = layer_param(s, p)?;
     let new = p.get("text").and_then(Value::as_str).filter(|t| !t.is_empty()).ok_or_else(|| bad(cmd, "missing `text`"))?.to_string();
     let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
@@ -244,7 +244,7 @@ pub fn specs() -> Vec<CommandSpec> {
             run: check_spelling,
         },
         CommandSpec {
-            id: "type.insertText",
+            id: "text.insertText",
             label: "Insert Glyph",
             menu: &[],
             shortcut: None,
@@ -263,7 +263,7 @@ mod tests {
     fn session(text: &str) -> (Session, u64) {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 300, "height": 100, "background": "white"})).unwrap();
-        let r = s.execute("type.create", json!({"x": 10, "y": 50, "text": text, "size": 12})).unwrap();
+        let r = s.execute("text.add", json!({"x": 10, "y": 50, "text": text, "size": 12})).unwrap();
         (s, r["layer"].as_u64().unwrap())
     }
 
@@ -310,18 +310,18 @@ mod tests {
         assert!(!s.is_enabled("edit.checkSpelling"));
         s.execute("file.new", json!({"width": 10, "height": 10})).unwrap();
         assert!(!s.is_enabled("edit.checkSpelling"));
-        assert!(!s.is_enabled("type.insertText"));
+        assert!(!s.is_enabled("text.insertText"));
     }
 
     #[test]
     fn insert_glyph_at_caret_and_over_range() {
         let (mut s, id) = session("ab");
-        s.execute("type.insertText", json!({"layer": id, "text": "→", "at": 1})).unwrap();
+        s.execute("text.insertText", json!({"layer": id, "text": "→", "at": 1})).unwrap();
         assert_eq!(text_of(&s, id), "a→b");
-        let r = s.execute("type.insertText", json!({"layer": id, "text": "€", "range": [0, 2]})).unwrap();
+        let r = s.execute("text.insertText", json!({"layer": id, "text": "€", "range": [0, 2]})).unwrap();
         assert_eq!((text_of(&s, id).as_str(), r["caret"].as_u64()), ("€b", Some(1)));
-        s.execute("type.insertText", json!({"text": "!"})).unwrap();
+        s.execute("text.insertText", json!({"text": "!"})).unwrap();
         assert_eq!(text_of(&s, id), "€b!");
-        assert!(s.execute("type.insertText", json!({"text": ""})).is_err());
+        assert!(s.execute("text.insertText", json!({"text": ""})).is_err());
     }
 }

@@ -5,7 +5,7 @@
 //!
 //! Methods (camelCase params):
 //! - `engine.execute {command, params?, wait?}` / `engine.commands {filter?}`
-//! - `jobs.list` / `jobs.cancel {job?}`: background jobs (#210)
+//! - `job.list` / `job.cancel {job?}`: background jobs (#210)
 //! - `session.list`, `doc.open {path}`, `doc.new {…file.new params}`,
 //!   `doc.save {path?, format?, quality?, index?}`, `doc.inspect {index?}`,
 //!   `doc.render {index?, maxSide?, path?}` (writes a PNG to `path`, else
@@ -31,8 +31,8 @@ use crate::{AutomationError, Headless};
 /// Method names served by [`Headless::handle`].
 pub const METHODS: &[&str] = &[
     "engine.execute",
-    "jobs.list",
-    "jobs.cancel",
+    "job.list",
+    "job.cancel",
     "engine.commands",
     "session.list",
     "doc.open",
@@ -70,8 +70,8 @@ impl Headless {
                 self.command_start(id, p.get("params").cloned().unwrap_or(Value::Null), wait)
             }
             // Background jobs (#210): list (applying any that finished) and cancel.
-            "jobs.list" => self.command_start("jobs.list", json!({}), true),
-            "jobs.cancel" => self.command_start("jobs.cancel", p, true),
+            "job.list" => self.command_start("job.list", json!({}), true),
+            "job.cancel" => self.command_start("job.cancel", p, true),
             "engine.commands" => {
                 let all = self.command_list();
                 Ok(match str_of(&p, "filter").map(str::to_lowercase) {
@@ -403,12 +403,12 @@ mod tests {
         // wait: false returns a job id at once.
         let r = h.handle("engine.execute", json!({"command": "filter.blur.gaussianBlur", "params": {"radius": 40}, "wait": false})).unwrap();
         let job = r["job"].as_u64().unwrap();
-        let listed = h.handle("jobs.list", json!({})).unwrap();
+        let listed = h.handle("job.list", json!({})).unwrap();
         assert!(listed["jobs"].as_array().unwrap().iter().any(|j| j["id"] == job), "{listed}");
-        // Wait for it via jobs.list (which applies finished jobs).
+        // Wait for it via job.list (which applies finished jobs).
         let t = std::time::Instant::now();
         loop {
-            let l = h.handle("jobs.list", json!({})).unwrap();
+            let l = h.handle("job.list", json!({})).unwrap();
             let state = l["jobs"].as_array().unwrap().iter().find(|j| j["id"] == job).map(|j| j["state"].clone());
             if state == Some(json!("done")) {
                 break;
@@ -420,9 +420,9 @@ mod tests {
         let before = h.session.active().unwrap().doc.clone();
         let r = h.handle("engine.execute", json!({"command": "filter.blur.gaussianBlur", "params": {"radius": 40}, "wait": false})).unwrap();
         let job = r["job"].as_u64().unwrap();
-        h.handle("jobs.cancel", json!({"job": job})).unwrap();
-        assert!(h.handle("jobs.cancel", json!({"job": "nope"})).is_err());
-        let l = h.handle("jobs.list", json!({})).unwrap();
+        h.handle("job.cancel", json!({"job": job})).unwrap();
+        assert!(h.handle("job.cancel", json!({"job": "nope"})).is_err());
+        let l = h.handle("job.list", json!({})).unwrap();
         assert_eq!(l["jobs"].as_array().unwrap().iter().find(|j| j["id"] == job).unwrap()["state"], "cancelled");
         assert!(std::sync::Arc::ptr_eq(&h.session.active().unwrap().doc, &before));
     }
@@ -440,18 +440,18 @@ mod tests {
         assert_eq!(r["completed"], 3, "{r}");
         let job = r["results"][2]["result"]["job"].as_u64().unwrap_or_else(|| panic!("no job id: {r}"));
         assert_eq!(r["results"][2]["result"]["pending"], true);
-        let listed = h.handle("jobs.list", json!({})).unwrap();
+        let listed = h.handle("job.list", json!({})).unwrap();
         assert!(listed["jobs"].as_array().unwrap().iter().any(|j| j["id"] == job), "{listed}");
         let t = std::time::Instant::now();
         while h.session.jobs().iter().any(|j| j.id.0 == job) {
             assert!(t.elapsed().as_secs() < 60);
             std::thread::sleep(std::time::Duration::from_millis(5));
-            h.handle("jobs.list", json!({})).unwrap();
+            h.handle("job.list", json!({})).unwrap();
         }
     }
 
     /// Regression (#503): a finished `wait: false` job was only applied by a later command or
-    /// `jobs.list`, so save, inspect, render and `session.list` still saw the document without it.
+    /// `job.list`, so save, inspect, render and `session.list` still saw the document without it.
     #[test]
     fn every_request_sees_a_finished_background_job() {
         let dir = std::env::temp_dir().join(format!("pc-rpc-job-sync-{}", std::process::id()));
@@ -466,7 +466,7 @@ mod tests {
         let revision = |h: &mut Headless| h.handle("session.list", json!({})).unwrap()["documents"][0]["revision"].clone();
         let start = revision(&mut h);
         h.handle("engine.execute", json!({"command": "filter.blur.gaussianBlur", "params": {"radius": 4}, "wait": false})).unwrap();
-        // Only reading requests from here on: no command and no `jobs.list`.
+        // Only reading requests from here on: no command and no `job.list`.
         let t = std::time::Instant::now();
         while revision(&mut h) == start {
             assert!(t.elapsed().as_secs() < 60, "session.list never saw the finished job");
@@ -563,7 +563,7 @@ mod tests {
         let listed: Vec<&str> = listed.as_array().unwrap().iter().map(|m| m.as_str().unwrap()).collect();
         assert_eq!(listed, METHODS);
         // The job methods `engine.execute {"wait": false}` depends on are discoverable (#414).
-        assert!(listed.contains(&"jobs.list") && listed.contains(&"jobs.cancel"));
+        assert!(listed.contains(&"job.list") && listed.contains(&"job.cancel"));
         for m in METHODS {
             if let Err(e) = h.handle(m, Value::Null) {
                 assert!(!e.to_string().contains("unknown method"), "{m} is listed but not served: {e}");

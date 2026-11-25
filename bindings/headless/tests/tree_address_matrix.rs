@@ -89,7 +89,7 @@ fn fixture() -> Vec<u8> {
         doc.execute("layer.new.layer", json!({"name":format!("L{i}")})).unwrap();
         doc.execute("select.rect", json!({"x":8+i*20,"y":12,"width":16,"height":24})).unwrap();
         doc.execute("edit.fill", json!({"color":"#dd3344"})).unwrap();
-        doc.execute("select.deselect", json!({})).unwrap();
+        doc.execute("edit.deselectAll", json!({})).unwrap();
     }
     let ids = ids_by_name(&doc.inspect().unwrap());
     let group = doc.execute("layer.new.group", json!({"name":"G"})).unwrap()["layer"].clone();

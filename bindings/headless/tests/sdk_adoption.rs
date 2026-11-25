@@ -38,14 +38,14 @@ async fn several_channel_sources_merge_private_coverage_on_the_image() {
                 doc.execute("select.rect", json!({"x":x,"y":1,"width":5,"height":5})).unwrap();
                 doc.execute("select.saveSelection", json!({"name":name})).unwrap();
             }
-            doc.execute("select.deselect", json!({})).unwrap();
+            doc.execute("edit.deselectAll", json!({})).unwrap();
             let f = Fixture::from_bytes("Sources.kphoto", &doc.save_sealed(None).unwrap(), CallOptions::default());
             let (_, basis) = f.inspect().await;
             if pixels {
                 f.colleague(&[
                     ("select.rect", json!({"x":2,"y":2,"width":8,"height":8})),
                     ("select.saveSelection", json!({"channel":source,"operation":"replace"})),
-                    ("select.deselect", json!({})),
+                    ("edit.deselectAll", json!({})),
                 ]);
             } else {
                 f.colleague(&[("channel.rename", json!({"channel":source,"name":format!("Changed {source}")}))]);
@@ -235,7 +235,7 @@ async fn c8_point_comparison_keeps_outside_pixels_after_an_agent_fill() {
             vec![
                 ("select.rect", json!({"x":828,"y":60,"width":12,"height":12})),
                 ("edit.fill", json!({"layer":target,"color":"#202020"})),
-                ("select.deselect", json!({})),
+                ("edit.deselectAll", json!({})),
             ]
         });
         f.ok(

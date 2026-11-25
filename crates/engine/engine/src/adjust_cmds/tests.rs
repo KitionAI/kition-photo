@@ -71,7 +71,7 @@ fn destructive_adjustments_all_depths_and_modes_one_undo_step() {
 #[test]
 fn destructive_adjustments_respect_selection() {
     let mut s = session(8, "rgb");
-    s.execute("select.all", json!({})).ok();
+    s.execute("edit.selectAll", json!({})).ok();
     s.edit("sel", |doc, _| {
         let mut sel = Surface::new(kition_photo_color::PixelFormat::GRAY8);
         sel.write_region(Rect::new(0, 0, 10, 32), &vec![1.0; 320]);
@@ -91,7 +91,7 @@ fn match_color_from_another_document() {
     let mut s = session(8, "rgb");
     s.execute("file.new", json!({"width": 16, "height": 16, "background": "#e05010"})).unwrap();
     // The target is document 0.
-    s.execute("document.activate", json!({"document": 0})).unwrap();
+    s.execute("file.activate", json!({"document": 0})).unwrap();
     let before = rgba(&s, 10, 10);
     s.execute("image.adjustments.matchColor", json!({"source": 1})).unwrap();
     let after = rgba(&s, 10, 10);
@@ -215,7 +215,7 @@ LUT_3D_SIZE 2
     assert!(e.to_string().contains("DOMAIN_MIN"), "{e}");
     assert!(s.execute("image.adjustments.colorLookup", json!({"data": "LUT_3D_SIZE 3\n0 0 0\n"})).is_err());
     assert!(s.execute("layer.newAdjustmentLayer.colorLookup", json!({"file": "/nonexistent/x.cube"})).is_err());
-    let looks = s.execute("image.adjustments.colorLookup.list", json!({})).unwrap();
+    let looks = s.execute("image.adjustments.listColorLookups", json!({})).unwrap();
     assert_eq!(looks.as_array().unwrap().len(), kition_photo_cms::lutfile::BUILTIN.len());
 }
 
@@ -337,7 +337,7 @@ fn invert_with_the_mask_targeted_inverts_the_mask() {
         let mut s = session(depth, "rgb");
         s.execute("select.rect", json!({"x": 24, "y": 0, "width": 24, "height": 32})).unwrap();
         s.execute("layer.layerMask.revealSelection", json!({})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let (pixels, off_canvas) = (rgba(&s, 3, 3), mask_at(&s, -500, 3));
         let steps = s.active().unwrap().history.past_len();
         s.execute("image.adjustments.invert", json!({"target": "mask"})).unwrap();
@@ -378,7 +378,7 @@ fn a_targeted_mask_enables_editing_it_on_any_layer() {
     s.execute("layer.delete", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 24, "y": 0, "width": 24, "height": 32})).unwrap();
     s.execute("layer.layerMask.revealSelection", json!({})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     let pixels = rgba(&s, 23, 3);
     s.execute("filter.blur.gaussianBlur", json!({"radius": 3, "target": "mask"})).unwrap();
     assert!(mask_at(&s, 23, 3) > 0.0 && mask_at(&s, 23, 3) < 1.0, "the mask's edge is blurred");

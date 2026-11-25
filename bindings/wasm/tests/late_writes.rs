@@ -23,7 +23,7 @@ fn replay(command: &str) {
     doc.execute("layer.new.layer", json!({"name":"Ink"})).unwrap();
     doc.execute("select.rect", json!({"x":10,"y":10,"width":24,"height":20})).unwrap();
     doc.execute("edit.fill", json!({"color":"#ff0000"})).unwrap();
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
     doc.execute("filter.blur.gaussianBlur", json!({"radius":2})).unwrap();
     doc.execute("edit.transform", json!({"matrix":[1,0,0,1,4,0]})).unwrap();
     let version = doc.version().unwrap();
@@ -31,7 +31,7 @@ fn replay(command: &str) {
     let mut colleague = PhotoDocument::open("Late.kphoto", &bytes).unwrap();
     colleague.execute("select.rect", json!({"x":20,"y":20,"width":4,"height":4})).unwrap();
     colleague.execute("edit.fill", json!({"color":"#0000ff"})).unwrap();
-    colleague.execute("select.deselect", json!({})).unwrap();
+    colleague.execute("edit.deselectAll", json!({})).unwrap();
     doc.add_blobs(&colleague.blobs().unwrap()).unwrap();
     doc.import_changes(&colleague.export_changes(&version).unwrap()).unwrap();
     let before = doc.render(0.0, 0.0, 1.0, 64, 48).unwrap();

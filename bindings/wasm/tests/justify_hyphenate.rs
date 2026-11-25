@@ -26,10 +26,10 @@ fn justified_hyphenated_lines_reach_the_edge() {
     let mut image = PhotoDocument::create("column.psd", 400, 700).unwrap();
     let made = run(
         &mut image,
-        "type.create",
+        "text.add",
         json!({ "x": 20, "y": 20, "box": [20, 20, 315, 640], "font": "Lora", "size": 15, "leading": 22, "color": "#000000", "align": "justify", "hyphenate": true, "text": TEXT }),
     );
-    let info = run(&mut image, "type.info", json!({ "layer": made["layer"] }));
+    let info = run(&mut image, "text.info", json!({ "layer": made["layer"] }));
     let pixels = image.render(0.0, 0.0, 1.0, 400, 700).unwrap();
     let lines = info["lines"].as_array().unwrap();
     for (i, line) in lines.iter().enumerate() {

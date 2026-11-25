@@ -6,14 +6,14 @@ fn names(s: &Session) -> Vec<String> {
 }
 
 fn export_bytes(s: &mut Session, p: Value) -> Vec<u8> {
-    let r = s.execute("swatches.export", p).unwrap();
+    let r = s.execute("swatch.export", p).unwrap();
     b64_decode(r["data"].as_str().unwrap()).unwrap()
 }
 
 #[test]
 fn defaults_and_listing() {
     let mut s = Session::new();
-    let r = s.execute("swatches.list", json!({})).unwrap();
+    let r = s.execute("swatch.list", json!({})).unwrap();
     assert_eq!(r["count"], 40);
     assert_eq!(r["groups"][0]["name"], "Grays");
     assert_eq!(r["groups"][0]["swatches"][0], json!({"name": "Black", "model": "rgb", "values": [0.0, 0.0, 0.0], "hex": "#000000"}));
@@ -24,74 +24,74 @@ fn defaults_and_listing() {
 fn add_from_foreground_and_explicit_models() {
     let mut s = Session::new();
     s.tools.foreground = [1.0, 0.5, 0.0, 1.0];
-    let r = s.execute("swatches.add", json!({})).unwrap();
+    let r = s.execute("swatch.add", json!({})).unwrap();
     assert_eq!((r["name"].as_str(), r["group"].as_str()), (Some("Color Swatch 1"), Some("Grays")));
     assert_eq!(s.presets.swatches[0].items.last().unwrap().color, SwatchColor::Rgb([1.0, 0.5, 0.0]));
-    let r = s.execute("swatches.add", json!({})).unwrap();
+    let r = s.execute("swatch.add", json!({})).unwrap();
     assert_eq!(r["name"], "Color Swatch 2");
     // CMYK into a new group at the front, spot.
     let r = s
-        .execute("swatches.add", json!({"name": "Ink", "group": "Print", "index": 0, "kind": "spot", "color": {"model": "cmyk", "values": [100, 0, 0, 0]}}))
+        .execute("swatch.add", json!({"name": "Ink", "group": "Print", "index": 0, "kind": "spot", "color": {"model": "cmyk", "values": [100, 0, 0, 0]}}))
         .unwrap();
     assert_eq!(r["group"], "Print");
     let g = s.presets.swatches.last().unwrap();
     assert_eq!(g.items[0], Swatch { name: "Ink".into(), color: SwatchColor::Cmyk([1.0, 0.0, 0.0, 0.0]), kind: SwatchKind::Spot });
     // Names stay unique.
-    let r = s.execute("swatches.add", json!({"name": "Ink"})).unwrap();
+    let r = s.execute("swatch.add", json!({"name": "Ink"})).unwrap();
     assert_eq!(r["name"], "Ink 2");
 }
 
 #[test]
 fn use_sets_foreground_and_background_through_colour_management() {
     let mut s = Session::new();
-    s.execute("swatches.use", json!({"swatch": "Red"})).unwrap();
+    s.execute("swatch.use", json!({"swatch": "Red"})).unwrap();
     assert_eq!(s.tools.foreground, [230.0 / 255.0, 40.0 / 255.0, 40.0 / 255.0, 1.0]);
-    s.execute("swatches.use", json!({"index": 9, "target": "background"})).unwrap();
+    s.execute("swatch.use", json!({"index": 9, "target": "background"})).unwrap();
     assert_eq!(s.tools.background, [1.0, 1.0, 1.0, 1.0], "index 9 is White");
-    s.execute("swatches.add", json!({"name": "Lab white", "color": {"model": "lab", "values": [100, 0, 0]}})).unwrap();
-    let r = s.execute("swatches.use", json!({"swatch": "Lab white"})).unwrap();
+    s.execute("swatch.add", json!({"name": "Lab white", "color": {"model": "lab", "values": [100, 0, 0]}})).unwrap();
+    let r = s.execute("swatch.use", json!({"swatch": "Lab white"})).unwrap();
     assert_eq!(r["hex"], "#ffffff");
-    s.execute("swatches.add", json!({"name": "Paper", "color": {"model": "gray", "values": [0]}})).unwrap();
-    s.execute("swatches.use", json!({"swatch": "Paper", "target": "background"})).unwrap();
+    s.execute("swatch.add", json!({"name": "Paper", "color": {"model": "gray", "values": [0]}})).unwrap();
+    s.execute("swatch.use", json!({"swatch": "Paper", "target": "background"})).unwrap();
     assert!(s.tools.background.iter().all(|v| (v - 1.0).abs() < 0.01), "{:?}", s.tools.background);
 }
 
 #[test]
 fn rename_delete_move_and_groups() {
     let mut s = Session::new();
-    s.execute("swatches.rename", json!({"swatch": "Black", "name": "Ink Black"})).unwrap();
+    s.execute("swatch.rename", json!({"swatch": "Black", "name": "Ink Black"})).unwrap();
     assert!(names(&s).contains(&"Ink Black".to_string()));
-    assert!(s.execute("swatches.rename", json!({"swatch": "Ink Black", "name": "White"})).is_err(), "duplicate");
+    assert!(s.execute("swatch.rename", json!({"swatch": "Ink Black", "name": "White"})).is_err(), "duplicate");
     // Reorder within the group, then into another group.
-    s.execute("swatches.move", json!({"swatch": "White", "position": 0})).unwrap();
+    s.execute("swatch.move", json!({"swatch": "White", "position": 0})).unwrap();
     assert_eq!(s.presets.swatches[0].items[0].name, "White");
-    let r = s.execute("swatches.move", json!({"swatch": "White", "to": "Dark", "position": 1})).unwrap();
+    let r = s.execute("swatch.move", json!({"swatch": "White", "to": "Dark", "position": 1})).unwrap();
     assert_eq!(r, json!({"group": "Dark", "position": 1}));
     assert_eq!(s.presets.swatches[3].items[1].name, "White");
     // Out-of-range positions clamp.
-    let r = s.execute("swatches.move", json!({"swatch": "White", "position": 999_999})).unwrap();
+    let r = s.execute("swatch.move", json!({"swatch": "White", "position": 999_999})).unwrap();
     assert_eq!(r["position"], 10);
     // New group from swatches, rename it, delete it keeping the swatches.
-    let r = s.execute("swatches.newGroup", json!({"name": "Mine", "swatches": ["Red", "Blue"]})).unwrap();
+    let r = s.execute("swatch.newGroup", json!({"name": "Mine", "swatches": ["Red", "Blue"]})).unwrap();
     assert_eq!(r, json!({"group": "Mine", "moved": 2}));
-    let r = s.execute("swatches.newGroup", json!({"name": "Mine"})).unwrap();
+    let r = s.execute("swatch.newGroup", json!({"name": "Mine"})).unwrap();
     assert_eq!(r["group"], "Mine 1");
-    s.execute("swatches.renameGroup", json!({"group": "Mine", "name": "Favourites"})).unwrap();
-    assert!(s.execute("swatches.renameGroup", json!({"group": "Favourites", "name": "Dark"})).is_err());
-    let r = s.execute("swatches.deleteGroup", json!({"group": "Favourites", "keepSwatches": true})).unwrap();
+    s.execute("swatch.renameGroup", json!({"group": "Mine", "name": "Favourites"})).unwrap();
+    assert!(s.execute("swatch.renameGroup", json!({"group": "Favourites", "name": "Dark"})).is_err());
+    let r = s.execute("swatch.deleteGroup", json!({"group": "Favourites", "keepSwatches": true})).unwrap();
     assert_eq!(r["kept"], 2);
     assert!(s.presets.swatches[3].items.iter().any(|i| i.name == "Red"), "kept in the group above");
-    s.execute("swatches.deleteGroup", json!({"group": "Mine 1"})).unwrap();
+    s.execute("swatch.deleteGroup", json!({"group": "Mine 1"})).unwrap();
     // Delete several by name, and one by index.
-    let r = s.execute("swatches.delete", json!({"swatch": ["Red", "Blue", "Red"]})).unwrap();
+    let r = s.execute("swatch.delete", json!({"swatch": ["Red", "Blue", "Red"]})).unwrap();
     assert_eq!(r["deleted"].as_array().unwrap().len(), 2);
-    let r = s.execute("swatches.delete", json!({"index": 0})).unwrap();
+    let r = s.execute("swatch.delete", json!({"index": 0})).unwrap();
     assert_eq!(r["deleted"], json!(["Ink Black"]));
     assert_eq!(names(&s).len(), 37);
     // Reset restores the defaults; append adds them again with unique names.
-    s.execute("swatches.reset", json!({})).unwrap();
+    s.execute("swatch.reset", json!({})).unwrap();
     assert_eq!(names(&s).len(), 40);
-    s.execute("swatches.reset", json!({"append": true})).unwrap();
+    s.execute("swatch.reset", json!({"append": true})).unwrap();
     assert_eq!(names(&s).len(), 80);
     assert!(names(&s).contains(&"Black 2".to_string()));
     assert_eq!(s.presets.swatches[4].name, "Grays 1");
@@ -100,7 +100,7 @@ fn rename_delete_move_and_groups() {
 #[test]
 fn changes_persist_with_the_preferences() {
     let mut s = Session::new();
-    s.execute("swatches.add", json!({"name": "Keep me", "color": {"model": "lab", "values": [40, 12.5, -7.25]}})).unwrap();
+    s.execute("swatch.add", json!({"name": "Keep me", "color": {"model": "lab", "values": [40, 12.5, -7.25]}})).unwrap();
     let saved = s.presets.to_json(&s);
     let mut t = Session::new();
     t.load_presets_json(saved);
@@ -123,7 +123,7 @@ fn aco_round_trip_keeps_16_bit_values_and_books() {
     ];
     let file = kition_photo_psd::aco::write(&swatches).unwrap();
     let mut s = Session::new();
-    let r = s.execute("swatches.import", json!({"data": b64_encode(&file), "group": "Pro", "mode": "replace"})).unwrap();
+    let r = s.execute("swatch.import", json!({"data": b64_encode(&file), "group": "Pro", "mode": "replace"})).unwrap();
     assert_eq!((r["format"].as_str(), r["count"].as_u64()), (Some("aco"), Some(6)));
     assert_eq!(r["warnings"].as_array().unwrap().len(), 1, "the colour book is reported");
     assert_eq!(s.presets.swatches.len(), 1);
@@ -135,11 +135,11 @@ fn aco_round_trip_keeps_16_bit_values_and_books() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("Brand Colors.aco");
     std::fs::write(&path, &file).unwrap();
-    let r = s.execute("swatches.import", json!({"path": path.to_string_lossy()})).unwrap();
+    let r = s.execute("swatch.import", json!({"path": path.to_string_lossy()})).unwrap();
     assert_eq!(r["groups"], json!(["Brand Colors"]));
     assert_eq!(names(&s).iter().filter(|n| n.starts_with("R")).count(), 2, "imported names are made unique");
     let out = dir.join("out.ase");
-    let r = s.execute("swatches.export", json!({"path": out.to_string_lossy(), "group": "Pro"})).unwrap();
+    let r = s.execute("swatch.export", json!({"path": out.to_string_lossy(), "group": "Pro"})).unwrap();
     assert_eq!((r["format"].as_str(), r["count"].as_u64()), (Some("ase"), Some(5)), "the book can't go to .ase");
     assert!(std::fs::read(&out).unwrap().starts_with(b"ASEF"));
     std::fs::remove_dir_all(&dir).ok();
@@ -163,7 +163,7 @@ fn ase_round_trip_keeps_groups_floats_and_kinds() {
     };
     let bytes = kition_photo_psd::ase::write(&src).unwrap();
     let mut s = Session::new();
-    let r = s.execute("swatches.import", json!({"data": b64_encode(&bytes), "group": "Exchange"})).unwrap();
+    let r = s.execute("swatch.import", json!({"data": b64_encode(&bytes), "group": "Exchange"})).unwrap();
     assert_eq!(r["groups"], json!(["Exchange", "Brand"]));
     assert_eq!(r["count"], 4);
     assert_eq!(r["warnings"].as_array().unwrap().len(), 1, "the unknown model is reported");
@@ -191,7 +191,7 @@ fn ase_round_trip_keeps_groups_floats_and_kinds() {
     assert!((l[0] - 0.5).abs() < 1e-6 && l[1] == 20.0 && l[2] == -30.0);
     assert!((g - 0.25).abs() < 1e-6);
     // HSB swatches become RGB in .ase.
-    s.execute("swatches.add", json!({"name": "Hue", "color": {"model": "hsb", "values": [120, 100, 100]}})).unwrap();
+    s.execute("swatch.add", json!({"name": "Hue", "color": {"model": "hsb", "values": [120, 100, 100]}})).unwrap();
     let out = export_bytes(&mut s, json!({"format": "ase", "swatches": ["Hue"]}));
     let back = kition_photo_psd::ase::parse(&out).unwrap();
     assert_eq!(
@@ -208,50 +208,50 @@ fn bad_params_fail_gracefully() {
     let mut s = Session::new();
     let before = s.presets.swatches.clone();
     let cases: &[(&str, Value)] = &[
-        ("swatches.add", json!({"color": "#12"})),
-        ("swatches.add", json!({"color": {"model": "lab"}})),
-        ("swatches.add", json!({"color": 5})),
-        ("swatches.add", json!({"name": 7})),
-        ("swatches.add", json!({"name": "   "})),
-        ("swatches.add", json!({"group": []})),
-        ("swatches.add", json!({"index": -1})),
-        ("swatches.add", json!({"kind": "metallic"})),
-        ("swatches.delete", json!({})),
-        ("swatches.delete", json!({"swatch": "Nope"})),
-        ("swatches.delete", json!({"swatch": ["Red", 5]})),
-        ("swatches.delete", json!({"swatch": ["Red", "Nope"]})),
-        ("swatches.delete", json!({"index": 40})),
-        ("swatches.delete", json!({"index": "0"})),
-        ("swatches.delete", json!({"swatch": "Red", "group": "Grays"})),
-        ("swatches.rename", json!({"swatch": "Red"})),
-        ("swatches.rename", json!({"swatch": "Red", "name": ""})),
-        ("swatches.rename", json!({"name": "x"})),
-        ("swatches.move", json!({"swatch": "Red", "to": "Nowhere"})),
-        ("swatches.move", json!({"swatch": "Red", "position": -3})),
-        ("swatches.move", json!({"index": 999_999})),
-        ("swatches.newGroup", json!({"swatches": "Red"})),
-        ("swatches.newGroup", json!({"swatches": ["Nope"]})),
-        ("swatches.newGroup", json!({"name": 3})),
-        ("swatches.renameGroup", json!({"group": "Nope", "name": "x"})),
-        ("swatches.renameGroup", json!({"group": "Grays"})),
-        ("swatches.deleteGroup", json!({})),
-        ("swatches.deleteGroup", json!({"group": "Grays", "keepSwatches": "yes"})),
-        ("swatches.use", json!({"swatch": "Red", "target": "middle"})),
-        ("swatches.use", json!({})),
-        ("swatches.reset", json!({"append": 1})),
-        ("swatches.import", json!({})),
-        ("swatches.import", json!({"path": "/nonexistent/x.aco"})),
-        ("swatches.import", json!({"data": "%%%"})),
-        ("swatches.import", json!({"data": b64_encode(b"junk junk")})),
-        ("swatches.import", json!({"data": b64_encode(b"ASEF\0\x01\0\0\xff\xff\xff\xff")})),
-        ("swatches.import", json!({"data": b64_encode(&[0, 1, 0xff, 0xff])})),
-        ("swatches.import", json!({"data": b64_encode(&[0, 1, 0, 0])})),
-        ("swatches.import", json!({"data": b64_encode(&[0, 1, 0, 0]), "format": "gpl"})),
-        ("swatches.import", json!({"data": b64_encode(&[0, 1, 0, 0]), "mode": "merge"})),
-        ("swatches.export", json!({"format": "pdf"})),
-        ("swatches.export", json!({"group": "Nope"})),
-        ("swatches.export", json!({"swatches": ["Nope"]})),
-        ("swatches.export", json!({"swatches": "Red"})),
+        ("swatch.add", json!({"color": "#12"})),
+        ("swatch.add", json!({"color": {"model": "lab"}})),
+        ("swatch.add", json!({"color": 5})),
+        ("swatch.add", json!({"name": 7})),
+        ("swatch.add", json!({"name": "   "})),
+        ("swatch.add", json!({"group": []})),
+        ("swatch.add", json!({"index": -1})),
+        ("swatch.add", json!({"kind": "metallic"})),
+        ("swatch.delete", json!({})),
+        ("swatch.delete", json!({"swatch": "Nope"})),
+        ("swatch.delete", json!({"swatch": ["Red", 5]})),
+        ("swatch.delete", json!({"swatch": ["Red", "Nope"]})),
+        ("swatch.delete", json!({"index": 40})),
+        ("swatch.delete", json!({"index": "0"})),
+        ("swatch.delete", json!({"swatch": "Red", "group": "Grays"})),
+        ("swatch.rename", json!({"swatch": "Red"})),
+        ("swatch.rename", json!({"swatch": "Red", "name": ""})),
+        ("swatch.rename", json!({"name": "x"})),
+        ("swatch.move", json!({"swatch": "Red", "to": "Nowhere"})),
+        ("swatch.move", json!({"swatch": "Red", "position": -3})),
+        ("swatch.move", json!({"index": 999_999})),
+        ("swatch.newGroup", json!({"swatches": "Red"})),
+        ("swatch.newGroup", json!({"swatches": ["Nope"]})),
+        ("swatch.newGroup", json!({"name": 3})),
+        ("swatch.renameGroup", json!({"group": "Nope", "name": "x"})),
+        ("swatch.renameGroup", json!({"group": "Grays"})),
+        ("swatch.deleteGroup", json!({})),
+        ("swatch.deleteGroup", json!({"group": "Grays", "keepSwatches": "yes"})),
+        ("swatch.use", json!({"swatch": "Red", "target": "middle"})),
+        ("swatch.use", json!({})),
+        ("swatch.reset", json!({"append": 1})),
+        ("swatch.import", json!({})),
+        ("swatch.import", json!({"path": "/nonexistent/x.aco"})),
+        ("swatch.import", json!({"data": "%%%"})),
+        ("swatch.import", json!({"data": b64_encode(b"junk junk")})),
+        ("swatch.import", json!({"data": b64_encode(b"ASEF\0\x01\0\0\xff\xff\xff\xff")})),
+        ("swatch.import", json!({"data": b64_encode(&[0, 1, 0xff, 0xff])})),
+        ("swatch.import", json!({"data": b64_encode(&[0, 1, 0, 0])})),
+        ("swatch.import", json!({"data": b64_encode(&[0, 1, 0, 0]), "format": "gpl"})),
+        ("swatch.import", json!({"data": b64_encode(&[0, 1, 0, 0]), "mode": "merge"})),
+        ("swatch.export", json!({"format": "pdf"})),
+        ("swatch.export", json!({"group": "Nope"})),
+        ("swatch.export", json!({"swatches": ["Nope"]})),
+        ("swatch.export", json!({"swatches": "Red"})),
     ];
     for (id, p) in cases {
         assert!(s.execute(id, p.clone()).is_err(), "{id} {p}");
@@ -259,19 +259,19 @@ fn bad_params_fail_gracefully() {
     // An unwritable path (its "folder" is a file) is an error.
     let file = std::env::temp_dir().join(format!("pc-swatch-file-{}", std::process::id()));
     std::fs::write(&file, b"x").unwrap();
-    assert!(s.execute("swatches.export", json!({"path": file.join("x.aco").to_string_lossy()})).is_err());
+    assert!(s.execute("swatch.export", json!({"path": file.join("x.aco").to_string_lossy()})).is_err());
     std::fs::remove_file(&file).ok();
     assert_eq!(s.presets.swatches, before, "failed commands change nothing");
     // Empty library: the swatch commands are disabled, not crashing.
-    s.execute("swatches.delete", json!({"swatch": names(&s)})).unwrap();
+    s.execute("swatch.delete", json!({"swatch": names(&s)})).unwrap();
     for g in ["Grays", "Pastel", "Pure", "Dark"] {
-        s.execute("swatches.deleteGroup", json!({"group": g})).unwrap();
+        s.execute("swatch.deleteGroup", json!({"group": g})).unwrap();
     }
-    for id in ["swatches.delete", "swatches.rename", "swatches.move", "swatches.use", "swatches.export", "swatches.renameGroup", "swatches.deleteGroup"] {
+    for id in ["swatch.delete", "swatch.rename", "swatch.move", "swatch.use", "swatch.export", "swatch.renameGroup", "swatch.deleteGroup"] {
         assert!(s.execute(id, json!({"swatch": "Red", "group": "Grays", "name": "x"})).is_err(), "{id}");
     }
     // Adding to an empty library creates a group.
-    let r = s.execute("swatches.add", json!({})).unwrap();
+    let r = s.execute("swatch.add", json!({})).unwrap();
     assert_eq!(r["group"], "Swatches");
 }
 
@@ -280,8 +280,8 @@ fn library_limits() {
     let mut s = Session::new();
     let one = vec![AcoSwatch { name: "x".into(), color: AcoColor::Gray(0) }; 60_000];
     let file = b64_encode(&kition_photo_psd::aco::write(&one).unwrap());
-    s.execute("swatches.import", json!({"data": file, "mode": "replace"})).unwrap();
-    assert!(s.execute("swatches.import", json!({"data": file})).is_err(), "over the library limit");
+    s.execute("swatch.import", json!({"data": file, "mode": "replace"})).unwrap();
+    assert!(s.execute("swatch.import", json!({"data": file})).is_err(), "over the library limit");
     assert_eq!(names(&s).len(), 60_000);
     // A hand-edited preferences file is trimmed, not trusted.
     let mut g = vec![Group::new(&"n".repeat(1000), vec![Swatch::new("a", SwatchColor::Gray(0.0)); MAX_SWATCHES + 5])];

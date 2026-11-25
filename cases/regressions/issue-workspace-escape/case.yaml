@@ -4,7 +4,7 @@ feature: photo.layer.object-layers
 intent: >-
   The headless kit reads and writes only inside its workspace, through its host (KHP A29, A37, A42,
   A45, section 10.6): whatever an agent runs (directly, inside model.batch with any origin, as an
-  actions.play step, through editable filter parameters or the object model's layer properties) and
+  action.play step, through editable filter parameters or the object model's layer properties) and
   whatever its document files link to, nothing appears in the process's current, home or
   temporary folder, no program starts, and nothing outside the workspace is listed, read into an
   answer, a render, a save or an export, changed or deleted. An object layer linked outside the

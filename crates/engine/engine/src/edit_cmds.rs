@@ -720,7 +720,7 @@ mod tests {
         s.execute("select.rect", json!({"x": 5, "y": 5, "width": 10, "height": 10})).unwrap();
         s.execute("edit.fill", json!({"color": "#3366cc"})).unwrap();
         s.execute("edit.copy", json!({})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let m = LayerId(s.execute("layer.new.layer", json!({"name": "m"})).unwrap()["layer"].as_u64().unwrap());
         s.execute("layer.layerMask.hideAll", json!({})).unwrap();
         (s, src, m)
@@ -853,7 +853,7 @@ mod tests {
             s
         };
         let px = |s: &Session, i: usize, x: i32, y: i32| s.active().unwrap().doc.layers[i].surface().unwrap().pixel(x, y);
-        for cmd in ["edit.cut", "edit.clear", "layer.new.layerViaCut"] {
+        for cmd in ["edit.cut", "edit.delete", "layer.new.layerViaCut"] {
             let mut s = fresh();
             s.execute(cmd, json!({})).unwrap();
             let d = &s.active().unwrap().doc;
@@ -868,7 +868,7 @@ mod tests {
         // Once it's a normal layer, cutting makes transparency again.
         let mut s = fresh();
         s.execute("layer.new.layerFromBackground", json!({})).unwrap();
-        s.execute("edit.clear", json!({})).unwrap();
+        s.execute("edit.delete", json!({})).unwrap();
         assert_eq!(px(&s, 0, 8, 8)[3], 0.0);
     }
 
@@ -967,7 +967,7 @@ mod tests {
         let cut = s.execute("edit.cut", json!({})).unwrap_err().to_string();
         assert!(cut.contains("not directly editable"), "{cut}");
         assert!(matches!(active_content(&s), LayerContent::Smart(_)));
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("layer.new.layerViaCopy", json!({})).unwrap();
         assert!(matches!(active_content(&s), LayerContent::Smart(_)), "⌘J without a selection duplicates the object layer");
         s.execute("layer.duplicate", json!({})).unwrap();
@@ -979,7 +979,7 @@ mod tests {
     #[test]
     fn copy_reads_any_layer_that_shows_pixels() {
         let mut s = session();
-        s.execute("type.create", json!({"text": "Hi", "size": 30, "x": 20, "y": 60})).unwrap();
+        s.execute("text.add", json!({"text": "Hi", "size": 30, "x": 20, "y": 60})).unwrap();
         assert!(!s.is_enabled("edit.cut"));
         assert!(s.execute("edit.copy", json!({})).is_ok());
         s.execute("layer.groupLayers", json!({})).unwrap();

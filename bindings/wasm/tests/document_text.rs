@@ -24,8 +24,8 @@ fn part(label: &str, start: usize, end: usize) -> TextPart {
 }
 
 fn type_layer(image: &mut PhotoDocument, text: &str, name: &str) -> u64 {
-    let made = image.execute("type.create", serde_json::json!({ "x": 10, "y": 40, "text": text, "name": name, "size": 12 })).unwrap();
-    made["layer"].as_u64().unwrap_or_else(|| panic!("type.create answered {made}"))
+    let made = image.execute("text.add", serde_json::json!({ "x": 10, "y": 40, "text": text, "name": name, "size": 12 })).unwrap();
+    made["layer"].as_u64().unwrap_or_else(|| panic!("text.add answered {made}"))
 }
 
 /// Heading (bottom), a group holding Body, and a hidden Draft on top.

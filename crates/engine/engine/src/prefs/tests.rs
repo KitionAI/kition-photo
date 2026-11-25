@@ -264,8 +264,8 @@ fn temporary_tools_and_fill_keys_are_rebindable() {
     // D / X and the fill keys are listed with their Photoshop defaults.
     let r = s.execute("edit.keyboardShortcuts", json!({"list": true})).unwrap();
     let def = |id: &str| r["commands"].as_array().unwrap().iter().find(|c| c["id"] == id).map(|c| c["default"].clone());
-    assert_eq!(def("tools.swapColors"), Some(json!("X")));
-    assert_eq!(def("tools.defaultColors"), Some(json!("D")));
+    assert_eq!(def("tool.swapColors"), Some(json!("X")));
+    assert_eq!(def("tool.defaultColors"), Some(json!("D")));
     assert_eq!(def("edit.fillBackground"), Some(json!("Cmd+Backspace")));
     // Bad values fail.
     assert!(s.execute("edit.keyboardShortcuts", json!({"set": {"tools.temporary.hand": 7}})).is_err());

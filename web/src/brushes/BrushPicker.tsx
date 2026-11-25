@@ -13,7 +13,7 @@ export type BrushOptions = { size: number; hardness: number; set: (patch: { size
 
 /**
  * The engine's brush for the brush panels (plan 2026-11-24, stage 5): read with `brush.get`,
- * changed with `tools.setBrush` (no history step: the brush is the person's tool, not the
+ * changed with `tool.setBrush` (no history step: the brush is the person's tool, not the
  * document), a preset picked by name.
  */
 export function useEngineBrush() {
@@ -23,7 +23,7 @@ export function useEngineBrush() {
   useEffect(refresh, [refresh])
   const set = useCallback(
     async (patch: Record<string, unknown>) => {
-      const answer = await query<EngineBrush>('tools.setBrush', patch)
+      const answer = await query<EngineBrush>('tool.setBrush', patch)
       if (answer) setBrush(answer)
       return answer
     },
@@ -54,7 +54,7 @@ function usePresets() {
 
 /**
  * The brush preset picker's body (Photoshop's Brush Preset picker; the Brushes panel): Size and
- * Hardness, then every preset with its stroke. A preset becomes the brush (`tools.setBrush`), its
+ * Hardness, then every preset with its stroke. A preset becomes the brush (`tool.setBrush`), its
  * size, hardness and pressure toggles the options bar's.
  */
 export function BrushPresets({ options, onPicked, testId }: { options: BrushOptions; onPicked?: () => void; testId: string }) {

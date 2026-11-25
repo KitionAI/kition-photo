@@ -13,7 +13,7 @@ fn session(mode: &str, depth: u32) -> Session {
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 12, "y": 8, "width": 24, "height": 16})).unwrap();
     s.execute("edit.fill", json!({"contents": "color", "color": "#808080"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s
 }
 
@@ -41,7 +41,7 @@ fn effect_colour_modes(s: &Session) -> Vec<String> {
 }
 
 fn pixel(s: &mut Session, x: i32, y: i32) -> [f32; 4] {
-    let v = s.execute("document.pixel", json!({"x": x, "y": y})).unwrap();
+    let v = s.execute("file.pixel", json!({"x": x, "y": y})).unwrap();
     let a: Vec<f32> = v.as_array().unwrap().iter().map(|c| c.as_f64().unwrap() as f32).collect();
     [a[0], a[1], a[2], a[3]]
 }
@@ -104,7 +104,7 @@ fn a_style_pasted_or_applied_into_a_grayscale_document_converts() {
     s.execute("layer.new.layer", json!({})).unwrap();
     s.execute("select.rect", json!({"x": 12, "y": 8, "width": 24, "height": 16})).unwrap();
     s.execute("edit.fill", json!({"contents": "color", "color": "#808080"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("layer.layerStyle.pasteLayerStyle", json!({})).unwrap();
     assert_in_mode(&s, "gray", "Paste Layer Style");
     let p = pixel(&mut s, 20, 15);

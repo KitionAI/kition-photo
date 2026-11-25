@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use crate::commands::{CommandSpec, check_pixels_unlocked, layer_param};
 use crate::{EngineError, Result, Session};
 
-pub const SET: &str = "layer.fill.solidColor.set";
+pub const SET: &str = "layer.fill.setSolidColor";
 
 fn bad(msg: &str) -> EngineError {
     EngineError::BadParams { cmd: SET.into(), msg: msg.into() }

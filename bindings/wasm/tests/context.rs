@@ -48,7 +48,7 @@ fn image() -> Image {
     let a = layer_id(&doc.execute("layer.new.layer", json!({ "name": "A" })).unwrap());
     let b = layer_id(&doc.execute("layer.new.layer", json!({ "name": "B" })).unwrap());
     doc.execute("select.rect", json!({ "x": 40, "y": 30, "width": 10, "height": 8 })).unwrap();
-    doc.execute("tools.setColors", json!({ "foreground": "#ff0000", "background": "#00ff00" })).unwrap();
+    doc.execute("tool.setColors", json!({ "foreground": "#ff0000", "background": "#00ff00" })).unwrap();
     Image { doc, a, b }
 }
 
@@ -120,7 +120,7 @@ fn the_pixel_selection_and_the_colors_come_back_after_an_agent_changed_them() {
     let revision = doc.revision();
     as_agent(|| {
         doc.execute("select.rect", json!({ "x": 2, "y": 2, "width": 5, "height": 5 })).unwrap();
-        doc.execute("tools.setColors", json!({ "foreground": "#0000ff" })).unwrap();
+        doc.execute("tool.setColors", json!({ "foreground": "#0000ff" })).unwrap();
     });
     assert_ne!(editor(&doc), before);
     let edited = (doc.revision(), doc.dirty());
@@ -202,7 +202,7 @@ fn the_commands_that_act_inside_the_selection_read_the_area() {
     let reading: Vec<&str> =
         commands.iter().filter(|command| command.reads.contains(&kition_kit::EditorState::Area)).map(|command| command.id.as_str()).collect();
     assert_eq!(reading.len(), kition_photo_kit::acts::REGION.len(), "{reading:?}");
-    for id in ["edit.fill", "edit.clear", "paint.stroke"] {
+    for id in ["edit.fill", "edit.delete", "paint.stroke"] {
         assert!(reading.contains(&id), "{id} reads the area");
     }
     assert!(!reading.contains(&"layer.setProps"), "a property reads no area");

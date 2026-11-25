@@ -49,14 +49,14 @@ fn every_kind() -> Session {
     run(&mut s, "select.rect", json!({"x": 10, "y": 8, "width": 30, "height": 20}));
     let ink = id_of(&s, "Ink");
     run(&mut s, "layer.layerMask.revealSelection", json!({"layer": ink}));
-    run(&mut s, "select.deselect", json!({}));
+    run(&mut s, "edit.deselectAll", json!({}));
     run(&mut s, "layer.new.group", json!({"name": "Group"}));
     run(&mut s, "layer.new.layer", json!({"name": "Inside"}));
     run(&mut s, "paint.stroke", json!({"points": [[50, 40, 1], [60, 50, 1]], "size": 4, "color": "#00ff00"}));
     run(&mut s, "layer.newAdjustmentLayer.levels", json!({"gamma": 1.6, "inBlack": 20, "outWhite": 230}));
     run(&mut s, "layer.newFillLayer.solidColor", json!({"color": "#204060"}));
-    run(&mut s, "type.create", json!({"text": "Title", "x": 4, "y": 30, "size": 14, "color": "#aa2200", "name": "Title"}));
-    run(&mut s, "shape.create", json!({"kind": "ellipse", "rect": [4, 4, 30, 20], "fill": "#ff0000", "name": "Shape"}));
+    run(&mut s, "text.add", json!({"text": "Title", "x": 4, "y": 30, "size": 14, "color": "#aa2200", "name": "Title"}));
+    run(&mut s, "shape.add", json!({"kind": "ellipse", "rect": [4, 4, 30, 20], "fill": "#ff0000", "name": "Shape"}));
     run(&mut s, "layer.new.layer", json!({"name": "Art"}));
     run(&mut s, "paint.stroke", json!({"points": [[20, 20, 1], [30, 25, 1]], "size": 5, "color": "#0000ff"}));
     let art = id_of(&s, "Art");
@@ -243,7 +243,7 @@ fn a_layer_copied_into_another_document_takes_a_fresh_id_there() {
     assert_eq!(ids(&s), source_ids, "the source is unchanged");
 
     // Pasting pixels copied from the source makes a new layer with a fresh id too.
-    run(&mut s, "select.all", json!({}));
+    run(&mut s, "edit.selectAll", json!({}));
     run(&mut s, "layer.select", json!({"layer": ink}));
     run(&mut s, "edit.copy", json!({}));
     assert!(s.set_active(target));

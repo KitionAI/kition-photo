@@ -3,11 +3,11 @@ import type { ToolOptions } from '../tools/options'
 /**
  * A type layer's character and paragraph style as the Type options bar, the Properties panel, and
  * the Character and Paragraph panels show it (upstream's `type_tool::styles_at` and
- * `type_sections`), read from `type.info`, or from the Type tool's options for new type; and the
+ * `type_sections`), read from `text.info`, or from the Type tool's options for new type; and the
  * way an edit reaches either. Pure, so the flow of values is tested without a browser.
  */
 
-/** A run's style as `type.info` reports it (upstream's `CharStyle`, snake case). */
+/** A run's style as `text.info` reports it (upstream's `CharStyle`, snake case). */
 export type RunStyle = {
   font_family: string
   font_style: string
@@ -27,7 +27,7 @@ export type RunStyle = {
   caps?: string
 }
 
-/** A paragraph's style as `type.info` reports it (upstream's `ParagraphStyle`). */
+/** A paragraph's style as `text.info` reports it (upstream's `ParagraphStyle`). */
 export type ParagraphStyle = {
   align?: string
   first_line_indent_pt?: number
@@ -39,7 +39,7 @@ export type ParagraphStyle = {
   hyphenate?: boolean
 }
 
-/** What `type.info` answers that the editor reads. */
+/** What `text.info` answers that the editor reads. */
 export type TypeInfo = { antialias: string; orientation: string; transform: number[] | { m: number[] }; runs: { start?: number; end?: number; style: RunStyle }[]; paragraphs: { start?: number; end?: number; style: ParagraphStyle }[] }
 
 /** The entry of `list` (runs or paragraphs, with character `start` and `end`) holding character `at`: the one it is inside, else the one ending there, else the first. */
@@ -91,7 +91,7 @@ export type TypeValues = {
 }
 
 /**
- * The engine's anti-aliasing values (`AntiAlias`, as `type.info` reports them) and the choices
+ * The engine's anti-aliasing values (`AntiAlias`, as `text.info` reports them) and the choices
  * they show as. Windows and Windows LCD come from imported files; the bar offers them only on a
  * layer that has one.
  */
@@ -108,7 +108,7 @@ export function alignOf(engine: string | undefined): Alignment {
   return (ALIGNMENTS.find(([value]) => value === name)?.[0] ?? 'left') as Alignment
 }
 
-/** An engine capitalization (`AllCaps`) as `type.setStyle` takes it (`all`). */
+/** An engine capitalization (`AllCaps`) as `text.setStyle` takes it (`all`). */
 export const capsOf = (engine: string | undefined): TypeValues['caps'] => (engine === 'AllCaps' ? 'all' : engine === 'SmallCaps' ? 'small' : 'normal')
 
 /** The Kerning field's text (upstream's `kerning_label`): a manual value wins, else the mode, Off showing as 0. */
@@ -144,7 +144,7 @@ export function transformScale(transform: TypeInfo['transform'] | undefined): nu
 export type TypeLayer = TypeValues & { layer: number; vertical: boolean; scale: number; antialias: string }
 
 /**
- * Type layer `layer`'s style from its `type.info`, or null without runs; `hex` writes its colour
+ * Type layer `layer`'s style from its `text.info`, or null without runs; `hex` writes its colour
  * (0 to 255 per channel) as `#rrggbb` (kit-editor's `rgbToHex`). `at`: the character whose run and
  * paragraph show (a selection's start while text is edited on the canvas); the first otherwise.
  */
@@ -235,11 +235,11 @@ export function typeValuesOf(o: ToolOptions, foreground: string): TypeValues {
 /** The keys a panel edit names: each panel field but the colour (the foreground's, without a layer). */
 export type TypeEdit = Partial<Omit<TypeValues, 'color' | 'autoLeading'>>
 
-/** The panel's keys `type.setStyle` takes as they are. */
+/** The panel's keys `text.setStyle` takes as they are. */
 const SAME = ['font', 'fontStyle', 'tracking', 'verticalScale', 'horizontalScale', 'baselineShift', 'fauxBold', 'fauxItalic', 'caps', 'underline', 'strikethrough', 'startIndent', 'endIndent', 'firstLineIndent', 'spaceBefore', 'spaceAfter', 'hyphenate'] as const
 
 /**
- * An edit as `type.setStyle` takes it for a layer whose transform scales its type by `scale`
+ * An edit as `text.setStyle` takes it for a layer whose transform scales its type by `scale`
  * (sizes and leading set divided by it, as upstream's `apply`), and the Type tool options it
  * sets: the font, its style, the size, and the alignment (one of the tool's three), which the
  * tool keeps whether a layer is edited (upstream's `apply` keeps `type_font` and `type_size`, its

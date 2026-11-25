@@ -12,7 +12,7 @@
 //! **Premises** ([`premises`]), for the families whose code was read:
 //! - `layer.setProps`: the fields it sets (`name`, `visible`, `opacity`, `fillOpacity`, `blend`,
 //!   `clipped`, `locks`, `extra.excluded_channels`), no position.
-//! - pixel writes in an area of one layer (`edit.fill` and `edit.clear` on the layer's pixels,
+//! - pixel writes in an area of one layer (`edit.fill` and `edit.delete` on the layer's pixels,
 //!   `paint.stroke`, `eraser.stroke`, the per-pixel `image.adjustments.*`): the layer's `kind`,
 //!   effective `locks`, `data`, `text` and the 256-pixel tiles of its `tiles` map that the area
 //!   touches (resolved stroke dabs intersected with the region/selection, else the region or
@@ -81,7 +81,7 @@ pub fn family(command: &str) -> Option<Family> {
     match command {
         "layer.setProps" => Some(Family::Props),
         "edit.fill"
-        | "edit.clear"
+        | "edit.delete"
         | "edit.cut"
         | "edit.fillForeground"
         | "edit.fillBackground"

@@ -57,7 +57,7 @@ pub fn image_doc(name: &str, layers: usize) -> PhotoDocument {
         let shade = 40 + (n * 9) % 200;
         doc.execute("edit.fill", json!({ "color": format!("#{shade:02x}{:02x}{:02x}", 255 - shade, (shade * 3) % 256) })).unwrap();
     }
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
     doc
 }
 

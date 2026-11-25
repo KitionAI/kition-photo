@@ -22,7 +22,7 @@ fn px(s: &Session) -> [f32; 4] {
 #[test]
 fn locked_layer_edits_are_refused() {
     for (cmd, p) in [
-        ("edit.clear", json!({})),
+        ("edit.delete", json!({})),
         ("edit.cut", json!({})),
         ("image.adjustments.invert", json!({})),
         ("image.autoTone", json!({})),
@@ -56,6 +56,6 @@ fn unlocked_layer_edits_still_work() {
     s.execute("layer.lockLayers", json!({"pixels": false})).unwrap();
     s.execute("image.adjustments.invert", json!({})).unwrap();
     assert_eq!(px(&s), [0.0, 1.0, 1.0, 1.0]);
-    s.execute("edit.clear", json!({})).unwrap();
+    s.execute("edit.delete", json!({})).unwrap();
     assert_eq!(px(&s)[3], 0.0);
 }

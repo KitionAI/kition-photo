@@ -65,5 +65,5 @@ export function withoutEllipsis(label: string) {
 export function previews(id: string) {
   if (id.startsWith('filter.') || id.startsWith('image.adjustments.') || id.startsWith('layer.newAdjustmentLayer.') || id.startsWith('layer.newFillLayer.')) return true
   if (id.startsWith('layer.layerStyle.') && id !== 'layer.layerStyle.globalLight') return true
-  return ['edit.fade', 'layer.matting.defringe', 'layer.matting.colorDecontaminate', 'edit.assignProfile', 'edit.convertToProfile', 'type.warpText'].includes(id)
+  return ['edit.fade', 'layer.matting.defringe', 'layer.matting.colorDecontaminate', 'edit.assignProfile', 'edit.convertToProfile', 'text.warpText'].includes(id)
 }

@@ -77,7 +77,7 @@ fn worst_px(a: &[f32], b: &[f32]) -> f32 {
 fn liquify_respects_the_selection() {
     let mut s = session(8);
     let before = active_surface(&s);
-    s.execute("select.all", json!({})).ok();
+    s.execute("edit.selectAll", json!({})).ok();
     s.edit("sel", |doc, _| {
         let mut sel = Surface::new(PixelFormat::GRAY8);
         sel.fill_rect(Rect::new(0, 0, 35, 60), &[1.0]);

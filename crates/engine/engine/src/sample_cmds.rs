@@ -221,14 +221,14 @@ fn coord(cmd: &str, p: &Value, key: &str) -> Result<f64> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![CommandSpec {
-        id: "document.sampleColor",
+        id: "file.sampleColor",
         label: "Sample Color",
         menu: &[],
         shortcut: None,
         params: r##"{"x":f64,"y":f64,"size":"point"|1|3|5|11|31|51|101=1,"sampleLayer":"current"|"currentAndBelow"|"all"|"allNoAdjustments"|"currentAndBelowNoAdjustments"="all"} → [r,g,b,a] (the Eyedropper's Sample Size and Sample: the composite pixel, or the average of the size×size square centred on it, clipped to the canvas; transparent off the canvas)"##,
         enabled: |s| s.active().map(|_| ()).ok_or_else(|| "no document open".into()),
         run: |s: &mut Session, p: &Value| {
-            const CMD: &str = "document.sampleColor";
+            const CMD: &str = "file.sampleColor";
             let (x, y) = (coord(CMD, p, "x")?, coord(CMD, p, "y")?);
             let size = size_param(CMD, p)?;
             let which = layers_param(CMD, p)?;
@@ -435,14 +435,14 @@ mod tests {
     #[test]
     fn the_command_validates_its_params() {
         let mut s = Session::new();
-        assert!(s.execute("document.sampleColor", json!({"x": 1, "y": 1})).is_err(), "no document");
+        assert!(s.execute("file.sampleColor", json!({"x": 1, "y": 1})).is_err(), "no document");
         s.execute("file.new", json!({"width": 8, "height": 8, "background": "white"})).unwrap();
-        let v: Vec<f32> = serde_json::from_value(s.execute("document.sampleColor", json!({"x": 4, "y": 4, "size": 3})).unwrap()).unwrap();
+        let v: Vec<f32> = serde_json::from_value(s.execute("file.sampleColor", json!({"x": 4, "y": 4, "size": 3})).unwrap()).unwrap();
         assert_eq!(v, vec![1.0; 4]);
         let v: Vec<f32> =
-            serde_json::from_value(s.execute("document.sampleColor", json!({"x": 4, "y": 4, "size": "point", "sampleLayer": "current"})).unwrap()).unwrap();
+            serde_json::from_value(s.execute("file.sampleColor", json!({"x": 4, "y": 4, "size": "point", "sampleLayer": "current"})).unwrap()).unwrap();
         assert_eq!(v, vec![1.0; 4]);
-        let v: Vec<f32> = serde_json::from_value(s.execute("document.sampleColor", json!({"x": -40, "y": 4, "size": 101})).unwrap()).unwrap();
+        let v: Vec<f32> = serde_json::from_value(s.execute("file.sampleColor", json!({"x": -40, "y": 4, "size": 101})).unwrap()).unwrap();
         assert_eq!(v, vec![0.0; 4]);
         for bad in [
             json!({}),
@@ -456,7 +456,7 @@ mod tests {
             json!({"x": 1, "y": 1, "sampleLayer": 3}),
             json!([1, 2]),
         ] {
-            assert!(matches!(s.execute("document.sampleColor", bad.clone()), Err(EngineError::BadParams { .. })), "{bad}");
+            assert!(matches!(s.execute("file.sampleColor", bad.clone()), Err(EngineError::BadParams { .. })), "{bad}");
         }
     }
 }

@@ -1014,7 +1014,7 @@ mod tests {
             s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
             s.execute(&format!("layer.layerStyle.{cmd}"), p.clone()).unwrap();
             let start = std::time::Instant::now();
-            s.execute("document.pixel", json!({"x": 0, "y": 0})).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"));
+            s.execute("file.pixel", json!({"x": 0, "y": 0})).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"));
             assert!(start.elapsed().as_secs() < 20, "{cmd} {p}: {:?}", start.elapsed());
         }
     }
@@ -1055,7 +1055,7 @@ mod tests {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
         s.execute("layer.layerStyle.colorOverlay", json!({"color": "#ff0000"})).unwrap();
-        let px: Vec<f32> = serde_json::from_value(s.execute("document.pixel", json!({"x": 3, "y": 3})).unwrap()).unwrap();
+        let px: Vec<f32> = serde_json::from_value(s.execute("file.pixel", json!({"x": 3, "y": 3})).unwrap()).unwrap();
         assert!(px[0] > 0.99 && px[1] < 0.01, "{px:?}");
     }
 
@@ -1218,11 +1218,11 @@ mod tests {
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 16, "y": 16, "width": 16, "height": 16})).unwrap();
         s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("layer.layerStyle.stroke", json!({"size": 3, "color": "#000000", "position": "outside"})).unwrap();
         s.execute("layer.layerStyle.stroke", json!({"size": 7, "color": "#ffffff", "position": "outside", "add": true})).unwrap();
         let px = |s: &mut Session, x: i32, y: i32| -> [f32; 4] {
-            let mut v: Vec<f32> = serde_json::from_value(s.execute("document.pixel", json!({"x": x, "y": y})).unwrap()).unwrap();
+            let mut v: Vec<f32> = serde_json::from_value(s.execute("file.pixel", json!({"x": x, "y": y})).unwrap()).unwrap();
             v.resize(4, 1.0);
             [v[0], v[1], v[2], v[3]]
         };

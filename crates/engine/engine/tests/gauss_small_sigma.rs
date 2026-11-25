@@ -3,7 +3,7 @@ use kition_photo_engine::Session;
 use serde_json::json;
 
 fn px(s: &mut Session, x: i32, y: i32) -> Vec<f32> {
-    serde_json::from_value(s.execute("document.pixel", json!({"x": x, "y": y})).unwrap()).unwrap()
+    serde_json::from_value(s.execute("file.pixel", json!({"x": x, "y": y})).unwrap()).unwrap()
 }
 
 fn edge_doc() -> Session {
@@ -12,7 +12,7 @@ fn edge_doc() -> Session {
     s.execute("file.new", json!({"width": 32, "height": 32, "background": "#602020"})).unwrap();
     s.execute("select.rect", json!({"x": 16, "y": 0, "width": 16, "height": 32})).unwrap();
     s.execute("edit.fill", json!({"contents": "color", "color": "#206020"})).unwrap();
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s
 }
 

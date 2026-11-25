@@ -145,8 +145,8 @@ fn touched<T: serde::Serialize + Default + Clone>(perturbed: T, apply: impl Fn(&
 }
 
 /// Splits `attrs` into character and paragraph attribute sets. Keys may be model field names
-/// (`size_pt`, `align`: values as in `type.info`) or the Character/Paragraph panel keys of
-/// `type.setStyle` (`size`, `font`, `align`, …).
+/// (`size_pt`, `align`: values as in `text.info`) or the Character/Paragraph panel keys of
+/// `text.setStyle` (`size`, `font`, `align`, …).
 fn parse_attrs(cmd: &str, v: &Value) -> Result<(StyleAttrs, StyleAttrs)> {
     let Some(obj) = v.as_object() else {
         return if v.is_null() { Ok((Map::new(), Map::new())) } else { Err(bad(cmd, "`attrs` must be an object")) };
@@ -420,7 +420,7 @@ fn list(s: &Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn new_style(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.new" } else { "type.characterStyle.new" };
+    let cmd = if paragraph { "text.paragraphStyle.new" } else { "text.characterStyle.new" };
     let mut st = styles(s)?;
     let (mut ca, mut pa) = parse_attrs(cmd, p.get("attrs").unwrap_or(&Value::Null))?;
     // With a type layer targeted, the style starts from the text's formatting (as Photoshop).
@@ -479,7 +479,7 @@ fn lookup_id(cmd: &str, st: &TextStyles, p: &Value, paragraph: bool, allow_defau
 }
 
 fn duplicate(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.duplicate" } else { "type.characterStyle.duplicate" };
+    let cmd = if paragraph { "text.paragraphStyle.duplicate" } else { "text.characterStyle.duplicate" };
     let mut st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, paragraph)?;
     let (new_id, name) = if paragraph {
@@ -502,7 +502,7 @@ fn duplicate(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn delete(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.delete" } else { "type.characterStyle.delete" };
+    let cmd = if paragraph { "text.paragraphStyle.delete" } else { "text.characterStyle.delete" };
     let st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, false)?;
     // Text keeps its look: references are dropped and the attributes become overrides.
@@ -544,7 +544,7 @@ fn delete(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn rename(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.rename" } else { "type.characterStyle.rename" };
+    let cmd = if paragraph { "text.paragraphStyle.rename" } else { "text.characterStyle.rename" };
     let mut st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, false)?;
     let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "missing `name`"))?.to_string();
@@ -560,7 +560,7 @@ fn rename(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn set_options(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.set" } else { "type.characterStyle.set" };
+    let cmd = if paragraph { "text.paragraphStyle.set" } else { "text.characterStyle.set" };
     let mut st = styles(s)?;
     let id = lookup_id(cmd, &st, p, paragraph, paragraph)?;
     let (ca, pa) = parse_attrs(cmd, p.get("attrs").unwrap_or(&Value::Null))?;
@@ -608,7 +608,7 @@ fn set_options(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
 }
 
 fn apply(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.apply" } else { "type.characterStyle.apply" };
+    let cmd = if paragraph { "text.paragraphStyle.apply" } else { "text.characterStyle.apply" };
     let st = styles(s)?;
     let id = match p.get("id") {
         None | Some(Value::Null) => 0,
@@ -635,7 +635,7 @@ fn clear_override(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> 
 }
 
 fn redefine(s: &mut Session, p: &Value, paragraph: bool) -> Result<Value> {
-    let cmd = if paragraph { "type.paragraphStyle.redefine" } else { "type.characterStyle.redefine" };
+    let cmd = if paragraph { "text.paragraphStyle.redefine" } else { "text.characterStyle.redefine" };
     let mut st = styles(s)?;
     let (run, para, layer, span) = sample(s, p).ok_or_else(|| bad(cmd, "select type to redefine the style from"))?;
     let id = match id_param(cmd, p)? {
@@ -670,7 +670,7 @@ macro_rules! target_doc {
 }
 macro_rules! attrs_doc {
     () => {
-        r##""attrs":{model fields as in type.info ("size_pt":36,"font_family":"Inter","align":"Center",…) or Character/Paragraph panel keys as in type.setStyle ("size":36,"font":"Inter","color":"#rrggbb","align":"center",…)}"##
+        r##""attrs":{model fields as in text.info ("size_pt":36,"font_family":"Inter","align":"Center",…) or Character/Paragraph panel keys as in text.setStyle ("size":36,"font":"Inter","color":"#rrggbb","align":"center",…)}"##
     };
 }
 

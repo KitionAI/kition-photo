@@ -70,8 +70,8 @@ fn paint_commands_bound_hostile_time_and_reject_oversized_brushes() {
     let result = s.execute("paint.stroke", json!({"points": [[8, 8]], "brush": {"dualBrush": {"enabled": true, "size": 1e30}}}));
     assert!(result.is_err(), "enabled dual brush dimensions are bounded too");
 
-    s.execute("tools.setBrush", json!({"size": 5000})).expect("the shared brush limit is accepted");
-    assert!(s.execute("tools.setBrush", json!({"size": 5001})).is_err(), "tools.setBrush must reject sizes above the shared limit");
+    s.execute("tool.setBrush", json!({"size": 5000})).expect("the shared brush limit is accepted");
+    assert!(s.execute("tool.setBrush", json!({"size": 5001})).is_err(), "tool.setBrush must reject sizes above the shared limit");
     assert_eq!(s.tools.brush.size, 5000.0, "a rejected brush update must not change the session brush");
 }
 
@@ -81,7 +81,7 @@ fn replay_is_deterministic() {
     let run = || {
         let mut s = session(200, 100);
         s.execute("paint.stroke", params.clone()).unwrap();
-        s.execute("tools.setBrush", json!({"preset": "Confetti"})).unwrap();
+        s.execute("tool.setBrush", json!({"preset": "Confetti"})).unwrap();
         s.execute("paint.stroke", json!({"points": [[10, 80], [190, 80]]})).unwrap();
         s
     };
@@ -115,7 +115,7 @@ fn pencil_is_aliased_and_auto_erases() {
             assert!(a == 0.0 || a == 1.0);
         }
     }
-    s.execute("tools.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
     // Starting on a foreground pixel: paints background.
     s.execute("paint.pencil", json!({"points": [[20, 10], [20, 25]], "size": 3, "autoErase": true})).unwrap();
     assert_eq!(rgba(&s, 20, 22), [1.0, 1.0, 1.0, 1.0]);
@@ -127,7 +127,7 @@ fn pencil_is_aliased_and_auto_erases() {
 #[test]
 fn mixer_brush_reservoir_and_cleaning() {
     let mut s = session(200, 30);
-    s.execute("tools.setColors", json!({"foreground": "#ff0000"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#ff0000"})).unwrap();
     s.execute(
         "paint.mixerBrush",
         json!({"points": [[5, 15], [195, 15]], "size": 8, "wet": 0, "load": 0, "mix": 0, "brush": {"pressureSize": false, "spacing": 0.25}}),
@@ -146,7 +146,7 @@ fn mixer_brush_reservoir_and_cleaning() {
 fn color_replacement_modes() {
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 60, "height": 40, "background": "#33993f"})).unwrap();
-    s.execute("tools.setColors", json!({"foreground": "#ff0000"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#ff0000"})).unwrap();
     let before = rgba(&s, 30, 20);
     s.execute("paint.colorReplacement", json!({"points": [[10, 20], [50, 20]], "size": 20, "mode": "color", "tolerance": 20})).unwrap();
     let c = rgba(&s, 30, 20);
@@ -170,7 +170,7 @@ fn presets_save_load_delete_round_trip() {
     assert_eq!(mine["brush"]["size"], 77.0);
     assert_eq!(mine["brush"]["scattering"]["count"], 3);
     // Round trip: select it, read it back.
-    let b = s.execute("tools.setBrush", json!({"preset": "mine"})).unwrap();
+    let b = s.execute("tool.setBrush", json!({"preset": "mine"})).unwrap();
     assert_eq!(b["size"], 77.0);
     let back: BrushSettings = serde_json::from_value(s.execute("brush.get", json!({})).unwrap()).unwrap();
     assert_eq!(back, s.tools.brush);
@@ -186,7 +186,7 @@ fn presets_save_load_delete_round_trip() {
 #[test]
 fn presets_save_appends_at_the_end_and_update_overwrites_in_place() {
     let mut s = session(10, 10);
-    s.execute("tools.setBrush", json!({"preset": "Chalk"})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk"})).unwrap();
     assert_eq!(s.tools.current_preset.as_deref(), Some("Chalk"));
     let n = s.tools.presets.len();
     let chalk_at = s.tools.presets.iter().position(|p| p.name == "Chalk").unwrap();
@@ -196,11 +196,11 @@ fn presets_save_appends_at_the_end_and_update_overwrites_in_place() {
     s.execute("brush.presets.save", json!({"name": "Tail"})).unwrap();
     assert_eq!(s.tools.presets.last().unwrap().name, "Tail");
     // A reset clears the picked preset.
-    s.execute("tools.setBrush", json!({"reset": true})).unwrap();
+    s.execute("tool.setBrush", json!({"reset": true})).unwrap();
     assert_eq!(s.tools.current_preset, None);
     // Editing the brush keeps the picked preset current; update overwrites it in place.
-    s.execute("tools.setBrush", json!({"preset": "Chalk"})).unwrap();
-    s.execute("tools.setBrush", json!({"size": 55})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk"})).unwrap();
+    s.execute("tool.setBrush", json!({"size": 55})).unwrap();
     assert_eq!(s.tools.current_preset.as_deref(), Some("Chalk"));
     let r = s.execute("brush.presets.update", json!({})).unwrap();
     assert_eq!(r["name"], "Chalk");
@@ -214,10 +214,10 @@ fn presets_save_appends_at_the_end_and_update_overwrites_in_place() {
     assert_eq!(s.tools.presets.iter().find(|p| p.name == "Mine").unwrap().brush.size, 9.0);
     // Errors: no such preset, and no preset to update after a reset.
     assert!(s.execute("brush.presets.update", json!({"name": "Nope"})).is_err());
-    s.execute("tools.setBrush", json!({"reset": true})).unwrap();
+    s.execute("tool.setBrush", json!({"reset": true})).unwrap();
     assert!(s.execute("brush.presets.update", json!({})).is_err());
     // Deleting the current preset clears it, so a later update fails rather than guessing.
-    s.execute("tools.setBrush", json!({"preset": "Chalk"})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk"})).unwrap();
     s.execute("brush.presets.delete", json!({"name": "Chalk"})).unwrap();
     assert_eq!(s.tools.current_preset, None);
     assert!(s.execute("brush.presets.update", json!({})).is_err());
@@ -228,31 +228,31 @@ fn a_failed_set_brush_leaves_no_current_preset_behind() {
     let mut s = session(10, 10);
     let before = s.tools.brush.clone();
     // A rejected brush (a wrong-typed size) must not record the preset it came with.
-    assert!(s.execute("tools.setBrush", json!({"preset": "Chalk", "brush": {"size": "big"}})).is_err());
+    assert!(s.execute("tool.setBrush", json!({"preset": "Chalk", "brush": {"size": "big"}})).is_err());
     assert_eq!(s.tools.current_preset, None);
     assert_eq!(s.tools.brush, before);
     // Once the brush is accepted, the preset is recorded.
-    s.execute("tools.setBrush", json!({"preset": "Chalk"})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk"})).unwrap();
     assert_eq!(s.tools.current_preset.as_deref(), Some("Chalk"));
     // A `reset` wins over a `preset` in the same call.
-    s.execute("tools.setBrush", json!({"preset": "Chalk", "reset": true})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk", "reset": true})).unwrap();
     assert_eq!(s.tools.current_preset, None);
 }
 
 #[test]
 fn set_brush_merges_fields() {
     let mut s = session(10, 10);
-    s.execute("tools.setBrush", json!({"size": 55, "shapeDynamics": {"enabled": true, "size": {"jitter": 0.5}}})).unwrap();
-    s.execute("tools.setBrush", json!({"shapeDynamics": {"angle": {"jitter": 0.25}}})).unwrap();
+    s.execute("tool.setBrush", json!({"size": 55, "shapeDynamics": {"enabled": true, "size": {"jitter": 0.5}}})).unwrap();
+    s.execute("tool.setBrush", json!({"shapeDynamics": {"angle": {"jitter": 0.25}}})).unwrap();
     let b = &s.tools.brush;
     assert_eq!(b.size, 55.0);
     assert!(b.shape_dynamics.enabled && b.shape_dynamics.size.jitter == 0.5 && b.shape_dynamics.angle.jitter == 0.25);
-    s.execute("tools.setBrush", json!({"reset": true})).unwrap();
+    s.execute("tool.setBrush", json!({"reset": true})).unwrap();
     assert_eq!(s.tools.brush, BrushSettings::default());
     // Protect texture carries the pattern across textured presets.
-    s.execute("tools.setBrush", json!({"preset": "Chalk", "protectTexture": true})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk", "protectTexture": true})).unwrap();
     let chalk_pattern = s.tools.brush.texture.pattern.clone();
-    s.execute("tools.setBrush", json!({"preset": "Canvas Texture"})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Canvas Texture"})).unwrap();
     assert_eq!(s.tools.brush.texture.pattern, chalk_pattern);
 }
 
@@ -265,7 +265,7 @@ fn set_brush_keeps_untouched_bitmaps_and_replaces_touched_ones() {
         texture: kition_photo_paint::Texture { pattern: kition_photo_paint::Pattern::Tile(tile(64, 64, 1)), ..Default::default() },
         ..Default::default()
     };
-    let cmd = "tools.setBrush";
+    let cmd = "tool.setBrush";
     // Untouched bitmaps survive any patch that doesn't name them.
     for patch in [json!({"size": 12}), json!({"dualBrush": {"size": 9}}), json!({"texture": {"depth": 0.5}}), json!({})] {
         let b = merge_brush(&base, &patch, cmd).unwrap();
@@ -312,7 +312,7 @@ fn define_brush_from_selection() {
     assert!(matches!(&s.tools.brush.tip, TipShape::Sampled(t) if t.width == 6 && t.height == 4 && t.get(0, 0) == 1.0));
     assert!(s.tools.presets.iter().any(|p| p.name == "Blob"));
     // Paint with it.
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.execute("paint.stroke", json!({"points": [[30, 32]], "color": "#ff0000"})).unwrap();
     assert!(rgba(&s, 30, 32)[3] > 0.9);
 }
@@ -357,7 +357,7 @@ fn eraser_on_background_layer_paints_the_background_colour() {
     // colour, not silently do nothing (opacity can't be removed there).
     let mut s = Session::new();
     s.execute("file.new", json!({"width": 20, "height": 20, "background": "white"})).unwrap();
-    s.execute("tools.setColors", json!({"background": "#ff0000"})).unwrap();
+    s.execute("tool.setColors", json!({"background": "#ff0000"})).unwrap();
     s.execute("paint.stroke", json!({"points": [[2, 10], [18, 10]], "size": 8, "erase": true, "brush": {"hardness": 1.0}})).unwrap();
     let st = s.active().unwrap();
     let c = st.doc.layers[0].surface().unwrap().rgba(10, 10);
@@ -446,9 +446,9 @@ fn live_brush_and_pencil_reject_invalid_batches_without_changing_the_preview() {
 #[test]
 fn live_pencil_matches_the_committed_pencil_and_auto_erases() {
     let mut s = session(80, 40);
-    s.execute("tools.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#000000", "background": "#ffffff"})).unwrap();
     // A soft, low-flow session brush: the Pencil is still hard, aliased and full flow.
-    s.execute("tools.setBrush", json!({"brush": {"size": 3, "hardness": 0.0, "flow": 0.3}})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"size": 3, "hardness": 0.0, "flow": 0.3}})).unwrap();
     let pts = [[5.0, 5.0, 1.0], [30.2, 17.7, 0.6], [70.0, 33.0, 1.0]];
     for (auto, start) in [(false, pts[0]), (true, [30.4, 17.2, 1.0])] {
         let p = json!({"points": [start], "autoErase": auto, "smoothing": 0.0});
@@ -569,7 +569,7 @@ fn new_brush_controls_round_trip_through_set_brush() {
         "locks": {"shapeDynamics": true, "texture": true, "noise": true},
         "mixer": {"wet": 0.8, "load": 0.25, "mix": 0.4, "flow": 0.9, "sampleAllLayers": true},
     });
-    s.execute("tools.setBrush", json!({ "brush": patch })).unwrap();
+    s.execute("tool.setBrush", json!({ "brush": patch })).unwrap();
     let b = &s.tools.brush;
     assert!(!b.spacing_enabled && b.shape_dynamics.brush_projection && b.shape_dynamics.tilt_scale == 1.5);
     assert_eq!(b.transfer.wetness.control, kition_photo_paint::Control::PenPressure);
@@ -590,17 +590,17 @@ fn new_brush_controls_round_trip_through_set_brush() {
         assert_eq!(got.pointer(path), Some(&want), "{path}");
     }
     let mut t = session(40, 40);
-    t.execute("tools.setBrush", json!({ "brush": got })).unwrap();
+    t.execute("tool.setBrush", json!({ "brush": got })).unwrap();
     assert_eq!(t.tools.brush, s.tools.brush);
     // Locked sections survive picking a preset through the command.
-    s.execute("tools.setBrush", json!({"preset": "Chalk"})).unwrap();
+    s.execute("tool.setBrush", json!({"preset": "Chalk"})).unwrap();
     assert!(s.tools.brush.shape_dynamics.brush_projection && s.tools.brush.locks.texture);
     // Wrong types are errors and leave the brush alone.
     let before = s.tools.brush.clone();
     for bad in
         [json!({"spacingEnabled": 3}), json!({"locks": {"texture": "yes"}}), json!({"mixer": {"wet": "wet"}}), json!({"shapeDynamics": {"tiltScale": []}})]
     {
-        assert!(s.execute("tools.setBrush", json!({ "brush": bad })).is_err());
+        assert!(s.execute("tool.setBrush", json!({ "brush": bad })).is_err());
     }
     assert_eq!(s.tools.brush, before);
 }
@@ -608,9 +608,9 @@ fn new_brush_controls_round_trip_through_set_brush() {
 #[test]
 fn mixer_brush_uses_the_brush_mixer_settings() {
     let mut s = session(200, 30);
-    s.execute("tools.setColors", json!({"foreground": "#ff0000"})).unwrap();
+    s.execute("tool.setColors", json!({"foreground": "#ff0000"})).unwrap();
     // No wet/load params: the brush's Mixer settings (a dry brush with 0 % Load) apply.
-    s.execute("tools.setBrush", json!({"brush": {"pressureSize": false, "spacing": 0.25, "mixer": {"wet": 0, "load": 0, "mix": 0}}})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"pressureSize": false, "spacing": 0.25, "mixer": {"wet": 0, "load": 0, "mix": 0}}})).unwrap();
     s.execute("paint.mixerBrush", json!({"points": [[5, 15], [195, 15]], "size": 8})).unwrap();
     assert!(rgba(&s, 10, 15)[3] > 0.95 && rgba(&s, 190, 15)[3] < 0.5, "the brush's 0 % Load dries out");
     // A param still overrides the brush.
@@ -623,23 +623,23 @@ fn coalesced_set_brush_calls_journal_once_per_gesture() {
     let mut s = session(20, 20);
     let n = s.journal.len();
     for k in 1..=10 {
-        s.execute("tools.setBrush", json!({"brush": {"opacity": k as f32 / 20.0}, "coalesce": "bar:1"})).unwrap();
+        s.execute("tool.setBrush", json!({"brush": {"opacity": k as f32 / 20.0}, "coalesce": "bar:1"})).unwrap();
         s.execute("brush.get", json!({})).unwrap();
     }
-    s.execute("tools.setBrush", json!({"brush": {"shapeDynamics": {"tiltScale": 0.5}}, "coalesce": "bar:1"})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"shapeDynamics": {"tiltScale": 0.5}}, "coalesce": "bar:1"})).unwrap();
     assert_eq!(s.journal.len(), n + 1, "one gesture, one entry");
     let (id, p) = s.journal.last().unwrap();
-    assert_eq!(id, "tools.setBrush");
+    assert_eq!(id, "tool.setBrush");
     assert_eq!(p["brush"], json!({"opacity": 0.5, "shapeDynamics": {"tiltScale": 0.5}}));
     // A new gesture is a new entry; so is an uncoalesced call.
-    s.execute("tools.setBrush", json!({"brush": {"flow": 0.5}, "coalesce": "bar:2"})).unwrap();
-    s.execute("tools.setBrush", json!({"brush": {"flow": 0.4}, "coalesce": "bar:2"})).unwrap();
-    s.execute("tools.setBrush", json!({"brush": {"size": 33}})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"flow": 0.5}, "coalesce": "bar:2"})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"flow": 0.4}, "coalesce": "bar:2"})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"size": 33}})).unwrap();
     assert_eq!(s.journal.len(), n + 3);
     // Another command in between ends the gesture.
-    s.execute("tools.setBrush", json!({"brush": {"size": 34}, "coalesce": "bar:3"})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"size": 34}, "coalesce": "bar:3"})).unwrap();
     s.execute("paint.stroke", json!({"points": [[2, 2], [10, 10]]})).unwrap();
-    s.execute("tools.setBrush", json!({"brush": {"size": 35}, "coalesce": "bar:3"})).unwrap();
+    s.execute("tool.setBrush", json!({"brush": {"size": 35}, "coalesce": "bar:3"})).unwrap();
     assert_eq!(s.journal.len(), n + 6);
     // Replay gives the same brush.
     let mut t = session(20, 20);
@@ -651,7 +651,7 @@ fn coalesced_set_brush_calls_journal_once_per_gesture() {
 
 /// A Scatter amount beyond the 1000 % maximum (the issue's 1e38, just above the maximum, or one
 /// that only fits as infinity) is rejected naming the value, before the session brush changes, by
-/// `tools.setBrush` and by a stroke's own brush patch; the maximum itself and an ordinary amount
+/// `tool.setBrush` and by a stroke's own brush patch; the maximum itself and an ordinary amount
 /// above 100 % still paint (#977).
 #[test]
 fn out_of_range_scatter_is_rejected_and_the_maximum_still_paints() {
@@ -668,7 +668,7 @@ fn out_of_range_scatter_is_rejected_and_the_maximum_still_paints() {
         for (patch, what) in [(scatter(j), "scatter"), (dual(j), "dual brush scatter")] {
             let mut s = new();
             let before = s.tools.brush.clone();
-            let err = s.execute("tools.setBrush", json!({ "brush": patch.clone() })).unwrap_err();
+            let err = s.execute("tool.setBrush", json!({ "brush": patch.clone() })).unwrap_err();
             let msg = err.to_string();
             assert!(matches!(err, EngineError::BadParams { .. }) && msg.contains(what) && msg.contains(shown), "{j}: {msg}");
             assert_eq!(s.tools.brush, before, "a rejected scatter must not change the session brush");
@@ -680,18 +680,18 @@ fn out_of_range_scatter_is_rejected_and_the_maximum_still_paints() {
     }
     // The issue's repro, end to end: a stroke after the rejected update still paints normally.
     let mut s = new();
-    assert!(s.execute("tools.setBrush", json!({ "brush": scatter(1e38) })).is_err());
+    assert!(s.execute("tool.setBrush", json!({ "brush": scatter(1e38) })).is_err());
     assert!(s.execute("paint.stroke", stroke.clone()).is_ok());
     // The maximum (1000 %) is accepted and paints a finite, well-formed dab.
     for patch in [scatter(10.0), dual(10.0)] {
         let mut s = new();
-        s.execute("tools.setBrush", json!({ "brush": patch })).unwrap();
+        s.execute("tool.setBrush", json!({ "brush": patch })).unwrap();
         let r = s.execute("paint.stroke", stroke.clone()).unwrap();
         let d: Vec<i64> = r["damage"].as_array().unwrap().iter().map(|v| v.as_i64().unwrap()).collect();
         assert!(d[0].abs() < 1000 && d[1].abs() < 1000 && d[2] > 0 && d[3] > 0, "{r}");
     }
     // Control: 200 % scatter paints where it did before the cap.
     let mut s = new();
-    s.execute("tools.setBrush", json!({ "brush": scatter(2.0) })).unwrap();
+    s.execute("tool.setBrush", json!({ "brush": scatter(2.0) })).unwrap();
     assert_eq!(s.execute("paint.stroke", stroke).unwrap(), json!({"damage": [17, 14, 23, 23]}));
 }

@@ -70,7 +70,7 @@ mod tests {
     }
 
     fn pixel(s: &mut Session) -> serde_json::Value {
-        s.execute("document.pixel", json!({"x": 10, "y": 10})).unwrap()
+        s.execute("file.pixel", json!({"x": 10, "y": 10})).unwrap()
     }
 
     #[test]

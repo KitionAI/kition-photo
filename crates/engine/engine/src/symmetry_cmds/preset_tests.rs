@@ -139,7 +139,7 @@ fn selection_transparency_lock_and_mask_targets_apply_to_all_passes() {
     s.execute("paint.stroke", json!({"points":[[20,10]],"size":5,"hardness":1.0,"color":"#000000"})).unwrap();
     assert!(pixel(&s, 20, 10)[0] < 0.2);
     assert!(pixel(&s, 60, 10)[0] > 0.9);
-    s.execute("select.deselect", json!({})).unwrap();
+    s.execute("edit.deselectAll", json!({})).unwrap();
     s.edit("Mask fixture", |doc, active| {
         let mut layer = Layer::raster("Mask", doc.pixel_format());
         layer.mask = Some(LayerMask::reveal_all());

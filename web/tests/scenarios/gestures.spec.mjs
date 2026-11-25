@@ -184,7 +184,7 @@ test('GEST06: fractional marquee coordinates preserve empty and nonempty gesture
   expect(results).toHaveLength(20)
   for (const { name, command, params, ellipse } of results) {
     if (['click', 'horizontal', 'vertical', 'fixed ratio click', 'Shift click'].includes(name)) {
-      expect({ command, params }, `${ellipse}: ${name}`).toEqual({ command: 'select.deselect', params: {} })
+      expect({ command, params }, `${ellipse}: ${name}`).toEqual({ command: 'edit.deselectAll', params: {} })
     } else {
       expect(command).toBe('select.rect')
       const [width, height] = name.startsWith('small ') ? [1, 1] : name === 'Shift horizontal' ? [8, 8] : [40, 24]
@@ -308,7 +308,7 @@ test('GEST09: empty selection gestures honor toolbar modes and press modifiers',
   })
   expect(results).toHaveLength(120)
   for (const { calls, clears, ...scenario } of results) {
-    expect(calls, JSON.stringify(scenario)).toEqual(scenario.input.clears ? [{ command: 'select.deselect', params: {} }] : [])
+    expect(calls, JSON.stringify(scenario)).toEqual(scenario.input.clears ? [{ command: 'edit.deselectAll', params: {} }] : [])
     expect(clears, `No-op must clear the temporary preview: ${JSON.stringify(scenario)}`).toBe(scenario.input.clears ? 0 : 1)
   }
 })
@@ -356,7 +356,7 @@ test('GEST10: empty rectangle drags clear previews while valid releases still su
     expect(clears, label).toBe(input.valid ? 0 : 1)
     if (!input.valid) expect(calls, label).toEqual([])
     else {
-      const command = tool === 'Crop' ? 'crop proposal' : tool === 'Slice' ? 'slice.new' : tool === 'ObjectSelection' ? 'select.object' : tool === 'CustomShape' ? 'shape.presets.place' : 'shape.create'
+      const command = tool === 'Crop' ? 'crop proposal' : tool === 'Slice' ? 'slice.new' : tool === 'ObjectSelection' ? 'select.object' : tool === 'CustomShape' ? 'shape.presets.place' : 'shape.add'
       expect(calls, label).toHaveLength(1)
       expect(calls[0].command, label).toBe(command)
       expect(calls[0].params, label).toMatchObject(tool === 'Crop' ? { x: 24, y: 24, width: 72, height: 48 } : { rect: [24, 24, 72, 48] })

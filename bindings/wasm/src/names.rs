@@ -93,7 +93,7 @@ fn resolved(id: &str) -> Vec<Typed> {
             ("effects[].fx.PatternOverlay.name", stored),
             ("effects[].fx.PatternOverlay.id", stored),
         ]),
-        "shape.create" | "shape.edit" => names.extend([("fill.pattern", stored), ("stroke.fill.pattern", stored)]),
+        "shape.add" | "shape.edit" => names.extend([("fill.pattern", stored), ("stroke.fill.pattern", stored)]),
         "pattern.export" => names.push(("patterns", stored)),
         "style.presets.apply" => names.extend([("preset", stored), ("group", stored)]),
         "style.presets.edit" | "pattern.presets.edit" => names.extend([("preset", stored), ("group", stored), ("to", stored)]),

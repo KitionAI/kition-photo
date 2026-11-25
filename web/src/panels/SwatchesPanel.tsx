@@ -8,10 +8,10 @@ const Trash2 = TesseraIcons.TrashIcon
 
 /**
  * Upstream's Swatches panel (`panels.rs` `swatches`) on the engine's swatch library
- * (`swatches.list`, Photoshop's groups), shared by every Photo tab and kept between documents
- * (`usePhotoColors`): a click sets the foreground, a right-click the background (`swatches.use`),
- * as upstream's; the footer adds the foreground as a new swatch (`swatches.add`) and deletes the
- * swatch last clicked (`swatches.delete`). None of this is a history step.
+ * (`swatch.list`, Photoshop's groups), shared by every Photo tab and kept between documents
+ * (`usePhotoColors`): a click sets the foreground, a right-click the background (`swatch.use`),
+ * as upstream's; the footer adds the foreground as a new swatch (`swatch.add`) and deletes the
+ * swatch last clicked (`swatch.delete`). None of this is a history step.
  */
 export function SwatchesPanel({ colors }: { colors: PhotoColorStore }) {
   const { phrase, t } = useKitEditor()
@@ -32,7 +32,7 @@ export function SwatchesPanel({ colors }: { colors: PhotoColorStore }) {
   let index = 0
   return (
     <div className="photo-swatches" data-testid="photo-swatches">
-      <KitElement id="control:swatches.list">
+      <KitElement id="control:swatch.list">
         <div className="photo-swatches-groups">
           {(list?.groups ?? []).map((group) => (
             <section key={group.name} className="photo-swatches-group" aria-label={group.name}>
@@ -68,8 +68,8 @@ export function SwatchesPanel({ colors }: { colors: PhotoColorStore }) {
             <KitElement id="control:swatches.new">
               <IconButton icon={Plus} label={phrase('Create new swatch')} onClick={() => void colors.addSwatch(colors.foreground)} data-testid="photo-swatches-new" />
             </KitElement>
-            <KitElement id="control:swatches.delete">
-              <IconButton icon={Trash2} label={t('swatches.delete')} disabled={selected == null} onClick={() => void remove()} data-testid="photo-swatches-delete" />
+            <KitElement id="control:swatch.delete">
+              <IconButton icon={Trash2} label={t('swatch.delete')} disabled={selected == null} onClick={() => void remove()} data-testid="photo-swatches-delete" />
             </KitElement>
           </>
         }

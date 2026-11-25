@@ -118,7 +118,7 @@ fn open_png_and_inspect() {
     let mut h = workspace(&dir);
     let o = ok(&mut h, "doc.open", json!({"path": "in.png"}));
     assert_eq!((o["width"].as_u64(), o["height"].as_u64()), (Some(8), Some(4)));
-    let px = run(&mut h, "document.pixel", json!({"x": 1, "y": 1}));
+    let px = run(&mut h, "file.pixel", json!({"x": 1, "y": 1}));
     assert!(px.to_string().contains("0.78"), "{px}");
     drop(h);
     std::fs::remove_dir_all(dir).unwrap();

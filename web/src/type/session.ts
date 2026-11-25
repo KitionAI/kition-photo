@@ -55,18 +55,18 @@ function live<T>(initial: T): Live<T> {
 
 /**
  * Editing a type layer on the canvas (plan 2026-11-24, stage 4): the text shown is the engine's
- * own rendering, changed by `type.edit` as keys are typed, so what is seen while editing is what
+ * own rendering, changed by `text.edit` as keys are typed, so what is seen while editing is what
  * stays. Every command of one edit session carries the session's `coalesce` key, so the whole
  * session is one history step (Photoshop's "Edit Type Layer"). The caret, the selection's
  * highlight, an input method's composition and a paragraph box's frame are drawn over the canvas
- * from the engine's `type.caret` and `type.info` (`TypeEditor.tsx`); a hidden text area takes the
+ * from the engine's `text.caret` and `text.info` (`TypeEditor.tsx`); a hidden text area takes the
  * keyboard, the input method and the clipboard.
  *
  * Steps run one at a time, in the order they came (`enqueue`): a key typed while the engine is
  * still answering the previous one acts on the text that answer left.
  */
 
-/** What `type.info` answers that editing reads. */
+/** What `text.info` answers that editing reads. */
 export type TypeInfo = {
   layer: number
   text: string
@@ -114,7 +114,7 @@ export type StartOptions = {
   select?: Range
   /** The session made the layer (new text): Escape, or committing it empty, removes it. */
   created?: boolean
-  /** The step to join (new text's `type.create` used it); a fresh key otherwise. */
+  /** The step to join (new text's `text.add` used it); a fresh key otherwise. */
   key?: string
   /** The caret sits on a new line after the text that is not typed yet (Enter on new text). */
   pendingBreak?: boolean
@@ -229,7 +229,7 @@ export class TypeSession {
   async start(options: StartOptions): Promise<boolean> {
     if (this.state) await this.commit()
     const revision = this.engine.revision()
-    const info = await this.engine.query<TypeInfo>('type.info', { layer: options.layer })
+    const info = await this.engine.query<TypeInfo>('text.info', { layer: options.layer })
     if (!info || typeof info.text !== 'string' || this.engine.revision() !== revision || this.state) return false
     const length = charCount(info.text)
     const [a, b] = options.select ?? [length, length]
@@ -334,7 +334,7 @@ export class TypeSession {
       this.ours = this.engine.revision()
       if (!result || this.state !== s) return false
       s.edited = true
-      const info = typeof result.text === 'string' && Array.isArray(result.lines) ? (result as unknown as TypeInfo) : await this.engine.query<TypeInfo>('type.info', { layer: s.layer })
+      const info = typeof result.text === 'string' && Array.isArray(result.lines) ? (result as unknown as TypeInfo) : await this.engine.query<TypeInfo>('text.info', { layer: s.layer })
       if (info && typeof info.text === 'string') {
         s.info = info
         s.text = info.text
@@ -362,7 +362,7 @@ export class TypeSession {
       offset = 1
     }
     if (start === end && !text) return start
-    const ok = await this.edit('type.edit', { replace: { start, end, text } })
+    const ok = await this.edit('text.edit', { replace: { start, end, text } })
     if (!ok) {
       if (this.state === s) s.pendingBreak = pendingBreak
       return null
@@ -468,7 +468,7 @@ export class TypeSession {
   private async navigate(index: number, move: string, x?: number): Promise<number | null> {
     const s = this.state
     if (!s) return null
-    const answer = await this.engine.query<{ index: number }>('type.navigate', { layer: s.layer, index, move, ...(x != null ? { x } : {}) })
+    const answer = await this.engine.query<{ index: number }>('text.navigate', { layer: s.layer, index, move, ...(x != null ? { x } : {}) })
     return typeof answer?.index === 'number' ? answer.index : null
   }
 
@@ -511,7 +511,7 @@ export class TypeSession {
   private async caretSegment(index: number): Promise<[Point, Point] | null> {
     const s = this.state
     if (!s) return null
-    const answer = await this.engine.query<{ segment: number[][] }>('type.caret', { layer: s.layer, index: Math.min(index, charCount(s.text)) })
+    const answer = await this.engine.query<{ segment: number[][] }>('text.caret', { layer: s.layer, index: Math.min(index, charCount(s.text)) })
     const seg = answer?.segment
     if (!Array.isArray(seg) || seg.length !== 2) return null
     return [
@@ -630,7 +630,7 @@ export class TypeSession {
     this.enqueue(async () => {
       const s = this.state
       if (!s) return
-      const hit = await this.engine.query<{ index: number }>('type.hitTest', { layer: s.layer, x: at.x, y: at.y })
+      const hit = await this.engine.query<{ index: number }>('text.hitTest', { layer: s.layer, x: at.x, y: at.y })
       if (typeof hit?.index !== 'number' || this.state !== s) return
       s.pendingBreak = false
       s.column = null
@@ -656,7 +656,7 @@ export class TypeSession {
       const point = this.pendingDrag
       this.pendingDrag = null
       if (!s || !point) return
-      const hit = await this.engine.query<{ index: number }>('type.hitTest', { layer: s.layer, x: point.x, y: point.y })
+      const hit = await this.engine.query<{ index: number }>('text.hitTest', { layer: s.layer, x: point.x, y: point.y })
       if (typeof hit?.index !== 'number' || this.state !== s) return
       const [from, to] = s.dragFrom
       s.selection = hit.index < from ? { anchor: to, focus: hit.index } : { anchor: from, focus: Math.max(to, hit.index) }
@@ -677,7 +677,7 @@ export class TypeSession {
       if (!s || !next || !box) return
       const { m } = this.frame(s)
       const local = docToLine(m, false, next.to.x, next.to.y)
-      await this.edit('type.edit', { box: boxParam(m, resizeBox(box, next.handle, local)) })
+      await this.edit('text.edit', { box: boxParam(m, resizeBox(box, next.handle, local)) })
     })
   }
 }

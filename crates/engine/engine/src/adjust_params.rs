@@ -1149,10 +1149,10 @@ mod tests {
         s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
         s.execute("edit.fill", json!({"color": [0.6, 0.5, 0.4]})).unwrap();
         s.execute("image.adjustments.curves", json!({"eyedropper": {"point": "white", "at": [2, 2]}})).unwrap();
-        let px: Vec<f32> = serde_json::from_value(s.execute("document.pixel", json!({"x": 2, "y": 2})).unwrap()).unwrap();
+        let px: Vec<f32> = serde_json::from_value(s.execute("file.pixel", json!({"x": 2, "y": 2})).unwrap()).unwrap();
         assert!(px.iter().take(3).all(|v| *v > 0.99), "the sample becomes white: {px:?}");
         s.execute("image.adjustments.curves", json!({"eyedropper": {"point": "black", "color": [1.0, 1.0, 1.0]}})).unwrap();
-        let px: Vec<f32> = serde_json::from_value(s.execute("document.pixel", json!({"x": 2, "y": 2})).unwrap()).unwrap();
+        let px: Vec<f32> = serde_json::from_value(s.execute("file.pixel", json!({"x": 2, "y": 2})).unwrap()).unwrap();
         assert!(px.iter().take(3).all(|v| *v < 0.01), "the given colour becomes black: {px:?}");
         for bad in [
             json!("black"),
@@ -1195,7 +1195,7 @@ mod tests {
             s.execute("select.rect", json!({"x": (i % 2) * 8, "y": (i / 2) * 8, "width": 8, "height": 8})).unwrap();
             s.execute("edit.fill", json!({"color": c})).unwrap();
         }
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s
     }
 
@@ -1237,7 +1237,7 @@ mod tests {
             s.execute("file.new", json!({"width": 16, "height": 16, "depth": depth, "background": "white"})).unwrap();
             s.execute("select.rect", json!({"x": 0, "y": 0, "width": 8, "height": 16})).unwrap();
             s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
-            s.execute("select.deselect", json!({})).unwrap();
+            s.execute("edit.deselectAll", json!({})).unwrap();
             s.execute("image.adjustments.levels", params.clone()).unwrap();
             let px = pixels(&s);
             assert!((px[0][0] * 255.0 - low).abs() < 0.6, "black @{depth}: {:?}", px[0]);

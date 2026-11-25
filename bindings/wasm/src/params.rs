@@ -14,7 +14,7 @@ use serde_json::{Map, Value, json};
 /// Commands whose top level takes keys no schema can list, with why.
 pub const OPEN: &[(&str, &str)] = &[
     ("layer.setAdjustment", "takes the parameters of the adjustment layer's own kind (Levels, Curves, …), which differ per kind"),
-    ("tools.setBrush", "takes any BrushSettings field (camelCase, deep-merged), as the brush settings panel writes them"),
+    ("tool.setBrush", "takes any BrushSettings field (camelCase, deep-merged), as the brush settings panel writes them"),
 ];
 
 /// A key a command reads: its name, its type, and what it does.
@@ -36,7 +36,7 @@ const READS: &[(&str, &[Read])] = &[
     ("filter.other.offset", &[("layer", "integer", "The layer to offset; the active layer by default.")]),
     ("image.analysis.recordMeasurements", &[("dateTime", "string", "The measurement's time (ISO 8601); now by default.")]),
     ("layer.new.artboard", &[("x", "integer", "The artboard's left edge, in pixels.")]),
-    ("type.create", &[("font", "string", "The font family."), ("kerning", "json", "\"metrics\", \"optical\" or a number (1/1000 em).")]),
+    ("text.add", &[("font", "string", "The font family."), ("kerning", "json", "\"metrics\", \"optical\" or a number (1/1000 em).")]),
 ];
 
 /// The layer style commands that set one effect on a layer (`layer`, the active layer by default).
@@ -62,7 +62,7 @@ pub fn declare(commands: &mut [KitCommand]) {
     // (`apply_char_props`, `apply_para_props`): the Type tool's options go in with the text.
     let styles: Vec<(String, Value)> = commands
         .iter()
-        .find(|command| command.id == "type.setStyle")
+        .find(|command| command.id == "text.setStyle")
         .and_then(|command| command.schema.as_ref()?.as_object().cloned())
         .map(|schema| schema.into_iter().filter(|(key, _)| !matches!(key.as_str(), "layer" | "range")).collect())
         .unwrap_or_default();
@@ -80,7 +80,7 @@ pub fn declare(commands: &mut [KitCommand]) {
                 })
             });
         }
-        if id == "type.create" {
+        if id == "text.add" {
             for (key, spec) in &styles {
                 schema.entry(key.clone()).or_insert_with(|| spec.clone());
             }

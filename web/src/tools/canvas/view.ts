@@ -11,7 +11,7 @@ export function eyedropperTool(env: PhotoToolEnv): KitTool {
     begin: (pointer) => {
       const target = pointer.alt ? 1 : 0
       const sample = ++samples[target]
-      void env.query<number[]>('document.sampleColor', { x: Math.floor(pointer.x), y: Math.floor(pointer.y), ...toolParams('Eyedropper', env.options) }).then((rgba) => {
+      void env.query<number[]>('file.sampleColor', { x: Math.floor(pointer.x), y: Math.floor(pointer.y), ...toolParams('Eyedropper', env.options) }).then((rgba) => {
         if (rgba && sample === samples[target]) env.pick([0, 1, 2].map((channel) => Math.round(rgba[channel] * 255)) as [number, number, number], pointer.alt)
       })
     },
@@ -86,7 +86,7 @@ export function rulerTool(env: PhotoToolEnv): KitTool {
 
 /** The Note and Count tools: a click adds a note (with the bar's author and colour) or a count mark there. */
 export function markTool(id: 'Note' | 'Count', env: PhotoToolEnv): KitTool {
-  const command = id === 'Note' ? 'notes.add' : 'count.add'
+  const command = id === 'Note' ? 'note.add' : 'count.add'
   return {
     id,
     cursor: 'crosshair',

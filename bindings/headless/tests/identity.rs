@@ -41,7 +41,7 @@ fn filled(doc: &mut PhotoDocument, name: &str, color: &str, at: i32) {
     doc.execute("layer.new.layer", json!({ "name": name })).unwrap();
     doc.execute("select.rect", json!({ "x": at, "y": at, "width": 64, "height": 64 })).unwrap();
     doc.execute("edit.fill", json!({ "color": color })).unwrap();
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
 }
 
 /// Every entry of a bundle, by name.

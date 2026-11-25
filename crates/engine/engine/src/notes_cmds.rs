@@ -53,7 +53,7 @@ fn index_of(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
 }
 
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "notes.add";
+    const CMD: &str = "note.add";
     let x = p.get("x").and_then(Value::as_f64).ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
     let y = p.get("y").and_then(Value::as_f64).ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
     if !x.is_finite() || !y.is_finite() {
@@ -80,7 +80,7 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "notes.set";
+    const CMD: &str = "note.set";
     let i = index_of(s, p, CMD)?;
     let d = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
     let mut n = d.notes[i].clone();
@@ -132,7 +132,7 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
         })?;
         return Ok(json!({"deleted": n, "remaining": 0}));
     }
-    let i = index_of(s, p, "notes.delete")?;
+    let i = index_of(s, p, "note.delete")?;
     s.edit("Delete Note", |d, _| {
         d.notes.remove(i);
         Ok(())
@@ -192,7 +192,7 @@ pub fn import_notes_from(s: &mut Session, name: &str, bytes: &[u8]) -> Result<Va
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         CommandSpec {
-            id: "notes.add",
+            id: "note.add",
             label: "New Note",
             menu: &[],
             shortcut: None,
@@ -202,7 +202,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "notes.set",
+            id: "note.set",
             label: "Edit Note",
             menu: &[],
             shortcut: None,
@@ -212,7 +212,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "notes.delete",
+            id: "note.delete",
             label: "Delete Note",
             menu: &[],
             shortcut: None,
@@ -222,7 +222,7 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
-            id: "notes.list",
+            id: "note.list",
             label: "Notes",
             menu: &[],
             shortcut: None,
@@ -257,36 +257,36 @@ mod tests {
     #[test]
     fn add_edit_move_delete_with_undo() {
         let mut s = session();
-        assert!(!s.is_enabled("notes.delete"));
-        let r = s.execute("notes.add", json!({"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"})).unwrap();
+        assert!(!s.is_enabled("note.delete"));
+        let r = s.execute("note.add", json!({"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"})).unwrap();
         assert_eq!(r["index"], 0);
         assert_eq!(r["note"]["color"], json!([1.0, 0.0, 0.0]));
-        s.execute("notes.add", json!({"x": 50, "y": 40})).unwrap();
-        s.execute("notes.set", json!({"index": 0, "text": "fixed", "x": 20})).unwrap();
+        s.execute("note.add", json!({"x": 50, "y": 40})).unwrap();
+        s.execute("note.set", json!({"index": 0, "text": "fixed", "x": 20})).unwrap();
         let d = s.active().unwrap().doc.clone();
         assert_eq!(d.notes[0].text, "fixed");
         assert_eq!(d.notes[0].position, [20.0, 12.0]);
         assert_eq!(d.notes[0].popup[0], 40.0);
         // Unchanged edits don't add history.
         let before = s.active().unwrap().history.past_len();
-        assert_eq!(s.execute("notes.set", json!({"index": 0, "text": "fixed"})).unwrap()["changed"], false);
+        assert_eq!(s.execute("note.set", json!({"index": 0, "text": "fixed"})).unwrap()["changed"], false);
         assert_eq!(s.active().unwrap().history.past_len(), before);
-        s.execute("notes.delete", json!({"index": 1})).unwrap();
-        assert_eq!(s.execute("notes.list", json!({})).unwrap()["notes"].as_array().unwrap().len(), 1);
+        s.execute("note.delete", json!({"index": 1})).unwrap();
+        assert_eq!(s.execute("note.list", json!({})).unwrap()["notes"].as_array().unwrap().len(), 1);
         assert!(s.undo());
         assert_eq!(s.active().unwrap().doc.notes.len(), 2);
-        s.execute("notes.delete", json!({"all": true})).unwrap();
+        s.execute("note.delete", json!({"all": true})).unwrap();
         assert!(s.active().unwrap().doc.notes.is_empty());
-        assert!(s.execute("notes.set", json!({"index": 0})).is_err());
+        assert!(s.execute("note.set", json!({"index": 0})).is_err());
     }
 
     #[test]
     fn bad_params() {
         let mut s = session();
-        assert!(s.execute("notes.add", json!({"x": 1})).is_err());
-        s.execute("notes.add", json!({"x": 1, "y": 1})).unwrap();
-        assert!(s.execute("notes.set", json!({"index": 5, "text": "x"})).is_err());
-        assert!(s.execute("notes.set", json!({})).is_err());
+        assert!(s.execute("note.add", json!({"x": 1})).is_err());
+        s.execute("note.add", json!({"x": 1, "y": 1})).unwrap();
+        assert!(s.execute("note.set", json!({"index": 5, "text": "x"})).is_err());
+        assert!(s.execute("note.set", json!({})).is_err());
         assert!(s.execute("file.import.notes", json!({})).is_err());
         assert!(s.execute("file.import.notes", json!({"path": "/nonexistent/x.psd"})).is_err());
     }

@@ -321,7 +321,7 @@ fn convert_to_shape(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------- warp ----------
 
 fn warp_text(s: &mut Session, p: &Value) -> Result<Value> {
-    let cmd = "type.warpText";
+    let cmd = "text.warpText";
     let style = p.get("style").and_then(Value::as_str).unwrap_or("arc");
     let psd =
         kition_photo_text::warp::psd_style(style).ok_or_else(|| EngineError::BadParams { cmd: cmd.into(), msg: format!("unknown warp style \"{style}\"") })?;
@@ -394,7 +394,7 @@ fn paste_lorem(s: &mut Session, p: &Value) -> Result<Value> {
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let (w, h) = (d.doc.size.width as f64, d.doc.size.height as f64);
     let size = p.get("size").and_then(Value::as_f64).unwrap_or((h / 20.0 * 72.0 / f64::from(d.doc.resolution_dpi)).clamp(6.0, 72.0));
-    let r = s.execute("type.create", json!({"box": [w * 0.1, h * 0.1, w * 0.8, h * 0.8], "text": LOREM_IPSUM, "size": size}))?;
+    let r = s.execute("text.add", json!({"box": [w * 0.1, h * 0.1, w * 0.8, h * 0.8], "text": LOREM_IPSUM, "size": size}))?;
     Ok(json!({"layer": r["layer"]}))
 }
 
@@ -516,46 +516,46 @@ pub fn specs() -> Vec<CommandSpec> {
     const LP: &str = r##"{"layer":id?}"##;
     const OT: &str = r##"{"layer":id?,"on":bool? (default: toggle),"range":[startChar,endChar]? (default all)}"##;
     vec![
-        spec!("type.antiAlias.none", "None", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::None)),
-        spec!("type.antiAlias.sharp", "Sharp", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Sharp)),
-        spec!("type.antiAlias.crisp", "Crisp", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Crisp)),
-        spec!("type.antiAlias.strong", "Strong", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Strong)),
-        spec!("type.antiAlias.smooth", "Smooth", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Smooth)),
-        spec!("type.antiAlias.windowsLcd", "Windows LCD", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::WindowsLcd)),
-        spec!("type.antiAlias.windows", "Windows", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Windows)),
-        spec!("type.orientation.horizontal", "Horizontal", &["Type", "Orientation"], LP, has_text, |s, p| set_orientation(s, p, Orientation::Horizontal)),
-        spec!("type.orientation.vertical", "Vertical", &["Type", "Orientation"], LP, has_text, |s, p| set_orientation(s, p, Orientation::Vertical)),
-        spec!("type.openType.standardLigatures", "Standard Ligatures", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "liga")),
-        spec!("type.openType.contextualAlternates", "Contextual Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "calt")),
-        spec!("type.openType.discretionaryLigatures", "Discretionary Ligatures", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "dlig")),
-        spec!("type.openType.swash", "Swash", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "swsh")),
-        spec!("type.openType.oldstyle", "Oldstyle", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "onum")),
-        spec!("type.openType.stylisticAlternates", "Stylistic Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "salt")),
-        spec!("type.openType.titlingAlternates", "Titling Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "titl")),
-        spec!("type.openType.ornaments", "Ornaments", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "ornm")),
-        spec!("type.openType.ordinals", "Ordinals", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "ordn")),
-        spec!("type.openType.fractions", "Fractions", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "frac")),
-        spec!("type.createWorkPath", "Create Work Path", &["Type"], LP, has_text, create_work_path),
-        spec!("type.convertToShape", "Convert to Shape", &["Type"], LP, has_text, convert_to_shape),
-        spec!("type.rasterizeTypeLayer", "Rasterize Type Layer", &["Type"], LP, has_text, |s, p| s.execute("type.rasterize", p.clone())),
-        spec!("type.convertToParagraphText", "Convert to Paragraph Text", &["Type"], LP, has_point_text, to_paragraph),
-        spec!("type.convertToPointText", "Convert to Point Text", &["Type"], LP, has_box_text, to_point),
+        spec!("text.antiAlias.none", "None", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::None)),
+        spec!("text.antiAlias.sharp", "Sharp", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Sharp)),
+        spec!("text.antiAlias.crisp", "Crisp", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Crisp)),
+        spec!("text.antiAlias.strong", "Strong", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Strong)),
+        spec!("text.antiAlias.smooth", "Smooth", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Smooth)),
+        spec!("text.antiAlias.windowsLcd", "Windows LCD", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::WindowsLcd)),
+        spec!("text.antiAlias.windows", "Windows", &["Type", "Anti-Alias"], LP, has_text, |s, p| set_aa(s, p, AntiAlias::Windows)),
+        spec!("text.orientation.horizontal", "Horizontal", &["Type", "Orientation"], LP, has_text, |s, p| set_orientation(s, p, Orientation::Horizontal)),
+        spec!("text.orientation.vertical", "Vertical", &["Type", "Orientation"], LP, has_text, |s, p| set_orientation(s, p, Orientation::Vertical)),
+        spec!("text.openType.standardLigatures", "Standard Ligatures", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "liga")),
+        spec!("text.openType.contextualAlternates", "Contextual Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "calt")),
+        spec!("text.openType.discretionaryLigatures", "Discretionary Ligatures", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "dlig")),
+        spec!("text.openType.swash", "Swash", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "swsh")),
+        spec!("text.openType.oldstyle", "Oldstyle", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "onum")),
+        spec!("text.openType.stylisticAlternates", "Stylistic Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "salt")),
+        spec!("text.openType.titlingAlternates", "Titling Alternates", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "titl")),
+        spec!("text.openType.ornaments", "Ornaments", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "ornm")),
+        spec!("text.openType.ordinals", "Ordinals", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "ordn")),
+        spec!("text.openType.fractions", "Fractions", &["Type", "OpenType"], OT, has_text, |s, p| toggle_opentype(s, p, "frac")),
+        spec!("text.convertToWorkPath", "Create Work Path", &["Type"], LP, has_text, create_work_path),
+        spec!("text.convertToShape", "Convert to Shape", &["Type"], LP, has_text, convert_to_shape),
+        spec!("text.rasterizeTypeLayer", "Rasterize Type Layer", &["Type"], LP, has_text, |s, p| s.execute("text.rasterize", p.clone())),
+        spec!("text.convertToParagraphText", "Convert to Paragraph Text", &["Type"], LP, has_point_text, to_paragraph),
+        spec!("text.convertToPointText", "Convert to Point Text", &["Type"], LP, has_box_text, to_point),
         spec!(
-            "type.warpText",
+            "text.warpText",
             "Warp Text…",
             &["Type"],
             r##"{"layer":id?,"style":"none|arc|arcLower|arcUpper|arch|bulge|shellLower|shellUpper|flag|wave|fish|rise|fisheye|inflate|squeeze|twist"="arc","bend":-100..100=50,"horizontalDistortion":-100..100=0,"verticalDistortion":-100..100=0,"orientation":"horizontal|vertical"="horizontal"}"##,
             has_text,
             warp_text
         ),
-        spec!("type.updateAllTextLayers", "Update All Text Layers", &["Type"], "{}", any_text, |s, _| update_all(s)),
-        spec!("type.replaceAllMissingFonts", "Replace All Missing Fonts", &["Type"], "{} (with the default family)", any_text, |s, _| replace_fonts(
+        spec!("text.updateAllTextLayers", "Update All Text Layers", &["Type"], "{}", any_text, |s, _| update_all(s)),
+        spec!("text.replaceAllMissingFonts", "Replace All Missing Fonts", &["Type"], "{} (with the default family)", any_text, |s, _| replace_fonts(
             s,
             &serde_json::Map::new(),
             true
         )),
         spec!(
-            "type.resolveMissingFonts",
+            "text.resolveMissingFonts",
             "Resolve Missing Fonts…",
             &["Type"],
             r##"{"map":{"Missing Family":"Installed Family"}?} (no map: list the missing families)"##,
@@ -563,7 +563,7 @@ pub fn specs() -> Vec<CommandSpec> {
             resolve_missing
         ),
         spec!(
-            "type.pasteLoremIpsum",
+            "text.pasteLoremIpsum",
             "Paste Lorem Ipsum",
             &["Type"],
             r##"{"layer":id?,"at":char? (default end),"new":bool=false (new paragraph text layer)}"##,
@@ -571,14 +571,14 @@ pub fn specs() -> Vec<CommandSpec> {
             paste_lorem
         ),
         spec!(
-            "type.saveDefaultTypeStyles",
+            "text.saveDefaultTypeStyles",
             "Save Default Type Styles",
             &["Type"],
             "{} (from the active type layer; new type layers start from them)",
             has_text,
             |s, _| save_defaults(s)
         ),
-        spec!("type.loadDefaultTypeStyles", "Load Default Type Styles", &["Type"], LP, has_defaults, load_defaults),
+        spec!("text.loadDefaultTypeStyles", "Load Default Type Styles", &["Type"], LP, has_defaults, load_defaults),
     ]
 }
 

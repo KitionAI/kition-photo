@@ -29,7 +29,7 @@ use serde_json::{Value, json};
 const SAMPLES: &[(&str, &str)] = &[
     ("cloneSource.select", r#"{"index": 0}"#),
     ("color.profileMismatch", r#"{"action": "discard"}"#),
-    ("document.activate", r#"{"document": 0}"#),
+    ("file.activate", r#"{"document": 0}"#),
     ("paint.setSymmetry", r#"{"mode": "vertical"}"#),
     ("paint.stroke", r#"{"points": [[2, 2, 1], [60, 40, 1]], "size": 8}"#),
     ("paint.line", r#"{"x0": 2, "y0": 2, "x1": 60, "y1": 40, "width": 4}"#),
@@ -55,7 +55,7 @@ const SAMPLES: &[(&str, &str)] = &[
     ("image.adjustments.selectiveColor", r#"{"colors": "reds", "cyan": 50, "method": "absolute"}"#),
     ("gradient.apply", r#"{"x0": 0, "y0": 0, "x1": 60, "y1": 40}"#),
     ("paint.bucket", r#"{"x": 40, "y": 20}"#),
-    ("type.create", r#"{"text": "Hi", "x": 4, "y": 30, "size": 12}"#),
+    ("text.add", r#"{"text": "Hi", "x": 4, "y": 30, "size": 12}"#),
     ("shape.rectangle", r#"{"x": 4, "y": 4, "width": 20, "height": 10}"#),
 ];
 
@@ -75,7 +75,7 @@ pub const READ_ACTIVE: &[&str] = &[
     "file.import.videoFramesToLayers",
     "file.placeEmbedded",
     "file.placeLinked",
-    "gradient.fill.create",
+    "gradient.fill.add",
     "gradient.presets.select",
     "image.adjustments.replaceColor",
     "image.analysis.placeScaleMarker",
@@ -99,7 +99,7 @@ pub const READ_ACTIVE: &[&str] = &[
     "layer.videoLayers.showAlteredVideo",
     "pattern.presets.select",
     "plugin.run",
-    "shape.create",
+    "shape.add",
     "shape.presets.place",
 ];
 pub const READ_SELECTED: &[&str] = &[
@@ -115,9 +115,9 @@ pub const READ_SELECTED: &[&str] = &[
     "layer.showLayers",
     "layer.translate",
     "style.presets.apply",
-    "type.characterStyle.new",
-    "type.characterStyle.redefine",
-    "type.paragraphStyle.new",
+    "text.characterStyle.new",
+    "text.characterStyle.redefine",
+    "text.paragraphStyle.new",
 ];
 pub const READ_REGION: &[&str] = &[
     "channel.new",
@@ -132,7 +132,7 @@ pub const READ_REGION: &[&str] = &[
     "edit.transform.warp",
     "filter.lastFilter",
     "filter.liquify",
-    "gradient.fill.create",
+    "gradient.fill.add",
     "image.adjustments.colorLookup",
     "image.adjustments.matchColor",
     "image.adjustments.replaceColor",
@@ -179,11 +179,11 @@ pub const READ_REGION: &[&str] = &[
     "plugin.run",
 ];
 pub const READ_COLORS: &[&str] = &[
-    "edit.clear",
+    "edit.delete",
     "edit.cut",
     "filter.filterGallery",
     "filter.lastFilter",
-    "gradient.fill.create",
+    "gradient.fill.add",
     "gradient.fill.set",
     "gradient.fill.stop",
     "gradient.presets.select",
@@ -207,7 +207,7 @@ pub const READ_COLORS: &[&str] = &[
     "paint.smudge",
     "path.fill",
     "path.stroke",
-    "shape.create",
+    "shape.add",
     "shape.edit",
     "shape.presets.place",
 ];
@@ -230,11 +230,11 @@ fn fixture() -> (Vec<u8>, Vec<[u64; 2]>) {
     let b = layer(&mut doc, "B");
     block(&mut doc, [20, 12, 30, 24], "#4060a0");
     doc.execute("select.saveSelection", json!({ "name": "Saved" })).unwrap();
-    doc.execute("select.deselect", json!({})).unwrap();
-    let t1 = id(doc.execute("type.create", json!({ "text": "One", "x": 4, "y": 20, "size": 12, "color": "#000000" })).unwrap());
-    let t2 = id(doc.execute("type.create", json!({ "text": "Two words", "x": 20, "y": 40, "size": 10, "color": "#ff0000" })).unwrap());
-    let s1 = id(doc.execute("shape.create", json!({ "kind": "rect", "rect": [2, 30, 20, 12], "fill": "#00ff00" })).unwrap());
-    let s2 = id(doc.execute("shape.create", json!({ "kind": "ellipse", "rect": [40, 20, 16, 16], "fill": "#ff00ff" })).unwrap());
+    doc.execute("edit.deselectAll", json!({})).unwrap();
+    let t1 = id(doc.execute("text.add", json!({ "text": "One", "x": 4, "y": 20, "size": 12, "color": "#000000" })).unwrap());
+    let t2 = id(doc.execute("text.add", json!({ "text": "Two words", "x": 20, "y": 40, "size": 10, "color": "#ff0000" })).unwrap());
+    let s1 = id(doc.execute("shape.add", json!({ "kind": "rect", "rect": [2, 30, 20, 12], "fill": "#00ff00" })).unwrap());
+    let s2 = id(doc.execute("shape.add", json!({ "kind": "ellipse", "rect": [40, 20, 16, 16], "fill": "#ff00ff" })).unwrap());
     let o1 = layer(&mut doc, "O1");
     block(&mut doc, [10, 30, 12, 10], "#808000");
     doc.execute("layer.objectLayers.convertToObjectLayer", json!({ "layer": o1 })).unwrap();
@@ -244,7 +244,7 @@ fn fixture() -> (Vec<u8>, Vec<[u64; 2]>) {
     doc.execute("layer.new.group", json!({ "name": "G" })).unwrap();
     layer(&mut doc, "C");
     block(&mut doc, [40, 2, 20, 10], "#00ff00");
-    doc.execute("select.deselect", json!({})).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
     let ids_by_name = |doc: &PhotoDocument, name: &str| -> u64 {
         fn find(layers: &Value, name: &str) -> Option<u64> {
             layers.as_array()?.iter().find_map(|layer| if layer["name"] == name { layer["id"].as_u64() } else { find(&layer["children"], name) })
@@ -283,7 +283,7 @@ fn variants() -> [(&'static str, State); 5] {
 fn outcome(bytes: &[u8], ids: [u64; 2], state: State, command: &str, params: &Value) -> Value {
     let mut doc = PhotoDocument::open(FILE, bytes).unwrap();
     doc.execute("select.rect", json!({ "x": state.region[0], "y": state.region[1], "width": state.region[2], "height": state.region[3] })).unwrap();
-    doc.execute("tools.setColors", json!({ "foreground": state.foreground, "background": state.background })).unwrap();
+    doc.execute("tool.setColors", json!({ "foreground": state.foreground, "background": state.background })).unwrap();
     let on: Vec<Value> = if state.one { vec![json!(ids[state.on[0]])] } else { state.on.iter().map(|i| json!(ids[*i])).collect() };
     doc.set_context(&CallContext { on, part: None, time: None }).unwrap();
     let answer = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| doc.execute(command, params.clone()))) {
@@ -404,7 +404,7 @@ fn probe() -> Found {
             command.id.as_str(),
             "cloneSource.select"
                 | "color.profileMismatch"
-                | "document.activate"
+                | "file.activate"
                 | "image.measure"
                 | "paint.setSymmetry"
                 | "paint.symmetryDisable"

@@ -532,7 +532,7 @@ mod tests {
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("select.rect", json!({"x": 10, "y": 10, "width": 10, "height": 10})).unwrap();
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("layer.layerStyle.patternOverlay", json!({"pattern": "Diagonal Lines"})).unwrap();
         s.execute("layer.layerStyle.stroke", json!({"size": 3, "color": "#00ff00", "add": true})).unwrap();
         let out = pixel(&s, 8, 15);

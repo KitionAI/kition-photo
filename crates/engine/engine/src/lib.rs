@@ -393,7 +393,7 @@ pub struct ToolState {
     pub presets_rev: u64,
     /// Mixer Brush paint carried between strokes.
     pub mixer: kition_photo_paint::mixer::MixerState,
-    /// The coalescing key of the running `tools.setBrush` gesture and the brush before it, so the
+    /// The coalescing key of the running `tool.setBrush` gesture and the brush before it, so the
     /// gesture journals as one call ([`brush_cmds::coalesce_journal`]).
     pub brush_gesture: Option<(String, kition_photo_paint::BrushSettings)>,
     /// Name of the preset the current brush was last picked from. Kept across later edits (the
@@ -467,7 +467,7 @@ pub struct Session {
     /// Window › Actions. The list persists with the preset store when one is attached.
     pub actions: actions_cmds::ActionState,
     /// Gate for every command the session runs, including the ones a command runs on its own
-    /// behalf and `actions.play` steps. Untrusted sessions (MCP, the control channel) install
+    /// behalf and `action.play` steps. Untrusted sessions (MCP, the control channel) install
     /// the same check a top-level request sees. `None` runs everything, which is what a local
     /// UI and `kition-photo-cli run` do.
     pub authorize: Option<fn(&str, &serde_json::Value) -> Result<()>>,

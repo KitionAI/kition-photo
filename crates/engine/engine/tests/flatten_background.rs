@@ -60,10 +60,10 @@ fn flatten_creates_a_background_in_one_undo_step_at_every_depth() {
 #[test]
 fn clear_and_cut_fill_the_flattened_background_without_transparency() {
     for depth in [8, 16, 32] {
-        for command in ["edit.clear", "edit.cut"] {
+        for command in ["edit.delete", "edit.cut"] {
             let mut s = layered(depth);
             s.execute("layer.flattenImage", json!({})).unwrap();
-            s.execute("tools.setColors", json!({"background": "#00ff00"})).unwrap();
+            s.execute("tool.setColors", json!({"background": "#00ff00"})).unwrap();
             s.execute("select.rect", json!({"x": 4, "y": 3, "width": 8, "height": 6})).unwrap();
             let history = history_len(&s);
 

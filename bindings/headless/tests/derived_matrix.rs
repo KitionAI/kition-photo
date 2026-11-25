@@ -60,7 +60,7 @@ async fn derived_resource_matrix() {
                 } else if relevant {
                     f.colleague(&[("layer.layerStyle.globalLight", json!({"angle":0,"altitude":60}))]);
                 } else {
-                    f.colleague(&[("notes.add", json!({"x":10,"y":10,"text":"Colleague"}))]);
+                    f.colleague(&[("note.add", json!({"x":10,"y":10,"text":"Colleague"}))]);
                 }
                 let before = std::fs::read(f.file()).unwrap();
                 let params = if command.starts_with("layer.") { json!({"layer":id}) } else { json!({}) };

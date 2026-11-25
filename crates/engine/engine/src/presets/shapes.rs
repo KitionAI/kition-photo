@@ -1,5 +1,5 @@
 //! Window › Shapes and the Custom Shape tool: vector shape presets in groups, placed as shape
-//! layers through `shape.create`.
+//! layers through `shape.add`.
 //!
 //! Built-in shapes were drawn from scratch for Kition Photo in a 100 × 100 box with a small path
 //! language ([`parse`]): `M x y`, `L x y…`, `C x1 y1 x2 y2 x y…`, `Q x1 y1 x y…`, `Z`, plus `O cx cy r`
@@ -355,7 +355,7 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
             q[k] = v.clone();
         }
     }
-    let mut r = super::call(s, "shape.create", q)?;
+    let mut r = super::call(s, "shape.add", q)?;
     r["preset"] = json!(shape.name);
     Ok(r)
 }
@@ -443,7 +443,7 @@ pub fn specs() -> Vec<CommandSpec> {
             label: "Place Custom Shape",
             menu: &[],
             shortcut: None,
-            params: r##"{"preset":name,"group":name?,"rect":[x,y,w,h]? (default: centred, half the canvas),"keepAspect":bool=true,"fill":…?=foreground,"stroke":…?,"name":str?,"addTo":layerId?,"op":"combine|subtract|intersect|exclude"?} → shape.info (Custom Shape tool / Shapes panel; fill and stroke as in shape.create)"##,
+            params: r##"{"preset":name,"group":name?,"rect":[x,y,w,h]? (default: centred, half the canvas),"keepAspect":bool=true,"fill":…?=foreground,"stroke":…?,"name":str?,"addTo":layerId?,"op":"combine|subtract|intersect|exclude"?} → shape.info (Custom Shape tool / Shapes panel; fill and stroke as in shape.add)"##,
             enabled: has_doc,
             run: place,
             journal: true,

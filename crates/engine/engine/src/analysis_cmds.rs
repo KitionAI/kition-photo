@@ -1123,7 +1123,7 @@ fn place_scale_marker(s: &mut Session, p: &Value) -> Result<Value> {
             if let Some(f) = &font {
                 tp["font"] = json!(f);
             }
-            text_layer = s.execute("type.create", tp)?["layer"].clone();
+            text_layer = s.execute("text.add", tp)?["layer"].clone();
         }
         let group = doc(s)?.layers.last().map(|l| l.id.0);
         Ok(json!({"group": group, "bar": bar_id.0, "text": text_layer, "barRect": [bar.x0, bar.y0, bar.x1, bar.y1], "pixels": px, "label": label}))

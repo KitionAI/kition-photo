@@ -55,13 +55,13 @@ pub fn fixture() -> (PhotoDocument, Vec<(&'static str, u64)>) {
     let block = |ex: &mut dyn FnMut(&str, Value) -> Value, rect: [i32; 4], color: &str| {
         ex("select.rect", json!({ "x": rect[0], "y": rect[1], "width": rect[2], "height": rect[3] }));
         ex("edit.fill", json!({ "color": color }));
-        ex("select.deselect", json!({}));
+        ex("edit.deselectAll", json!({}));
     };
     let p = id(&ex("layer.new.layer", json!({ "name": "Paint" })));
     block(&mut ex, [50, 50, 200, 150], "#c05040");
     let p2 = id(&ex("layer.new.layer", json!({ "name": "Second" })));
     block(&mut ex, [100, 80, 100, 100], "#4060a0");
-    ex("layer.createClippingMask", json!({ "layer": p2 }));
+    ex("layer.addClippingMask", json!({ "layer": p2 }));
     let so = id(&ex("layer.new.layer", json!({ "name": "Smart" })));
     block(&mut ex, [300, 20, 60, 60], "#40a060");
     let so = ex("layer.objectLayers.convertToObjectLayer", json!({ "layer": so }))["layer"].as_u64().unwrap_or(so);
@@ -72,19 +72,19 @@ pub fn fixture() -> (PhotoDocument, Vec<(&'static str, u64)>) {
     block(&mut ex, [30, 210, 50, 50], "#208080");
     ex("layer.layerMask.revealAll", json!({ "layer": c }));
     ex("layer.select", json!({ "layer": g }));
-    let sh = id(&ex("shape.create", json!({ "kind": "rect", "rect": [260, 150, 80, 60], "fill": "#aa3388", "name": "Shape 1" })));
+    let sh = id(&ex("shape.add", json!({ "kind": "rect", "rect": [260, 150, 80, 60], "fill": "#aa3388", "name": "Shape 1" })));
     let adj = id(&ex("layer.newAdjustmentLayer.curves", json!({ "points": [[0, 0], [128, 160], [255, 255]] })));
-    let t = id(&ex("type.create", json!({ "x": 20, "y": 40, "text": "Title", "size": 24 })));
+    let t = id(&ex("text.add", json!({ "x": 20, "y": 40, "text": "Title", "size": 24 })));
     for (layer, under) in [(sh, g), (adj, sh), (t, adj)] {
         ex("layer.moveTo", json!({ "layer": layer, "target": under, "position": "above" }));
     }
     ex("select.rect", json!({ "x": 60, "y": 60, "width": 40, "height": 40 }));
     ex("select.saveSelection", json!({ "name": "Alpha 1" }));
-    ex("select.deselect", json!({}));
+    ex("edit.deselectAll", json!({}));
     ex("path.set", json!({ "name": "Path 1", "path": { "subpaths": [{ "closed": true, "knots": [[10, 10], [90, 10], [90, 90], [10, 90]] }] } }));
     ex("layerComp.new", json!({ "name": "Comp 1" }));
     ex("view.newGuide", json!({ "orientation": "vertical", "position": 100 }));
-    ex("notes.add", json!({ "x": 5, "y": 5, "text": "n" }));
+    ex("note.add", json!({ "x": 5, "y": 5, "text": "n" }));
     ex("slice.new", json!({ "rect": [0, 0, 50, 50] }));
     let bytes = d.save(None).unwrap();
     let mut d = PhotoDocument::open("fx.psd", &bytes).unwrap();
@@ -213,7 +213,7 @@ fn every_write_rests_on_what_its_handler_reads() {
 /// by the schema too; the in-page `execute` did not).
 #[test]
 fn a_layer_by_name_where_the_command_takes_an_id_is_refused() {
-    for command in ["layer.delete", "layer.duplicate", "layer.hideLayers", "layer.createClippingMask"] {
+    for command in ["layer.delete", "layer.duplicate", "layer.hideLayers", "layer.addClippingMask"] {
         for value in [json!("Title"), json!("#1"), json!(3.0)] {
             let (mut doc, _) = fixture();
             let before = doc.inspect().unwrap()["layers"].clone();
@@ -2513,15 +2513,15 @@ const ROWS: &[Row] = &[
     // image.imageRotation.flipCanvasVertical: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
     // was held less: image not held
     r("image.imageRotation.flipCanvasVertical", r##"{}"##, "", &[("image", "height,width", false)]),
-    // image.imageRotation.180: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
+    // image.imageRotation.rotate180: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
     // was held less: image not held
-    r("image.imageRotation.180", r##"{}"##, "", &[("image", "height,width", false)]),
-    // image.imageRotation.90cw: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
+    r("image.imageRotation.rotate180", r##"{}"##, "", &[("image", "height,width", false)]),
+    // image.imageRotation.rotate90cw: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
     // was held less: image not held
-    r("image.imageRotation.90cw", r##"{}"##, "", &[("image", "height,width", false)]),
-    // image.imageRotation.90ccw: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
+    r("image.imageRotation.rotate90cw", r##"{}"##, "", &[("image", "height,width", false)]),
+    // image.imageRotation.rotate90ccw: layer none; editor quickmask; reads docState.measurement,docState.notes,docState.slices,image.channels,image.dpi,image.guides,image.paths,image.size,others
     // was held less: image not held
-    r("image.imageRotation.90ccw", r##"{}"##, "", &[("image", "height,width", false)]),
+    r("image.imageRotation.rotate90ccw", r##"{}"##, "", &[("image", "height,width", false)]),
     // image.adjustments.desaturate: layer ignored; editor active,area,channeltarget; reads T.locks,T.pixels,image.mode
     r(
         "image.adjustments.desaturate",
@@ -3136,42 +3136,42 @@ const ROWS: &[Row] = &[
     // layer.editableFilter.move: layer id-else-active; editor active; reads T.content,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
     r("layer.editableFilter.move", r##"{"layer": "$SO", "index": 0, "to": 1}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.entropy: layer id-else-active; editor active; reads T.content,T.mask,image.mode,image.size
+    // layer.stackMode.entropy: layer id-else-active; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.entropy", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.kurtosis: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.entropy", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.kurtosis: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.kurtosis", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.maximum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.kurtosis", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.maximum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.maximum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.mean: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.maximum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.mean: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.mean", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.median: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.mean", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.median: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.median", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.minimum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.median", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.minimum: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.minimum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.range: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.minimum", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.range: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.range", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.skewness: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.range", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.skewness: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.skewness", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.standardDeviation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.skewness", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.standardDeviation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.standardDeviation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.summation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.standardDeviation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.summation: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.summation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.variance: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.summation", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.variance: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.variance", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
-    // layer.objectLayers.stackMode.none: layer other; editor active; reads T.content,T.mask,image.mode,image.size
+    r("layer.stackMode.variance", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    // layer.stackMode.none: layer other; editor active; reads T.content,T.mask,image.mode,image.size
     // was held more: $SO: every field held, reads kind,props.data; $SO: position held
-    r("layer.objectLayers.stackMode.none", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
+    r("layer.stackMode.none", r##"{"layer": "$SO"}"##, "active", &[("$SO", "kind,data,text", false)]),
     // layer.objectLayers.revealInFinder: layer ignored; editor active; reads -
     r("layer.objectLayers.revealInFinder", r##"{"dryRun": true}"##, "", &[]),
     // layer.objectLayers.warp: layer id-else-active; editor active,area; reads T.attr,T.content,T.locks,T.mask,T.pixels,T.position,image.mode,image.size
@@ -3619,8 +3619,8 @@ const ROWS: &[Row] = &[
     // layer.layerStyle.globalLight: layer none; editor -; reads docState.global_light
     // was held less: image not held
     r("layer.layerStyle.globalLight", r##"{"angle": 90}"##, "", &[("image", "docState.global_light", false)]),
-    // layer.layerStyle.createLayer: layer id-else-active; editor active; reads T.attr,T.content,T.effects,T.pixels,T.position,T.vmask,docState.global_light,docState.patterns,image.size,others
-    r("layer.layerStyle.createLayer", r##"{"layer": "$P"}"##, "active", &[("$P", "*", false)]),
+    // layer.layerStyle.convertToLayer: layer id-else-active; editor active; reads T.attr,T.content,T.effects,T.pixels,T.position,T.vmask,docState.global_light,docState.patterns,image.size,others
+    r("layer.layerStyle.convertToLayer", r##"{"layer": "$P"}"##, "active", &[("$P", "*", false)]),
     // layer.layerStyle.scaleEffects: layer id-else-active; editor active; reads T.effects
     // was held less: $P not held
     r("layer.layerStyle.scaleEffects", r##"{"scale": 200}"##, "active", &[("$P", "styleSettings,styles", false)]),
@@ -3658,23 +3658,23 @@ const ROWS: &[Row] = &[
     r("layer.delete", r##"{}"##, "selection", &[("$P", "*", true)]),
     // layer.setProps: layer id-else-active; editor active; reads -
     r("layer.setProps", r##"{"layer": "$P", "opacity": 0.5, "blend": "Multiply", "visible": true}"##, "active", &[("$P", "blend,opacity,visible", false)]),
-    // layer.arrange.bringForward: layer id-else-active; editor active; reads T.position
+    // arrange.bringForward: layer id-else-active; editor active; reads T.position
     // was held more: $SH: every field held, reads -
-    r("layer.arrange.bringForward", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
-    // layer.arrange.sendBackward: layer id-else-active; editor active; reads T.position
+    r("arrange.bringForward", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
+    // arrange.sendBackward: layer id-else-active; editor active; reads T.position
     // was held more: $SH: every field held, reads -
-    r("layer.arrange.sendBackward", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
-    // layer.arrange.bringToFront: layer id-else-active; editor active; reads T.position
+    r("arrange.sendBackward", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
+    // arrange.bringToFront: layer id-else-active; editor active; reads T.position
     // was held more: $SH: every field held, reads -
-    r("layer.arrange.bringToFront", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
-    // layer.arrange.sendToBack: layer id-else-active; editor active; reads T.position
+    r("arrange.bringToFront", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
+    // arrange.sendToBack: layer id-else-active; editor active; reads T.position
     // was held more: $SH: every field held, reads -
-    r("layer.arrange.sendToBack", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
-    // layer.createClippingMask: layer id-else-active,id-else-selected; editor selected; reads others
+    r("arrange.sendToBack", r##"{"layer": "$SH"}"##, "active", &[("$SH", "-", true)]),
+    // layer.addClippingMask: layer id-else-active,id-else-selected; editor selected; reads others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
-    r("layer.createClippingMask", r##"{"layer": "$SH"}"##, "selection", &[("$SH", "*", true)]),
+    r("layer.addClippingMask", r##"{"layer": "$SH"}"##, "selection", &[("$SH", "*", true)]),
     // was held less: $P not held
-    r("layer.createClippingMask", r##"{}"##, "selection", &[("$P", "clipped", true)]),
+    r("layer.addClippingMask", r##"{}"##, "selection", &[("$P", "clipped", true)]),
     // layer.releaseClippingMask: layer id-else-active,id-else-selected; editor selected; reads others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
     r("layer.releaseClippingMask", r##"{"layer": "$P2"}"##, "selection", &[("$P2", "*", true)]),
@@ -3705,9 +3705,9 @@ const ROWS: &[Row] = &[
     r("layer.translate", r##"{"layer": "$P", "dx": 5, "dy": -3}"##, "active,selection", &[("$P", "*", true), ("image", "~linkGroups", false)]),
     // was held less: editor:selection
     r("layer.translate", r##"{"dx": 5}"##, "active,selection", &[("$P", "*", true), ("image", "~linkGroups", false)]),
-    // layer.fill.solidColor.set: layer id-strict; editor active; reads T.content,T.locks,T.pixels,image.mode
+    // layer.fill.setSolidColor: layer id-strict; editor active; reads T.content,T.locks,T.pixels,image.mode
     // was held more: $FILL: every field held, reads kind,locks,props.data; $FILL: position held
-    r("layer.fill.solidColor.set", r##"{"layer": "$FILL", "color": "#ff0000"}"##, "active", &[("$FILL", "kind,locks,data,text", false)]),
+    r("layer.fill.setSolidColor", r##"{"layer": "$FILL", "color": "#ff0000"}"##, "active", &[("$FILL", "kind,locks,data,text", false)]),
     // layer.removeBackground: layer id-else-active; editor -; reads T.effects,T.locks,T.mask,T.pixels,image.size
     r("layer.removeBackground", r##"{"layer": "$P"}"##, "active", &[("$P", "*", true)]),
     // layer.new.layerViaCopy: layer ignored; editor active,area; reads T.effects,T.mask,T.pixels,image.size,others
@@ -3792,9 +3792,9 @@ const ROWS: &[Row] = &[
     // layer.new.groupFromLayers: layer id-else-active; editor selected; reads others
     // was held less: $P not held; resolution: `layer` as a name or "#n" written to the active layer (in-page path)
     r("layer.new.groupFromLayers", r##"{"name": "Pair"}"##, "selection", &[("$P", "*", true)]),
-    // layer.arrange.reverse: layer selected; editor selected; reads others
+    // arrange.reverse: layer selected; editor selected; reads others
     // was held less: $P not held
-    r("layer.arrange.reverse", r##"{}"##, "selection", &[("$P", "*", true)]),
+    r("arrange.reverse", r##"{}"##, "selection", &[("$P", "*", true)]),
     // layer.lockLayers: layer ignored; editor selected; reads others
     // was held less: $P not held
     r("layer.lockLayers", r##"{"position": true}"##, "selection", &[("$P", "locks", false)]),
@@ -3848,26 +3848,26 @@ const ROWS: &[Row] = &[
     // layer.setEffectsVisible: layer id-strict; editor active; reads T.effects
     // was held more: $SH: every field held, reads effects; $SH: position held
     r("layer.setEffectsVisible", r##"{"layer": "$SH", "index": 0, "visible": false}"##, "active", &[("$SH", "styleSettings,styles", false)]),
-    // type.create: layer active-only,ignored; editor active,colors,library; reads image.dpi,image.mode,others
+    // text.add: layer active-only,ignored; editor active,colors,library; reads image.dpi,image.mode,others
     // was held less: $P not held
-    r("type.create", r##"{"x": 20, "y": 60, "text": "Hello", "size": 24}"##, "active,colors", &[("$P", "clipped,kind", true)]),
+    r("text.add", r##"{"x": 20, "y": 60, "text": "Hello", "size": 24}"##, "active,colors", &[("$P", "clipped,kind", true)]),
     // was held less: $P not held
-    r("type.create", r##"{"box": [10, 10, 200, 80], "text": "Para"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
-    // type.edit: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.add", r##"{"box": [10, 10, 200, 80], "text": "Para"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
+    // text.edit: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.edit", r##"{"layer": "$T", "text": "New title"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    r("text.edit", r##"{"layer": "$T", "text": "New title"}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.edit", r##"{"layer": "$T", "kernPair": {"at": 1, "by": 20}}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.setStyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.edit", r##"{"layer": "$T", "kernPair": {"at": 1, "by": 20}}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.setStyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.setStyle", r##"{"layer": "$T", "range": [0, 3], "size": 30, "align": "center"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.rasterize: layer id-else-active; editor active; reads T.content,image.mode
-    r("type.rasterize", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
-    // shape.create: layer ignored; editor active,colors; reads image.mode,image.size,others
+    r("text.setStyle", r##"{"layer": "$T", "range": [0, 3], "size": 30, "align": "center"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.rasterize: layer id-else-active; editor active; reads T.content,image.mode
+    r("text.rasterize", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
+    // shape.add: layer ignored; editor active,colors; reads image.mode,image.size,others
     // was held less: editor:colors; editor:active; $P not held
-    r("shape.create", r##"{"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
+    r("shape.add", r##"{"kind": "rect", "rect": [10, 10, 40, 20], "fill": "#ff0000"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
     // was held less: editor:colors; editor:active
-    r("shape.create", r##"{"kind": "ellipse", "rect": [0, 0, 20, 20], "addTo": "$SH", "op": "subtract"}"##, "active,colors", &[("$SH", "*", true)]),
+    r("shape.add", r##"{"kind": "ellipse", "rect": [0, 0, 20, 20], "addTo": "$SH", "op": "subtract"}"##, "active,colors", &[("$SH", "*", true)]),
     // shape.edit: layer id-else-active; editor active,colors; reads T.content,image.mode,image.size
     // was held less: editor:colors
     // was held more: $SH: every field held, reads kind,name,props.data; $SH: position held
@@ -3974,167 +3974,167 @@ const ROWS: &[Row] = &[
         "active",
         &[("$SH", "kind,data,text,extra", false), ("image", "paths,docState.work_path", false)],
     ),
-    // type.antiAlias.none: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    // text.antiAlias.none: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.none", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.sharp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.none", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.sharp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.sharp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.crisp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.sharp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.crisp: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.crisp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.strong: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.crisp", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.strong: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.strong", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.smooth: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.strong", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.smooth: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.smooth", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.windowsLcd: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.smooth", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.windowsLcd: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.windowsLcd", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.antiAlias.windows: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.windowsLcd", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.antiAlias.windows: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.antiAlias.windows", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.orientation.horizontal: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.antiAlias.windows", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.orientation.horizontal: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.orientation.horizontal", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.orientation.vertical: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.orientation.horizontal", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.orientation.vertical: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.orientation.vertical", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.standardLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.orientation.vertical", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.standardLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.standardLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.contextualAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.standardLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.contextualAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.contextualAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.discretionaryLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.contextualAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.discretionaryLigatures: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.discretionaryLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.swash: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.discretionaryLigatures", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.swash: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.swash", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.oldstyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.swash", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.oldstyle: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.oldstyle", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.stylisticAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.oldstyle", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.stylisticAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.stylisticAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.titlingAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.stylisticAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.titlingAlternates: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.titlingAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.ornaments: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.titlingAlternates", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.ornaments: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.ornaments", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.ordinals: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.ornaments", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.ordinals: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.ordinals", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.openType.fractions: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.ordinals", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.openType.fractions: layer id-else-active; editor active; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.openType.fractions", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.createWorkPath: layer id-else-active; editor -; reads T.content,image.dpi
-    r("type.createWorkPath", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
-    // type.convertToShape: layer id-else-active; editor -; reads T.content,image.dpi,image.mode,image.size
-    r("type.convertToShape", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
-    // type.rasterizeTypeLayer: layer id-else-active; editor -; reads T.content,image.mode
-    r("type.rasterizeTypeLayer", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
-    // type.convertToParagraphText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.openType.fractions", r##"{"layer": "$T", "on": true}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.convertToWorkPath: layer id-else-active; editor -; reads T.content,image.dpi
+    r("text.convertToWorkPath", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
+    // text.convertToShape: layer id-else-active; editor -; reads T.content,image.dpi,image.mode,image.size
+    r("text.convertToShape", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
+    // text.rasterizeTypeLayer: layer id-else-active; editor -; reads T.content,image.mode
+    r("text.rasterizeTypeLayer", r##"{"layer": "$T"}"##, "active", &[("$T", "*", true)]),
+    // text.convertToParagraphText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.convertToParagraphText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.convertToPointText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.convertToParagraphText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.convertToPointText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.convertToPointText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.warpText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
+    r("text.convertToPointText", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.warpText: layer id-else-active; editor -; reads T.attr,T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.warpText", r##"{"layer": "$T", "style": "arc", "bend": 30}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.updateAllTextLayers: layer ignored; editor -; reads image.dpi,image.mode,others
+    r("text.warpText", r##"{"layer": "$T", "style": "arc", "bend": 30}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.updateAllTextLayers: layer ignored; editor -; reads image.dpi,image.mode,others
     // was held less: image not held
-    r("type.updateAllTextLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
-    // type.replaceAllMissingFonts: layer none; editor -; reads image.dpi,image.mode,others
+    r("text.updateAllTextLayers", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
+    // text.replaceAllMissingFonts: layer none; editor -; reads image.dpi,image.mode,others
     // was held less: image not held
-    r("type.replaceAllMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
-    // type.resolveMissingFonts: layer none; editor -; reads image.dpi,others
+    r("text.replaceAllMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
+    // text.resolveMissingFonts: layer none; editor -; reads image.dpi,others
     // was held less: image not held
     r(
-        "type.resolveMissingFonts",
+        "text.resolveMissingFonts",
         r##"{"map": {"Old Font": "Inter"}}"##,
         "",
         &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)],
     ),
     // was held less: image not held
-    r("type.resolveMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
-    // type.pasteLoremIpsum: layer id-else-active,ignored; editor active,colors,library; reads T.attr,T.content,image.dpi,image.mode,image.size,others
+    r("text.resolveMissingFonts", r##"{}"##, "", &[("image", "depth,docState.global_light,patterns,height,icc,layers,mode,width", false)]),
+    // text.pasteLoremIpsum: layer id-else-active,ignored; editor active,colors,library; reads T.attr,T.content,image.dpi,image.mode,image.size,others
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.pasteLoremIpsum", r##"{"layer": "$T", "at": 3}"##, "active,colors", &[("$T", "kind,name,data,text", false)]),
+    r("text.pasteLoremIpsum", r##"{"layer": "$T", "at": 3}"##, "active,colors", &[("$T", "kind,name,data,text", false)]),
     // was held less: $P not held
-    r("type.pasteLoremIpsum", r##"{"new": true}"##, "active,colors", &[("$P", "kind,name,data,text", false)]),
-    // type.saveDefaultTypeStyles: layer ignored; editor active; reads others
-    r("type.saveDefaultTypeStyles", r##"{}"##, "active", &[]),
-    // type.loadDefaultTypeStyles: layer id-else-active; editor library; reads T.attr,T.content,image.dpi
+    r("text.pasteLoremIpsum", r##"{"new": true}"##, "active,colors", &[("$P", "kind,name,data,text", false)]),
+    // text.saveDefaultTypeStyles: layer ignored; editor active; reads others
+    r("text.saveDefaultTypeStyles", r##"{}"##, "active", &[]),
+    // text.loadDefaultTypeStyles: layer id-else-active; editor library; reads T.attr,T.content,image.dpi
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.loadDefaultTypeStyles", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
-    // type.characterStyle.new: layer id-else-active; editor active,selected; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.loadDefaultTypeStyles", r##"{"layer": "$T"}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    // text.characterStyle.new: layer id-else-active; editor active,selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: editor:selection
     r(
-        "type.characterStyle.new",
+        "text.characterStyle.new",
         r##"{"name": "Head", "attrs": {"size": 36}, "layer": "$T"}"##,
         "active,selection",
         &[("$T", "*", true), ("image", "docState.text_styles", false)],
     ),
-    // type.characterStyle.duplicate: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.characterStyle.duplicate", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.characterStyle.delete: layer none; editor -; reads docState.text_styles,image.dpi,others
-    r("type.characterStyle.delete", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.characterStyle.rename: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.characterStyle.rename", r##"{"id": 1, "name": "Body"}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.characterStyle.set: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.characterStyle.set", r##"{"id": 1, "attrs": {"size": 20}}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.characterStyle.apply: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    // text.characterStyle.duplicate: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.characterStyle.duplicate", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.characterStyle.delete: layer none; editor -; reads docState.text_styles,image.dpi,others
+    r("text.characterStyle.delete", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.characterStyle.rename: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.characterStyle.rename", r##"{"id": 1, "name": "Body"}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.characterStyle.set: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.characterStyle.set", r##"{"id": 1, "attrs": {"size": 20}}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.characterStyle.apply: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
     r(
-        "type.characterStyle.apply",
+        "text.characterStyle.apply",
         r##"{"id": 1, "layer": "$T", "range": [0, 5]}"##,
         "selection",
         &[("$T", "*", true), ("image", "docState.text_styles", false)],
     ),
-    // type.characterStyle.redefine: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    // text.characterStyle.redefine: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: editor:selection
-    r("type.characterStyle.redefine", r##"{"layer": "$T"}"##, "active,selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
-    // type.characterStyle.clearOverride: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.characterStyle.redefine", r##"{"layer": "$T"}"##, "active,selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
+    // text.characterStyle.clearOverride: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
-    r("type.characterStyle.clearOverride", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.new: layer id-else-active; editor active,selected; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.characterStyle.clearOverride", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.new: layer id-else-active; editor active,selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: editor:selection
     r(
-        "type.paragraphStyle.new",
+        "text.paragraphStyle.new",
         r##"{"name": "Head", "attrs": {"size": 36}, "layer": "$T"}"##,
         "active,selection",
         &[("$T", "*", true), ("image", "docState.text_styles", false)],
     ),
-    // type.paragraphStyle.duplicate: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.paragraphStyle.duplicate", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.delete: layer none; editor -; reads docState.text_styles,image.dpi,others
-    r("type.paragraphStyle.delete", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.rename: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.paragraphStyle.rename", r##"{"id": 1, "name": "Body"}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.set: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
-    r("type.paragraphStyle.set", r##"{"id": 1, "attrs": {"size": 20}}"##, "", &[("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.apply: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    // text.paragraphStyle.duplicate: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.paragraphStyle.duplicate", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.delete: layer none; editor -; reads docState.text_styles,image.dpi,others
+    r("text.paragraphStyle.delete", r##"{"id": 1}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.rename: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.paragraphStyle.rename", r##"{"id": 1, "name": "Body"}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.set: layer none; editor -; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.paragraphStyle.set", r##"{"id": 1, "attrs": {"size": 20}}"##, "", &[("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.apply: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
     r(
-        "type.paragraphStyle.apply",
+        "text.paragraphStyle.apply",
         r##"{"id": 1, "layer": "$T", "range": [0, 5]}"##,
         "selection",
         &[("$T", "*", true), ("image", "docState.text_styles", false)],
     ),
-    // type.paragraphStyle.redefine: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    // text.paragraphStyle.redefine: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
-    r("type.paragraphStyle.redefine", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
-    // type.paragraphStyle.clearOverride: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
+    r("text.paragraphStyle.redefine", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
+    // text.paragraphStyle.clearOverride: layer id-else-active; editor selected; reads docState.text_styles,image.dpi,image.mode,others
     // was held less: resolution: `layer` as a name or "#n" written to the active layer (in-page path)
-    r("type.paragraphStyle.clearOverride", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
-    // type.insertText: layer id-else-active; editor -; reads T.content,image.dpi,image.mode
+    r("text.paragraphStyle.clearOverride", r##"{"layer": "$T"}"##, "selection", &[("$T", "*", true), ("image", "docState.text_styles", false)]),
+    // text.insertText: layer id-else-active; editor -; reads T.content,image.dpi,image.mode
     // was held more: $T: every field held, reads kind,name,props.data; $T: position held
-    r("type.insertText", r##"{"layer": "$T", "text": "!", "at": 2}"##, "active", &[("$T", "kind,name,data,text", false)]),
+    r("text.insertText", r##"{"layer": "$T", "text": "!", "at": 2}"##, "active", &[("$T", "kind,name,data,text", false)]),
     // shape.presets.place: layer active-only; editor active,colors,library; reads image.mode,image.size,others
     // was held less: editor:colors; editor:active; $P not held
     r("shape.presets.place", r##"{"preset": "Cloud", "rect": [10, 10, 100, 80], "fill": "#ff0000"}"##, "active,colors", &[("$P", "clipped,kind", true)]),
@@ -4173,10 +4173,10 @@ const ROWS: &[Row] = &[
         "active,area,colors",
         &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
     ),
-    // edit.clear: layer id-else-active; editor area,colors; reads T.attr,T.locks,T.pixels,T.position,image.size
+    // edit.delete: layer id-else-active; editor area,colors; reads T.attr,T.locks,T.pixels,T.position,image.size
     // was held less: editor:colors
     r(
-        "edit.clear",
+        "edit.delete",
         r##"{"layer": "$P"}"##,
         "active,area,colors",
         &[("$P", "kind,locks,data,text,tiles", false), ("image", "depth,height,mode,width,~inheritedLocks", false)],
@@ -4491,9 +4491,9 @@ const ROWS: &[Row] = &[
         "active,area,colors",
         &[("$P", "-", false), ("image", "channels,depth,height,mode,width,~channelContents", false)],
     ),
-    // gradient.fill.create: layer active-only; editor active,area,colors,library; reads image.mode,image.size,others
+    // gradient.fill.add: layer active-only; editor active,area,colors,library; reads image.mode,image.size,others
     // was held less: editor:colors; editor:area; editor:active; $P not held
-    r("gradient.fill.create", r##"{"from": [0, 0], "to": [400, 0], "style": "linear"}"##, "active,area,colors", &[("$P", "clipped,kind", true)]),
+    r("gradient.fill.add", r##"{"from": [0, 0], "to": [400, 0], "style": "linear"}"##, "active,area,colors", &[("$P", "clipped,kind", true)]),
     // gradient.fill.set: layer id-else-active; editor colors; reads T.content,T.mask,T.vmask,image.mode,image.size
     // was held less: editor:colors
     // was held more: $FILL: every field held, reads kind,props.data; $FILL: position held
@@ -4583,28 +4583,28 @@ const ROWS: &[Row] = &[
     r("brush.presets.importAbr", r##"{"path": "/tmp/x.abr", "select": true}"##, "", &[]),
     // gradient.presets.importGrd: layer none; editor library; reads -
     r("gradient.presets.importGrd", r##"{"path": "/tmp/x.grd"}"##, "", &[]),
-    // swatches.add: layer none; editor colors,library; reads -
-    r("swatches.add", r##"{"color": "#ff0000"}"##, "", &[]),
-    // swatches.delete: layer none; editor library; reads -
-    r("swatches.delete", r##"{"swatch": "Color Swatch 1"}"##, "", &[]),
-    // swatches.rename: layer none; editor library; reads -
-    r("swatches.rename", r##"{"swatch": "Color Swatch 1", "name": "Red"}"##, "", &[]),
-    // swatches.move: layer none; editor library; reads -
-    r("swatches.move", r##"{"swatch": "Red", "position": 0}"##, "", &[]),
-    // swatches.newGroup: layer none; editor library; reads -
-    r("swatches.newGroup", r##"{"name": "Mine", "swatches": ["Red"]}"##, "", &[]),
-    // swatches.renameGroup: layer none; editor library; reads -
-    r("swatches.renameGroup", r##"{"group": "Mine", "name": "Ours"}"##, "", &[]),
-    // swatches.deleteGroup: layer none; editor library; reads -
-    r("swatches.deleteGroup", r##"{"group": "Mine"}"##, "", &[]),
-    // swatches.use: layer none; editor library,prefs; reads -
-    r("swatches.use", r##"{"swatch": "Red", "target": "background"}"##, "", &[]),
-    // swatches.reset: layer none; editor library; reads -
-    r("swatches.reset", r##"{}"##, "", &[]),
-    // swatches.import: layer none; editor library; reads -
-    r("swatches.import", r##"{"path": "/tmp/x.aco"}"##, "", &[]),
-    // swatches.export: layer none; editor library; reads -
-    r("swatches.export", r##"{"path": "/tmp/out.ase"}"##, "", &[]),
+    // swatch.add: layer none; editor colors,library; reads -
+    r("swatch.add", r##"{"color": "#ff0000"}"##, "", &[]),
+    // swatch.delete: layer none; editor library; reads -
+    r("swatch.delete", r##"{"swatch": "Color Swatch 1"}"##, "", &[]),
+    // swatch.rename: layer none; editor library; reads -
+    r("swatch.rename", r##"{"swatch": "Color Swatch 1", "name": "Red"}"##, "", &[]),
+    // swatch.move: layer none; editor library; reads -
+    r("swatch.move", r##"{"swatch": "Red", "position": 0}"##, "", &[]),
+    // swatch.newGroup: layer none; editor library; reads -
+    r("swatch.newGroup", r##"{"name": "Mine", "swatches": ["Red"]}"##, "", &[]),
+    // swatch.renameGroup: layer none; editor library; reads -
+    r("swatch.renameGroup", r##"{"group": "Mine", "name": "Ours"}"##, "", &[]),
+    // swatch.deleteGroup: layer none; editor library; reads -
+    r("swatch.deleteGroup", r##"{"group": "Mine"}"##, "", &[]),
+    // swatch.use: layer none; editor library,prefs; reads -
+    r("swatch.use", r##"{"swatch": "Red", "target": "background"}"##, "", &[]),
+    // swatch.reset: layer none; editor library; reads -
+    r("swatch.reset", r##"{}"##, "", &[]),
+    // swatch.import: layer none; editor library; reads -
+    r("swatch.import", r##"{"path": "/tmp/x.aco"}"##, "", &[]),
+    // swatch.export: layer none; editor library; reads -
+    r("swatch.export", r##"{"path": "/tmp/out.ase"}"##, "", &[]),
     // paint.cloneStamp: layer active-only,id-else-active; editor active,area,channeltarget,library,tool; reads T.attr,T.locks,T.pixels,T.position,composite
     // was held less: editor:area; image not held
     // was held more: $P: every field held, reads kind,locks,props.data,tiles; $P: position held
@@ -4971,22 +4971,22 @@ const ROWS: &[Row] = &[
     // measurementLog.export: layer none; editor -; reads -
     r("measurementLog.export", r##"{"path": "/tmp/m.csv"}"##, "", &[]),
     r("measurementLog.export", r##"{}"##, "", &[]),
-    // notes.add: layer none; editor -; reads docState.notes
+    // note.add: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.add", r##"{"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}"##, "", &[("image", "notes", false)]),
-    // notes.set: layer none; editor -; reads docState.notes
+    r("note.add", r##"{"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}"##, "", &[("image", "notes", false)]),
+    // note.set: layer none; editor -; reads docState.notes
     // was held less: image not held
     r(
-        "notes.set",
+        "note.set",
         r##"{"index": 0, "text": "fixed", "x": 20}"##,
         "",
         &[("image", "~noteContents.0.popup,~noteContents.0.position,~noteContents.0.text", false)],
     ),
-    // notes.delete: layer none; editor -; reads docState.notes
+    // note.delete: layer none; editor -; reads docState.notes
     // was held less: image not held
-    r("notes.delete", r##"{"index": 1}"##, "", &[("image", "notes", false)]),
+    r("note.delete", r##"{"index": 1}"##, "", &[("image", "notes", false)]),
     // was held less: image not held
-    r("notes.delete", r##"{"all": true}"##, "", &[("image", "notes", false)]),
+    r("note.delete", r##"{"all": true}"##, "", &[("image", "notes", false)]),
     // file.import.notes: layer none; editor -; reads image.size
     r("file.import.notes", r##"{"path": "/tmp/other.psd"}"##, "", &[]),
     // history.goTo: layer none; editor -; reads -
@@ -4995,10 +4995,10 @@ const ROWS: &[Row] = &[
     r("history.deleteState", r##"{}"##, "", &[]),
     // history.newDocument: layer none; editor -; reads -
     r("history.newDocument", r##"{"name": "Start"}"##, "", &[]),
-    // document.presets.save: layer none; editor colors,library; reads -
-    r("document.presets.save", r##"{"name": "Web", "settings": {"width": 800, "height": 600}}"##, "", &[]),
-    // document.presets.delete: layer none; editor library; reads -
-    r("document.presets.delete", r##"{"name": "Web"}"##, "", &[]),
+    // file.presets.save: layer none; editor colors,library; reads -
+    r("file.presets.save", r##"{"name": "Web", "settings": {"width": 800, "height": 600}}"##, "", &[]),
+    // file.presets.delete: layer none; editor library; reads -
+    r("file.presets.delete", r##"{"name": "Web"}"##, "", &[]),
     // slice.new: layer none; editor prefs; reads docState.slices,image.size
     // was held less: image not held
     r("slice.new", r##"{"rect": [10, 10, 100, 50], "name": "hdr", "url": "https://x"}"##, "", &[("image", "docState.slices", false)]),
@@ -5034,8 +5034,8 @@ const ROWS: &[Row] = &[
     r("file.generate.imageAssets", r##"{"on": false}"##, "", &[]),
     // file.automate.contactSheetII: layer none; editor library,prefs; reads -
     r("file.automate.contactSheetII", r##"{"input": ["/tmp/a.png", "/tmp/b.jpg"], "columns": 2, "rows": 1, "caption": true}"##, "", &[]),
-    // file.automate.createDroplet: layer none; editor -; reads -
-    r("file.automate.createDroplet", r##"{"path": "/tmp/d", "steps": [["filter.blur.gaussianBlur", {"radius": 2}]]}"##, "", &[]),
+    // file.automate.addDroplet: layer none; editor -; reads -
+    r("file.automate.addDroplet", r##"{"path": "/tmp/d", "steps": [["filter.blur.gaussianBlur", {"radius": 2}]]}"##, "", &[]),
     // file.automate.runDroplet: layer none; editor -; reads -
     r("file.automate.runDroplet", r##"{"droplet": "/tmp/d.pcdroplet", "input": ["/tmp/a.png"]}"##, "", &[]),
     // file.scripts.statistics: layer none; editor -; reads -
@@ -5046,9 +5046,9 @@ const ROWS: &[Row] = &[
     r("file.scripts.scriptEventsManager", r##"{"add": {"event": "newDocument", "steps": [["layer.new.layer", {}]]}}"##, "", &[]),
     // file.package: layer none; editor -; reads docState.path,others
     r("file.package", r##"{"dir": "/tmp/pkg", "format": "kphoto"}"##, "", &[]),
-    // timeline.create: layer none; editor -; reads docState.timeline
+    // timeline.add: layer none; editor -; reads docState.timeline
     // was held less: image not held
-    r("timeline.create", r##"{"duration": 24, "fps": 24}"##, "", &[("image", "docState.timeline", false)]),
+    r("timeline.add", r##"{"duration": 24, "fps": 24}"##, "", &[("image", "docState.timeline", false)]),
     // timeline.delete: layer none; editor -; reads docState.timeline
     // was held less: image not held
     r("timeline.delete", r##"{}"##, "", &[("image", "docState.timeline", false)]),
@@ -5092,6 +5092,6 @@ const ROWS: &[Row] = &[
         "active,area",
         &[("$P", "-", false), ("image", "channels,depth,height,mode,width,~channelContents", false)],
     ),
-    // actions.play: layer none; editor library; reads -
-    r("actions.play", r##"{"action": "Action 1", "from": 0}"##, "", &[]),
+    // action.play: layer none; editor library; reads -
+    r("action.play", r##"{"action": "Action 1", "from": 0}"##, "", &[]),
 ];

@@ -135,7 +135,7 @@ try {
   await kit.getByTestId('photo-text-field').press('Enter')
   await until(async () => (await details()).layers.some((layer) => layer.name === '极光'))
   step('places Chinese text as a type layer', (await details()).layers.some((layer) => layer.name === '极光'))
-  const typeInfo = async (layer) => (await page.evaluate((id) => window.devHost.connection().ai.run([{ command: 'type.info', params: { layer: id } }], false), layer)).completed[0].result
+  const typeInfo = async (layer) => (await page.evaluate((id) => window.devHost.connection().ai.run([{ command: 'text.info', params: { layer: id } }], false), layer)).completed[0].result
   const textLayer = (await details()).layers.find((layer) => layer.name === '极光')
   step("new text takes the bar's anti-aliasing (Sharp) in its one step", (await typeInfo(textLayer.id)).antialias === 'Sharp', (await typeInfo(textLayer.id)).antialias)
 
@@ -275,7 +275,7 @@ try {
     const now = await details()
     return findLayer(now.layers, now.activeLayer)?.bounds ?? null
   }
-  const sampleCurrent = async (point) => (await runAgent('document.sampleColor', { ...point, sampleLayer: 'current', size: 'point' })).completed[0].result
+  const sampleCurrent = async (point) => (await runAgent('file.sampleColor', { ...point, sampleLayer: 'current', size: 'point' })).completed[0].result
   const selectLayer = async (id) => {
     await kit.getByTestId(`photo-layer-${id}`).click()
     await until(async () => (await details()).activeLayer === id)
@@ -288,7 +288,7 @@ try {
   }
   const deselectForPerson = async () => {
     await kit.getByTestId('photo-menu-Select').click()
-    await kit.getByTestId('photo-cmd-select.deselect').click()
+    await kit.getByTestId('photo-cmd-edit.deselectAll').click()
     await until(async () => !(await details()).hasSelection, 40)
   }
   const rectForPerson = async ({ x, y, width, height }) => {
@@ -468,7 +468,7 @@ try {
   await until(async () => (await details()).width === size.width)
   await kit.getByTestId('photo-option-ratio').selectOption('')
 
-  // Type: with a type layer selected, the bar shows and changes that layer (type.setStyle).
+  // Type: with a type layer selected, the bar shows and changes that layer (text.setStyle).
   await choose('Type')
   await selectLayer(textLayer.id)
   // The bar shows the layer's size once its style is read (a tenth of a point).
@@ -956,7 +956,7 @@ try {
   const sampled = await until(async () => (await readout('r')) !== '—' && (await readout('x')) !== '—', 40)
   const px = Number(await readout('x'))
   const py = Number(await readout('y'))
-  const truth = (await runAgent('document.sampleColor', { x: px + 0.5, y: py + 0.5 })).completed[0].result.slice(0, 3).map((value) => Math.round(value * 255))
+  const truth = (await runAgent('file.sampleColor', { x: px + 0.5, y: py + 0.5 })).completed[0].result.slice(0, 3).map((value) => Math.round(value * 255))
   const shownRgb = [Number(await readout('r')), Number(await readout('g')), Number(await readout('b'))]
   step('Info shows the pixel under the pointer, its CMYK, and the document size', sampled && JSON.stringify(shownRgb) === JSON.stringify(truth) && (await readout('black')).endsWith('%') && (await readout('doc')).includes(String(docSize.width)), `${px},${py}: ${shownRgb} vs ${truth}`)
   await tab('navigator').click()
@@ -1027,7 +1027,7 @@ try {
   // Default Type Styles (the styled layer's tracking 50 and Faux Bold), as upstream's does.
   await selectLayer(styledLayer.id)
   await kit.getByTestId('photo-menu-Type').click()
-  await kit.getByTestId('photo-cmd-type.saveDefaultTypeStyles').click()
+  await kit.getByTestId('photo-cmd-text.saveDefaultTypeStyles').click()
   await selectLayer(pixelLayer.id)
   await until(async () => (await kit.getByTestId('photo-character').getAttribute('data-target')) === 'tool', 40)
   const newTypeAt = at(0.6, 0.3)
@@ -1213,8 +1213,8 @@ try {
     const states = (await details()).history.slice(-3)
     step(`${name}: OK rasterizes, then paints, in two history states`, twoSteps && (await activeKind()) === 'Pixel' && (await count('photo-rasterize')) === 0, `${JSON.stringify(states)}, ${await activeKind()}`)
   }
-  await asksToRasterize('Brush on a type layer', 'Brush', 'Type', () => createForPerson('type.create', { x: 40, y: 60, text: 'Raster' }))
-  await asksToRasterize('Paint Bucket on a shape layer', 'PaintBucket', 'Shape', () => createForPerson('shape.create', { kind: 'rect', rect: [20, 20, 120, 90], fill: '#ff0000' }))
+  await asksToRasterize('Brush on a type layer', 'Brush', 'Type', () => createForPerson('text.add', { x: 40, y: 60, text: 'Raster' }))
+  await asksToRasterize('Paint Bucket on a shape layer', 'PaintBucket', 'Shape', () => createForPerson('shape.add', { kind: 'rect', rect: [20, 20, 120, 90], fill: '#ff0000' }))
 
   // UI configuration (Kit UI protocol section 9).
   const frame = page.frames().find((candidate) => candidate.url().includes('index.html'))

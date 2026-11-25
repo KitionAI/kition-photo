@@ -7,7 +7,7 @@
     "height": 96,
     "steps": [
       {
-        "command": "shape.create",
+        "command": "shape.add",
         "params": {
           "kind": "rect",
           "rect": [
@@ -53,7 +53,7 @@
         }
       },
       {
-        "command": "type.create",
+        "command": "text.add",
         "params": {
           "x": 24,
           "y": 50,
@@ -73,13 +73,13 @@
         }
       },
       {
-        "command": "type.edit",
+        "command": "text.edit",
         "params": {
           "text": "SALE 50%"
         }
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -95,7 +95,7 @@
         "equals": "poster"
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -104,13 +104,13 @@
         }
       },
       {
-        "command": "type.edit",
+        "command": "text.edit",
         "params": {
           "text": "SALE 60%"
         }
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -122,7 +122,7 @@
         "reopen": "kphoto"
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -417,7 +417,7 @@
         "equals": "selected-fill"
       },
       {
-        "command": "select.deselect",
+        "command": "edit.deselectAll",
         "params": {},
         "expect": {
           "document": {
@@ -498,7 +498,7 @@
         "params": {}
       },
       {
-        "command": "select.deselect",
+        "command": "edit.deselectAll",
         "params": {},
         "expect": {
           "activeLayer": {
@@ -743,7 +743,7 @@
     "height": 96,
     "steps": [
       {
-        "command": "type.create",
+        "command": "text.add",
         "params": {
           "x": 10,
           "y": 50,
@@ -754,7 +754,7 @@
         }
       },
       {
-        "command": "type.edit",
+        "command": "text.edit",
         "params": {
           "replace": {
             "start": 2,
@@ -764,14 +764,14 @@
         }
       },
       {
-        "command": "type.setStyle",
+        "command": "text.setStyle",
         "params": {
           "size": 26,
           "color": "#ff0000"
         }
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -784,7 +784,7 @@
         "checkpoint": "chinese"
       },
       {
-        "command": "type.setStyle",
+        "command": "text.setStyle",
         "params": {
           "font": "Droid Sans Fallback"
         },
@@ -792,7 +792,7 @@
         "pixelsOnly": true
       },
       {
-        "command": "type.setStyle",
+        "command": "text.setStyle",
         "params": {
           "font": "Inter"
         },
@@ -804,7 +804,7 @@
         "equals": "chinese"
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -814,13 +814,13 @@
         }
       },
       {
-        "command": "type.edit",
+        "command": "text.edit",
         "params": {
           "text": "明天见"
         }
       },
       {
-        "command": "type.info",
+        "command": "text.info",
         "params": {},
         "expect": {
           "result": {
@@ -861,7 +861,7 @@
         }
       },
       {
-        "command": "select.deselect",
+        "command": "edit.deselectAll",
         "params": {}
       },
       {

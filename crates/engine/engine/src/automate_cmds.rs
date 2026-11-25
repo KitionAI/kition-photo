@@ -286,7 +286,7 @@ pub fn document_saved(s: &mut Session, index: usize) -> Option<Value> {
 // ---------- Create Droplet ----------
 
 fn create_droplet(s: &mut Session, p: &Value) -> Result<Value> {
-    let cmd = "file.automate.createDroplet";
+    let cmd = "file.automate.addDroplet";
     let path = p.get("path").and_then(Value::as_str).filter(|v| !v.is_empty()).ok_or_else(|| bad(cmd, "missing \"path\" (where to save the droplet)"))?;
     let steps_v = p.get("steps").or_else(|| p.get("action")).ok_or_else(|| bad(cmd, "missing \"steps\" (the action to run)"))?;
     let steps = parse_steps(steps_v, cmd)?;
@@ -470,7 +470,7 @@ fn contact_sheet(s: &mut Session, p: &Value) -> Result<Value> {
                 let (w, h) = t.active().map(|d| (f64::from(d.doc.size.width), f64::from(d.doc.size.height))).unwrap_or((1.0, 1.0));
                 let fit = |w: f64, h: f64| (cell_w / w).min(box_h / h);
                 if rotate && fit(h, w) > fit(w, h) * 1.001 {
-                    t.execute("image.imageRotation.90cw", json!({}))?;
+                    t.execute("image.imageRotation.rotate90cw", json!({}))?;
                 }
                 let (w, h) = t.active().map(|d| (f64::from(d.doc.size.width), f64::from(d.doc.size.height))).unwrap_or((1.0, 1.0));
                 let k = fit(w, h);
@@ -507,7 +507,7 @@ fn contact_sheet(s: &mut Session, p: &Value) -> Result<Value> {
             if caption {
                 let size_pt = font_pt;
                 let baseline = y0 + box_h + caption_px * 0.72;
-                s.execute("type.create", json!({"x": x0 + cell_w / 2.0, "y": baseline, "text": label, "font": font, "size": size_pt, "align": "center", "color": [0.0, 0.0, 0.0], "name": label}))?;
+                s.execute("text.add", json!({"x": x0 + cell_w / 2.0, "y": baseline, "text": label, "font": font, "size": size_pt, "align": "center", "color": [0.0, 0.0, 0.0], "name": label}))?;
             }
         }
         if flatten {
@@ -535,7 +535,7 @@ pub fn specs() -> Vec<CommandSpec> {
             contact_sheet
         ),
         spec!(
-            "file.automate.createDroplet",
+            "file.automate.addDroplet",
             "Create Droplet…",
             &["File", "Automate"],
             r##"{"path":str (.pcdroplet),"steps":[[id,params]…] (the action),"name":str?,"output":folder?,"format":"same|png|jpg|…"?,"quality":0..12?,"shim":bool=true on Unix (writes <name>.command calling `kition-photo-cli droplet`)} → {path, shim}"##,

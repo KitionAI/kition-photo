@@ -1,6 +1,6 @@
 // The Info, Histogram, Navigator, Character, and Paragraph panels' arithmetic: upstream's CMYK,
 // ruler units, histogram statistics, zoom slider, navigator geometry, and the type style's way from
-// `type.info` to the panels and back to `type.setStyle`. Run with `pnpm --dir web test:parity`.
+// `text.info` to the panels and back to `text.setStyle`. Run with `pnpm --dir web test:parity`.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { cacheLevel, centredOn, retryDelay, cmykOf, formatLength, histogramStats, navigatorImage, navigatorViewBox, sliderOfZoom, zoomOfSlider } from './readouts.ts'
@@ -140,7 +140,7 @@ test("without a type layer the panels show the Type tool's own options and the f
   assert.deepEqual([...TOOL_FIELDS], ['font', 'fontStyle', 'size', 'align', 'color'])
 })
 
-test('an edit becomes type.setStyle keys (sizes divided by the scale), and sets only the tool options the Type tool keeps', () => {
+test('an edit becomes text.setStyle keys (sizes divided by the scale), and sets only the tool options the Type tool keeps', () => {
   const { style, options } = typeEdit({ size: 30, leading: 40, tracking: 25, kerning: '-50', align: 'justifyAll', fauxItalic: true, font: 'Inter' }, 2)
   assert.deepEqual(style, { font: 'Inter', tracking: 25, fauxItalic: true, size: 15, leading: 20, kerning: -50, align: 'justifyAll' })
   assert.deepEqual(options, { font: 'Inter', fontSize: 30 }, 'a justified alignment is no tool option')

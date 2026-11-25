@@ -932,7 +932,7 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             global_light
         ),
-        spec!("layer.layerStyle.createLayer", "Create Layer", ["Layer", "Layer Style"], r##"{"layer":id?}"##, has_effects, create_layer),
+        spec!("layer.layerStyle.convertToLayer", "Create Layer", ["Layer", "Layer Style"], r##"{"layer":id?}"##, has_effects, create_layer),
         spec!("layer.layerStyle.scaleEffects", "Scale Effects…", ["Layer", "Layer Style"], r##"{"scale":1..1000=100}"##, has_effects, scale_effects),
         spec!(
             "layer.layerStyle.transferEffects",

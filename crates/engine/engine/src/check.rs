@@ -374,9 +374,9 @@ mod tests {
     #[test]
     fn reports_empty_text_and_each_missing_font_once() {
         let mut session = image();
-        let made = session.execute("type.create", json!({ "x": 4, "y": 20, "text": "Hello", "size": 12, "color": "#000000" })).expect("type layer");
+        let made = session.execute("text.add", json!({ "x": 4, "y": 20, "text": "Hello", "size": 12, "color": "#000000" })).expect("type layer");
         let id = kition_photo_doc::LayerId(made["layer"].as_u64().expect("layer id"));
-        session.execute("type.create", json!({ "x": 4, "y": 40, "text": "World", "size": 12, "color": "#000000" })).expect("type layer");
+        session.execute("text.add", json!({ "x": 4, "y": 40, "text": "World", "size": 12, "color": "#000000" })).expect("type layer");
         let text = |session: &mut Session| match &mut doc(session).layer_mut(id).expect("layer").content {
             LayerContent::Text(text) => text.font_family.clone(),
             _ => panic!("type layer"),

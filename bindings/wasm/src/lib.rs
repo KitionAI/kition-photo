@@ -49,7 +49,7 @@ pub use context::EDITOR_STATE;
 static COMMAND_GATE: std::sync::OnceLock<fn(&str, &Value) -> kition_photo_engine::Result<()>> = std::sync::OnceLock::new();
 
 /// Gates every command every document runs from now on, including the ones a command runs on its
-/// own behalf and `actions.play` steps ([`Session::authorize`]): a headless kit (`kition-photo`) sets
+/// own behalf and `action.play` steps ([`Session::authorize`]): a headless kit (`kition-photo`) sets
 /// the automation engine's check for commands that reach the file system on their own, before it
 /// opens a document. Documents gated this way leave the commands the gate always refuses (with no
 /// parameters) out of [`KitDocument::commands`]. The page's editor sets none.
@@ -528,7 +528,7 @@ impl KitDocument for PhotoDocument {
                 .and_then(|v| v.values.get("channelContents"))
                 .and_then(|now| resource_rests::channel_covered(params.get("channel").unwrap_or(&Value::Null), true, objects, now)));
         }
-        if matches!(command, "notes.set" | "layerComp.rename" | "path.rename" | "view.moveGuide") {
+        if matches!(command, "note.set" | "layerComp.rename" | "path.rename" | "view.moveGuide") {
             let state = self.state()?;
             let Some(kdm) = state.kdm() else { return Ok(None) };
             let id = kition_kit::kdm::ObjectId::from_string(place::IMAGE.to_owned());
@@ -991,17 +991,17 @@ mod tests {
             "file.new",
             "view.newGuide",
             "select.saveSelection",
-            "actions.play",
+            "action.play",
             "timeline.nextFrame",
         ] {
             assert!(mutates(id), "{id} changes the document");
         }
         for id in [
-            "select.all",
+            "edit.selectAll",
             "select.rect",
-            "select.deselect",
+            "edit.deselectAll",
             "layer.selectAbove",
-            "tools.swapColors",
+            "tool.swapColors",
             "channel.target",
             "edit.copy",
             "file.close",

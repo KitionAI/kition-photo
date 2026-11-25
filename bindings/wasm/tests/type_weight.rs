@@ -21,7 +21,7 @@ fn weight_reports(image: &PhotoDocument) -> Vec<String> {
 #[test]
 fn a_weight_no_font_has_is_reported_until_one_is_added() {
     let mut image = PhotoDocument::create("label.psd", 400, 120).unwrap();
-    let made = run(&mut image, "type.create", json!({ "x": 10, "y": 80, "text": "Budget", "font": "Inter", "size": 40, "weight": 700 }));
+    let made = run(&mut image, "text.add", json!({ "x": 10, "y": 80, "text": "Budget", "font": "Inter", "size": 40, "weight": 700 }));
     let layers = image.inspect().unwrap()["layers"].clone();
     let layer = layers.as_array().unwrap().iter().find(|l| l["id"] == made["layer"]).cloned().unwrap();
     assert_eq!(layer["text"]["weight"], json!(700), "{layer}");

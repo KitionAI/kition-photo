@@ -893,7 +893,7 @@ mod tests {
         let all = || {
             let mut s = Session::new();
             s.execute("file.new", json!({"width": 40, "height": 30})).unwrap();
-            s.execute("select.all", json!({})).unwrap();
+            s.execute("edit.selectAll", json!({})).unwrap();
             s
         };
         // Off (Photoshop's default): the selection continues past the canvas, so the edges stay.
@@ -975,11 +975,11 @@ mod tests {
             let err = s.execute("select.rect", json!({"x": x, "y": 0, "width": 10, "height": 10})).unwrap_err();
             assert!(err.to_string().contains("32-bit"), "{err}");
         }
-        let err = s.execute("document.pixel", json!({"x": 4_294_967_346_i64, "y": 0})).unwrap_err();
+        let err = s.execute("file.pixel", json!({"x": 4_294_967_346_i64, "y": 0})).unwrap_err();
         assert!(err.to_string().contains("32 bits"), "{err}");
         // In-range coordinates, including negative and past-canvas ones, are unaffected.
         s.execute("select.rect", json!({"x": -100, "y": -100, "width": 500, "height": 500})).unwrap();
-        s.execute("document.pixel", json!({"x": 0, "y": 0})).unwrap();
+        s.execute("file.pixel", json!({"x": 0, "y": 0})).unwrap();
     }
 
     #[test]

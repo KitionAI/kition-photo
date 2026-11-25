@@ -34,5 +34,5 @@ fn keys_the_session_and_commands_read_beyond_their_notation_are_taken() {
     let layer = image.execute("layer.new.layer", json!({ "name": "A" })).unwrap()["layer"].clone();
     image.execute("layer.layerStyle.stroke", json!({ "layer": layer, "size": 2 })).unwrap();
     // A new type layer takes the Type tool's options, which are character and paragraph keys.
-    image.execute("type.create", json!({ "x": 4, "y": 20, "text": "A", "font": "Arial", "fontStyle": "Bold", "size": 12, "align": "left" })).unwrap();
+    image.execute("text.add", json!({ "x": 4, "y": 20, "text": "A", "font": "Arial", "fontStyle": "Bold", "size": 12, "align": "left" })).unwrap();
 }

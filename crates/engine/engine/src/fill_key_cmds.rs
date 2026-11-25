@@ -95,7 +95,7 @@ mod tests {
     fn session_at(depth: u32) -> Session {
         let mut s = Session::new();
         s.execute("file.new", json!({"width": 8, "height": 6, "background": "transparent", "depth": depth})).unwrap();
-        s.execute("tools.setColors", json!({"foreground": "#ff0000", "background": "#0000ff"})).unwrap();
+        s.execute("tool.setColors", json!({"foreground": "#ff0000", "background": "#0000ff"})).unwrap();
         s
     }
 
@@ -125,7 +125,7 @@ mod tests {
             let mut s = session_at(depth);
             s.execute("select.rect", json!({"x": 0, "y": 0, "width": 4, "height": 6})).unwrap();
             s.execute("edit.fillForeground", json!({})).unwrap();
-            s.execute("select.deselect", json!({})).unwrap();
+            s.execute("edit.deselectAll", json!({})).unwrap();
             s.execute("edit.fillBackgroundPreserve", json!({})).unwrap();
             let [r, g, b, a] = px(&s, 1, 1);
             assert!(r.abs() < 1e-3 && g.abs() < 1e-3 && (b - 1.0).abs() < 1e-3 && (a - 1.0).abs() < 1e-3, "{depth}-bit: {:?}", px(&s, 1, 1));
@@ -148,7 +148,7 @@ mod tests {
         let mut s = session();
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 2, "height": 2})).unwrap();
         s.execute("edit.fillBackground", json!({})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         s.execute("edit.fillForegroundPreserve", json!({})).unwrap();
         assert_eq!(px(&s, 1, 1), [1.0, 0.0, 0.0, 1.0]);
         assert_eq!(px(&s, 4, 4)[3], 0.0, "transparent pixels stay transparent");

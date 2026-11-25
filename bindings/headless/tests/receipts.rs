@@ -53,7 +53,7 @@ async fn receipt_bytes() {
             let moved = receipt(&f, json!({ "command": "layer.translate", "params": { "layer": l0, "dx": 300, "dy": 0 } })).await;
             rows.push(("move layer (its pixels 300 px right)", moved));
         }
-        let reorder = receipt(&f, json!({ "command": "layer.arrange.bringToFront", "params": { "layer": l0 } })).await;
+        let reorder = receipt(&f, json!({ "command": "arrange.bringToFront", "params": { "layer": l0 } })).await;
         rows.push(("reorder: bottom to top", reorder));
         let width = details["width"].as_i64().unwrap();
         let resize =

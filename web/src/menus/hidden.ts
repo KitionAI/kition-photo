@@ -119,7 +119,7 @@ const NOT_BUILT: Readonly<Record<string, string>> = {
   'layer.objectLayers.convertToLinked': 'Links the contents to a local file, which a browser editor cannot.',
   'layer.videoLayers.replaceFootage': 'Video layers need the Timeline, cut for the launch.',
   'layer.videoLayers.interpretFootage': 'Video layers need the Timeline, cut for the launch.',
-  'type.resolveMissingFonts': 'Needs a font-mapping dialog, not built yet.',
+  'text.resolveMissingFonts': 'Needs a font-mapping dialog, not built yet.',
   'layer.layerContentOptions': "Needs the fill layer's own dialog, not built yet; Properties edits a fill layer meanwhile.",
   'image.trap': 'Needs a trap-width dialog, not built yet.',
   'layer.new.artboardFromGroup': 'Needs the artboard dialog, not built yet.',

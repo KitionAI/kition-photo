@@ -124,7 +124,7 @@ mod tests {
         assert!(expanded(&s, inner));
         // The inspect JSON reports it.
         s.execute(ID, json!({"layer": outer, "expanded": false})).unwrap();
-        assert_eq!(s.execute("document.inspect", json!({})).unwrap()["layers"][0]["expanded"], false);
+        assert_eq!(s.execute("file.inspect", json!({})).unwrap()["layers"][0]["expanded"], false);
     }
 
     #[test]

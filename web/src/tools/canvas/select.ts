@@ -77,7 +77,7 @@ export function marqueeTool(id: 'RectMarquee' | 'EllipseMarquee', ellipse: boole
   const done = (area: { x: number; y: number; width: number; height: number }, start: KitPointer) => {
     const mode = selectionModeFor(id, env.options.selectionMode, start)
     if (area.width < 1 || area.height < 1) {
-      if (mode === 'replace' || mode === 'intersect') void env.run('select.deselect', {}, NO_REPAINT)
+      if (mode === 'replace' || mode === 'intersect') void env.run('edit.deselectAll', {}, NO_REPAINT)
       else return false
     } else void env.run('select.rect', { ...area, ellipse, mode, ...toolParams(id, env.options) }, NO_REPAINT)
   }

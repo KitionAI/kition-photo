@@ -38,7 +38,7 @@ export function pendingFontChoices(doc: object | null) {
  * The one way the editor reads and edits type style (upstream's `type_tool::target`, `apply`,
  * and `type_options`), for the Type options bar, the Properties panel's type sections, and the
  * Character and Paragraph panels. With a type layer active, its first run and paragraph show, and
- * an edit restyles its whole text (`type.setStyle`; every change of a field's drag shares one
+ * an edit restyles its whole text (`text.setStyle`; every change of a field's drag shares one
  * history step); the font, its style, the size, and the alignment become the Type tool's too.
  * Without one, the tool's own options (font, style, size, alignment) and the foreground colour
  * show and change, for new type; every other field is disabled (`editable`), new type taking it
@@ -64,7 +64,7 @@ export function useTypeStyle(target: TypeTarget) {
   /** A command on the layer: in the edit session's step (on its selected range), else on its own. */
   const runOnLayer = (command: string, params: Record<string, unknown>, coalesce?: string) => {
     if (!layer) return
-    if (edited) void edited.run(command, { ...params, ...(edited.range && command === 'type.setStyle' ? { range: edited.range } : {}) })
+    if (edited) void edited.run(command, { ...params, ...(edited.range && command === 'text.setStyle' ? { range: edited.range } : {}) })
     else void run(command, { layer: layer.layer, ...params, ...(coalesce ? { coalesce } : {}) })
   }
   const values: TypeValues = layer ? { ...layer, size: shownSize(layer) } : typeValuesOf(target.options, target.foreground)
@@ -76,7 +76,7 @@ export function useTypeStyle(target: TypeTarget) {
   const apply = (edit: TypeEdit, field: string, final = true) => {
     const { style, options } = typeEdit(edit, layer?.scale ?? 1)
     if (Object.keys(options).length) target.setOptions(options)
-    if (layer && Object.keys(style).length) runOnLayer('type.setStyle', style, gestures.key(field, final))
+    if (layer && Object.keys(style).length) runOnLayer('text.setStyle', style, gestures.key(field, final))
   }
 
   const setFont = async (font: string) => {
@@ -101,7 +101,7 @@ export function useTypeStyle(target: TypeTarget) {
 
   /** The text colour: the layer's, or the foreground for new type (upstream's Type bar swatch). */
   const setColor = (color: string, final: boolean) => {
-    if (layer) runOnLayer('type.setStyle', { color }, gestures.key('color', final))
+    if (layer) runOnLayer('text.setStyle', { color }, gestures.key('color', final))
     else target.setForeground(color)
   }
 

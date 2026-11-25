@@ -32,9 +32,9 @@ fn picture() -> (Vec<u8>, u64) {
     doc.execute("layer.new.layer", json!({ "name": "Paint" })).unwrap();
     doc.execute("select.rect", json!({ "x": 20, "y": 30, "width": 120, "height": 80 })).unwrap();
     doc.execute("edit.fill", json!({ "color": "#c04020" })).unwrap();
-    doc.execute("select.deselect", json!({})).unwrap();
-    doc.execute("notes.add", json!({ "x": 4, "y": 4, "text": "a note", "open": false })).unwrap();
-    doc.execute("timeline.create", json!({ "duration": 12 })).unwrap();
+    doc.execute("edit.deselectAll", json!({})).unwrap();
+    doc.execute("note.add", json!({ "x": 4, "y": 4, "text": "a note", "open": false })).unwrap();
+    doc.execute("timeline.add", json!({ "duration": 12 })).unwrap();
     doc.execute("layer.setExpanded", json!({ "layer": group, "expanded": false })).unwrap();
     doc.execute("select.rect", json!({ "x": 1, "y": 1, "width": 9, "height": 9 })).unwrap();
     (host_save(&mut doc), group)
@@ -56,7 +56,7 @@ fn restore(doc: &mut PhotoDocument, view: &[u8]) {
 fn look_around(doc: &mut PhotoDocument, group: u64) {
     doc.execute("select.rect", json!({ "x": 40, "y": 20, "width": 200, "height": 150, "ellipse": true })).unwrap();
     doc.execute("layer.setExpanded", json!({ "layer": group, "expanded": true })).unwrap();
-    doc.execute("notes.set", json!({ "index": 0, "open": true })).unwrap();
+    doc.execute("note.set", json!({ "index": 0, "open": true })).unwrap();
     doc.execute("timeline.setFrame", json!({ "frame": 5 })).unwrap();
 }
 

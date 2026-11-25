@@ -124,7 +124,7 @@ mod tests {
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
         let a = s.active().unwrap().active_layer.unwrap();
         s.execute("layer.new.layer", json!({"name": "B"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         // Empty B is skipped; A wins inside its square, the Background elsewhere.
         assert_eq!(s.execute("layer.pickAt", json!({"x": 5, "y": 5})).unwrap()["layer"], a.0);
         assert_eq!(s.active().unwrap().active_layer, Some(a));
@@ -147,7 +147,7 @@ mod tests {
             s.execute("edit.fill", json!({"color": "#00ff00"})).unwrap();
             ids.push(s.active().unwrap().active_layer.unwrap());
         }
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         (s, ids[0], ids[1])
     }
 
@@ -199,7 +199,7 @@ mod tests {
         s.execute("layer.new.layer", json!({"name": "A"})).unwrap();
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let a = s.active().unwrap().active_layer.unwrap();
         let board = s.execute("layer.new.artboardFromLayers", json!({})).unwrap()["layer"].as_u64().unwrap();
         s.execute("layer.artboard.set", json!({"width": 30, "height": 30})).unwrap();
@@ -231,7 +231,7 @@ mod tests {
         s.execute("layer.new.layer", json!({"name": "Top"})).unwrap();
         s.execute("select.rect", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
-        s.execute("select.deselect", json!({})).unwrap();
+        s.execute("edit.deselectAll", json!({})).unwrap();
         let top = s.active().unwrap().active_layer.unwrap();
         let lock = |s: &mut Session, id: u64, locks: Value| s.execute("layer.setProps", json!({"layer": id, "locks": locks})).unwrap();
         let pick = |s: &mut Session| s.execute("layer.pickAt", json!({"x": 5, "y": 5})).unwrap()["layer"].clone();

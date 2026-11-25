@@ -7,10 +7,10 @@ use serde_json::Value;
 
 /// Read commands that answer nothing a model reads.
 pub const NO_OUTPUT: &[(&str, &str)] = &[
-    ("select.all", "changes the selection, colors or session state and answers nothing to read"),
-    ("tools.setColors", "changes the selection, colors or session state and answers nothing to read"),
-    ("tools.swapColors", "changes the selection, colors or session state and answers nothing to read"),
-    ("tools.defaultColors", "changes the selection, colors or session state and answers nothing to read"),
+    ("edit.selectAll", "changes the selection, colors or session state and answers nothing to read"),
+    ("tool.setColors", "changes the selection, colors or session state and answers nothing to read"),
+    ("tool.swapColors", "changes the selection, colors or session state and answers nothing to read"),
+    ("tool.defaultColors", "changes the selection, colors or session state and answers nothing to read"),
     ("select.deselectLayers", "changes the selection, colors or session state and answers nothing to read"),
 ];
 
@@ -46,9 +46,9 @@ fn describe(id: &str) -> &'static str {
         "edit.fill" => {
             "Fills the selection (or the whole active layer) with the foreground, background, a color, a pattern or smart fill, with blend mode and opacity."
         }
-        "edit.clear" => "Clears the selected pixels of the active layer to transparency (or the background color on a background layer).",
-        "select.all" => "Selects the whole canvas.",
-        "select.deselect" => "Removes the selection; needs one.",
+        "edit.delete" => "Clears the selected pixels of the active layer to transparency (or the background color on a background layer).",
+        "edit.selectAll" => "Selects the whole canvas.",
+        "edit.deselectAll" => "Removes the selection; needs one.",
         "select.inverse" => "Inverts the selection; needs one.",
         "select.rect" => {
             "Makes a rectangular selection at `x`, `y`, `width`, `height` in pixels, replacing, adding to, subtracting from or intersecting the current one."
@@ -63,14 +63,14 @@ fn describe(id: &str) -> &'static str {
         "layer.duplicate" => "Duplicates `layer` (else the active layer) above itself, named `name` (default \"<name> copy\"), and answers the copy's id.",
         "layer.delete" => "Deletes `layer`, or every selected layer without it.",
         "layer.select" => {
-            "Selects layer `layer` (id from document.inspect), replacing the layer selection or adding, toggling or extending a range; commands without `layer` act on it."
+            "Selects layer `layer` (id from file.inspect), replacing the layer selection or adding, toggling or extending a range; commands without `layer` act on it."
         }
         "layer.setProps" => "Sets a layer's name, visibility, opacity (0..1), fill opacity, blend mode, lock and color label.",
-        "layer.arrange.bringForward" => "Bring Forward: moves `layer` (else the active layer) in the layer stack.",
-        "layer.arrange.sendBackward" => "Send Backward: moves `layer` (else the active layer) in the layer stack.",
-        "layer.arrange.bringToFront" => "Bring to Front: moves `layer` (else the active layer) in the layer stack.",
-        "layer.arrange.sendToBack" => "Send to Back: moves `layer` (else the active layer) in the layer stack.",
-        "layer.createClippingMask" => {
+        "arrange.bringForward" => "Bring Forward: moves `layer` (else the active layer) in the layer stack.",
+        "arrange.sendBackward" => "Send Backward: moves `layer` (else the active layer) in the layer stack.",
+        "arrange.bringToFront" => "Bring to Front: moves `layer` (else the active layer) in the layer stack.",
+        "arrange.sendToBack" => "Send to Back: moves `layer` (else the active layer) in the layer stack.",
+        "layer.addClippingMask" => {
             "Clips `layer` (else every selected layer but the lowest) to the layer below, so it shows only inside that layer's pixels; undo with layer.releaseClippingMask."
         }
         "layer.releaseClippingMask" => "Unclips `layer` (else every selected layer) from the layer below, so it shows everywhere again.",
@@ -91,26 +91,26 @@ fn describe(id: &str) -> &'static str {
             "Mirrors the whole canvas left to right, every layer included. To flip one layer use edit.transform.flipHorizontal."
         }
         "image.imageRotation.flipCanvasVertical" => "Mirrors the whole canvas top to bottom, every layer included.",
-        "image.imageRotation.180" => "Rotates the whole canvas and every layer by 180°.",
-        "image.imageRotation.90cw" => "Rotates the whole canvas and every layer 90° clockwise, swapping width and height.",
-        "image.imageRotation.90ccw" => "Rotates the whole canvas and every layer 90° counter-clockwise, swapping width and height.",
+        "image.imageRotation.rotate180" => "Rotates the whole canvas and every layer by 180°.",
+        "image.imageRotation.rotate90cw" => "Rotates the whole canvas and every layer 90° clockwise, swapping width and height.",
+        "image.imageRotation.rotate90ccw" => "Rotates the whole canvas and every layer 90° counter-clockwise, swapping width and height.",
         "image.adjustments.desaturate" => {
             "Removes all color from the active pixel layer (inside the selection), keeping lightness; destructive and without control, unlike black & white."
         }
         "paint.stroke" => {
             "Paints a brush stroke through `points` [[x, y, pressure?…]] on the active layer with the current brush, or a preset, size, color and opacity given here."
         }
-        "tools.setColors" => "Sets the foreground and/or background colors (#rrggbb) that fills and brushes use.",
-        "tools.swapColors" => "Swaps the foreground and background colors.",
-        "tools.defaultColors" => "Resets the foreground to black and the background to white.",
+        "tool.setColors" => "Sets the foreground and/or background colors (#rrggbb) that fills and brushes use.",
+        "tool.swapColors" => "Swaps the foreground and background colors.",
+        "tool.defaultColors" => "Resets the foreground to black and the background to white.",
         "session.inspect" => "Answers the open documents (index, name, size, dirty), the active one and the foreground and background colors.",
-        "document.inspect" => {
+        "file.inspect" => {
             "Answers the active document (or `document`): size, mode, the layer tree with ids, kinds, names and properties, channels, paths, selection and history. Start here."
         }
-        "document.activate" => "Makes document `document` (index from 0) the active one.",
-        "document.move" => "Moves document `document` to tab position `to`.",
+        "file.activate" => "Makes document `document` (index from 0) the active one.",
+        "file.move" => "Moves document `document` to tab position `to`.",
         "command.list" => "Lists the kit's commands with labels, menu paths, parameters and whether they are enabled.",
-        "document.pixel" => "Answers the composite color [r, g, b, a] (0..1) at pixel `x`, `y`.",
+        "file.pixel" => "Answers the composite color [r, g, b, a] (0..1) at pixel `x`, `y`.",
         "layer.newAdjustmentLayer.brightnessContrast" => {
             "Adds an editable Brightness/Contrast adjustment layer above the active layer, which shifts all tones lighter or darker (`brightness` −150–150) and spreads or compresses them (`contrast` −50–100); quick but coarse, Levels or Curves give control per tone; masked by `path` or the selection; edit with layer.setAdjustment; answers its id."
         }
@@ -571,7 +571,7 @@ fn describe(id: &str) -> &'static str {
         "filter.gallery.texturizer" => {
             "Filter Gallery effect (active pixel layer, inside the selection if any): applies a canvas, brick, burlap or sandstone `texture`; `scaling`, `relief`, `light`."
         }
-        "gradient.fill.create" => {
+        "gradient.fill.add" => {
             "Adds a gradient fill layer from `from` to `to` px in `style` (linear, radial, angle, reflected, diamond), using a preset `gradient` or `stops`; stays editable."
         }
         "gradient.fill.set" => "Changes gradient fill layer `layer`: endpoints, `style`, `angle`, `scale`, `offset`, `reverse`, `dither`, or its stops.",
@@ -581,27 +581,27 @@ fn describe(id: &str) -> &'static str {
         "gradient.fill.get" => {
             "Answers the settings of gradient fill layer `layer`: style, angle, scale, offset, endpoints, color stops, transparency stops and midpoints."
         }
-        "layer.fill.solidColor.set" => {
+        "layer.fill.setSolidColor" => {
             "Changes the color of a solid-color fill layer `layer` (else the active one) to `color` (hex, rgba array or color object)."
         }
-        "type.create" => {
-            "Adds a type layer with `text` at `x`, `y` (point text), or paragraph text in `box` [x, y, width, height] (any other `box` is refused), with font, size, color, alignment and `hyphenate` (breaks long words at line ends with a hyphen); answers its id and its bounds [x, y, width, height], as document.inspect gives them."
+        "text.add" => {
+            "Adds a type layer with `text` at `x`, `y` (point text), or paragraph text in `box` [x, y, width, height] (any other `box` is refused), with font, size, color, alignment and `hyphenate` (breaks long words at line ends with a hyphen); answers its id and its bounds [x, y, width, height], as file.inspect gives them."
         }
-        "type.edit" => "Replaces or edits the text of type layer `layer` (else the active one), keeping its styles.",
-        "type.setStyle" => {
+        "text.edit" => "Replaces or edits the text of type layer `layer` (else the active one), keeping its styles.",
+        "text.setStyle" => {
             "Sets character and paragraph styles (font, size, color, tracking, leading, alignment, …) on a type layer, for a character range or all of it."
         }
-        "type.rasterize" => "Converts type layer `layer` (else the active one) into pixels.",
-        "type.info" => {
+        "text.rasterize" => "Converts type layer `layer` (else the active one) into pixels.",
+        "text.info" => {
             "Answers type layer `layer`'s text, its style runs, one entry per paragraph with its paragraph style, its laid-out lines and its frame, and its bounds [x, y, width, height] in document pixels."
         }
-        "type.fonts" => "Lists the font families (or one family's faces) type commands can use.",
+        "text.fonts" => "Lists the font families (or one family's faces) type commands can use.",
         "edit.transform" => "Scales, rotates, skews or moves `layer` (else the active layer) or the selection to a target frame or by a matrix.",
         "select.float" => {
             "Lifts the selected pixels into a floating piece above the layer, optionally moved by `dx`,`dy` px or copied; answers {layer, offset}. Drop it with select.drop."
         }
         "select.drop" => "Drops the floating piece back into its layer and moves the selection with it, as one history step; answers {dropped, offset}.",
-        "shape.create" => "Adds a shape layer (rectangle, rounded rectangle, ellipse, polygon, star, line or path) with fill and stroke; answers its id.",
+        "shape.add" => "Adds a shape layer (rectangle, rounded rectangle, ellipse, polygon, star, line or path) with fill and stroke; answers its id.",
         "shape.edit" => "Changes shape layer `layer`'s geometry, fill or stroke.",
         "shape.info" => "Answers shape layer `layer`'s kind, path, fill, stroke and bounds.",
         "shape.rasterize" => "Converts shape layer `layer` (else the active one) into pixels.",
@@ -715,7 +715,7 @@ fn describe(id: &str) -> &'static str {
         "brush.presets.setCurrent" => "Makes brush preset `name` the current brush for painting tools.",
         "brush.defineFromSelection" => "Creates a brush tip preset named `name` from the selected pixels (grayscale; dark is opaque).",
         "brush.get" => "Answers the current brush settings.",
-        "tools.setBrush" => "Sets the current brush from a preset and/or brush settings fields, and answers the brush.",
+        "tool.setBrush" => "Sets the current brush from a preset and/or brush settings fields, and answers the brush.",
         "brush.presets.rename" => "Renames brush preset `name` to `newName`; answers {name}.",
         "brush.presets.move" => "Moves brush preset `name` to another `group` or nested `folder`, before a given preset or at `index`.",
         "brush.presets.moveGroup" => "Reorders brush preset group `group` (or a nested `folder`) among its siblings.",
@@ -725,18 +725,18 @@ fn describe(id: &str) -> &'static str {
         "paint.backgroundEraser" => "Painting: Background Eraser on the active layer along `points` with the current brush.",
         "brush.presets.importAbr" => "The Import Brushes command (changes the document); takes `path`, `data`, `group`, `replace`, `select`.",
         "gradient.presets.importGrd" => "The Import Gradients command (changes the document); takes `path`, `data`, `group`, `replace`.",
-        "swatches.list" => "Lists the swatch groups and their colors.",
-        "swatches.add" => "Adds a swatch of `color` (hex or a color model with values; default the foreground) named `name` to a group.",
-        "swatches.delete" => "Deletes swatch `swatch` (name, list of names, or `index`); answers {deleted}.",
-        "swatches.rename" => "Renames swatch `swatch` to `name`.",
-        "swatches.move" => "Moves swatch `swatch` to group `to` at `position`.",
-        "swatches.newGroup" => "Creates a swatch group named `name`, optionally moving `swatches` into it.",
-        "swatches.renameGroup" => "Renames swatch group `group` to `name`.",
-        "swatches.deleteGroup" => "Deletes swatch group `group`, with its swatches unless `keepSwatches` moves them up.",
-        "swatches.use" => "Sets the foreground (or background, `target`) color to swatch `swatch`; answers {swatch, target, hex}.",
-        "swatches.reset" => "Replaces the swatch library with the defaults, or adds them with `append`.",
-        "swatches.import" => "The Import Swatches command (changes the document); takes `path`, `data`, `format`, `mode`, `group`.",
-        "swatches.export" => "The Export Swatches command (changes the document); takes `format`, `path`, `group`, `swatches`.",
+        "swatch.list" => "Lists the swatch groups and their colors.",
+        "swatch.add" => "Adds a swatch of `color` (hex or a color model with values; default the foreground) named `name` to a group.",
+        "swatch.delete" => "Deletes swatch `swatch` (name, list of names, or `index`); answers {deleted}.",
+        "swatch.rename" => "Renames swatch `swatch` to `name`.",
+        "swatch.move" => "Moves swatch `swatch` to group `to` at `position`.",
+        "swatch.newGroup" => "Creates a swatch group named `name`, optionally moving `swatches` into it.",
+        "swatch.renameGroup" => "Renames swatch group `group` to `name`.",
+        "swatch.deleteGroup" => "Deletes swatch group `group`, with its swatches unless `keepSwatches` moves them up.",
+        "swatch.use" => "Sets the foreground (or background, `target`) color to swatch `swatch`; answers {swatch, target, hex}.",
+        "swatch.reset" => "Replaces the swatch library with the defaults, or adds them with `append`.",
+        "swatch.import" => "The Import Swatches command (changes the document); takes `path`, `data`, `format`, `mode`, `group`.",
+        "swatch.export" => "The Export Swatches command (changes the document); takes `format`, `path`, `group`, `swatches`.",
         "paint.cloneStamp" => "Painting: Clone Stamp on the active layer along `points` with the current brush.",
         "paint.patternStamp" => "Painting: Pattern Stamp on the active layer along `points` with the current brush.",
         "paint.healingBrush" => "Painting: Healing Brush on the active layer along `points` with the current brush.",
@@ -800,7 +800,7 @@ fn describe(id: &str) -> &'static str {
         }
         "edit.transform.rotate180" => "Rotates the active layer (or the selected pixels) 180° within the canvas.",
         "edit.transform.rotate90Cw" => {
-            "Rotates the active layer (or the selected pixels) 90° clockwise within the canvas; to rotate the whole canvas use image.imageRotation.90cw."
+            "Rotates the active layer (or the selected pixels) 90° clockwise within the canvas; to rotate the whole canvas use image.imageRotation.rotate90cw."
         }
         "edit.transform.rotate90Ccw" => "Rotates the active layer (or the selected pixels) 90° counter-clockwise within the canvas.",
         "edit.transform.flipHorizontal" => {
@@ -878,94 +878,94 @@ fn describe(id: &str) -> &'static str {
         }
         "view.newGuidesFromShape" => "Adds guides along the bounds of shape `layer` (else the active layer).",
         "view.clearCanvasGuides" => "Deletes the guides on the canvas outside artboards.",
-        "type.antiAlias.none" => "Renders type layer `layer` with no anti-aliasing (jagged edges); affects how glyph edges look, not the text.",
-        "type.antiAlias.sharp" => "Renders type layer `layer` with sharp anti-aliasing; affects how glyph edges look, not the text.",
-        "type.antiAlias.crisp" => "Renders type layer `layer` with crisp anti-aliasing; affects how glyph edges look, not the text.",
-        "type.antiAlias.strong" => "Renders type layer `layer` with strong (heavier) anti-aliasing; affects how glyph edges look, not the text.",
-        "type.antiAlias.smooth" => "Renders type layer `layer` with smooth anti-aliasing; affects how glyph edges look, not the text.",
-        "type.antiAlias.windowsLcd" => "Renders type layer `layer` with Windows LCD-style anti-aliasing; affects how glyph edges look, not the text.",
-        "type.antiAlias.windows" => "Renders type layer `layer` with Windows-style anti-aliasing; affects how glyph edges look, not the text.",
-        "type.orientation.horizontal" => "Sets type layer `layer` to horizontal text.",
-        "type.orientation.vertical" => "Sets type layer `layer` to vertical text (top to bottom, columns right to left).",
-        "type.openType.standardLigatures" => {
+        "text.antiAlias.none" => "Renders type layer `layer` with no anti-aliasing (jagged edges); affects how glyph edges look, not the text.",
+        "text.antiAlias.sharp" => "Renders type layer `layer` with sharp anti-aliasing; affects how glyph edges look, not the text.",
+        "text.antiAlias.crisp" => "Renders type layer `layer` with crisp anti-aliasing; affects how glyph edges look, not the text.",
+        "text.antiAlias.strong" => "Renders type layer `layer` with strong (heavier) anti-aliasing; affects how glyph edges look, not the text.",
+        "text.antiAlias.smooth" => "Renders type layer `layer` with smooth anti-aliasing; affects how glyph edges look, not the text.",
+        "text.antiAlias.windowsLcd" => "Renders type layer `layer` with Windows LCD-style anti-aliasing; affects how glyph edges look, not the text.",
+        "text.antiAlias.windows" => "Renders type layer `layer` with Windows-style anti-aliasing; affects how glyph edges look, not the text.",
+        "text.orientation.horizontal" => "Sets type layer `layer` to horizontal text.",
+        "text.orientation.vertical" => "Sets type layer `layer` to vertical text (top to bottom, columns right to left).",
+        "text.openType.standardLigatures" => {
             "Turns OpenType standard ligatures (fi, fl) on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.contextualAlternates" => {
+        "text.openType.contextualAlternates" => {
             "Turns OpenType contextual alternates on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.discretionaryLigatures" => {
+        "text.openType.discretionaryLigatures" => {
             "Turns OpenType discretionary ligatures on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.swash" => {
+        "text.openType.swash" => {
             "Turns OpenType swash glyphs on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.oldstyle" => {
+        "text.openType.oldstyle" => {
             "Turns OpenType oldstyle figures on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.stylisticAlternates" => {
+        "text.openType.stylisticAlternates" => {
             "Turns OpenType stylistic alternates on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.titlingAlternates" => {
+        "text.openType.titlingAlternates" => {
             "Turns OpenType titling alternates on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.ornaments" => {
+        "text.openType.ornaments" => {
             "Turns OpenType ornaments on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.ordinals" => {
+        "text.openType.ordinals" => {
             "Turns OpenType ordinal superscripts (1st, 2nd) on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.openType.fractions" => {
+        "text.openType.fractions" => {
             "Turns OpenType fractions (1/2 as ½) on or off (`on`, else toggle) for type layer `layer`, all text or the characters in `range`; needs a font that has them."
         }
-        "type.createWorkPath" => "Creates a work path from the outlines of type layer `layer`; the text layer stays editable.",
-        "type.convertToShape" => "Converts type layer `layer` into a shape layer with the glyph outlines; the text is no longer editable.",
-        "type.rasterizeTypeLayer" => "Converts type layer `layer` into pixels; the text is no longer editable.",
-        "type.convertToParagraphText" => "Converts point text `layer` into paragraph (area) text that wraps inside a box.",
-        "type.convertToPointText" => "Converts paragraph text `layer` into point text; line breaks are inserted where lines wrapped.",
-        "type.warpText" => "Warps type layer `layer` with a `style` (arc, flag, wave, …), `bend` and distortions (−100–100 %); the text stays editable.",
-        "type.updateAllTextLayers" => "Re-lays out every type layer, e.g. after fonts changed or were installed.",
-        "type.replaceAllMissingFonts" => "Replaces every missing font in the document with the default family.",
-        "type.resolveMissingFonts" => "Maps missing font families to installed ones (`map`); with no map, answers the missing families.",
-        "type.pasteLoremIpsum" => "Inserts placeholder Lorem Ipsum text into type layer `layer` at character `at`, or as a `new` paragraph layer.",
-        "type.saveDefaultTypeStyles" => "Saves the active type layer's styles as the defaults new type layers start from.",
-        "type.loadDefaultTypeStyles" => "Applies the saved default type styles to type layer `layer`.",
-        "type.characterStyle.new" => {
+        "text.convertToWorkPath" => "Creates a work path from the outlines of type layer `layer`; the text layer stays editable.",
+        "text.convertToShape" => "Converts type layer `layer` into a shape layer with the glyph outlines; the text is no longer editable.",
+        "text.rasterizeTypeLayer" => "Converts type layer `layer` into pixels; the text is no longer editable.",
+        "text.convertToParagraphText" => "Converts point text `layer` into paragraph (area) text that wraps inside a box.",
+        "text.convertToPointText" => "Converts paragraph text `layer` into point text; line breaks are inserted where lines wrapped.",
+        "text.warpText" => "Warps type layer `layer` with a `style` (arc, flag, wave, …), `bend` and distortions (−100–100 %); the text stays editable.",
+        "text.updateAllTextLayers" => "Re-lays out every type layer, e.g. after fonts changed or were installed.",
+        "text.replaceAllMissingFonts" => "Replaces every missing font in the document with the default family.",
+        "text.resolveMissingFonts" => "Maps missing font families to installed ones (`map`); with no map, answers the missing families.",
+        "text.pasteLoremIpsum" => "Inserts placeholder Lorem Ipsum text into type layer `layer` at character `at`, or as a `new` paragraph layer.",
+        "text.saveDefaultTypeStyles" => "Saves the active type layer's styles as the defaults new type layers start from.",
+        "text.loadDefaultTypeStyles" => "Applies the saved default type styles to type layer `layer`.",
+        "text.characterStyle.new" => {
             "Creates a character style (font, size, color and other character attributes) from `attrs` or the selected text (`fromSelection`), optionally applying it; answers its id."
         }
-        "type.characterStyle.duplicate" => "Duplicates character style `id`; answers the copy's id.",
-        "type.characterStyle.delete" => "Deletes character style `id`; text that used it keeps its formatting as overrides.",
-        "type.characterStyle.rename" => "Renames character style `id` to `name`.",
-        "type.characterStyle.set" => "Changes the attributes of character style `id` (`attrs`), or removes some (`clear`); text using it updates.",
-        "type.characterStyle.apply" => {
+        "text.characterStyle.duplicate" => "Duplicates character style `id`; answers the copy's id.",
+        "text.characterStyle.delete" => "Deletes character style `id`; text that used it keeps its formatting as overrides.",
+        "text.characterStyle.rename" => "Renames character style `id` to `name`.",
+        "text.characterStyle.set" => "Changes the attributes of character style `id` (`attrs`), or removes some (`clear`); text using it updates.",
+        "text.characterStyle.apply" => {
             "Applies character style `id` (0 or null for none) to the targeted text of `layer`/`layers`; `clearOverrides` drops local formatting."
         }
-        "type.characterStyle.redefine" => "Redefines character style `id` from the targeted text's current formatting, so all text using it changes.",
-        "type.characterStyle.clearOverride" => "Removes local formatting that differs from the applied character style in the targeted text.",
-        "type.characterStyle.list" => "Answers the document's character styles and which one the targeted text uses.",
-        "type.paragraphStyle.new" => {
+        "text.characterStyle.redefine" => "Redefines character style `id` from the targeted text's current formatting, so all text using it changes.",
+        "text.characterStyle.clearOverride" => "Removes local formatting that differs from the applied character style in the targeted text.",
+        "text.characterStyle.list" => "Answers the document's character styles and which one the targeted text uses.",
+        "text.paragraphStyle.new" => {
             "Creates a paragraph style (alignment, indents, spacing plus character attributes) from `attrs` or the selected text (`fromSelection`), optionally applying it; answers its id."
         }
-        "type.paragraphStyle.duplicate" => "Duplicates paragraph style `id`; answers the copy's id.",
-        "type.paragraphStyle.delete" => "Deletes paragraph style `id`; text that used it keeps its formatting as overrides.",
-        "type.paragraphStyle.rename" => "Renames paragraph style `id` to `name`.",
-        "type.paragraphStyle.set" => "Changes the attributes of paragraph style `id` (`attrs`), or removes some (`clear`); text using it updates.",
-        "type.paragraphStyle.apply" => {
+        "text.paragraphStyle.duplicate" => "Duplicates paragraph style `id`; answers the copy's id.",
+        "text.paragraphStyle.delete" => "Deletes paragraph style `id`; text that used it keeps its formatting as overrides.",
+        "text.paragraphStyle.rename" => "Renames paragraph style `id` to `name`.",
+        "text.paragraphStyle.set" => "Changes the attributes of paragraph style `id` (`attrs`), or removes some (`clear`); text using it updates.",
+        "text.paragraphStyle.apply" => {
             "Applies paragraph style `id` (0 or null for none) to the targeted text of `layer`/`layers`; `clearOverrides` drops local formatting."
         }
-        "type.paragraphStyle.redefine" => "Redefines paragraph style `id` from the targeted text's current formatting, so all text using it changes.",
-        "type.paragraphStyle.clearOverride" => "Removes local formatting that differs from the applied paragraph style in the targeted text.",
-        "type.paragraphStyle.list" => "Answers the document's paragraph styles and which one the targeted text uses.",
+        "text.paragraphStyle.redefine" => "Redefines paragraph style `id` from the targeted text's current formatting, so all text using it changes.",
+        "text.paragraphStyle.clearOverride" => "Removes local formatting that differs from the applied paragraph style in the targeted text.",
+        "text.paragraphStyle.list" => "Answers the document's paragraph styles and which one the targeted text uses.",
         "edit.checkSpelling" => {
             "Checks spelling in the active type layer or `allLayers`: `action` list, suggest, change, changeAll, or add/remove a dictionary word."
         }
-        "type.insertText" => {
+        "text.insertText" => {
             "Inserts `text` into type layer `layer` at character `at` (default the end), or replaces the characters in `range`; answers {layer, caret}."
         }
-        "type.hitTest" => "Answers which character of type layer `layer` is at `x`,`y` px: {layer, index, line, inside}.",
-        "type.caret" => {
+        "text.hitTest" => "Answers which character of type layer `layer` is at `x`,`y` px: {layer, index, line, inside}.",
+        "text.caret" => {
             "Answers the caret line and segment (document px) for character `index` in type layer `layer`: {index, line, segment}; works for rotated and vertical type."
         }
-        "type.navigate" => {
+        "text.navigate" => {
             "Answers the character index reached by moving from `index` by word, line, line start/end or text start/end (`move`), or nearest `x`; for placing the caret."
         }
         "layer.objectLayers.convertToObjectLayer" => {
@@ -1036,7 +1036,7 @@ fn describe(id: &str) -> &'static str {
         "layer.linkLayers" => "Links the selected layers so they move and transform together; unlinks them if they already form one link group.",
         "layer.mergeLayers" => "Merges the selected layers into one pixel layer (with one selected, merges it into the layer below).",
         "layer.new.groupFromLayers" => "Puts the selected layers into a new group named `name`.",
-        "layer.arrange.reverse" => "Reverse: moves `layer` (else the active layer) in the layer stack.",
+        "arrange.reverse" => "Reverse: moves `layer` (else the active layer) in the layer stack.",
         "layer.lockLayers" => "Locks the selected layers' `transparency`, `pixels`, `position`, `artboard` nesting, or `all`, so those can't be edited.",
         "layer.renameLayer" => "Renames `layer` (else the active layer) to `name`.",
         "layer.copyToDocument" => {
@@ -1127,13 +1127,13 @@ fn describe(id: &str) -> &'static str {
         "edit.fillBackground" => "Fills the selection (else the whole layer) of `layer` with the background color; `target` can be a channel or quick mask.",
         "edit.fillForegroundPreserve" => "Fills with the foreground color only where the layer already has pixels, keeping transparency.",
         "edit.fillBackgroundPreserve" => "Fills with the background color only where the layer already has pixels, keeping transparency.",
-        "document.sampleColor" => {
+        "file.sampleColor" => {
             "Answers the color at `x`,`y` px, averaged over `size` and sampled from the current layer, layers below, or all (`sampleLayer`); like the eyedropper."
         }
-        "tools.decreaseBrushSize" => "Makes the current brush smaller by one step, as the [ key does.",
-        "tools.increaseBrushSize" => "Makes the current brush larger by one step, as the ] key does.",
-        "tools.decreaseBrushHardness" => "Makes the current brush softer by one step.",
-        "tools.increaseBrushHardness" => "Makes the current brush harder by one step.",
+        "tool.decreaseBrushSize" => "Makes the current brush smaller by one step, as the [ key does.",
+        "tool.increaseBrushSize" => "Makes the current brush larger by one step, as the ] key does.",
+        "tool.decreaseBrushHardness" => "Makes the current brush softer by one step.",
+        "tool.increaseBrushHardness" => "Makes the current brush harder by one step.",
         "layer.stampVisible" => "Merges every visible layer into a new pixel layer above the active one, keeping the originals; answers {layer}.",
         "layer.stampDown" => {
             "Merges a copy of the active layer into the pixel layer below it (several selected: into a new layer above them); answers {layer}."
@@ -1206,7 +1206,7 @@ fn describe(id: &str) -> &'static str {
         "image.adjustments.hdrToning" => {
             "Tone-maps a 32-bit or flattened image: local `radius`/`strength` edge glow, `exposure`, `gamma`, `detail`, saturation and a tone `curve`; flattens the document."
         }
-        "image.adjustments.colorLookup.list" => {
+        "image.adjustments.listColorLookups" => {
             "Lists the color lookup tables (LUTs) available to layer.newAdjustmentLayer.colorLookup and image.adjustments.colorLookup."
         }
         "layer.layerMask.apply" => "Layer mask, Apply: acts on `layer`'s (else the active layer's) layer mask.",
@@ -1223,20 +1223,18 @@ fn describe(id: &str) -> &'static str {
         "layer.matting.colorDecontaminate" => {
             "Replaces background color bleeding into semi-transparent edge pixels with nearby foreground color; `amount` %, `radius` px."
         }
-        "layer.objectLayers.stackMode.entropy" => "The Layer › Object Layers › Stack Mode › Entropy command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.kurtosis" => "The Layer › Object Layers › Stack Mode › Kurtosis command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.maximum" => "The Layer › Object Layers › Stack Mode › Maximum command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.mean" => "The Layer › Object Layers › Stack Mode › Mean command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.median" => "The Layer › Object Layers › Stack Mode › Median command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.minimum" => "The Layer › Object Layers › Stack Mode › Minimum command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.range" => "The Layer › Object Layers › Stack Mode › Range command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.skewness" => "The Layer › Object Layers › Stack Mode › Skewness command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.standardDeviation" => {
-            "The Layer › Object Layers › Stack Mode › Standard Deviation command (changes the document); takes `layer`."
-        }
-        "layer.objectLayers.stackMode.summation" => "The Layer › Object Layers › Stack Mode › Summation command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.variance" => "The Layer › Object Layers › Stack Mode › Variance command (changes the document); takes `layer`.",
-        "layer.objectLayers.stackMode.none" => "The Layer › Object Layers › Stack Mode › None command (changes the document); takes `layer`.",
+        "layer.stackMode.entropy" => "The Layer › Object Layers › Stack Mode › Entropy command (changes the document); takes `layer`.",
+        "layer.stackMode.kurtosis" => "The Layer › Object Layers › Stack Mode › Kurtosis command (changes the document); takes `layer`.",
+        "layer.stackMode.maximum" => "The Layer › Object Layers › Stack Mode › Maximum command (changes the document); takes `layer`.",
+        "layer.stackMode.mean" => "The Layer › Object Layers › Stack Mode › Mean command (changes the document); takes `layer`.",
+        "layer.stackMode.median" => "The Layer › Object Layers › Stack Mode › Median command (changes the document); takes `layer`.",
+        "layer.stackMode.minimum" => "The Layer › Object Layers › Stack Mode › Minimum command (changes the document); takes `layer`.",
+        "layer.stackMode.range" => "The Layer › Object Layers › Stack Mode › Range command (changes the document); takes `layer`.",
+        "layer.stackMode.skewness" => "The Layer › Object Layers › Stack Mode › Skewness command (changes the document); takes `layer`.",
+        "layer.stackMode.standardDeviation" => "The Layer › Object Layers › Stack Mode › Standard Deviation command (changes the document); takes `layer`.",
+        "layer.stackMode.summation" => "The Layer › Object Layers › Stack Mode › Summation command (changes the document); takes `layer`.",
+        "layer.stackMode.variance" => "The Layer › Object Layers › Stack Mode › Variance command (changes the document); takes `layer`.",
+        "layer.stackMode.none" => "The Layer › Object Layers › Stack Mode › None command (changes the document); takes `layer`.",
         "layer.objectLayers.revealInFinder" => "The Layer › Object Layers › Reveal in Finder command (changes the document); takes `dryRun`.",
         "layer.layerStyle.blendingOptions" => {
             "Sets the blending options of `layer` (the active layer by default): blend mode, opacity and fillOpacity (0–100), Blend If ranges (`blendIf`, values 0–255; split points fade; null resets) and Advanced Blending (`channels` = which colour channels blend, R G B / C M Y K / L a b; knockout; interior effects, clipped layers as group, transparency shapes, masks hide effects). Kition Photo's defaults are knockout none, interior effects off, clipped layers as group on, transparency shapes on, masks hide effects off."
@@ -1244,7 +1242,7 @@ fn describe(id: &str) -> &'static str {
         "layer.layerStyle.globalLight" => {
             "Sets the document's global light (`angle` −180–180°, `altitude` 0–90°), which every effect with Use Global Light (drop shadow, inner shadow, bevel & emboss) follows; answers {angle, altitude}."
         }
-        "layer.layerStyle.createLayer" => {
+        "layer.layerStyle.convertToLayer" => {
             "Turns the layer effects of `layer` (the active layer by default) into pixel layers of their own, one per effect (below the layer, or clipped above it), and removes them from the layer; answers {layers} (how many were made)."
         }
         "layer.layerStyle.scaleEffects" => {
@@ -1354,10 +1352,10 @@ fn describe(id: &str) -> &'static str {
         "measurementLog.list" => "Answers the Measurement Log rows and columns recorded by image.analysis.recordMeasurements.",
         "measurementLog.delete" => "Deletes Measurement Log `rows` by id, or all rows.",
         "measurementLog.export" => "The Export Measurements command (changes the document); takes `path`, `rows`.",
-        "notes.add" => "Adds an annotation note at `x`,`y` px with `text`, `author` and `color`; notes are saved with the document but not rendered.",
-        "notes.set" => "Changes note `index`: text, author, color, position or whether it is open.",
-        "notes.delete" => "Deletes note `index`, or every note (`all`).",
-        "notes.list" => "Answers the document's notes: index, author, text, color, position, open state and modified time.",
+        "note.add" => "Adds an annotation note at `x`,`y` px with `text`, `author` and `color`; notes are saved with the document but not rendered.",
+        "note.set" => "Changes note `index`: text, author, color, position or whether it is open.",
+        "note.delete" => "Deletes note `index`, or every note (`all`).",
+        "note.list" => "Answers the document's notes: index, author, text, color, position, open state and modified time.",
         "file.import.notes" => "The File › Import › Notes command (changes the document); takes `path`.",
         "history.goTo" => "Undoes or redoes to History state `state` (0 = oldest) in one command; answers {current}.",
         "history.deleteState" => "Deletes History state `state` (default current) and every later one; answers {states, current}.",
@@ -1433,10 +1431,10 @@ fn describe(id: &str) -> &'static str {
         "cloneSource.set" => "Sets clone source `index`: its `source` point, `offset`, scale, `rotation` and flips.",
         "cloneSource.resetTransform" => "Resets the scale, rotation and flips of clone source `index`.",
         "cloneSource.overlay" => "Sets the clone source overlay (shown while cloning): visibility, opacity, clipping, auto-hide, invert and blend.",
-        "document.presets.list" => "Answers the saved new-document presets (size, resolution, mode); use one with document.presets.get and file.new.",
-        "document.presets.get" => "Answers new-document preset `name` and the file.new params it stands for; creates nothing.",
-        "document.presets.save" => "Saves new-document `settings` (size, resolution, mode, background) as preset `name`.",
-        "document.presets.delete" => "Deletes the saved new-document preset `name`; existing documents are unchanged.",
+        "file.presets.list" => "Answers the saved new-document presets (size, resolution, mode); use one with file.presets.get and file.new.",
+        "file.presets.get" => "Answers new-document preset `name` and the file.new params it stands for; creates nothing.",
+        "file.presets.save" => "Saves new-document `settings` (size, resolution, mode, background) as preset `name`.",
+        "file.presets.delete" => "Deletes the saved new-document preset `name`; existing documents are unchanged.",
         "filter.render.flame" => {
             "Draws flames of `flameType` (along a path, candle light, …) onto the active layer, with length, width, color, lines and shape settings; `path` is a saved path's name, \"work\", SVG path data (\"M 20 110 L 20 20\") or a path object (default: the work path, else an arc across the lower canvas). Answers how many flames it drew; past its primitive limit it says so (`truncated`, `note`) instead of stopping silently."
         }
@@ -1467,7 +1465,7 @@ fn describe(id: &str) -> &'static str {
         "file.automate.contactSheetII" => {
             "The File › Automate › Contact Sheet II command (changes the document); takes `input`, `units`, `width`, `height`, `resolution`, `mode`."
         }
-        "file.automate.createDroplet" => {
+        "file.automate.addDroplet" => {
             "The File › Automate › Create Droplet command (changes the document); takes `path`, `steps`, `name`, `output`, `format`, `quality`."
         }
         "file.automate.runDroplet" => {
@@ -1504,7 +1502,7 @@ fn describe(id: &str) -> &'static str {
             "The Edit › Presets › Migrate Presets command (reads, or changes only the view or selection); answers {migrated, added:{gradients,styles,shapes,patternGroups,toolPresets}."
         }
         "image.trap" => "Spreads inks at color edges by `width` px to hide registration gaps in print; CMYK documents only. Answers {trapped, width}.",
-        "timeline.create" => "Creates a video timeline of `duration` frames at `fps` for the document; answers {timeline}.",
+        "timeline.add" => "Creates a video timeline of `duration` frames at `fps` for the document; answers {timeline}.",
         "timeline.delete" => "Removes the document's timeline; answers {timeline: null}.",
         "timeline.setFrame" => "Moves the timeline playhead to `frame`; video layers show that frame. Answers {timeline}.",
         "timeline.nextFrame" => "Moves the playhead one frame forward; answers {timeline}.",
@@ -1546,8 +1544,8 @@ fn describe(id: &str) -> &'static str {
         "layer.videoLayers.reloadFrame" => "The Layer › Video Layers › Reload Frame command (changes the document).",
         "file.import.videoFramesToLayers" => "The File › Import › Video Frames to Layers command (changes the document).",
         "file.export.renderVideo" => "The File › Export › Render Video command (reads, or changes only the view or selection); answers {}.",
-        "jobs.list" => "Answers {jobs}: the background jobs (long filters and exports), running and recently finished, with their ids and progress.",
-        "jobs.cancel" => "Cancels background job `job`, or every running job.",
+        "job.list" => "Answers {jobs}: the background jobs (long filters and exports), running and recently finished, with their ids and progress.",
+        "job.cancel" => "Cancels background job `job`, or every running job.",
         "file.import.wiaSupport" => {
             "The File › Import › WIA Support command (reads, or changes only the view or selection); answers {available, devices, note}."
         }
@@ -1560,7 +1558,7 @@ fn describe(id: &str) -> &'static str {
         "file.export.dataSetsAsFiles" => {
             "The File › Export › Data Sets as Files command (reads, or changes only the view or selection); answers {files,count}."
         }
-        "variables.list" => "Answers the document's variable definitions, data sets and the active data set.",
+        "variable.list" => "Answers the document's variable definitions, data sets and the active data set.",
         "plugin.list" => "Answers the installed WebAssembly plug-ins with their ids and parameters.",
         "plugin.install" => {
             "The Filter › Plug-ins › Install Plug-in command (reads, or changes only the view or selection); takes `path`, `data`, `replace` (path: a .wasm file, native only; data: the module as base64)."
@@ -1583,13 +1581,13 @@ fn describe(id: &str) -> &'static str {
         "layer.toggleMaskOverlay" => {
             "Shows or hides the active layer's mask as a 50% red overlay on the composite; view only, and painting while it shows paints the mask."
         }
-        "actions.move" => "Moves an action, or step `step` within it, to zero-based position `to`.",
-        "actions.list" => "Answers the recorded actions with their step counts, and which one is recording.",
-        "actions.get" => "Answers action `action` as {name, steps: [[command id, params], …]}, the form file.automate.batch takes.",
-        "actions.record" => "Starts recording commands into a new action `name`, or appends to `action`; stop with actions.stop. Answers {action, index}.",
-        "actions.stop" => "Stops recording; answers {action, steps}. Queries and action-editing commands are not recorded.",
-        "actions.play" => "Runs action `action` from step `from` (0-based), stopping at the first error; answers {action, ran, failed?}.",
-        "actions.delete" => "Deletes action `action`, or only step `step` of it.",
+        "action.move" => "Moves an action, or step `step` within it, to zero-based position `to`.",
+        "action.list" => "Answers the recorded actions with their step counts, and which one is recording.",
+        "action.get" => "Answers action `action` as {name, steps: [[command id, params], …]}, the form file.automate.batch takes.",
+        "action.record" => "Starts recording commands into a new action `name`, or appends to `action`; stop with action.stop. Answers {action, index}.",
+        "action.stop" => "Stops recording; answers {action, steps}. Queries and action-editing commands are not recorded.",
+        "action.play" => "Runs action `action` from step `from` (0-based), stopping at the first error; answers {action, ran, failed?}.",
+        "action.delete" => "Deletes action `action`, or only step `step` of it.",
         "file.exportImage" => "Answers the flattened document encoded as PNG, JPEG, TIFF or WebP (`format`) as base64 {data, mime, bytes}; writes no file.",
         _ => "",
     }
@@ -1600,20 +1598,20 @@ fn output(id: &str) -> Option<Value> {
         "session.inspect" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"active":{"type":"integer"},"background":{"type":"array","items":{"type":"number"}},"documents":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"dirty":{"type":"boolean"},"height":{"type":"integer"},"index":{"type":"integer"},"name":{"type":"string"},"path":{"type":"string"},"revision":{"type":"integer"},"width":{"type":"integer"}}}},"foreground":{"type":"array","items":{"type":"number"}}}}"#
         }
-        "document.inspect" => {
+        "file.inspect" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"activeLayer":{"type":"integer"},"canRedo":{"type":"boolean"},"canUndo":{"type":"boolean"},"channels":{"type":"object","additionalProperties":true,"properties":{"alpha":{"type":"array"},"colors":{"type":"array","items":{"type":"json"}},"composite":{"type":"string"},"compositeVisible":{"type":"boolean"},"layerMaskView":{"type":"json"},"quickMask":{"type":"json"},"target":{"type":"object","additionalProperties":true,"properties":{"kind":{"type":"string"}}}}},"depth":{"type":"integer"},"effectsCollapsed":{"type":"array"},"hasSelection":{"type":"boolean"},"height":{"type":"integer"},"history":{"type":"array","items":{"type":"string"}},"historyIndex":{"type":"integer"},"historyRedo":{"type":"array"},"isolatedLayers":{"type":"array"},"lastAppliedComp":{"type":"json"},"layerComps":{"type":"array"},"layerMaskView":{"type":"json"},"layers":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"blend":{"type":"string"},"bounds":{"type":"json"},"clipped":{"type":"boolean"},"fill":{"type":"number"},"hasMask":{"type":"boolean"},"id":{"type":"integer"},"kind":{"type":"string"},"labelColor":{"type":"string"},"linkGroup":{"type":"json"},"locks":{"type":"json"},"maskEnabled":{"type":"json"},"maskLinked":{"type":"json"},"name":{"type":"string"},"opacity":{"type":"number"},"selected":{"type":"boolean"},"visible":{"type":"boolean"}}}},"measurement":{"type":"object","additionalProperties":true,"properties":{"count":{"type":"integer"},"countGroups":{"type":"integer"},"ruler":{"type":"json"},"scale":{"type":"string"}}},"mode":{"type":"string"},"name":{"type":"string"},"notes":{"type":"array"},"quickMask":{"type":"boolean"},"resolution":{"type":"number"},"revision":{"type":"integer"},"selectedLayers":{"type":"array","items":{"type":"integer"}},"selectionBounds":{"type":"json"},"symmetry":{"type":"json"},"timeline":{"type":"json"},"variables":{"type":"json"},"width":{"type":"integer"}}}"#
         }
         "command.list" => {
             r#"{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"id":{"type":"string"},"label":{"type":"string"},"menu":{"type":"array","items":{"type":"string"}},"params":{"type":"string"},"shortcut":{"type":"json"}}}}"#
         }
-        "document.pixel" => r#"{"type":"array","items":{"type":"number"}}"#,
+        "file.pixel" => r#"{"type":"array","items":{"type":"number"}}"#,
         "file.render" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"png":{"type":"string"},"width":{"type":"integer"},"height":{"type":"integer"},"scale":{"type":"array","items":{"type":"number"}},"region":{"type":"array","items":{"type":"integer"}},"mapping":{"type":"string"},"drawn":{"type":"json"},"background":{"type":"string"}}}"#
         }
         "image.measure" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"layer":{"type":"json"},"region":{"type":"array","items":{"type":"integer"}},"bounds":{"type":"json"},"pixels":{"type":"integer"},"mean":{"type":"json"},"histogram":{"type":"array","items":{"type":"integer"}},"overlap":{"type":"json"}}}"#
         }
-        "type.fonts" => r#"{"type":"object","additionalProperties":true,"properties":{"families":{"type":"array","items":{"type":"string"}}}}"#,
+        "text.fonts" => r#"{"type":"object","additionalProperties":true,"properties":{"families":{"type":"array","items":{"type":"string"}}}}"#,
         "path.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"clippingPath":{"type":"json"},"layerPath":{"type":"json"},"paths":{"type":"array"},"workPath":{"type":"json"}}}"#
         }
@@ -1645,10 +1643,10 @@ fn output(id: &str) -> Option<Value> {
         "brush.get" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
-        "tools.setBrush" => {
+        "tool.setBrush" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
-        "swatches.list" => {
+        "swatch.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"count":{"type":"integer"},"groups":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"name":{"type":"string"},"swatches":{"type":"json"}}}}}}"#
         }
         "select.magicWand" => r#"{"type":"object","additionalProperties":true,"properties":{"selected":{"type":"boolean"}}}"#,
@@ -1663,10 +1661,10 @@ fn output(id: &str) -> Option<Value> {
         "file.closeAll" => r#"{"type":"object","additionalProperties":false,"properties":{"closed":{"type":"boolean","required":true}}}"#,
         "file.closeOthers" => r#"{"type":"object","additionalProperties":true,"properties":{"closed":{"type":"integer"}}}"#,
         "file.revealInFinder" => r#"{"type":"object","additionalProperties":true,"properties":{"path":{"type":"string"}}}"#,
-        "type.characterStyle.list" => {
+        "text.characterStyle.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"current":{"type":"json"},"styles":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"attrs":{"type":"json"},"id":{"type":"integer"},"name":{"type":"string"}}}}}}"#
         }
-        "type.paragraphStyle.list" => {
+        "text.paragraphStyle.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"current":{"type":"json"},"styles":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"characterAttrs":{"type":"json"},"id":{"type":"integer"},"name":{"type":"string"},"paragraphAttrs":{"type":"json"},"resolved":{"type":"json"}}}}}}"#
         }
         "prefs.get" => {
@@ -1736,16 +1734,16 @@ fn output(id: &str) -> Option<Value> {
         "edit.purge.videoCache" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"bytes":{"type":"integer"},"message":{"type":"string"},"purged":{"type":"array"}}}"#
         }
-        "tools.decreaseBrushSize" => {
+        "tool.decreaseBrushSize" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
-        "tools.increaseBrushSize" => {
+        "tool.increaseBrushSize" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
-        "tools.decreaseBrushHardness" => {
+        "tool.decreaseBrushHardness" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
-        "tools.increaseBrushHardness" => {
+        "tool.increaseBrushHardness" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"aliased":{"type":"boolean"},"angle":{"type":"number"},"background":{"type":"array","items":{"type":"number"}},"buildUp":{"type":"boolean"},"buildUpRate":{"type":"number"},"color":{"type":"array","items":{"type":"number"}},"colorDynamics":{"type":"object","additionalProperties":true,"properties":{"brightnessJitter":{"type":"number"},"enabled":{"type":"boolean"},"fgBg":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"hueJitter":{"type":"number"},"perTip":{"type":"boolean"},"purity":{"type":"number"},"saturationJitter":{"type":"number"}}},"dualBrush":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"number"},"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"enabled":{"type":"boolean"},"flip":{"type":"boolean"},"hardness":{"type":"number"},"mode":{"type":"string"},"roundness":{"type":"number"},"scatter":{"type":"number"},"size":{"type":"number"},"spacing":{"type":"number"},"tip":{"type":"string"}}},"erase":{"type":"boolean"},"flipX":{"type":"boolean"},"flipY":{"type":"boolean"},"flow":{"type":"number"},"hardness":{"type":"number"},"locks":{"type":"object","additionalProperties":true,"properties":{"buildUp":{"type":"boolean"},"colorDynamics":{"type":"boolean"},"dualBrush":{"type":"boolean"},"noise":{"type":"boolean"},"pose":{"type":"boolean"},"protectTexture":{"type":"boolean"},"scattering":{"type":"boolean"},"shapeDynamics":{"type":"boolean"},"smoothing":{"type":"boolean"},"texture":{"type":"boolean"},"transfer":{"type":"boolean"},"wetEdges":{"type":"boolean"}}},"mixer":{"type":"object","additionalProperties":true,"properties":{"flow":{"type":"number"},"load":{"type":"number"},"mix":{"type":"number"},"sampleAllLayers":{"type":"boolean"},"wet":{"type":"number"}}},"mode":{"type":"string"},"noise":{"type":"boolean"},"opacity":{"type":"number"},"pose":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"overridePressure":{"type":"boolean"},"overrideRotation":{"type":"boolean"},"overrideTilt":{"type":"boolean"},"pressure":{"type":"number"},"rotation":{"type":"number"},"tiltX":{"type":"number"},"tiltY":{"type":"number"}}},"pressureOpacity":{"type":"boolean"},"pressureSize":{"type":"boolean"},"protectTexture":{"type":"boolean"},"roundness":{"type":"number"},"scattering":{"type":"object","additionalProperties":true,"properties":{"bothAxes":{"type":"boolean"},"count":{"type":"integer"},"countJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"enabled":{"type":"boolean"},"scatter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"seed":{"type":"integer"},"shapeDynamics":{"type":"object","additionalProperties":true,"properties":{"angle":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"brushProjection":{"type":"boolean"},"enabled":{"type":"boolean"},"flipXJitter":{"type":"boolean"},"flipYJitter":{"type":"boolean"},"roundness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"size":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"tiltScale":{"type":"number"}}},"size":{"type":"number"},"smoothing":{"type":"object","additionalProperties":true,"properties":{"adjustForZoom":{"type":"boolean"},"amount":{"type":"number"},"catchUp":{"type":"boolean"},"catchUpOnEnd":{"type":"boolean"},"pulledString":{"type":"boolean"}}},"spacing":{"type":"number"},"spacingEnabled":{"type":"boolean"},"texture":{"type":"object","additionalProperties":true,"properties":{"brightness":{"type":"number"},"contrast":{"type":"number"},"depth":{"type":"number"},"depthJitter":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"eachTip":{"type":"boolean"},"enabled":{"type":"boolean"},"invert":{"type":"boolean"},"mode":{"type":"string"},"pattern":{"type":"object","additionalProperties":true,"properties":{"procedural":{"type":"json"}}},"scale":{"type":"number"}}},"tip":{"type":"string"},"transfer":{"type":"object","additionalProperties":true,"properties":{"enabled":{"type":"boolean"},"flow":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"mix":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"opacity":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}},"wetness":{"type":"object","additionalProperties":true,"properties":{"control":{"type":"string"},"fadeSteps":{"type":"integer"},"jitter":{"type":"number"},"minimum":{"type":"number"}}}}},"wetEdges":{"type":"boolean"}}}"#
         }
         "select.editInQuickMaskMode" => r#"{"type":"object","additionalProperties":true,"properties":{"quickMask":{"type":"boolean"}}}"#,
@@ -1767,7 +1765,7 @@ fn output(id: &str) -> Option<Value> {
         "channel.target.slot5" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"alpha":{"type":"array"},"colors":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"name":{"type":"string"},"visible":{"type":"boolean"}}}},"composite":{"type":"string"},"compositeVisible":{"type":"boolean"},"layerMaskView":{"type":"json"},"quickMask":{"type":"json"},"target":{"type":"object","additionalProperties":true,"properties":{"index":{"type":"integer"},"kind":{"type":"string"}}}}}"#
         }
-        "image.adjustments.colorLookup.list" => {
+        "image.adjustments.listColorLookups" => {
             r#"{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"id":{"type":"string"},"label":{"type":"string"}}}}"#
         }
         "pattern.list" => {
@@ -1783,7 +1781,7 @@ fn output(id: &str) -> Option<Value> {
             r#"{"type":"object","additionalProperties":true,"properties":{"count":{"type":"object","additionalProperties":true,"properties":{"activeGroup":{"type":"integer"},"groups":{"type":"array"},"total":{"type":"integer"}}},"logRows":{"type":"integer"},"notes":{"type":"integer"},"ruler":{"type":"json"},"scale":{"type":"object","additionalProperties":true,"properties":{"default":{"type":"boolean"},"factor":{"type":"number"},"logicalLength":{"type":"number"},"pixelLength":{"type":"number"},"text":{"type":"string"},"units":{"type":"string"}}}}}"#
         }
         "measurementLog.list" => r#"{"type":"object","additionalProperties":true,"properties":{"columns":{"type":"array"},"rows":{"type":"array"}}}"#,
-        "notes.list" => r#"{"type":"object","additionalProperties":true,"properties":{"notes":{"type":"array"}}}"#,
+        "note.list" => r#"{"type":"object","additionalProperties":true,"properties":{"notes":{"type":"array"}}}"#,
         "view.proofSetup.workingCyanPlate" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"profile":{"type":"string"},"proof":{"type":"string"},"proofColors":{"type":"boolean"}}}"#
         }
@@ -1826,7 +1824,7 @@ fn output(id: &str) -> Option<Value> {
         "cloneSource.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"active":{"type":"integer"},"overlay":{"type":"object","additionalProperties":true,"properties":{"auto_hide":{"type":"boolean"},"blend":{"type":"string"},"clipped":{"type":"boolean"},"invert":{"type":"boolean"},"opacity":{"type":"number"},"show":{"type":"boolean"}}},"sources":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"anchor":{"type":"json"},"flipH":{"type":"boolean"},"flipV":{"type":"boolean"},"height":{"type":"number"},"index":{"type":"integer"},"layer":{"type":"json"},"offset":{"type":"json"},"rotation":{"type":"number"},"source":{"type":"json"},"width":{"type":"number"}}}}}}"#
         }
-        "document.presets.list" => r#"{"type":"object","additionalProperties":true,"properties":{"presets":{"type":"array"}}}"#,
+        "file.presets.list" => r#"{"type":"object","additionalProperties":true,"properties":{"presets":{"type":"array"}}}"#,
         "slice.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"locked":{"type":"boolean"},"slices":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"alt":{"type":"string"},"background":{"type":"json"},"cellText":{"type":"string"},"id":{"type":"json"},"kind":{"type":"string"},"layer":{"type":"json"},"message":{"type":"string"},"name":{"type":"string"},"number":{"type":"integer"},"origin":{"type":"string"},"rect":{"type":"json"},"target":{"type":"string"},"url":{"type":"string"}}}}}}"#
         }
@@ -1861,21 +1859,21 @@ fn output(id: &str) -> Option<Value> {
             r#"{"type":"object","additionalProperties":true,"properties":{"layer":{"type":"integer"},"selected":{"type":"array","items":{"type":"integer"}}}}"#
         }
         "timeline.info" => r#"{"type":"object","additionalProperties":true,"properties":{"timeline":{"type":"json"}}}"#,
-        "jobs.list" => r#"{"type":"object","additionalProperties":true,"properties":{"jobs":{"type":"array"}}}"#,
-        "jobs.cancel" => r#"{"type":"object","additionalProperties":true,"properties":{"cancelled":{"type":"integer"}}}"#,
+        "job.list" => r#"{"type":"object","additionalProperties":true,"properties":{"jobs":{"type":"array"}}}"#,
+        "job.cancel" => r#"{"type":"object","additionalProperties":true,"properties":{"cancelled":{"type":"integer"}}}"#,
         "file.import.wiaSupport" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"available":{"type":"boolean"},"devices":{"type":"array"},"note":{"type":"string"}}}"#
         }
-        "variables.list" => {
+        "variable.list" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"active":{"type":"json"},"dataSets":{"type":"array"},"defs":{"type":"array"}}}"#
         }
         "plugin.list" => r#"{"type":"object","additionalProperties":true,"properties":{"folder":{"type":"json"},"plugins":{"type":"array"}}}"#,
-        "actions.list" => r#"{"type":"object","additionalProperties":true,"properties":{"actions":{"type":"array"},"recording":{"type":"json"}}}"#,
-        "actions.record" => r#"{"type":"object","additionalProperties":true,"properties":{"action":{"type":"string"},"index":{"type":"integer"}}}"#,
+        "action.list" => r#"{"type":"object","additionalProperties":true,"properties":{"actions":{"type":"array"},"recording":{"type":"json"}}}"#,
+        "action.record" => r#"{"type":"object","additionalProperties":true,"properties":{"action":{"type":"string"},"index":{"type":"integer"}}}"#,
         "file.exportImage" => {
             r#"{"type":"object","additionalProperties":true,"properties":{"bytes":{"type":"integer"},"data":{"type":"string"},"mime":{"type":"string"}}}"#
         }
-        "select.deselect" => {
+        "edit.deselectAll" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "select.inverse" => {
@@ -1887,10 +1885,10 @@ fn output(id: &str) -> Option<Value> {
         "layer.select" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "document.activate" => {
+        "file.activate" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "document.move" => {
+        "file.move" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "layer.layerStyle.makeDefault" => {
@@ -1905,7 +1903,7 @@ fn output(id: &str) -> Option<Value> {
         "gradient.fill.get" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "type.info" => {
+        "text.info" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "shape.info" => {
@@ -1965,13 +1963,13 @@ fn output(id: &str) -> Option<Value> {
         "file.export.colorLookupTables" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "type.hitTest" => {
+        "text.hitTest" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "type.caret" => {
+        "text.caret" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "type.navigate" => {
+        "text.navigate" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "select.allLayers" => {
@@ -1998,7 +1996,7 @@ fn output(id: &str) -> Option<Value> {
         "edit.purge.all" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "document.sampleColor" => {
+        "file.sampleColor" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "select.loadSelection" => {
@@ -2031,7 +2029,7 @@ fn output(id: &str) -> Option<Value> {
         "view.thirtyTwoBitPreviewOptions" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "document.presets.get" => {
+        "file.presets.get" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         "file.export.quickExport" => {
@@ -2073,16 +2071,16 @@ fn output(id: &str) -> Option<Value> {
         "layer.toggleMaskOverlay" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "actions.move" => {
+        "action.move" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "actions.get" => {
+        "action.get" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "actions.stop" => {
+        "action.stop" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
-        "actions.delete" => {
+        "action.delete" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
         }
         _ => return None,

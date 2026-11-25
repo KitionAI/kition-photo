@@ -6,7 +6,7 @@
 // a double click selects a word, whose colour then changes alone; Escape puts the text back as it
 // was; copy and paste; a dragged paragraph box wraps its text and its handle resizes it; the Move
 // tool's double click and a Layers thumbnail's start editing. Real pointer and keyboard input on
-// dev.html; the text and styles are read back from the engine (`type.info`). Prints PASS or FAIL per step.
+// dev.html; the text and styles are read back from the engine (`text.info`). Prints PASS or FAIL per step.
 import { mkdirSync } from 'node:fs'
 import { chromium, webkit } from 'playwright'
 import { createServer } from 'vite'
@@ -53,7 +53,7 @@ try {
   const details = async () => (await inspect()).details
   const history = async () => (await details()).historyIndex
   const engine = (command, params = {}) => page.evaluate(async ([command, params]) => (await window.devHost.connection().ai.run([{ command, params }], false)).completed[0].result, [command, params])
-  const info = (layer) => engine('type.info', { layer })
+  const info = (layer) => engine('text.info', { layer })
   const view = async () => {
     const [zoom, x, y] = (await workspace.getAttribute('data-view')).split(' ').map(Number)
     return { zoom, x, y, box: await surface.boundingBox() }
@@ -73,7 +73,7 @@ try {
   /** The text being edited and its line count, as the engine last answered the editor (no query of ours comes between its edits). */
   const edited = async () => ((await editing()) ? { text: await editor.getAttribute('data-text'), lines: Number(await editor.getAttribute('data-lines')) } : { text: null, lines: 0 })
   const typeLayers = async () => (await details()).layers.filter((layer) => layer.kind === 'Type')
-  const caretOf = async (layer, index) => (await engine('type.caret', { layer, index })).segment
+  const caretOf = async (layer, index) => (await engine('text.caret', { layer, index })).segment
   /** The middle of character `index` of `layer` (document pixels). */
   const middleOf = async (layer, index) => {
     const [a] = await caretOf(layer, index)

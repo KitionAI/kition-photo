@@ -34,7 +34,7 @@ fn c8_late_writer_actions_cannot_hide_journal_replay() {
         s.execute("edit.transform", json!({"matrix":[1,0,0,1,4,0]})).unwrap();
         s.actions.list.push(crate::actions_cmds::Action { name: "Replay".into(), steps: vec![(command.into(), json!({}))] });
         let before = s.active().unwrap().doc.clone();
-        let answer = s.execute_as("actions.play", json!({"action":"Replay"}), &Origin::agent("C8-photo-3")).unwrap();
+        let answer = s.execute_as("action.play", json!({"action":"Replay"}), &Origin::agent("C8-photo-3")).unwrap();
         assert_eq!(answer["ran"], 0, "{command}: {answer}");
         assert!(answer["failed"].to_string().contains("premise guard"), "{command}: {answer}");
         assert!(Arc::ptr_eq(&s.active().unwrap().doc, &before));

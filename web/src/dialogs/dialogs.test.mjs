@@ -13,7 +13,7 @@ import { isHiddenCommand, notBuiltReason } from '../menus/hidden.ts'
 test('a "…" command with something to ask opens the generic dialog; one with nothing to ask runs', () => {
   assert.equal(dialogFor({ id: 'filter.blur.gaussianBlur', title: 'Gaussian Blur…', asks: true }), 'params')
   assert.equal(dialogFor({ id: 'layer.new.layerFromBackground', title: 'Layer from Background…', asks: false }), null)
-  assert.equal(dialogFor({ id: 'select.all', title: 'All', asks: false }), null)
+  assert.equal(dialogFor({ id: 'edit.selectAll', title: 'All', asks: false }), null)
   // A row without "…" runs even when it has parameters (Image › Auto Tone).
   assert.equal(dialogFor({ id: 'image.autoTone', title: 'Auto Tone', asks: true }), null)
   assert.equal(isEllipsis('Fill...'), true)

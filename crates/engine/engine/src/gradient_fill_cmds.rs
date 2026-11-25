@@ -21,7 +21,7 @@ use crate::commands::{CommandSpec, blend_from_str, layer_param};
 use crate::presets::gradients::{GradientPreset, transparency_param};
 use crate::{EngineError, Result, Session};
 
-pub const CREATE: &str = "gradient.fill.create";
+pub const CREATE: &str = "gradient.fill.add";
 pub const SET: &str = "gradient.fill.set";
 pub const STOP: &str = "gradient.fill.stop";
 pub const GET: &str = "gradient.fill.get";
@@ -110,7 +110,7 @@ fn hex(c: &Color) -> String {
     }
 }
 
-/// The gradient a `gradient.fill.create` uses: a preset (`"gradient"`), explicit `"stops"`,
+/// The gradient a `gradient.fill.add` uses: a preset (`"gradient"`), explicit `"stops"`,
 /// else the current gradient (Gradients panel); explicit `"transparency"` stops replace its own.
 fn preset_param(s: &Session, p: &Value, cmd: &str) -> Result<GradientPreset> {
     if let Some(name) = p.get("gradient").and_then(Value::as_str) {
@@ -281,7 +281,7 @@ pub fn apply_set(layer: &Layer, f: &Fill, canvas: Rect, p: &Value, fg: [f32; 4],
     Ok(out)
 }
 
-/// The Gradient Fill layer `gradient.fill.create` adds to `doc` for `p` (also the canvas's live
+/// The Gradient Fill layer `gradient.fill.add` adds to `doc` for `p` (also the canvas's live
 /// preview of a Gradient tool drag): laid out on the canvas, so the handles land exactly where
 /// the drag was, and masked by the selection (Photoshop keeps the selection, as a mask).
 pub fn new_layer(s: &Session, doc: &Document, p: &Value) -> Result<Layer> {
