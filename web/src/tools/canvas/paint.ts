@@ -1,7 +1,7 @@
 import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoToolId } from '../catalog'
 import { selectionModeFor, toolParams } from '../options'
-import { NO_REPAINT, accentTint, clipToDocument, lineDrag, strokeArea, tracePolyline, type KitGesture, type PhotoToolEnv } from './common'
+import { NO_REPAINT, accentTint, clipToDocument, dashed, strokeArea, tracePolyline, type KitGesture, type PhotoToolEnv } from './common'
 import { lockAxis } from './geometry'
 import { picksColour } from '../altPicks'
 import type { LivePreview } from './live'
@@ -212,15 +212,53 @@ export function clickFill(id: string, command: string, params: () => Record<stri
   }
 }
 
+/** How often (ms) the Gradient shows the gradient under the drag. */
+const GRADIENT_EVERY_MS = 60
+
 /**
- * The Gradient: a drag makes a Gradient Fill layer of the current gradient preset (upstream's live
- * "Gradient"), or with "Classic gradient" paints foreground to background into the pixels.
+ * The Gradient: a drag makes a Gradient Fill layer of the current gradient (upstream's live
+ * "Gradient"), or with "Classic gradient" paints it into the pixels. The gradient shows while the
+ * drag runs (plan 2026-11-24, stage 5: the editor previews the command with the line so far, one
+ * history step for the drag); Escape takes it away.
  */
 export function gradientTool(env: PhotoToolEnv): KitTool {
-  return lineDrag('Gradient', 'crosshair', (start, end) => {
-    if (Math.hypot(end.x - start.x, end.y - start.y) < 1) return
-    const ends = { from: [start.x, start.y], to: [end.x, end.y], ...toolParams('Gradient', env.options) }
-    if (env.options.gradientClassic) void env.run('paint.gradient', { ...ends, colors: [env.foreground, env.background] })
-    else void env.run('gradient.fill.create', ends)
-  })
+  return {
+    id: 'Gradient',
+    cursor: 'crosshair',
+    begin: (start, { overlay }) => {
+      const command = env.options.gradientClassic ? 'paint.gradient' : 'gradient.fill.create'
+      const params = (end: KitPointer) => ({ from: [start.x, start.y], to: [end.x, end.y], ...toolParams('Gradient', env.options) })
+      let live: LivePreview | null = null
+      let shownAt = 0
+      const line = (end: KitPointer) =>
+        overlay.draw((context, toScreen) => {
+          tracePolyline(context, toScreen, [
+            [start.x, start.y],
+            [end.x, end.y],
+          ])
+          dashed(context)
+        })
+      return {
+        move: (pointer) => {
+          line(pointer)
+          if (Math.hypot(pointer.x - start.x, pointer.y - start.y) < 1) return
+          const now = Date.now()
+          if (now - shownAt < GRADIENT_EVERY_MS) return
+          shownAt = now
+          live ??= env.preview(command)
+          live.push(params(pointer))
+        },
+        cancel: () => {
+          overlay.clear()
+          void live?.cancel()
+        },
+        end: (pointer) => {
+          overlay.clear()
+          if (Math.hypot(pointer.x - start.x, pointer.y - start.y) < 1) return void live?.cancel()
+          if (live) void live.finish(params(pointer))
+          else void env.run(command, params(pointer))
+        },
+      }
+    },
+  }
 }

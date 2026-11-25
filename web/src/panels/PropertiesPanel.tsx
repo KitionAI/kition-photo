@@ -12,6 +12,8 @@ import { useTypeStyle, type TypeTarget } from './useTypeStyle'
 import { ColorSwatch, EditingControls, Row, Section, useRemembered } from './PropsParts'
 import { DEPTHS, MODES, QUICK_ACTIONS, boundsEdit, canvasResizeParams, kindLabel, type Box } from './properties'
 import { useDialogs } from '../dialogs/DialogHost'
+import { useGradientEditor } from '../gradient/GradientEditorHost'
+import { cssGradient, fromEngine, toEngine } from '../gradient/gradient'
 
 const AlignCenterHorizontal = TesseraIcons.AlignCenterHorizontalIcon
 const AlignCenterVertical = TesseraIcons.AlignCenterVerticalIcon
@@ -178,6 +180,7 @@ function LayerProperties({ layer, info, foreground, background, typeTarget }: Pr
           {layer.hasMask ? <MaskSection layer={layer} /> : null}
           {layer.kind === 'Type' ? <TypeProperties target={typeTarget} /> : null}
           {layer.kind === 'Shape' ? <ShapeSections layer={id} /> : null}
+          {layer.kind === 'Fill' ? <GradientFillSection layer={id} foreground={foreground} background={background} /> : null}
           <Section id="align" title={phrase('Align and Distribute')}>
             <Row>
               {ALIGN.map(([kind, icon]) => {
@@ -409,6 +412,61 @@ function ShapeSections({ layer }: { layer: number }) {
         </Section>
       ) : null}
     </>
+  )
+}
+
+type GradientFill = { stops: [number, string][]; transparency: [number, number][]; midpoints: number[]; style: string; angle: number; scale: number; reverse: boolean }
+
+/**
+ * A gradient fill layer's gradient (plan 2026-11-24, stage 5): its swatch opens the gradient
+ * editor (midpoints kept), and its style, angle, scale and Reverse; each change one
+ * `gradient.fill.set`. Nothing for a solid colour or pattern fill.
+ */
+function GradientFillSection({ layer, foreground, background }: { layer: number; foreground: string; background: string }) {
+  const { run, phrase, t } = useKitEditor()
+  const editGradient = useGradientEditor()
+  const gestures = useGestures(`gradient-fill-${layer}`)
+  const fill = useEngineQuery<GradientFill>('gradient.fill.get', { layer }, layer)
+  if (!fill || !Array.isArray(fill.stops)) return null
+  const draft = fromEngine(fill)
+  const set = (params: Record<string, unknown>, field: string, final = true) => void run('gradient.fill.set', { layer, ...params, coalesce: gestures.key(field, final) })
+  return (
+    <Section id="gradientFill" title={phrase('Gradient Fill')}>
+      <Row>
+        <span className="photo-props-label">{phrase('Gradient')}</span>
+        <button
+          type="button"
+          className="photo-gradient-chip"
+          style={{ backgroundImage: `${cssGradient(draft, foreground, background, fill.reverse)}, var(--photo-checker)` }}
+          title={t('gradient.edit')}
+          aria-label={t('gradient.edit')}
+          disabled={!editGradient}
+          onClick={() => {
+            if (!editGradient) return
+            void editGradient({ title: t('gradient.title'), value: draft, midpoints: true }).then((chosen) => {
+              if (!chosen) return
+              const engine = toEngine(chosen)
+              set({ stops: engine.stops, transparency: engine.transparency, midpoints: engine.midpoints ?? chosen.midpoints.map(() => 0.5) }, 'stops')
+            })
+          }}
+          data-testid="photo-props-gradient-fill"
+        />
+        <Checkbox label={phrase('Reverse')} checked={fill.reverse} onChange={(reverse) => set({ reverse }, 'reverse')} testId="photo-props-gradient-reverse" />
+      </Row>
+      <Row>
+        <Choice
+          label={phrase('Style')}
+          value={fill.style}
+          choices={(['linear', 'radial', 'angle', 'reflected', 'diamond'] as const).map((style) => [style, phrase(`${style.charAt(0).toUpperCase()}${style.slice(1)}`)] as const)}
+          onChange={(style) => set({ style }, 'style')}
+          testId="photo-props-gradient-style"
+        />
+      </Row>
+      <Row>
+        <NumberField label={phrase('Angle')} value={Math.round(fill.angle * 10) / 10} min={-180} max={180} step={0.1} unit="°" onChange={(angle, final) => set({ angle }, 'angle', final)} testId="photo-props-gradient-angle" />
+        <NumberField label={phrase('Scale')} value={Math.round(fill.scale)} min={10} max={1000} unit="%" onChange={(scale, final) => set({ scale }, 'scale', final)} testId="photo-props-gradient-scale" />
+      </Row>
+    </Section>
   )
 }
 

@@ -1,11 +1,14 @@
 import { TesseraIcons } from '@kition/sdk/editor'
-import { Choice as KitChoice, IconButton, MenuButton, MenuItem, MenuSeparator, NumberField, Segmented, parseHex, useEngineQuery, useKitEditor, useUi } from '@kition/sdk/editor'
+import { Choice as KitChoice, IconButton, MenuButton, MenuItem, MenuSeparator, NumberField, Segmented, useEngineQuery, useKitEditor, useUi } from '@kition/sdk/editor'
 import { CROP_RATIOS, cropRatioKey, cropRatioSize } from '../tools/options'
 import { useFontChoices } from './typeLayer'
 import { useTypeStyle } from '../panels/useTypeStyle'
 import { antiAliasChoices } from '../panels/TypeSections'
 import { ColorSwatch } from '../panels/PropsParts'
 import { ColorWell } from '../color/ColorWell'
+import { useState } from 'react'
+import { useGradientEditor } from '../gradient/GradientEditorHost'
+import { bakeMidpoints, cssGradient, fromEngine, type EngineGradient } from '../gradient/gradient'
 import { Act, BlendMode, Check, Choice, FillSampling, Hint, Icon, Icons, Num, Opt, Sep, Toggle, bare, fill, useBar } from './fields'
 
 
@@ -26,46 +29,40 @@ const Grid3x3 = TesseraIcons.Grid3x3Icon
 const RotateCw = TesseraIcons.RotateCwIcon
 const TextCursor = TesseraIcons.TextCursorIcon
 
-type Stop = [number, string]
-type Preset = { stops: Stop[]; transparency: [number, number][] }
 
-/** A gradient's opacity at `t` (0 to 1) from its transparency stops, as a fraction. */
-function opacityAt(transparency: readonly [number, number][], t: number) {
-  if (!transparency.length) return 1
-  const after = transparency.findIndex(([at]) => at >= t)
-  if (after <= 0) return transparency[after < 0 ? transparency.length - 1 : 0][1] / 100
-  const [a, va] = transparency[after - 1]
-  const [b, vb] = transparency[after]
-  return (va + ((vb - va) * (t - a)) / Math.max(1e-6, b - a)) / 100
-}
-
-/** A colour with an opacity, as CSS. */
-function withOpacity(hex: string, opacity: number) {
-  const [r, g, b] = parseHex(hex) ?? [0, 0, 0]
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`
-}
-
-/** The Gradient tool's swatch: the current preset (live) or foreground to background (classic), reversed with Reverse. */
+/**
+ * The Gradient tool's swatch: the current gradient (the engine's, which both the live and the
+ * classic gradient draw with), reversed with Reverse. A click opens the gradient editor on it
+ * (plan 2026-11-24, stage 5); OK makes the edited gradient the current one (`gradient.presets.select`).
+ */
 function GradientSwatch() {
-  const { phrase } = useKitEditor()
+  const { phrase, t, query } = useKitEditor()
   const { o, foreground, background } = useBar()
-  const current = useEngineQuery<{ current: Preset }>('gradient.presets.list')?.current
-  const preset: Preset =
-    !o.gradientClassic && current
-      ? current
-      : {
-          stops: [
-            [0, 'foreground'],
-            [1, 'background'],
-          ],
-          transparency: [],
-        }
-  const colour = (value: string) => (value === 'foreground' ? foreground : value === 'background' ? background : value)
-  const stops = preset.stops.map(([at, value]) => `${withOpacity(colour(value), opacityAt(preset.transparency, at))} ${(o.reverse ? 1 - at : at) * 100}%`)
-  if (o.reverse) stops.reverse()
-  // Upstream's tooltips: the live swatch names where its gradient comes from; the classic one has no action behind its words.
-  const title = o.gradientClassic ? phrase('Click to edit the gradient') : phrase('The current gradient (pick one in Window › Gradients)')
-  return <span className="photo-gradient-swatch" style={{ background: `linear-gradient(to right, ${stops.join(', ')}), repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%) 0 0 / 8px 8px` }} title={title} aria-hidden="true" />
+  const editGradient = useGradientEditor()
+  const [asked, setAsked] = useState(0)
+  const current = useEngineQuery<{ current: EngineGradient }>('gradient.presets.list', undefined, asked)?.current
+  const draft = fromEngine(current ?? { stops: [[0, 'foreground'], [1, 'background']], transparency: [] })
+  const title = editGradient ? t('gradient.edit') : phrase('The current gradient (pick one in Window › Gradients)')
+  return (
+    <button
+      type="button"
+      className="photo-gradient-swatch"
+      style={{ backgroundImage: `${cssGradient(draft, foreground, background, o.reverse)}, var(--photo-checker)` }}
+      title={title}
+      aria-label={title}
+      disabled={!editGradient}
+      onClick={() => {
+        if (!editGradient) return
+        void editGradient({ title: t('gradient.title'), value: draft, midpoints: false }).then(async (chosen) => {
+          if (!chosen) return
+          const baked = bakeMidpoints(chosen, foreground, background)
+          await query('gradient.presets.select', { stops: baked.stops, transparency: baked.transparency, applyToLayer: false })
+          setAsked((count) => count + 1)
+        })
+      }}
+      data-testid="photo-gradient-swatch"
+    />
+  )
 }
 
 export function GradientBar() {

@@ -10,7 +10,7 @@ import type { GradientDraft } from './gradient'
 export type GradientRequest = {
   title: string
   value: GradientDraft
-  /** Whether the target keeps midpoints (a gradient fill layer); elsewhere the editor hides them. */
+  /** Whether the target keeps midpoints (a gradient fill layer); elsewhere the caller bakes them into stops (`bakeMidpoints`). */
   midpoints: boolean
   /** Each gradient as the person edits it; the starting one again on Cancel. */
   onLive?: (draft: GradientDraft) => void

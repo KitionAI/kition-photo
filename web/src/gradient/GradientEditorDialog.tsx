@@ -127,7 +127,6 @@ export function GradientEditorDialog({ title, value, midpoints, onLive, foregrou
   const opacityStop = selected?.which === 'opacity' ? draft.opacity[selected.index] : undefined
   const location = colorStop?.at ?? opacityStop?.at ?? (selected?.which === 'midpoint' ? midpointPlaces(draft)[selected.index] : undefined)
   const places = midpointPlaces(draft)
-  const showMidpoints = midpoints || draft.midpoints.some((mid) => Math.abs(mid - 0.5) > 1e-6)
   return (
     <PreviewDialog title={title} onOk={() => doneNow.current(draftNow.current)} onCancel={cancel} ids={DIALOG_BUTTONS} testId={GRADIENT_EDITOR}>
       <div className="photo-gradient-editor">
@@ -179,7 +178,7 @@ export function GradientEditorDialog({ title, value, midpoints, onLive, foregrou
                 data-testid={`${GRADIENT_EDITOR}-color-${index}`}
               />
             ))}
-            {showMidpoints
+            {places.length
               ? places.map((place, segment) => (
                   <button
                     key={`mid-${segment}`}

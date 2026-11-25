@@ -60,8 +60,10 @@
   flex: none;
   width: 96px;
   height: 20px;
+  padding: 0;
   border: 1px solid var(--kit-border);
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .photo-swatch {
@@ -1772,7 +1774,7 @@ select.kui-field.photo-kerning-presets {
 
 /* The gradient editor: presets, the bar with opacity stops over it and colour stops under it, the selected stop's fields. */
 .photo-gradient-editor {
-  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%) 0 0 / 10px 10px;
+  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1852,8 +1854,12 @@ select.kui-field.photo-kerning-presets {
   background: var(--kit-text);
 }
 
+.photo-gradient-row-color {
+  height: 24px;
+}
+
 .photo-gradient-row-color .photo-gradient-stop {
-  top: 5px;
+  top: 10px;
 }
 
 .photo-gradient-stop-fields {
@@ -1871,7 +1877,7 @@ select.kui-field.photo-kerning-presets {
 
 /* A gradient chip that opens the editor (the options bar, Layer Style, Properties). */
 .photo-gradient-chip {
-  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%) 0 0 / 8px 8px;
+  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%);
   flex: none;
   width: 72px;
   height: 18px;
@@ -2067,4 +2073,19 @@ select.kui-field.photo-kerning-presets {
   width: 72px;
   height: 20px;
   padding: 0 4px;
+}
+
+/* The checkerboard a gradient's transparency shows over, in Layer Style and Properties. */
+.photo-layer-style,
+.photo-props {
+  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%);
+}
+
+/* A gradient over the checkerboard: the gradient fills the box, the checks are 8 px. */
+.photo-gradient-bar,
+.photo-gradient-preset,
+.photo-gradient-chip,
+.photo-gradient-swatch {
+  --photo-checker: repeating-conic-gradient(var(--kit-border) 0 25%, var(--kit-surface) 0 50%);
+  background-size: 100% 100%, 8px 8px;
 }
