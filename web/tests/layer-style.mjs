@@ -210,7 +210,8 @@ try {
   const editorOnly = (await until(async () => (await count('photo-gradient-editor')) === 0)) && (await count(dialog)) === 1
   await kit.getByTestId(`${dialog}-field-gradient`).click()
   await until(async () => (await count('photo-gradient-editor')) === 1)
-  await page.mouse.click(colors.x + colors.width * 0.5, colors.y + colors.height / 2)
+  const again = await kit.getByTestId('photo-gradient-editor-colors').boundingBox()
+  await page.mouse.click(again.x + again.width * 0.5, again.y + again.height / 2)
   await until(async () => (await kit.locator('[data-testid^="photo-gradient-editor-color-"]').count()) === 3)
   await kit.getByTestId('photo-gradient-editor-ok').click()
   await until(async () => (await count('photo-gradient-editor')) === 0)

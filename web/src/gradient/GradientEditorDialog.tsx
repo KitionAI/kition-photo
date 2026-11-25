@@ -130,8 +130,8 @@ export function GradientEditorDialog({ title, value, midpoints, onLive, foregrou
   return (
     <PreviewDialog title={title} onOk={() => doneNow.current(draftNow.current)} onCancel={cancel} ids={DIALOG_BUTTONS} testId={GRADIENT_EDITOR}>
       <div className="photo-gradient-editor">
-        {presets.length ? (
-          <div className="photo-gradient-presets" role="listbox" aria-label={t('gradient.presets')}>
+        {/* Always there, so the bar does not move down when the presets arrive. */}
+        <div className="photo-gradient-presets" role="listbox" aria-label={t('gradient.presets')} data-testid={`${GRADIENT_EDITOR}-presets`}>
             {presets.map((preset, index) => (
               <button
                 key={`${preset.name}-${index}`}
@@ -149,8 +149,7 @@ export function GradientEditorDialog({ title, value, midpoints, onLive, foregrou
                 data-testid={`${GRADIENT_EDITOR}-preset-${index}`}
               />
             ))}
-          </div>
-        ) : null}
+        </div>
         <div className="photo-gradient-ramp">
           <div className="photo-gradient-row photo-gradient-row-opacity" onPointerDown={pressRow('opacity')} title={t('gradient.addOpacityStop')} data-testid={`${GRADIENT_EDITOR}-opacities`}>
             {draft.opacity.map((stop, index) => (
