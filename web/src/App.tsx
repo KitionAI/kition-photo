@@ -9,6 +9,7 @@ import {
   KitEditorProvider,
   createKitStrings,
   kitLeases,
+  shortcutMatches,
   toast,
   useKitEditorState,
   useKitSession,
@@ -46,7 +47,7 @@ import { RasterizePrompt } from './tools/RasterizePrompt'
 import { TOOL_FIELDS, optionsFor, toolParams, type ToolOptions } from './tools/options'
 import { PhotoToolRail, type ToolKeys } from './tools/PhotoToolRail'
 import { toolFor, type PhotoToolId } from './tools/catalog'
-import { NO_MARKS, usePhotoOverlays, type CanvasMarks } from './overlays'
+import { NO_EXTRAS, NO_MARKS, usePhotoOverlays, type CanvasExtras, type CanvasMarks } from './overlays'
 import { OptionsBar } from './options/OptionsBar'
 import { useToolOptions } from './options/store'
 import { PhotoDock, dockGroupId } from './panels/dock'
@@ -80,6 +81,17 @@ import { BusyIndicator } from './io/BusyIndicator'
 import { ErrorNotices, reportError } from './io/ErrorNotices'
 import { PhotoFileIo, fileAbilities, type FileIo } from './io/PhotoFileIo'
 import { withoutEllipsis } from './dialogs/routes'
+import { CanvasMenu } from './canvasMenu/CanvasMenu'
+import { PATH_TOOLS, canvasMenuRows, type CanvasMenuContext, type CanvasMenuRow } from './canvasMenu/rows'
+import { Rulers } from './guides/Rulers'
+import { useDocGuides, useViewSettings, withGuides, type GuideControl } from './guides/useGuides'
+import { NO_GUIDES, SNAP_DISTANCE, snapMove, snapPoint, snapSource, type Box, type SnapLine, type Snapper } from './guides/snap'
+import { VIEW_SETTING_ROWS, gridSpacing, shown as extraShown, viewChecked, viewRow } from './guides/view'
+import type { GuideDraft } from './guides/draw'
+import { NO_PATHS, createPathStore, partAt as partAtPoint, prunedSelection } from './paths/store'
+import type { PathData } from './paths/bezier'
+import { deleteSelectedAnchors, editPointAt, nudgeAnchors } from './tools/canvas/pathTools'
+import { PHOTO_MENUS } from './menus/catalog'
 
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
@@ -91,6 +103,10 @@ const OUTLINE_TOOLS: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['RectMarqu
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }
 /** Where arrow and number keys stay the control's own (a menu, a slider, a list). */
 const OWN_KEYS = 'input, select, textarea, [role="menu"], [role="menubar"], [role="menuitem"], [role="slider"], [role="listbox"], [role="option"], [role="tree"], [role="treeitem"], [role="grid"], [role="row"], [role="tablist"], [role="tab"], [role="radiogroup"], [role="scrollbar"], .kui-popover'
+/** The tools whose arrow keys and Delete act on the selected anchors of a path (plan 2026-11-24, stage 7). */
+const PATH_EDIT_TOOLS: ReadonlySet<string> = new Set(['Pen', 'PathSelection', 'DirectSelection', 'ConvertPoint'])
+/** The menu rows View answers itself, with their keys (Cmd+R Rulers, Cmd+; Guides, Cmd+' Grid…). */
+const VIEW_KEY_ROWS = PHOTO_MENUS.filter((row) => row.shortcut && VIEW_SETTING_ROWS.has(row.command))
 const RotateCcw = TesseraIcons.RotateCcwIcon
 const SquareDashed = TesseraIcons.SquareDashedIcon
 
@@ -303,7 +319,61 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const marks = useRef<CanvasMarks>(NO_MARKS)
   const viewport = useRef<Parameters<KitTool['begin']>[1]['viewport'] | null>(null)
   const redraw = useCallback(() => viewport.current?.draw(), [])
-  const overlays = usePhotoOverlays(doc, change, state?.hasSelection ?? false, zoom, tool === 'Pen' || tool === 'PathSelection' || tool === 'DirectSelection', marks)
+  // View's rulers, guides, grid and snapping, and the paths the path tools edit (plan 2026-11-24, stage 7).
+  const [viewSettings, setViewSettings] = useViewSettings()
+  const viewSettingsNow = useRef(viewSettings)
+  viewSettingsNow.current = viewSettings
+  const guides = useDocGuides(doc, change.revision)
+  const guidesNow = useRef(guides)
+  guidesNow.current = guides
+  const extras = useRef<CanvasExtras>(NO_EXTRAS)
+  const paths = useMemo(createPathStore, [])
+  const pathTool = PATH_TOOLS.has(tool)
+  // View's extras as the canvas draws them, set as the editor renders; a change of them gives the
+  // canvas a new decoration, which it draws at once (even before any pointer has been over it).
+  const activeBounds = state?.activeBounds ?? null
+  extras.current = {
+    ...extras.current,
+    settings: viewSettings,
+    guides,
+    resolution: state?.resolution ?? 72,
+    paths: pathTool ? paths : null,
+    tool,
+    layerEdges: activeBounds ? { x0: activeBounds.x0, y0: activeBounds.y0, x1: activeBounds.x1, y1: activeBounds.y1 } : null,
+  }
+  const [guideDraftShown, setGuideDraftShown] = useState<GuideDraft | null>(null)
+  const extrasVersion = JSON.stringify([viewSettings, guides, state?.resolution, pathTool, tool, activeBounds, guideDraftShown])
+  const overlays = usePhotoOverlays(doc, change, state?.hasSelection ?? false, zoom, marks, extras, extrasVersion)
+  /** A guide being dragged (out of a ruler, or moved), drawn at once (the ruler's drag may come before the canvas has seen the pointer, so the canvas is also given a new decoration). */
+  const setGuideDraft = useCallback(
+    (draft: GuideDraft | null) => {
+      extras.current = { ...extras.current, guideDraft: draft }
+      setGuideDraftShown(draft)
+      redraw()
+    },
+    [redraw],
+  )
+  // The paths the path tools edit: the work path and the active shape layer's, read again after every change.
+  const activeKind = state?.layers.find((layer) => layer.id === state.activeLayer)?.kind
+  useEffect(() => {
+    if (!doc || !pathTool) {
+      paths.set(NO_PATHS)
+      return undefined
+    }
+    let current = true
+    const shapeLayer = activeKind === 'Shape' ? (state?.activeLayer ?? null) : null
+    const read = (command: string, params: Record<string, unknown>) => doc.execute(command, params).then((answer) => (JSON.parse(answer) as { path?: PathData }).path ?? null, () => null)
+    void Promise.all([read('path.info', { name: 'work' }), shapeLayer != null ? read('shape.info', { layer: shapeLayer }) : Promise.resolve(null)]).then(([work, shape]) => {
+      if (!current) return
+      const view = paths.get()
+      const next = { ...view, work, shape: shape && shapeLayer != null ? { layer: shapeLayer, path: shape } : null }
+      paths.set({ ...next, selected: prunedSelection(next) })
+    })
+    return () => {
+      current = false
+    }
+  }, [doc, change.revision, pathTool, state?.activeLayer, activeKind, paths])
+  useEffect(() => paths.subscribe(redraw), [paths, redraw])
   // The keys held now, the pointer over the canvas (the brush outline follows it), and the cursor a tool asks for.
   const held = useMemo(createHeldKeys, [])
   const keys = useLive(held)
@@ -449,6 +519,68 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const typeHoverNow = useRef<(pointer: KitPointer, context: TypeContextArg) => void>(() => undefined)
   const editTextAtNow = useRef<(pointer: KitPointer) => Promise<void>>(() => Promise.resolve())
 
+  // Snapping (plan 2026-11-24, stage 7): to the guides and the grid, to other layers and the
+  // document as View › Snap To asks, and with Smart Guides on, the Move tool's drag to the other
+  // layers' and the document's edges and centres, with magenta lines. Ctrl held suspends it.
+  const snapper = useMemo<Snapper>(() => {
+    const source = (moving: number | null | undefined, smart: boolean) => {
+      const settings = viewSettingsNow.current
+      const now = stateNow.current
+      if (!now || held.get().ctrl) return null
+      const to = settings.snap ? settings.snapTo : { guides: false, grid: false, layers: false, documentBounds: false }
+      const smartOn = smart && extraShown(settings, 'smartGuides')
+      const layers = to.layers || smartOn
+      const boxes: Box[] = layers ? now.layers.filter((layer) => layer.visible && layer.id !== moving && layer.kind !== 'Group' && layer.bounds && layer.bounds[2] > 0 && layer.bounds[3] > 0).map((layer) => ({ x0: layer.bounds![0], y0: layer.bounds![1], x1: layer.bounds![0] + layer.bounds![2], y1: layer.bounds![1] + layer.bounds![3] })) : []
+      if (!settings.snap && !smartOn) return null
+      return snapSource({
+        guides: extraShown(settings, 'guides') ? guidesNow.current : NO_GUIDES,
+        layers: boxes,
+        width: now.width,
+        height: now.height,
+        grid: extraShown(settings, 'grid') ? gridSpacing(now.resolution).minor : null,
+        to: { ...to, layers, documentBounds: to.documentBounds || smartOn },
+      })
+    }
+    // The lines a snap shows: what it met besides a guide or the grid (those show already).
+    const report = (lines: readonly SnapLine[]) => {
+      const shownLines = lines.filter((line) => line.kind === 'layer' || line.kind === 'document')
+      if (!shownLines.length && !extras.current.snapLines.length) return
+      extras.current = { ...extras.current, snapLines: shownLines }
+      redraw()
+    }
+    return {
+      point: (p, zoom) => {
+        const from = source(null, false)
+        const answer = from ? snapPoint(p, from, SNAP_DISTANCE / (zoom || 1)) : { ...p, lines: [] }
+        report(answer.lines)
+        return answer
+      },
+      move: (box, dx, dy, zoom, moving) => {
+        const from = source(moving, true)
+        const answer = from ? snapMove(box, dx, dy, from, SNAP_DISTANCE / (zoom || 1)) : { dx, dy, lines: [] }
+        report(answer.lines)
+        return answer
+      },
+      done: () => report([]),
+    }
+  }, [held, redraw])
+  // Guides to grab with the Move tool (or Cmd held): moved, or dragged back to a ruler to delete them.
+  const guideControl = useMemo<GuideControl>(
+    () => ({
+      guides: () => guidesNow.current,
+      grabbable: () => extraShown(viewSettingsNow.current, 'guides') && !viewSettingsNow.current.lockGuides,
+      size: () => {
+        const shownView = canvas.current?.view()
+        return shownView ? { width: shownView.width, height: shownView.height } : null
+      },
+      draft: setGuideDraft,
+      move: (orientation, index, position) => void typeRun.current('view.moveGuide', { orientation, index, position }),
+      remove: (orientation, index) => void typeRun.current('view.deleteGuide', { orientation, index }),
+      setCursor: setToolCursor,
+    }),
+    [setGuideDraft],
+  )
+
   // The session's `run` takes a repaint area, which tells the canvas what to redraw; a failed tool
   // command says why. A tool that paints pixels asks first to rasterize a layer that has none.
   const env = useMemo<PhotoToolEnv>(() => ({
@@ -552,17 +684,22 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             })
             .catch(() => undefined)
         },
+        paths,
+        layerKind: (layer) => stateNow.current?.layers.find((item) => item.id === layer)?.kind ?? null,
+        snap: snapper,
     }),
     // The getters read refs; what is passed by value is in the list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline, aim],
+    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline, aim, paths, snapper],
   )
   const transformOpen = transform.box != null
   // While Free Transform's box is open the canvas is the box's: asked on every press, so a box a
   // press opens (a Show Transform Controls handle) keeps that press's drag.
   const boxTool = useMemo(() => transformTool(env, () => void transformNow.current.commit()), [env])
   const canvasTool = useMemo(() => {
-    const made = photoCanvasTool(tool, env)
+    const own0 = photoCanvasTool(tool, env)
+    // The Move tool grabs guides (plan 2026-11-24, stage 7).
+    const made = tool === 'Move' ? withGuides(own0, guideControl) : own0
     const needed = () => (paintsPixels(tool, optionsNow.current.gradientClassic) ? rasterizeNeeded(stateNow.current, maskTargetNow.current) : null)
     // Alt-click with the Clone Stamp or Healing Brush only sets the source: it paints nothing.
     const paints = (pointer: { alt: boolean; meta: boolean }) => paintsPixels(tool, optionsNow.current.gradientClassic) && !((tool === 'CloneStamp' || tool === 'Healing' || ALT_PICKS.has(tool)) && pointer.alt && !pointer.meta)
@@ -582,13 +719,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       },
     }
     return toolNow
-  }, [env, paintLease, tool, toolGeneration, boxTool])
+  }, [env, paintLease, tool, toolGeneration, boxTool, guideControl])
   // Cmd held turns a press into the Move tool's (Photoshop's), except for tools whose Cmd is their own.
   const moveOptionsNow = useRef(optionsFor(optionsState, 'Move'))
   moveOptionsNow.current = optionsFor(optionsState, 'Move')
   const temporaryMove = useMemo(
-    () => (CMD_IS_OWN.has(tool) || transformOpen ? null : photoCanvasTool('Move', Object.create(env, { options: { get: () => moveOptionsNow.current } }) as PhotoToolEnv)),
-    [env, tool, transformOpen],
+    () => (CMD_IS_OWN.has(tool) || transformOpen ? null : withGuides(photoCanvasTool('Move', Object.create(env, { options: { get: () => moveOptionsNow.current } }) as PhotoToolEnv), guideControl)),
+    [env, tool, transformOpen, guideControl],
   )
   // The Info panel reads the pointer on every move over the canvas, whatever the tool or the view is
   // doing; the brush outline follows it in the canvas's pixels.
@@ -613,18 +750,20 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const precise = (prefs.brushCursor === 'precise') !== keys.capsLock
   const outline = brushLike && !keys.space && !(keys.meta && temporaryMove) && !altOwn && !precise ? outlineDiameter(options.size, zoom) : null
 
-  // A right click on the canvas with a brush tool opens the brush preset picker there (the shared
-  // canvas drops right presses: Photo listens itself, as for Space and the wheel).
+  // A right click on the canvas opens the tool's menu there (plan 2026-11-24, stage 7), with a brush
+  // tool the brush preset picker (stage 5); Cmd (Ctrl) held lists the layers under the pointer. The
+  // shared canvas drops right presses: Photo listens itself, as for Space and the wheel.
   const brushLikeNow = useRef(brushLike)
   brushLikeNow.current = brushLike
+  const [canvasMenu, setCanvasMenu] = useState<{ at: { x: number; y: number }; rows: CanvasMenuRow[]; point: { x: number; y: number } | null } | null>(null)
+  const openCanvasMenuNow = useRef<(at: { x: number; y: number }, meta: boolean) => void>(() => undefined)
   useEffect(() => {
     const menu = (event: MouseEvent) => {
       const target = event.target
       if (!(target instanceof Element) || target.getAttribute('data-testid') !== 'kit-canvas-surface' || !workspace.current?.contains(target)) return
-      if (!brushLikeNow.current) return
       event.preventDefault()
       event.stopPropagation()
-      setBrushPicker({ x: event.clientX, y: event.clientY })
+      openCanvasMenuNow.current({ x: event.clientX, y: event.clientY }, event.metaKey || event.ctrlKey)
     }
     window.addEventListener('contextmenu', menu, true)
     return () => window.removeEventListener('contextmenu', menu, true)
@@ -712,9 +851,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // Files in and out (plan 2026-11-24, stage 6): Place Embedded picks through the host, Copy also
   // fills the system clipboard, Paste takes an image from it (`io/PhotoFileIo.tsx`).
   const fileIo = useRef<FileIo | null>(null)
+  // View's rows the editor answers (Rulers, Show, Snap, Snap To, Lock Guides: plan 2026-11-24, stage 7).
+  const viewRowNow = useRef((command: string) => setViewSettings(viewRow(viewSettingsNow.current, command)))
+  viewRowNow.current = (command: string) => setViewSettings(viewRow(viewSettingsNow.current, command))
   const dialogs = useMemo<Dialogs>(
     () => ({
       invoke: (command) => {
+        if (VIEW_SETTING_ROWS.has(command)) return viewRowNow.current(command)
         const io = fileIo.current
         if (io && command === 'file.placeEmbedded') return void io.place()
         if (io && (command === 'edit.copy' || command === 'edit.copyMerged')) return io.copy(command)
@@ -757,7 +900,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     }),
     [t, dialogs, phrase, toggleFloating, abilities, host],
   )
-  const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase])
+  const viewCheck = useCallback((command: string) => viewChecked(viewSettings, command), [viewSettings])
+  const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase, viewChecked: viewCheck }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase, viewCheck])
   // Home's tool buttons choose as the rail does (the latest `chooseTool`); the tabs are built again when the tool changes, for its pressed state.
   const chooseToolNow = useRef(chooseTool)
   chooseToolNow.current = chooseTool
@@ -1003,9 +1147,96 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     else await run(kind === 'undo' ? 'edit.undo' : 'edit.redo', {})
   }
 
+  /** The document point under page point (`clientX`, `clientY`), or null before the canvas is laid out. */
+  const documentAt = (clientX: number, clientY: number) => {
+    const surface = workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')
+    const shownView = canvas.current?.view()
+    if (!surface || !shownView) return null
+    const box = surface.getBoundingClientRect()
+    return { x: shownView.x + (clientX - box.left) / (shownView.zoom || 1), y: shownView.y + (clientY - box.top) / (shownView.zoom || 1), zoom: shownView.zoom || 1 }
+  }
+  // The canvas's menu (plan 2026-11-24, stage 7): read what is under the pointer, then show the tool's rows.
+  const menuSerial = useRef(0)
+  // Read when the menu opens and when a row runs: this render's paths and tools.
+  const pathsNow = {
+    current: {
+    target: async () => {
+      const view = paths.get()
+      return view.shape ? { kind: 'shape' as const } : view.work ? { kind: 'work' as const } : null
+    },
+    partAt: (_target: { kind: 'work' | 'shape' }, p: { x: number; y: number }, zoom: number): 'anchor' | 'segment' | null => {
+      const part = partAtPoint(paths.get(), [p.x, p.y], 6 / zoom)
+      return part?.anchor ? 'anchor' : part?.segment ? 'segment' : null
+    },
+    editPoint: (kind: 'addAnchor' | 'deleteAnchor', p: { x: number; y: number }) => editPointAt(env, kind, [p.x, p.y], canvas.current?.view()?.zoom ?? 1),
+    },
+  }
+  openCanvasMenuNow.current = (at, meta) => {
+    if (brushLikeNow.current && !meta) return setBrushPicker(at)
+    const serial = ++menuSerial.current
+    const point = documentAt(at.x, at.y)
+    const now = stateNow.current
+    void (async () => {
+      const inside = point != null && now != null && point.x >= 0 && point.y >= 0 && point.x < now.width && point.y < now.height
+      const picked = (meta || tool === 'Move') && inside ? await query<{ layers?: { layer: number; name: string }[] }>('layer.pickAt', { x: Math.floor(point.x), y: Math.floor(point.y), list: true, select: false }) : null
+      const pathTool = PATH_TOOLS.has(tool) && !meta
+      const target = pathTool ? await pathsNow.current.target() : null
+      const latest = stateNow.current
+      const active = latest?.layers.find((layer) => layer.id === latest.activeLayer)
+      const context: CanvasMenuContext = {
+        tool,
+        layersOnly: meta,
+        hasSelection: latest?.hasSelection ?? false,
+        layer: active ? { kind: active.kind, background: active.background } : null,
+        layersHere: (picked?.layers ?? []).map((layer) => ({ id: layer.layer, name: layer.name })),
+        activeLayer: latest?.activeLayer ?? null,
+        typeEditing: typeSession.active || textDraft != null,
+        path: target?.kind ?? null,
+        pathPart: pathTool && target && point ? pathsNow.current.partAt(target, point, point.zoom) : null,
+        penOpen: tool === 'Pen' && pending.current?.tool === 'Pen',
+        cropping: cropNow.current != null && !cropNow.current.initial,
+        sampleSize: optionsFor(optionsState, 'Eyedropper').sampleSize,
+      }
+      const rows = canvasMenuRows(context)
+      if (serial !== menuSerial.current || !rows.length) return
+      setCanvasMenu({ at, rows, point })
+    })()
+  }
+  /** A choice in the canvas's menu: a command (a "…" one through its dialog), a layer, or the editor's own action. */
+  const chooseFromCanvasMenu = (row: Extract<CanvasMenuRow, { kind: 'item' }>, point: { x: number; y: number } | null) => {
+    workspace.current?.focus({ preventScroll: true })
+    const action = row.action
+    if ('layer' in action) return void run('layer.select', { layer: action.layer, mode: 'replace' })
+    if ('command' in action) return action.params ? void run(action.command, action.params) : dialogs.invoke(action.command)
+    if (action.own === 'freeTransform') return startTransform()
+    if (action.own === 'editType') {
+      const layer = stateNow.current?.activeLayer
+      return layer != null ? void editLayerTextNow.current(layer, (length) => [0, length]) : undefined
+    }
+    if (action.own === 'commitType') return void (typeSession.active ? typeSession.commit() : textActions.current?.commit())
+    if (action.own === 'cancelType') return void (typeSession.active ? typeSession.cancel() : textActions.current?.cancel())
+    if (action.own === 'cropCommit') return void applyCrop()
+    if (action.own === 'cropCancel') return cancelCrop()
+    if (action.own === 'sampleSize' && action.value) return setToolOptions('Eyedropper', { sampleSize: action.value })
+    if (action.own === 'view' && action.value) return viewCommand(action.value)
+    if (action.own === 'closePath') return pending.current?.tool === 'Pen' ? (pending.current as PendingClicks & { close?: () => void }).close?.() : undefined
+    if ((action.own === 'deleteAnchor' || action.own === 'addAnchor') && point) return void pathsNow.current.editPoint(action.own, point)
+  }
+  const chooseFromCanvasMenuNow = useRef(chooseFromCanvasMenu)
+  chooseFromCanvasMenuNow.current = chooseFromCanvasMenu
+  /** The menu key or Shift+F10: the canvas's menu at the pointer (the canvas's centre when the pointer is elsewhere). */
+  const menuFromKeys = () => {
+    const surface = workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')
+    if (!surface) return
+    const box = surface.getBoundingClientRect()
+    const over = canvasPointer.get()
+    openCanvasMenuNow.current(over ? { x: box.left + over.x, y: box.top + over.y } : { x: box.left + box.width / 2, y: box.top + box.height / 2 }, false)
+  }
+
   // Arrow keys nudge (plan 2026-11-24, stage 2): Free Transform's box, the crop frame, the active
   // layer (its selected pixels with a selection) with the Move tool or Cmd held, and the selection's
   // outline with a selection tool; 1 screen pixel, 10 document pixels with Shift. Bundled presses are one step.
+  const pathNudge = useRef({ at: 0, key: '' })
   const nudge = (event: KeyboardEvent<HTMLDivElement>, command: boolean): boolean => {
     const arrow = ARROWS[event.key.toLowerCase()]
     if (!arrow || (event.target instanceof Element && event.target.closest(OWN_KEYS))) return false
@@ -1019,6 +1250,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     const frame = cropNow.current
     if (frame && !frame.initial) {
       updateCrop({ ...frame, x: frame.x + dx, y: frame.y + dy }, true)
+      return true
+    }
+    // A path's selected anchors (the path tools), one step for presses in a row.
+    if (PATH_EDIT_TOOLS.has(tool) && paths.get().selected?.anchors.length) {
+      const at = Date.now()
+      if (at - pathNudge.current.at > 1000) pathNudge.current.key = `photo-path-nudge-${at}`
+      pathNudge.current.at = at
+      void nudgeAnchors(env, dx, dy, pathNudge.current.key)
       return true
     }
     const now = stateNow.current
@@ -1060,6 +1299,17 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         return true
       }
     }
+    // The menu key and Shift+F10: the canvas's menu (plan 2026-11-24, stage 7).
+    if ((event.key === 'ContextMenu' || (event.shiftKey && !command && !event.altKey && event.key === 'F10')) && !(event.target instanceof Element && event.target.closest('input, select, [role="menu"], [role="menuitem"]'))) {
+      menuFromKeys()
+      return true
+    }
+    // View's own rows' keys: Cmd+R Rulers, Cmd+; Guides, Cmd+' Grid, Cmd+H Extras, Cmd+Shift+; Snap, Cmd+Alt+; Lock Guides.
+    const viewKey = VIEW_KEY_ROWS.find((row) => shortcutMatches(row.shortcut!, event, undefined, true))
+    if (viewKey) {
+      viewRowNow.current(viewKey.command)
+      return true
+    }
     const box = transformNow.current.boxNow.current
     const frame = cropNow.current
     if (box && key === 'enter') void transformNow.current.commit()
@@ -1069,8 +1319,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     else if (frame && !frame.initial && key === 'enter') void applyCrop()
     else if (frame && !frame.initial && key === 'escape') cancelCrop()
     else if (pending.current && key === 'enter') pending.current.finish()
-    else if (pending.current && key === 'escape') pending.current.cancel()
+    // Escape finishes the Pen's path as Enter does (Photoshop's); it drops the other tools' clicks.
+    else if (pending.current && key === 'escape') (pending.current.tool === 'Pen' ? pending.current.finish() : pending.current.cancel())
     else if (pending.current?.back && (key === 'backspace' || key === 'delete')) pending.current.back()
+    // Delete on a path's selected anchors takes them out; Escape lets them go (plan 2026-11-24, stage 7).
+    else if (PATH_EDIT_TOOLS.has(tool) && paths.get().selected?.anchors.length && (key === 'backspace' || key === 'delete') && !command && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) void deleteSelectedAnchors(env)
+    else if (PATH_EDIT_TOOLS.has(tool) && paths.get().selected?.anchors.length && key === 'escape' && !command) {
+      paths.set({ ...paths.get(), selected: null })
+    }
     else if (nudge(event, command)) return true
     else if (command || event.altKey) return false
     else if (event.code === 'BracketLeft' || event.code === 'BracketRight') stepBrush(event.code === 'BracketRight' ? 1 : -1, event.shiftKey)
@@ -1096,9 +1352,15 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     [floating, phrase, brushSettingsBody, brushesBody],
   )
   const closeFloating = useCallback((id: string) => setFloating((open) => open.filter((item) => item !== id)), [])
+  // View's own rows (Rulers, Show, Snap…) have no engine command: the editor answers them, so they are live.
+  const editorEnabled = editor.enabled
+  const photoEnabled = useCallback((command: string) => VIEW_SETTING_ROWS.has(command) || editorEnabled(command), [editorEnabled])
+  const surfaceBox = useCallback(() => workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')?.getBoundingClientRect() ?? null, [])
+  const dropGuide = useCallback((orientation: 'horizontal' | 'vertical', position: number) => void typeRun.current('view.newGuide', { orientation, position }), [])
+  const rulerLabel = useCallback((side: 'top' | 'left') => t(side === 'top' ? 'ruler.top' : 'ruler.left'), [t])
 
   return (
-    <KitEditorProvider editor={{ ...editor, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
+    <KitEditorProvider editor={{ ...editor, enabled: photoEnabled, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
       <TypeEditingContext.Provider value={typeEditingApi}>
       <DialogsProvider value={dialogs}>
       <ColorPickerProvider sample={sampleAt}>
@@ -1196,7 +1458,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           <PhotoFileIo api={fileIo} workspace={workspace} canvas={canvas} size={state ? { width: state.width, height: state.height } : null} busy={busy} editing={() => typeSession.active || textDraft != null} />
           <GradientEditorOutlet />
           <ColorPickerOutlet />
-          <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
+          <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace" data-rulers={viewSettings.rulers ? '' : undefined} data-guides={JSON.stringify(guides)}>
+            {viewSettings.rulers ? <Rulers view={view} pointer={canvasPointer} surface={surfaceBox} onDraft={setGuideDraft} onDrop={dropGuide} label={rulerLabel} /> : null}
             <PhotoCanvas
               activeTool={tool}
               onDenied={denyTools}
@@ -1250,6 +1513,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           <ErrorNotices t={t} />
           {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
           {brushPicker ? <BrushPickerPopover at={brushPicker} options={brushOptions} onClose={() => setBrushPicker(null)} /> : null}
+          <CanvasMenu at={canvasMenu?.at ?? null} rows={canvasMenu?.rows ?? []} phrase={phrase} onChoose={(row) => chooseFromCanvasMenuNow.current(row, canvasMenu?.point ?? null)} onClose={() => setCanvasMenu(null)} />
         </EditorFrame>
       </GradientEditorProvider>
       </ColorPickerProvider>

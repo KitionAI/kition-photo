@@ -84,12 +84,20 @@ export function marqueeTool(id: 'RectMarquee' | 'EllipseMarquee', ellipse: boole
   const tool: KitTool = {
     id,
     cursor: 'crosshair',
-    begin: (pressed, context) => {
+    begin: (press, context) => {
+      // Snapping (plan 2026-11-24, stage 7): the press and the pointer to guides, the grid, layers, the document.
+      const snap = (pointer: KitPointer): KitPointer => {
+        if (!env.snap) return pointer
+        const at = env.snap.point({ x: pointer.x, y: pointer.y }, context.viewport.view.zoom)
+        return { ...pointer, x: at.x, y: at.y }
+      }
+      const pressed = snap(press)
       // Shift and Alt at the press choose the mode (add, subtract); pressed again (or first) after
       // it, they square the box and draw it from its centre, as Photoshop's.
       let shiftFree = !pressed.shift
       let altFree = !pressed.alt
-      const area = (start: KitPointer, pointer: KitPointer) => {
+      const area = (start: KitPointer, raw: KitPointer) => {
+        const pointer = snap(raw)
         if (!pointer.shift) shiftFree = true
         if (!pointer.alt) altFree = true
         const square = pointer.shift && shiftFree
@@ -127,7 +135,19 @@ export function marqueeTool(id: 'RectMarquee' | 'EllipseMarquee', ellipse: boole
         if (end.y === start.y) box.height = 0
         return box
       }
-      return rectDrag(id, 'crosshair', done, { area, outline: ellipse ? ellipseOutline : undefined, readout: true }).begin(pressed, context)
+      const gesture = rectDrag(id, 'crosshair', done, { area, outline: ellipse ? ellipseOutline : undefined, readout: true }).begin(pressed, context)
+      if (!gesture || !env.snap) return gesture
+      return {
+        ...gesture,
+        end: (pointer, now) => {
+          gesture.end?.(pointer, now)
+          env.snap?.done()
+        },
+        cancel: (now) => {
+          gesture.cancel?.(now)
+          env.snap?.done()
+        },
+      }
     },
   }
   return withOutlineMove(id, tool, env)

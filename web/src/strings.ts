@@ -7,6 +7,15 @@ import type { Catalog } from '@kition/sdk/editor'
  * phrases (`dialogs/labels.ts`).
  */
 const PARAM_WORDS: ReadonlyArray<readonly [string, string, string]> = [
+  // View › New Guide… and New Guide Layout… (plan 2026-11-24, stage 7).
+  ['orientation', 'Orientation', '取向'],
+  ['position', 'Position', '位置'],
+  ['columns', 'Columns', '列数'],
+  ['rows', 'Rows', '行数'],
+  ['gutter', 'Gutter', '装订线'],
+  ['rowGutter', 'Row Gutter', '行装订线'],
+  ['centerColumns', 'Center Columns', '列居中'],
+  ['clearExisting', 'Clear Existing Guides', '清除现有参考线'],
   ['amount', 'Amount', '数量'],
   ['inPlace', 'In Place', '原位'],
   ['to', 'To Mode', '目标模式'],
@@ -208,6 +217,8 @@ const PARAM_WORDS: ReadonlyArray<readonly [string, string, string]> = [
 ]
 
 const OPTION_WORDS: ReadonlyArray<readonly [string, string, string]> = [
+  ['horizontal', 'Horizontal', '水平'],
+  ['vertical', 'Vertical', '垂直'],
   ['warming85', 'Warming Filter (85)', '加温滤镜 (85)'],
   ['warmingLBA', 'Warming Filter (LBA)', '加温滤镜 (LBA)'],
   ['warming81', 'Warming Filter (81)', '加温滤镜 (81)'],
@@ -669,6 +680,12 @@ const STAGE6_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['error.denied', 'You do not have permission to do that here.', '你在这里没有执行此操作的权限。'],
 ]
 
+/** Plan 2026-11-24, stage 7: the canvas's menu, rulers and guides, snapping, the path tools and the five tools added. [key, English, Chinese] */
+const STAGE7_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
+  ['ruler.top', 'Ruler (drag down for a guide)', '标尺（向下拖出参考线）'],
+  ['ruler.left', 'Ruler (drag right for a guide)', '标尺（向右拖出参考线）'],
+]
+
 const enUS: Catalog = {
   "noLayers": "No layers",
   "colors": "Foreground and background colors",
@@ -746,6 +763,7 @@ const enUS: Catalog = {
   ...words(CANVAS_STRINGS, '', 1),
   ...words(STAGE5_STRINGS, '', 1),
   ...words(STAGE6_STRINGS, '', 1),
+  ...words(STAGE7_STRINGS, '', 1),
   ...words(PARAM_WORDS, 'param', 1),
   ...words(OPTION_WORDS, 'option', 1),
 }
@@ -827,6 +845,7 @@ const zhCN: Catalog = {
   ...words(CANVAS_STRINGS, '', 2),
   ...words(STAGE5_STRINGS, '', 2),
   ...words(STAGE6_STRINGS, '', 2),
+  ...words(STAGE7_STRINGS, '', 2),
   ...words(PARAM_WORDS, 'param', 2),
   ...words(OPTION_WORDS, 'option', 2),
 }
@@ -871,6 +890,22 @@ export const PHRASES: Record<string, Record<string, string>> = {
     'Delete Path': '删除路径',
     'Rename Path': '重命名路径',
     'Adjustment Properties': '调整属性',
+    // Plan 2026-11-24, stage 7: the canvas's menu and the tools added.
+    'Context Menu': '右键菜单',
+    'Select a layer': '选择图层',
+    'Make Work Path…': '建立工作路径…',
+    'Commit': '提交',
+    'Close Path': '闭合路径',
+    'Delete Anchor Point': '删除锚点',
+    'Add Anchor Point': '添加锚点',
+    'Free Transform Path': '自由变换路径',
+    'Select Inverse': '选择反向',
+    'New Layer…': '新建图层…',
+    'Create Vector Mask': '创建矢量蒙版',
+    'Color Replacement Tool': '颜色替换工具',
+    'Single Row Marquee Tool': '单行选框工具',
+    'Single Column Marquee Tool': '单列选框工具',
+    'Convert Point Tool': '转换点工具',
     'Adjustment Layer': '调整图层',
     'Method': '方法',
     'Interpolation': '插值',

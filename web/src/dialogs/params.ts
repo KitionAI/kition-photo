@@ -69,6 +69,16 @@ export function softMaxFor(min: number, max: number) {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
+/**
+ * Starting values for numbers whose engine default asks nothing useful (plan 2026-11-24, stage 7):
+ * New Guide has no default position, and New Guide Layout's zero columns make no guides; these
+ * start as Photoshop's dialogs do.
+ */
+const STARTING: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+  'view.newGuide': { position: 0 },
+  'view.newGuideLayout': { columns: 8, gutter: 20 },
+}
+
 /** One key's field, or null when the dialog does not ask for it. */
 export function fieldFor(command: ParamsCommand, key: string, node: SchemaNode): ParamField | null {
   if (SHARED_KEYS.has(key)) return null
@@ -84,7 +94,7 @@ export function fieldFor(command: ParamsCommand, key: string, node: SchemaNode):
       rangeFromParams(command.params, key) ??
       rangeFromDescription(node.description) ??
       (node.minimum !== undefined && node.maximum !== undefined && node.minimum < node.maximum ? { min: node.minimum, max: node.maximum } : null)
-    const fallback = typeof node.default === 'number' ? node.default : undefined
+    const fallback = STARTING[command.id]?.[key] ?? (typeof node.default === 'number' ? node.default : undefined)
     if (range) {
       const initial = clamp(fallback ?? ('initial' in range && typeof range.initial === 'number' ? range.initial : Math.max(range.min, Math.min(0, range.max))), range.min, range.max)
       return { key, kind: 'slider', min: range.min, max: range.max, softMax: Math.max(initial, softMaxFor(range.min, range.max)), decimals: decimalsFor(integer, range.min, range.max), initial }

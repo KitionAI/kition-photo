@@ -27,7 +27,16 @@ function heldRatio(env: PhotoToolEnv): [number, number] | null {
  */
 let previewLeft = false
 
-function drawFrame(env: PhotoToolEnv, start: KitPointer, context: KitToolContext): KitGesture | void {
+/** A point snapped (plan 2026-11-24, stage 7) to guides, the grid, layers and the document, as View › Snap To asks. */
+function snapped(env: PhotoToolEnv, pointer: KitPointer, zoom: number): KitPointer {
+  if (!env.snap) return pointer
+  const at = env.snap.point({ x: pointer.x, y: pointer.y }, zoom)
+  return { ...pointer, x: at.x, y: at.y }
+}
+
+function drawFrame(env: PhotoToolEnv, press: KitPointer, context: KitToolContext): KitGesture | void {
+  const zoom = context.viewport.view.zoom
+  const start = snapped(env, press, zoom)
   const before = env.crop?.frame ?? null
   let proposed = false
   const drag = rectDrag(
@@ -40,7 +49,8 @@ function drawFrame(env: PhotoToolEnv, start: KitPointer, context: KitToolContext
       env.proposeCrop(area)
     },
     {
-      area: (from, pointer) => {
+      area: (from, raw) => {
+        const pointer = snapped(env, raw, zoom)
         const ratio = heldRatio(env)
         if (!ratio) return dragRect(from, pointer, pointer.shift)
         // From a whole pixel, both sides rounded from the same scale: a 1 : 1 crop stays square
@@ -60,10 +70,12 @@ function drawFrame(env: PhotoToolEnv, start: KitPointer, context: KitToolContext
     ...drag,
     end: (pointer, now) => {
       drag.end?.(pointer, now)
+      env.snap?.done()
       restore()
     },
     cancel: (now) => {
       drag.cancel?.(now)
+      env.snap?.done()
       restore()
     },
   }
@@ -91,11 +103,28 @@ export function cropTool(env: PhotoToolEnv): KitTool {
         context.overlay.clear()
       }
       const from = { x: pointer.x, y: pointer.y }
-      const place = (to: KitPointer): CropFrame => ({ ...dragCrop(frame, handle, from, to, { shift: to.shift }, handle === 'inside' || handle === 'rotate' ? null : heldRatio(env)), initial: false })
+      const zoom = viewport.view.zoom
+      // A handle snaps where it is dragged; the moved frame by its edges and centre; a turn does not.
+      const snap = (to: KitPointer): KitPointer => {
+        if (!env.snap || handle === 'rotate') return to
+        if (handle !== 'inside') return snapped(env, to, zoom)
+        const moved = env.snap.move({ x0: frame.x, y0: frame.y, x1: frame.x + frame.width, y1: frame.y + frame.height }, to.x - from.x, to.y - from.y, zoom)
+        return { ...to, x: from.x + moved.dx, y: from.y + moved.dy }
+      }
+      const place = (raw: KitPointer): CropFrame => {
+        const to = snap(raw)
+        return { ...dragCrop(frame, handle, from, to, { shift: to.shift }, handle === 'inside' || handle === 'rotate' ? null : heldRatio(env)), initial: false }
+      }
       return {
         move: (to) => env.crop.update(place(to), false),
-        end: (to) => env.crop.update(place(to), true),
-        cancel: () => env.crop.update(frame, true),
+        end: (to) => {
+          env.crop.update(place(to), true)
+          env.snap?.done()
+        },
+        cancel: () => {
+          env.snap?.done()
+          env.crop.update(frame, true)
+        },
       }
     },
     hover: (pointer, { viewport, overlay }) => {

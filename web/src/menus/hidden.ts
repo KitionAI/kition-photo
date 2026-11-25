@@ -78,7 +78,11 @@ export function isHiddenOnWeb(row: MenuRow) {
 
 const PREFERENCES = 'The preferences pages are not built yet: the row would only add an empty history step.'
 const CUT = 'Needs a window of its own, cut for the launch (plan 2026-11-24, section 1).'
-const NO_GUIDES = 'The canvas does not draw guides yet (plan 2026-11-24, stage 7).'
+const SCREEN = 'The host shows the editor; it has no screen modes of its own.'
+const ASPECT = "The canvas shows square pixels; the engine keeps no pixel aspect ratio to correct."
+const PROOF = 'Soft-proofing to this profile is not in the web engine.'
+const NO_ARTBOARDS = 'There are no artboards in Kition Photo yet.'
+const NOT_DRAWN = 'The canvas does not draw these yet (plan 2026-11-24, stage 7: guides, grid, pixel grid, smart guides, selection edges, target path and layer edges are drawn).'
 const VARIABLES = 'Variables need a data-set editor, not built yet; without one the engine refuses the row.'
 const MEASUREMENT = 'Measurement needs the Measurement Log panel, cut for the launch.'
 
@@ -111,8 +115,30 @@ const NOT_BUILT: Readonly<Record<string, string>> = {
   'filter.liquify': CUT,
   'filter.rawDevelop': CUT,
   'filter.distort.displace': 'Needs a displacement map file, which the editor cannot pick yet; the engine refuses it without one.',
-  'view.newGuide': NO_GUIDES,
-  'view.newGuideLayout': NO_GUIDES,
+  // View rows with nothing behind them (plan 2026-11-24, stage 7: the rest of View works).
+  'view.proofSetup.custom': PROOF,
+  'view.proofSetup.workingCmyk': PROOF,
+  'view.proofSetup.internetStandardRgb': PROOF,
+  'view.proofSetup.monitorRgb': PROOF,
+  ...Object.fromEntries(['custom', 'square', 'd1DvNtsc', 'd1DvPal', 'd1DvNtscWidescreen', 'hdv1080', 'd1DvPalWidescreen', 'dvcproHd1080', 'anamorphic2To1'].map((name) => [`view.pixelAspectRatio.${name}`, ASPECT])),
+  'view.pixelAspectRatioCorrection': ASPECT,
+  'view.fitArtboardOnScreen': NO_ARTBOARDS,
+  'view.show.artboardGuides': NO_ARTBOARDS,
+  'view.show.canvasGuides': "Without artboards every guide is the canvas's: View › Show › Guides shows them.",
+  'view.flipHorizontal': "The shared canvas cannot mirror the view; Image › Image Rotation › Flip Canvas Horizontal flips the image itself.",
+  'view.screenMode.standard': SCREEN,
+  'view.screenMode.fullScreenWithMenuBar': SCREEN,
+  'view.screenMode.fullScreen': SCREEN,
+  'view.show.count': NOT_DRAWN,
+  'view.show.slices': NOT_DRAWN,
+  'view.show.notes': NOT_DRAWN,
+  'view.show.brushPreview': NOT_DRAWN,
+  'view.show.mesh': NOT_DRAWN,
+  'view.show.editPins': NOT_DRAWN,
+  'view.show.showExtrasOptions': 'The extras options dialog is not built yet; View › Show turns each extra on and off.',
+  'view.snapTo.slices': 'Slices are not drawn on the canvas yet, so nothing snaps to them.',
+  'view.patternPreview': 'Pattern Preview is not in the web engine.',
+  'view.pixelArtPreview': 'Pixel Art Preview is not in the web engine.',
   // "…" rows whose values the generic dialog cannot ask (a file, a JSON map): without a dialog of their own they would run bare.
   'layer.objectLayers.replaceContents': 'Needs a file picker for the new contents, not built yet.',
   'layer.objectLayers.exportContents': 'Writes the contents to a local file; exporting through the host is not built yet.',

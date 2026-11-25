@@ -37,6 +37,8 @@ export type PhotoLayer = {
   expanded?: boolean
   folded: boolean
   effects: { enabled: boolean; items: PhotoEffect[] } | null
+  /** The layer's content bounds [x, y, width, height] in document pixels (smart guides snap to them), when the engine gives them. */
+  bounds?: [number, number, number, number] | null
   /** An adjustment layer's kind (`levels`, `hueSaturation`…) and settings as `layer.setAdjustment` takes them; null for other layers. */
   adjustment: { kind: string; params: Record<string, unknown>; lookup: string | null } | null
   /** Whether the layer is an artboard (a group with a canvas of its own). */
@@ -157,6 +159,7 @@ function flatten(layers: readonly InspectedLayer[] | undefined, depth: number, f
       expanded: layer.kind === 'Group' ? (layer.expanded ?? true) : undefined,
       folded,
       effects: items.length ? { enabled: layer.effects?.enabled ?? true, items } : null,
+      bounds: layer.bounds ?? null,
       adjustment: layer.adjustmentKind ? adjustmentOf(layer) : null,
       artboard: layer.artboard != null,
     })

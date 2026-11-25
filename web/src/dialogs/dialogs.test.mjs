@@ -32,7 +32,8 @@ test('the purpose-built dialogs serve the destructive adjustment and its adjustm
 })
 
 test('rows with nothing behind them are hidden and open no dialog', () => {
-  for (const command of ['edit.preferences.interface', 'edit.preferences.rawDefaults', 'edit.keyboardShortcuts', 'filter.filterGallery', 'view.newGuide', 'image.variables.define', 'filter.distort.displace']) {
+  // View › New Guide… has its dialog since stage 7; Pattern Preview stands for View's rows with nothing behind them.
+  for (const command of ['edit.preferences.interface', 'edit.preferences.rawDefaults', 'edit.keyboardShortcuts', 'filter.filterGallery', 'view.patternPreview', 'image.variables.define', 'filter.distort.displace']) {
     assert.ok(notBuiltReason(command)?.trim(), command)
     assert.equal(isHiddenCommand(command), true, command)
     assert.equal(dialogFor({ id: command, title: 'x…', asks: true }), null, command)

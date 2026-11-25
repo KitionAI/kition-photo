@@ -44,7 +44,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
     begin: (start, context) => {
       const { overlay, viewport } = context
       const handle = boxHandle(env, start, (x, y) => viewport.toScreen(x, y))
-      if (handle && env.transform.start()) return transformGesture(env, handle, start)
+      if (handle && env.transform.start()) return transformGesture(env, handle, start, viewport.view.zoom)
       const floating = env.selection != null && env.layer?.kind === 'Pixel'
       env.moving(true)
       // With a selection the selected pixels move: Auto-Select does not pick another layer.
@@ -106,7 +106,14 @@ export function moveTool(env: PhotoToolEnv): KitTool {
       const offsetOf = (pointer: KitPointer) => {
         const dx = pointer.x - start.x
         const dy = pointer.y - start.y
-        return pointer.shift ? constrainEight(dx, dy) : { x: Math.round(dx), y: Math.round(dy) }
+        const free = pointer.shift ? constrainEight(dx, dy) : { x: Math.round(dx), y: Math.round(dy) }
+        // Snapping (plan 2026-11-24, stage 7): the moved box's edges or centre to guides, the grid, other layers, the document.
+        const selection = floating ? env.selection : null
+        const box = selection ? { x0: selection[0], y0: selection[1], x1: selection[0] + selection[2], y1: selection[1] + selection[3] } : bounds
+        if (!env.snap || !box) return free
+        const snapped = env.snap.move(box, free.x, free.y, viewport.view.zoom, floating ? null : (env.layer?.id ?? null))
+        // An axis Shift holds stays held.
+        return { x: pointer.shift && free.x === 0 ? 0 : Math.round(snapped.dx), y: pointer.shift && free.y === 0 ? 0 : Math.round(snapped.dy) }
       }
       const draw = () => {
         if (refused) return
@@ -152,6 +159,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
         },
         cancel: () => {
           env.moving(false)
+          env.snap?.done()
           refused = true
           putBack()
           image?.bitmap.close()
@@ -162,6 +170,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
           moved ||= Math.hypot(pointer.clientX - start.clientX, pointer.clientY - start.clientY) >= COPY_AFTER_PX
           if (moved) delta = offsetOf(pointer)
           env.moving(false)
+          env.snap?.done()
           await picked
           judge()
           refused ||= !judged && Boolean(env.layer?.locked && !floating && pickedLayer === null)
@@ -204,7 +213,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
  * point; Cmd moves a corner alone or slides an edge), inside moves, outside rotates (Shift: 15°),
  * the reference point moves itself. The layer follows live (the editor previews `edit.transform`).
  */
-export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPointer): KitGesture | void {
+export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPointer, zoom = 1): KitGesture | void {
   const box = env.transform.box
   if (!box) return
   const from = { x: start.x, y: start.y }
@@ -215,11 +224,23 @@ export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPo
   const modeKeys = box.mode !== 'free'
   let quad = startQuad
   let reference = startReference
-  const place = (pointer: KitPointer) => {
+  const bbox = { x0: Math.min(...startQuad.map((p) => p.x)), y0: Math.min(...startQuad.map((p) => p.y)), x1: Math.max(...startQuad.map((p) => p.x)), y1: Math.max(...startQuad.map((p) => p.y)) }
+  /** The pointer snapped (plan 2026-11-24, stage 7): a moved box by its edges and centre, a handle by itself; a turn is not snapped. */
+  const snapped = (pointer: KitPointer): KitPointer => {
+    if (!env.snap || handle === 'rotate' || handle === 'centre') return pointer
+    if (handle === 'inside') {
+      const moved = env.snap.move(bbox, pointer.x - from.x, pointer.y - from.y, zoom, box.layer)
+      return { ...pointer, x: from.x + moved.dx, y: from.y + moved.dy }
+    }
+    const at = env.snap.point({ x: pointer.x, y: pointer.y }, zoom)
+    return { ...pointer, x: at.x, y: at.y }
+  }
+  const place = (raw: KitPointer) => {
     if (handle === 'centre') {
-      reference = { x: pointer.x, y: pointer.y }
+      reference = { x: raw.x, y: raw.y }
       return
     }
+    const pointer = snapped(raw)
     quad = dragTransform(startQuad, startReference, handle, from, pointer, { shift: pointer.shift, alt: pointer.alt, meta: pointer.meta || modeKeys })
     if (centred) reference = quadCentre(quad)
     else if (handle === 'inside') reference = { x: startReference.x + (quad[0].x - startQuad[0].x), y: startReference.y + (quad[0].y - startQuad[0].y) }
@@ -231,9 +252,13 @@ export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPo
     },
     end: (pointer) => {
       place(pointer)
+      env.snap?.done()
       env.transform.update(quad, reference, true)
     },
-    cancel: () => env.transform.update(startQuad, startReference, true),
+    cancel: () => {
+      env.snap?.done()
+      env.transform.update(startQuad, startReference, true)
+    },
   }
 }
 
@@ -253,7 +278,7 @@ export function transformTool(env: PhotoToolEnv, commit: () => void): KitTool {
     cursor: 'default',
     begin: (pointer, { viewport }) => {
       const handle = handleOf(pointer, (x, y) => viewport.toScreen(x, y))
-      return handle ? transformGesture(env, handle, pointer) : undefined
+      return handle ? transformGesture(env, handle, pointer, viewport.view.zoom) : undefined
     },
     hover: (pointer, { viewport }) => {
       const handle = handleOf(pointer, (x, y) => viewport.toScreen(x, y))

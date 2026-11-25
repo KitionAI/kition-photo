@@ -34,8 +34,9 @@ const PHOTO_PRIMARY: Record<string, readonly string[]> = {
  * zoom rows; Help). An engine row runs through `onCommand` (the dialog host's `invoke`, so a "…"
  * row asks first); `before` puts Kition's own actions at the top of a menu (File › New…).
  */
-export function photoMenuTabs({ windows, dock, onKitCommand, onCommand, before, phrase }: { windows: WindowState; dock: DockTabs; onKitCommand: (command: string) => void; onCommand: (command: string) => void; before?: Readonly<Record<string, readonly MenuAction[]>>; phrase: Phrases }): FrameTab[] {
-  return catalogTabs(PHOTO_MENUS, { phrase, hidden: isHiddenInMenus, onKitCommand, onCommand, before, checked: (command) => windowShown(windows, command, dock), view: VIEW_MENUS }).map((tab) =>
+export function photoMenuTabs({ windows, dock, onKitCommand, onCommand, before, phrase, viewChecked }: { windows: WindowState; dock: DockTabs; onKitCommand: (command: string) => void; onCommand: (command: string) => void; before?: Readonly<Record<string, readonly MenuAction[]>>; phrase: Phrases; viewChecked?: (command: string) => boolean | undefined }): FrameTab[] {
+  // `viewChecked`: the check marks of View's rows the editor answers (Rulers, Show, Snap: plan 2026-11-24, stage 7).
+  return catalogTabs(PHOTO_MENUS, { phrase, hidden: isHiddenInMenus, onKitCommand, onCommand, before, checked: (command) => windowShown(windows, command, dock) ?? viewChecked?.(command), view: VIEW_MENUS }).map((tab) =>
     PHOTO_PRIMARY[tab.id] && tab.menu ? { ...tab, ribbon: <PhotoMenuRibbon tab={tab} tree={tab.menu} primary={PHOTO_PRIMARY[tab.id]} onCommand={onCommand} /> } : tab,
   )
 }

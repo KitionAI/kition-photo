@@ -2278,3 +2278,48 @@ select.kui-field.photo-kerning-presets {
   word-break: break-word;
   font-size: 11px;
 }
+
+/* View › Rulers (plan 2026-11-24, stage 7): along the top and the left; the canvas moves in by their thickness. */
+.photo-workspace[data-rulers] > .kui-canvas,
+.photo-workspace[data-rulers] .kui-canvas {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  width: calc(100% - 18px);
+  height: calc(100% - 18px);
+}
+
+.photo-ruler,
+.photo-ruler-corner {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  background: var(--kit-surface-muted);
+  color: var(--kit-text-muted);
+  border-color: var(--kit-border);
+  touch-action: none;
+}
+
+.photo-ruler-corner {
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  box-shadow: inset -1px -1px 0 var(--kit-border);
+}
+
+.photo-ruler-top {
+  left: 18px;
+  top: 0;
+  width: calc(100% - 18px);
+  height: 18px;
+  cursor: row-resize;
+}
+
+.photo-ruler-left {
+  left: 0;
+  top: 18px;
+  width: 18px;
+  height: calc(100% - 18px);
+  cursor: col-resize;
+}

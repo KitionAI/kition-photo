@@ -3,6 +3,8 @@ import type { ToolOptions } from '../options'
 import { CORNERS, EDGES, HANDLE_AT, cropQuad, quadPoint, snap45, type CropBox, type Point, type Quad } from './geometry'
 import type { LivePreview } from './live'
 import type { LiveStroke } from './stroke'
+import type { PathStore } from '../../paths/store'
+import type { Snapper } from '../../guides/snap'
 
 /** An image area that needs no repaint: the change touched no pixels (selections, paths, notes). */
 export const NO_REPAINT: RasterRect = { x0: 0, y0: 0, x1: 0, y1: 0 }
@@ -21,8 +23,8 @@ export type KitViewport = Parameters<KitTool['begin']>[1]['viewport']
 /** One drag a tool's press starts. */
 export type KitGesture = Exclude<ReturnType<KitTool['begin']>, void>
 
-/** A tool that takes several clicks (Pen, Polygonal and Magnetic Lasso): Enter finishes it, Escape drops it, Backspace takes its last point back. */
-export type PendingClicks = { tool: string; finish: () => void; cancel: () => void; back?: () => void }
+/** A tool that takes several clicks (Pen, Polygonal and Magnetic Lasso): Enter finishes it, Escape drops it, Backspace takes its last point back, `close` closes it (the canvas menu's Close Path). */
+export type PendingClicks = { tool: string; finish: () => void; cancel: () => void; back?: () => void; close?: () => void }
 
 /** Free Transform's box (plan 2026-11-24, stage 2): the source rectangle [x0, y0, x1, y1], where its corners go, and the reference point. */
 export type TransformBox = { layer: number; rect: [number, number, number, number]; quad: Quad; reference: Point; mode: 'free' | 'skew' | 'distort' }
@@ -114,6 +116,12 @@ export type PhotoToolEnv = {
    * the layer only at the pointer); null puts it back. `area` is drawn again (the whole view when null).
    */
   omitLayer?: (layer: number | null, viewport: KitViewport, area: RasterRect | null) => void
+  /** The paths the path tools edit, their selected anchors (plan 2026-11-24, stage 7); absent where a tool runs on its own. */
+  paths?: PathStore
+  /** A layer's kind (`Shape`, `Pixel`…) by id, or null: Path Selection picks a shape layer under the press. */
+  layerKind?: (layer: number) => string | null
+  /** Snapping (plan 2026-11-24, stage 7): absent or off, points and boxes stay where they are. */
+  snap?: Snapper
 }
 
 export function rectArea(area: Area, margin = 0): RasterRect {
@@ -331,6 +339,7 @@ export function clickTool<P extends number[]>(
           first: pointer,
           overlay,
           finish: () => finish(false),
+          close: () => finish(true),
           cancel: () => {
             env.pending.current = null
             overlay.clear()
