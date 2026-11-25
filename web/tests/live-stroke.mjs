@@ -126,6 +126,10 @@ try {
   // Escape mid-stroke puts the picture back and changes nothing.
   {
     const start = await inspect()
+    // Read the picture there once the canvas has painted it (after the last release it can still
+    // be drawing): the document's own colour at that point, as the engine composites it.
+    const composite = (await page.evaluate(async () => (await window.devHost.connection().ai.run([{ command: 'document.sampleColor', params: { x: 500, y: 450, size: 'point', sampleLayer: 'all' } }], false)).completed[0].result)).slice(0, 3).map((value) => Math.round(value * 255))
+    await until(async () => near(await pixel(500, 450), composite, 6), 50)
     const before = await pixel(500, 450)
     await press(300, 450)
     await drawTo(700, 450)
