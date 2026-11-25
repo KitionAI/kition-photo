@@ -1301,3 +1301,211 @@ select.kui-field.photo-kerning-presets {
 .photo-scrollbars[data-both] > .kui-scrollbar[aria-orientation='horizontal'] {
   right: 14px;
 }
+
+/* Command dialogs (`dialogs/`): rows of labelled controls in a PreviewDialog. */
+.photo-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 340px;
+  max-width: 460px;
+}
+
+.photo-dialog-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.photo-dialog-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.photo-dialog-row > .kui-choice {
+  flex: 1 1 auto;
+}
+
+.photo-dialog-row > .kui-choice > span,
+.photo-dialog-label {
+  flex: 0 0 104px;
+  overflow: hidden;
+  color: var(--kit-text-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-dialog-row > .kui-choice select {
+  max-width: none;
+  flex: 1 1 auto;
+}
+
+.photo-dialog-row > input.kui-field {
+  flex: 1 1 auto;
+}
+
+.photo-dialog-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.photo-dialog-number input {
+  width: 96px;
+}
+
+.photo-dialog-unit {
+  color: var(--kit-text-muted);
+  font-size: 12px;
+}
+
+.photo-dialog-caption {
+  margin-top: 4px;
+  color: var(--kit-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.photo-dialog-hint {
+  color: var(--kit-text-muted);
+  font-size: 12px;
+}
+
+.photo-dialog-warning {
+  color: var(--kit-danger);
+  font-size: 12px;
+}
+
+/* Levels and Curves (`dialogs/ToneEditors.tsx`), in a dialog and in Properties. */
+.photo-tone-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.photo-histogram-box {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* A fixed width in a dialog: a dialog fits its content, and a histogram that fits its box would
+   resize the dialog that sizes it (WebKit reports the ResizeObserver loop). */
+.photo-dialog .photo-tone-editor {
+  width: 380px;
+}
+
+.photo-histogram-empty {
+  border: 1px solid var(--kit-border);
+  border-radius: var(--kit-radius-control);
+  background: var(--kit-surface-muted);
+}
+
+.photo-tone-fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.photo-handle-track {
+  position: relative;
+  height: 14px;
+  margin: 0 6px;
+}
+
+.photo-handle-track-ramp {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 6px;
+  border: 1px solid var(--kit-border);
+  border-radius: 2px;
+}
+
+.photo-handle {
+  position: absolute;
+  top: 2px;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--kit-text-muted);
+  border-left: 6px solid transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.photo-handle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: -4px;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid var(--photo-handle-fill);
+  border-left: 4px solid transparent;
+}
+
+.photo-handle:focus-visible {
+  outline: 2px solid var(--kit-primary);
+  outline-offset: 2px;
+}
+
+.photo-curve-box {
+  position: relative;
+  width: 260px;
+  max-width: 100%;
+}
+
+.photo-curve-histogram {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.photo-curve-box .kui-curve-editor-plot {
+  background: transparent;
+}
+
+.photo-hue-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.photo-hue-bar {
+  height: 10px;
+  border: 1px solid var(--kit-border);
+  border-radius: 2px;
+}
+
+.photo-anchor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  grid-template-rows: repeat(3, 24px);
+  gap: 2px;
+}
+
+.photo-anchor-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--kit-border);
+  border-radius: 3px;
+  background: var(--kit-surface);
+  color: var(--kit-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.photo-anchor-cell[data-anchor] {
+  border-color: var(--kit-primary);
+  background: var(--kit-primary-soft);
+}
