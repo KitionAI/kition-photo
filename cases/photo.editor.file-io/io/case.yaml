@@ -1,0 +1,31 @@
+format: 1
+id: photo.editor.file-io/io
+feature: photo.editor.file-io
+intent: >-
+  Real input on dev.html in Chinese (plan 2026-11-24, stage 6): the File menu has New, Save, Export As, Quick Export
+  and Place Embedded and no Open where the host opens nothing; Export As opens on a PNG at the image's size with the
+  file as its preview and its size; JPEG at 300 px wide keeps the proportions and is written beside the document
+  through the host at 300 px; Cmd+Alt+Shift+W opens it again with the last format, and WebP at 50% writes a half-size
+  WebP; Quick Export writes the whole image as a PNG; an image pasted from the clipboard is a new pixel layer in the
+  middle of the view in one history step (in Chromium also through the system clipboard with the real keys); Cmd+C
+  then Cmd+V brings the copy back in its place; a dropped image is placed with its middle at the drop point, one
+  dropped on the Layers panel in the middle, the target marked while dragging; a dropped file the engine cannot read
+  shows a translated message without command ids, one that is no image is refused by name; Last Filter's long
+  Surface Blur shows the progress bar with Cancel while the menus answer, and Cancel leaves the history as it was.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/io.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/io.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

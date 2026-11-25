@@ -1,0 +1,23 @@
+format: 1
+id: photo.editor.file-io/place
+feature: photo.editor.file-io
+intent: >-
+  Place Embedded with a file's bytes (plan 2026-11-24, stage 6), as a browser editor has them from the host's picker,
+  a drop or the system clipboard: base64 `data` with its `name` places an object layer named after the file with its
+  middle at `center`, in one step; `pixels` makes a pixel layer at 100% instead, as a paste does, in one step called
+  Paste; bytes that are no image, bad base64 and a `data` that is not text are refused before any change.
+layer: gate
+source:
+  kind: probe
+  from: crates/engine/engine/src/file_cmds/tests.rs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, kition-photo-engine, --lib, file_cmds::tests::place_embedded_takes_the_bytes_and_a_centre]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 900
+since: "2026-11-25"

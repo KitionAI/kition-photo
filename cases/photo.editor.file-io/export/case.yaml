@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.file-io/export
+feature: photo.editor.file-io
+intent: >-
+  The engine's side of files in and out (plan 2026-11-24, stage 6): file.exportImage answers PNG, JPEG, WebP and
+  TIFF bytes at the image's size or one with one side given (the other in proportion) or both, a lower JPEG quality
+  in fewer bytes, a lossless WebP with every pixel kept, transparency kept or flattened onto a matte; the engine's
+  clipboard answers as a PNG of what was copied; bad formats, qualities, sizes and mattes are errors; nothing is
+  written and the document is unchanged.
+layer: gate
+source:
+  kind: probe
+  from: bindings/wasm/tests/export_options.rs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, kition-photo-kit, --test, export_options]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 600
+since: "2026-11-25"

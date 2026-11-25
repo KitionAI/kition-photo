@@ -796,3 +796,14 @@ features:
     gap: "No Select and Mask… or Color Range… buttons, vector mask density and feather, or mask feather previewed while dragging beyond the engine's own; X, Y, W and H scale from the top left corner (no reference point), and a typed W does not keep the aspect ratio (no link button)."
     cases: [photo.editor.properties-masks/bounds]
     since: "2026-11-25"
+  - id: photo.editor.file-io
+    title: "Files in and out by hand (plan 2026-11-24, stage 6): File › Export As… (Cmd+Alt+Shift+W) with PNG, JPEG, WebP or TIFF, quality, lossless WebP, a scale or width and height kept in proportion, transparency or a matte, the exported file as its preview with its exact size, written beside the document through the host; Quick Export as PNG; the File menu offers New, Open (where the host opens files), Save, Save As (where the host saves as), Export and Place Embedded (the host's picker); Cmd+C and Cmd+Shift+C also put the copy on the system clipboard as a PNG, Cmd+V pastes an image from it as a new pixel layer in the middle of the view (the editor's own copy back in its place); image files dragged from the computer onto the canvas are placed where they drop, onto the Layers panel in the middle, with the drop target marked; a command still running after half a second shows a progress bar with Cancel, the editor answering meanwhile, Cancel leaving the image as it was; the engine's errors in the editor's words (zh-CN, en-US), an unknown one with its detail folded"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [file.exportImage, file.placeEmbedded, edit.copy, edit.copyMerged, edit.paste, history.deleteState]
+    paths: [bindings/wasm/src/export.rs, bindings/wasm/src/lib.rs, crates/engine/engine/src/file_cmds.rs, web/src/io/exportOptions.ts, web/src/io/errors.ts, web/src/io/busy.ts, web/src/io/files.ts, web/src/io/PhotoFileIo.tsx, web/src/io/BusyIndicator.tsx, web/src/io/ErrorNotices.tsx, web/src/dialogs/ExportDialog.tsx, web/src/App.tsx, web/tests/io.mjs]
+    target: "Photoshop 2026"
+    gap: "The engine cannot be stopped mid-command in the browser (its worker runs a command to the end): Cancel takes the result away when it ends, and the bar shows no fraction done. No export presets, metadata or colour-profile choices, export of layers or artboards, or several sizes at once; the preview is the full export, not a small proxy. A file dropped on the canvas is always placed, never opened as a document of its own; Edit › Paste from the menu reads the system clipboard only where the browser allows it, and stays off while the engine's own clipboard is empty."
+    cases: [photo.editor.file-io/io, photo.editor.file-io/model, photo.editor.file-io/export, photo.editor.file-io/place]
+    since: "2026-11-25"

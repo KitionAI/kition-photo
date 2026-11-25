@@ -1,0 +1,25 @@
+format: 1
+id: photo.editor.file-io/model
+feature: photo.editor.file-io
+intent: >-
+  Files in and out as pure functions (plan 2026-11-24, stage 6): Export As's settings become the engine's export
+  parameters (a scale or one side keeps the proportions, JPEG and lossy WebP take a quality, transparency off sends
+  the matte) and a file name beside the document; file sizes read as B, KB and MB; the engine's errors become the
+  editor's sentences in both languages without command ids, an unknown one keeping its detail; a command shows the
+  progress bar only after half a second and a cancelled one is dropped when it ends; image files and drags of files
+  are told apart from others, and bytes survive base64.
+layer: gate
+source:
+  kind: probe
+  from: web/src/io/io.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/io/io.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"
