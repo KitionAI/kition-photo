@@ -1,6 +1,7 @@
 import { TesseraIcons } from '@kition/sdk/editor'
 import { CommandButton, CommandItem, MenuSeparator, RibbonButton, RibbonGroup, RibbonMenu, RibbonStack, useKitEditor, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS, type PhotoToolId } from './tools/catalog'
+import { useDialogs } from './dialogs/DialogHost'
 
 
 const Brush = TesseraIcons.BrushIcon
@@ -17,7 +18,7 @@ const SquarePlus = TesseraIcons.SquarePlusIcon
 
 /** Image ▸ Adjustments as Photoshop's Adjustments panel makes them: adjustment layers, edited in Properties. */
 const ADJUSTMENT_LAYERS = ['brightnessContrast', 'levels', 'curves', 'exposure', 'vibrance', 'hueSaturation', 'colorBalance', 'blackWhite', 'photoFilter', 'gradientMap']
-const FILTERS = ['filter.blur.gaussianBlur', 'filter.sharpen.unsharpMask', 'filter.sharpen.smartSharpen', 'filter.noise.addNoise', 'filter.noise.reduceNoise', 'filter.stylize.oilPaint', 'filter.liquify']
+const FILTERS = ['filter.blur.gaussianBlur', 'filter.sharpen.unsharpMask', 'filter.sharpen.smartSharpen', 'filter.noise.addNoise', 'filter.noise.reduceNoise', 'filter.stylize.oilPaint']
 const TRANSFORMS = ['edit.transform.again', 'edit.transform.rotate180', 'edit.transform.rotate90Cw', 'edit.transform.rotate90Ccw', 'edit.transform.flipHorizontal', 'edit.transform.flipVertical', 'edit.transform.warp']
 
 /**
@@ -51,19 +52,22 @@ function HomeTool({ id, tool, onTool, primary, size = 'large' }: { id: PhotoTool
 /**
  * Photo's Home tab: the tasks done most, in every display mode (a drop-down panel in Menus):
  * layers, crop and transform, adjustments (as adjustment layers), filters, selections, and paint.
- * Menu names reuse upstream's words, which the phrase tables translate.
+ * Menu names reuse upstream's words, which the phrase tables translate. Commands run as their menu
+ * rows do: one that asks first opens its dialog.
  */
 export function HomeTab({ tool, onTool }: { tool: PhotoToolId; onTool: (id: PhotoToolId) => void }) {
   const { phrase: p, t } = useKitEditor()
+  // A "…" command opens its dialog, as its menu row does.
+  const { invoke } = useDialogs()
   return (
     <>
       <RibbonGroup label={p('Layer')} icon={Layers}>
         {/* Upstream's row reads "Layer…" under Layer ▸ New; on its own it needs the verb. */}
-        <CommandButton command="layer.new.layer" label={t('home.newLayer')} icon={SquarePlus} size="large" primary />
+        <CommandButton onRun={invoke} command="layer.new.layer" label={t('home.newLayer')} icon={SquarePlus} size="large" primary />
         <RibbonStack>
-          <CommandButton command="layer.new.layerViaCopy" icon={Layers} />
-          <CommandButton command="layer.duplicate" icon={Layers} />
-          <CommandButton command="layer.mergeDown" icon={Layers} />
+          <CommandButton onRun={invoke} command="layer.new.layerViaCopy" icon={Layers} />
+          <CommandButton onRun={invoke} command="layer.duplicate" icon={Layers} />
+          <CommandButton onRun={invoke} command="layer.mergeDown" icon={Layers} />
         </RibbonStack>
       </RibbonGroup>
 
@@ -71,34 +75,35 @@ export function HomeTab({ tool, onTool }: { tool: PhotoToolId; onTool: (id: Phot
         <HomeTool id="Crop" tool={tool} onTool={onTool} />
         <RibbonMenu icon={RotateCw} label={p('Transform')} size="large" testId="photo-home-transform" primary>
           {TRANSFORMS.map((command) => (
-            <CommandItem key={command} command={command} />
+            <CommandItem key={command} onRun={invoke} command={command} />
           ))}
         </RibbonMenu>
         <RibbonStack>
-          <CommandButton command="image.imageSize" icon={Scaling} primary />
-          <CommandButton command="image.canvasSize" icon={Crop} />
-          <CommandButton command="edit.transform.flipHorizontal" icon={FlipHorizontal2} />
+          <CommandButton onRun={invoke} command="image.imageSize" icon={Scaling} primary />
+          <CommandButton onRun={invoke} command="image.canvasSize" icon={Crop} />
+          <CommandButton onRun={invoke} command="edit.transform.flipHorizontal" icon={FlipHorizontal2} />
         </RibbonStack>
       </RibbonGroup>
 
       <RibbonGroup label={p('Adjustments')} icon={SlidersHorizontal}>
         <RibbonMenu icon={SlidersHorizontal} label={p('Adjustments')} size="large" testId="photo-home-adjustments" primary>
+          {/* As Photoshop's Adjustments panel: the layer comes at once, its settings in Properties. */}
           {ADJUSTMENT_LAYERS.map((kind) => (
             <CommandItem key={kind} command={`layer.newAdjustmentLayer.${kind}`} />
           ))}
           <MenuSeparator />
-          <CommandItem command="image.autoTone" />
-          <CommandItem command="image.autoContrast" />
-          <CommandItem command="image.autoColor" />
+          <CommandItem onRun={invoke} command="image.autoTone" />
+          <CommandItem onRun={invoke} command="image.autoContrast" />
+          <CommandItem onRun={invoke} command="image.autoColor" />
           <MenuSeparator />
-          <CommandItem command="image.adjustments.invert" />
-          <CommandItem command="image.adjustments.desaturate" />
+          <CommandItem onRun={invoke} command="image.adjustments.invert" />
+          <CommandItem onRun={invoke} command="image.adjustments.desaturate" />
         </RibbonMenu>
         <RibbonMenu icon={Sparkles} label={p('Filter')} size="large" testId="photo-home-filters" primary>
-          <CommandItem command="filter.lastFilter" />
+          <CommandItem onRun={invoke} command="filter.lastFilter" />
           <MenuSeparator />
           {FILTERS.map((command) => (
-            <CommandItem key={command} command={command} />
+            <CommandItem key={command} onRun={invoke} command={command} />
           ))}
         </RibbonMenu>
       </RibbonGroup>
@@ -110,27 +115,27 @@ export function HomeTab({ tool, onTool }: { tool: PhotoToolId; onTool: (id: Phot
           <HomeTool id="QuickSelection" tool={tool} onTool={onTool} size="small" />
         </RibbonStack>
         <RibbonMenu icon={SquareDashedMousePointer} label={p('Select')} size="large" testId="photo-home-select" primary>
-          <CommandItem command="select.all" />
-          <CommandItem command="select.deselect" />
-          <CommandItem command="select.inverse" />
+          <CommandItem onRun={invoke} command="select.all" />
+          <CommandItem onRun={invoke} command="select.deselect" />
+          <CommandItem onRun={invoke} command="select.inverse" />
           <MenuSeparator />
-          <CommandItem command="select.subject" />
-          <CommandItem command="select.sky" />
-          <CommandItem command="select.colorRange" />
+          <CommandItem onRun={invoke} command="select.subject" />
+          <CommandItem onRun={invoke} command="select.sky" />
+          <CommandItem onRun={invoke} command="select.colorRange" />
           <MenuSeparator />
-          <CommandItem command="select.modify.feather" />
-          <CommandItem command="select.transformSelection" />
+          <CommandItem onRun={invoke} command="select.modify.feather" />
+          <CommandItem onRun={invoke} command="select.transformSelection" />
         </RibbonMenu>
       </RibbonGroup>
 
       <RibbonGroup label={t('home.paint')} icon={Brush}>
         <HomeTool id="Brush" tool={tool} onTool={onTool} />
         <HomeTool id="Eraser" tool={tool} onTool={onTool} />
-        <CommandButton command="edit.fill" icon={PaintBucket} size="large" primary />
+        <CommandButton onRun={invoke} command="edit.fill" icon={PaintBucket} size="large" primary />
         <HomeTool id="Type" tool={tool} onTool={onTool} />
         <RibbonStack>
           <HomeTool id="Gradient" tool={tool} onTool={onTool} size="small" />
-          <CommandButton command="edit.stroke" icon={PaintBucket} />
+          <CommandButton onRun={invoke} command="edit.stroke" icon={PaintBucket} />
         </RibbonStack>
       </RibbonGroup>
     </>

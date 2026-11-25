@@ -43,7 +43,7 @@ import { useMaskTarget } from './panels/useMaskTarget'
 import { pendingFontChoices, pendingTypeFont } from './panels/useTypeStyle'
 import { TextField, type TextDraft, type TextFieldActions } from './TextField'
 import { DEFAULT_WINDOWS, windowCommand, zoomStep, type DockTabs } from './menus/kitMenus'
-import { hiddenReason } from './menus/hidden'
+import { isHiddenCommand } from './menus/hidden'
 import { PhotoStatus } from './PhotoStatus'
 import { PaintLease, layerScope, useLayerObjectIds, withPaintLease } from './layerLeases'
 import { PhotoMenuKeys, photoMenuTabs, type MenuKeys } from './menus/photoMenus'
@@ -51,15 +51,13 @@ import { HelpDialog, type HelpTopic } from './menus/HelpDialog'
 import { HomeTab } from './HomeTab'
 import { usePhotoViewState } from './viewState'
 import { PhotoCanvas } from './PhotoCanvas'
+import { DialogsProvider, PhotoDialogs, type Dialogs } from './dialogs/DialogHost'
 import manifest from '../../kit.json'
 
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
 const RotateCcw = TesseraIcons.RotateCcwIcon
 const SquareDashed = TesseraIcons.SquareDashedIcon
-
-/** Engine commands a browser editor never shows: the shell runs none of their keys. */
-const isHiddenCommand = (command: string) => hiddenReason(command) != null
 
 export function App({ host, phrase }: { host: HostConnection; phrase: Phrases }) {
   // Declared tool labels are upstream's English labels: a string Photo's catalogs lack is looked up in upstream's translations.
@@ -338,7 +336,23 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const kitCommandNow = useRef(kitCommand)
   kitCommandNow.current = kitCommand
   const runKitCommand = useCallback((command: string) => kitCommandNow.current(command), [])
-  const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, phrase }), [windows, dockTabs, runKitCommand, phrase])
+  // The dialog host (`PhotoDialogs`, inside the editor's provider) answers through `dialogApi`; the
+  // menus, built out here, reach it through `dialogs`. A "…" row opens its dialog instead of running.
+  const dialogApi = useRef<Dialogs | null>(null)
+  const runNow = useRef(run)
+  runNow.current = run
+  const dialogs = useMemo<Dialogs>(
+    () => ({
+      invoke: (command) => (dialogApi.current ? dialogApi.current.invoke(command) : void runNow.current(command)),
+      open: (command, values) => dialogApi.current?.open(command, values) ?? false,
+      asks: (command) => dialogApi.current?.asks(command) ?? false,
+      newDocument: () => dialogApi.current?.newDocument(),
+    }),
+    [],
+  )
+  // File › New… (the engine's row is the host's): Kition's own action, at the top of the File menu.
+  const fileActions = useMemo(() => ({ File: [{ label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' }] }), [t, dialogs])
+  const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase])
   // Home's tool buttons choose as the rail does (the latest `chooseTool`); the tabs are built again when the tool changes, for its pressed state.
   const chooseToolNow = useRef(chooseTool)
   chooseToolNow.current = chooseTool
@@ -434,131 +448,134 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
 
   return (
     <KitEditorProvider editor={{ ...editor, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
-      <EditorFrame
-        tabs={tabs}
-        defaultTab="home"
-        options={
-          windows.options ? (
-            <OptionsBar
-              tool={tool}
-              o={options}
-              set={(patch) => setToolOptions(tool, patch)}
-              foreground={fg}
-              background={bg}
-              setForeground={(value) => colors.set({ foreground: value })}
-              layer={activeLayer ? { id: activeLayer.id, kind: activeLayer.kind } : null}
-              crop={{ proposed: crop != null, commit: () => void applyCrop(), cancel: cancelCrop }}
-              text={{ editing: textDraft != null, submitting: textPending, commit: () => textActions.current?.commit(), cancel: () => textActions.current?.cancel() }}
-              cloneSourceSet={cloneSource != null}
-              view={{ fit: () => canvas.current?.fit(), actual: () => canvas.current?.zoomTo(1) }}
-            />
-          ) : undefined
-        }
-        canvas={canvas}
-        statusBar={windows.status}
-        hiddenCommands={isHiddenCommand}
-        onKeyDown={keyDown}
-        status={state ? <PhotoStatus info={state} zoom={zoom} canvas={canvas} tool={tool} /> : null}
-        statusEnd={
-          <span className="tabular-nums" data-testid="photo-web-stats">
-            {[session.openMs != null ? t('stats.open', { ms: session.openMs }) : null, stats ? t('stats.render', { ms: stats.renderMs }) : null].filter(Boolean).join(' · ')}
-          </span>
-        }
-        focusTool={railTool ? { label: phrase(railTool.label), icon: railTool.icon } : null}
-        rail={
-          <PhotoToolRail active={tool} onChoose={chooseTool} shown={windows.toolbar} keys={toolKeys}>
-            <KitElement id="control:colors">
-              <div className="photo-colors" title={t('colors')}>
-                <label className="photo-color photo-color-background" style={{ background: bg }} title={phrase('Set background color')}>
-                  <input type="color" value={bg} onChange={(event) => colors.set({ background: event.target.value })} aria-label={phrase('Set background color')} data-testid="photo-background" />
-                </label>
-                <label className="photo-color photo-color-foreground" style={{ background: fg }} title={phrase('Set foreground color')}>
-                  <input type="color" value={fg} onChange={(event) => colors.set({ foreground: event.target.value })} aria-label={phrase('Set foreground color')} data-testid="photo-foreground" />
-                </label>
-                <span className="photo-color-actions">
-                  <IconButton icon={ArrowLeftRight} label={t('swapColors')} onClick={colors.swap} data-testid="photo-colors-swap" />
-                  <IconButton icon={RotateCcw} label={t('defaultColors')} onClick={colors.reset} data-testid="photo-colors-reset" />
+      <DialogsProvider value={dialogs}>
+        <EditorFrame
+          tabs={tabs}
+          defaultTab="home"
+          options={
+            windows.options ? (
+              <OptionsBar
+                tool={tool}
+                o={options}
+                set={(patch) => setToolOptions(tool, patch)}
+                foreground={fg}
+                background={bg}
+                setForeground={(value) => colors.set({ foreground: value })}
+                layer={activeLayer ? { id: activeLayer.id, kind: activeLayer.kind } : null}
+                crop={{ proposed: crop != null, commit: () => void applyCrop(), cancel: cancelCrop }}
+                text={{ editing: textDraft != null, submitting: textPending, commit: () => textActions.current?.commit(), cancel: () => textActions.current?.cancel() }}
+                cloneSourceSet={cloneSource != null}
+                view={{ fit: () => canvas.current?.fit(), actual: () => canvas.current?.zoomTo(1) }}
+              />
+            ) : undefined
+          }
+          canvas={canvas}
+          statusBar={windows.status}
+          hiddenCommands={isHiddenCommand}
+          onKeyDown={keyDown}
+          status={state ? <PhotoStatus info={state} zoom={zoom} canvas={canvas} tool={tool} /> : null}
+          statusEnd={
+            <span className="tabular-nums" data-testid="photo-web-stats">
+              {[session.openMs != null ? t('stats.open', { ms: session.openMs }) : null, stats ? t('stats.render', { ms: stats.renderMs }) : null].filter(Boolean).join(' · ')}
+            </span>
+          }
+          focusTool={railTool ? { label: phrase(railTool.label), icon: railTool.icon } : null}
+          rail={
+            <PhotoToolRail active={tool} onChoose={chooseTool} shown={windows.toolbar} keys={toolKeys}>
+              <KitElement id="control:colors">
+                <div className="photo-colors" title={t('colors')}>
+                  <label className="photo-color photo-color-background" style={{ background: bg }} title={phrase('Set background color')}>
+                    <input type="color" value={bg} onChange={(event) => colors.set({ background: event.target.value })} aria-label={phrase('Set background color')} data-testid="photo-background" />
+                  </label>
+                  <label className="photo-color photo-color-foreground" style={{ background: fg }} title={phrase('Set foreground color')}>
+                    <input type="color" value={fg} onChange={(event) => colors.set({ foreground: event.target.value })} aria-label={phrase('Set foreground color')} data-testid="photo-foreground" />
+                  </label>
+                  <span className="photo-color-actions">
+                    <IconButton icon={ArrowLeftRight} label={t('swapColors')} onClick={colors.swap} data-testid="photo-colors-swap" />
+                    <IconButton icon={RotateCcw} label={t('defaultColors')} onClick={colors.reset} data-testid="photo-colors-reset" />
+                  </span>
+                </div>
+              </KitElement>
+              {/* Upstream's Quick Mask button under the chips (Q, as Select › Edit in Quick Mask Mode). */}
+              <KitElement id="control:quickMask">
+                <span className="photo-rail-modes">
+                  <IconButton
+                    icon={SquareDashed}
+                    label={phrase(quickMask ? 'Edit in Standard Mode  (Q)' : 'Edit in Quick Mask Mode  (Q)')}
+                    pressed={quickMask}
+                    disabled={!editor.enabled('select.editInQuickMaskMode')}
+                    onClick={() => void run('select.editInQuickMaskMode', {})}
+                    data-testid="photo-quick-mask"
+                  />
                 </span>
-              </div>
-            </KitElement>
-            {/* Upstream's Quick Mask button under the chips (Q, as Select › Edit in Quick Mask Mode). */}
-            <KitElement id="control:quickMask">
-              <span className="photo-rail-modes">
-                <IconButton
-                  icon={SquareDashed}
-                  label={phrase(quickMask ? 'Edit in Standard Mode  (Q)' : 'Edit in Quick Mask Mode  (Q)')}
-                  pressed={quickMask}
-                  disabled={!editor.enabled('select.editInQuickMaskMode')}
-                  onClick={() => void run('select.editInQuickMaskMode', {})}
-                  data-testid="photo-quick-mask"
-                />
-              </span>
-            </KitElement>
-          </PhotoToolRail>
-        }
-        panels={
-          state ? (
-            <PhotoDock
-              state={{
-                info: state,
-                maskTarget,
-                onMaskTarget: setMaskTarget,
-                colors,
-                typeOptions: optionsFor(optionsState, 'Type'),
-                setTypeOptions: (patch) => setToolOptions('Type', patch),
-                typing: textDraft != null,
-                pointer,
-                view,
-                canvas,
+              </KitElement>
+            </PhotoToolRail>
+          }
+          panels={
+            state ? (
+              <PhotoDock
+                state={{
+                  info: state,
+                  maskTarget,
+                  onMaskTarget: setMaskTarget,
+                  colors,
+                  typeOptions: optionsFor(optionsState, 'Type'),
+                  setTypeOptions: (patch) => setToolOptions('Type', patch),
+                  typing: textDraft != null,
+                  pointer,
+                  view,
+                  canvas,
+                }}
+                windows={windows}
+                dock={dock}
+              />
+            ) : null
+          }
+        >
+          <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} dialogs={dialogs} />
+          <PhotoDialogs api={dialogApi} info={state} colors={colors} />
+          <div className="kui-row" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
+            <PhotoCanvas
+              activeTool={tool}
+              onDenied={cancelToolDrafts}
+              canvas={canvas}
+              viewMemory={viewMemory}
+              panBounds={panBounds}
+              tool={trackedTool}
+              decorate={overlays.decorate}
+              animated={overlays.animated}
+              onView={(next, nextStats) => {
+                setZoom(next.zoom)
+                setShown((before) => (before && before.zoom === next.zoom && before.width === next.width && before.height === next.height ? before : { zoom: next.zoom, width: next.width, height: next.height }))
+                view.set(next)
+                // The view, for the scroll test's checks (zoom and the document point at the top left).
+                workspace.current?.setAttribute('data-view', `${next.zoom} ${next.x} ${next.y}`)
+                if (nextStats) setStats(nextStats)
               }}
-              windows={windows}
-              dock={dock}
+            >
+              {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={options.fontSize} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
+              {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
+              <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} />
+            </PhotoCanvas>
+          </div>
+          {rasterize ? (
+            <RasterizePrompt
+              message={rasterize.message}
+              onCancel={() => {
+                setRasterize(null)
+                workspace.current?.focus()
+              }}
+              onConfirm={() => {
+                setRasterize(null)
+                workspace.current?.focus()
+                const current = () => rasterize.generation === toolGenerationNow.current
+                void rasterizeThenPaint(rasterize, (command, params) => runTool(command, params, null, current), current)
+              }}
             />
-          ) : null
-        }
-      >
-        <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} />
-        <div className="kui-row" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
-          <PhotoCanvas
-            activeTool={tool}
-            onDenied={cancelToolDrafts}
-            canvas={canvas}
-            viewMemory={viewMemory}
-            panBounds={panBounds}
-            tool={trackedTool}
-            decorate={overlays.decorate}
-            animated={overlays.animated}
-            onView={(next, nextStats) => {
-              setZoom(next.zoom)
-              setShown((before) => (before && before.zoom === next.zoom && before.width === next.width && before.height === next.height ? before : { zoom: next.zoom, width: next.width, height: next.height }))
-              view.set(next)
-              // The view, for the scroll test's checks (zoom and the document point at the top left).
-              workspace.current?.setAttribute('data-view', `${next.zoom} ${next.x} ${next.y}`)
-              if (nextStats) setStats(nextStats)
-            }}
-          >
-            {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={options.fontSize} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
-            {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
-            <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} />
-          </PhotoCanvas>
-        </div>
-        {rasterize ? (
-          <RasterizePrompt
-            message={rasterize.message}
-            onCancel={() => {
-              setRasterize(null)
-              workspace.current?.focus()
-            }}
-            onConfirm={() => {
-              setRasterize(null)
-              workspace.current?.focus()
-              const current = () => rasterize.generation === toolGenerationNow.current
-              void rasterizeThenPaint(rasterize, (command, params) => runTool(command, params, null, current), current)
-            }}
-          />
-        ) : null}
-        {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
-      </EditorFrame>
+          ) : null}
+          {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
+        </EditorFrame>
+      </DialogsProvider>
     </KitEditorProvider>
   )
 }

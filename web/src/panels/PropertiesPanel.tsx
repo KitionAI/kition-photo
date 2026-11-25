@@ -10,6 +10,7 @@ import { CharacterSection, ParagraphSection, TypeOptionsSection } from './TypeSe
 import { useTypeStyle, type TypeTarget } from './useTypeStyle'
 import { ColorSwatch, EditingControls, Row, Section, useRemembered } from './PropsParts'
 import { DEPTHS, MODES, QUICK_ACTIONS, canvasResizeParams, kindLabel, type Box } from './properties'
+import { useDialogs } from '../dialogs/DialogHost'
 
 const AlignCenterHorizontal = TesseraIcons.AlignCenterHorizontalIcon
 const AlignCenterVertical = TesseraIcons.AlignCenterVerticalIcon
@@ -74,13 +75,9 @@ export function PropertiesPanel(props: PropertiesProps) {
   )
 }
 
-/** Runs a command as its menu row does: a "…" row asks for its values first. */
+/** Runs a command as its menu row does: a "…" row opens its dialog first (`dialogs/DialogHost.tsx`). */
 function useInvoke() {
-  const { run, ask, byId } = useKitEditor()
-  return (id: string) => {
-    if (byId.get(id)?.title.endsWith('…')) ask(id)
-    else void run(id, {})
-  }
+  return useDialogs().invoke
 }
 
 function DocumentProperties({ info }: { info: PhotoInfo }) {

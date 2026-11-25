@@ -9,6 +9,7 @@ import { useLayerDrag } from './useLayerDrag'
 import { useThumbnails, type ThumbnailSource } from './thumbnails'
 import { layersLeasedByOthers, useLayerObjectIds } from '../layerLeases'
 import { gestureKey } from './gesture'
+import { useDialogs } from '../dialogs/DialogHost'
 
 
 const AppWindow = TesseraIcons.AppWindowIcon
@@ -129,6 +130,11 @@ function menuEntries(layer: PhotoLayer, multi: boolean, hasSelection: boolean): 
 
 export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInfo; maskTarget: boolean; onMaskTarget: (on: boolean) => void }) {
   const { run, ask, enabled, byId, phrase, t, session } = useKitEditor()
+  const dialogs = useDialogs()
+  /** A "…" command's dialog (with its live preview), or the generic form for one the dialog host has none for. */
+  const askFirst = (command: string) => {
+    if (!dialogs.open(command)) ask(command)
+  }
   const ui = useUi()
   // A viewer's document: the panel's own editing controls are greyed (the engine refuses edits).
   const readOnly = useReadOnly()
@@ -226,7 +232,7 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
     // The Background becomes a normal layer; a name renames in place; elsewhere opens Blending Options.
     if (layer.background) void run('layer.new.layerFromBackground', {})
     else if (part === 'name') setRenaming({ key: layer.id!, text: layer.name })
-    else if (enabled('layer.layerStyle.blendingOptions')) ask('layer.layerStyle.blendingOptions')
+    else if (enabled('layer.layerStyle.blendingOptions')) askFirst('layer.layerStyle.blendingOptions')
   }
 
   /** The row menu acts on the selection: a row outside it is selected first (as upstream's), so the menu's states are that row's. */
@@ -271,7 +277,7 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
 
   /** A context-menu row ("…" rows open their dialog); the menu's row is already selected. */
   const choose = (command: string, title: string) => {
-    if (title.endsWith('…')) ask(command)
+    if (title.endsWith('…')) askFirst(command)
     else void run(command, {})
   }
 
@@ -386,10 +392,10 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
             </KitElement>
             <KitElement id="control:layers.style">
               <MenuButton trigger={({ toggle }) => <button type="button" className="kui-icon-button photo-fx-button" aria-label={label('Add a layer style')} title={label('Add a layer style')} disabled={!active || readOnly} onClick={toggle} data-testid="photo-layers-style"><i>fx</i></button>}>
-                <MenuItem label={label('Blending Options…')} onSelect={() => ask('layer.layerStyle.blendingOptions')} uiId="control:layers.style" />
+                <MenuItem label={label('Blending Options…')} onSelect={() => askFirst('layer.layerStyle.blendingOptions')} uiId="control:layers.style" />
                 <MenuSeparator />
                 {LAYER_STYLES.map(([key, english]) => (
-                  <MenuItem key={key} label={`${label(english)}…`} onSelect={() => ask(`layer.layerStyle.${key}`)} uiId="control:layers.style" testId={`photo-layers-style-${key}`} />
+                  <MenuItem key={key} label={`${label(english)}…`} onSelect={() => askFirst(`layer.layerStyle.${key}`)} uiId="control:layers.style" testId={`photo-layers-style-${key}`} />
                 ))}
               </MenuButton>
             </KitElement>

@@ -1,7 +1,7 @@
 import { defineKitUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS } from './tools/catalog'
 import { PHOTO_MENUS } from './menus/catalog'
-import { isHiddenOnWeb } from './menus/hidden'
+import { isHiddenInMenus } from './menus/hidden'
 import { OPTION_ELEMENTS } from './options/controls'
 import { DOCK_PANELS, PANEL_CONTROLS } from './panels/dock'
 
@@ -10,7 +10,8 @@ import { DOCK_PANELS, PANEL_CONTROLS } from './panels/dock'
  * menu bar can draw, with Kition's own rows) and its own tools, panels (each dock tab,
  * `panel:<tab>`; a group's strip carries its active tab's id), and controls (the rail's column toggle, colours, and Quick Mask button,
  * the options bar and each of its fields, `control:options.<field>`, the status bar and its zoom
- * field, `control:status.zoom`, and the panels' own, `control:<panel>.<name>`).
+ * field, `control:status.zoom`, the dialogs' OK, Cancel and Preview, `control:dialog.<button>`, and
+ * the panels' own, `control:<panel>.<name>`).
  * Ids are public: a host hides or disables them by these names.
  */
 export const PHOTO_UI = defineKitUi({
@@ -24,8 +25,12 @@ export const PHOTO_UI = defineKitUi({
     { id: 'control:options', label: 'toolOptions' },
     { id: 'control:status', label: 'Status Bar' },
     { id: 'control:status.zoom', label: 'Zoom', parent: 'control:status' },
+    // Every command dialog's OK, Cancel and Preview (`dialogs/DialogFrame.tsx`).
+    { id: 'control:dialog.ok', label: 'OK' },
+    { id: 'control:dialog.cancel', label: 'Cancel' },
+    { id: 'control:dialog.preview', label: 'Preview' },
     ...OPTION_ELEMENTS,
     ...PANEL_CONTROLS,
   ],
-  menus: PHOTO_MENUS.filter((row) => !isHiddenOnWeb(row)),
+  menus: PHOTO_MENUS.filter((row) => !isHiddenInMenus(row)),
 })

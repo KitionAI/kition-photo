@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Checkbox, Choice, Hint, NumberField, toast, useEngineQuery, useHostPick, useKitEditor } from '@kition/sdk/editor'
 import type { PhotoLayer } from '../photo'
 import { useGestures } from './gesture'
 import { ColorSwatch, Row } from './PropsParts'
+import { CurvesEditor, LevelsEditor, type Histograms } from '../dialogs/ToneEditors'
+import { fromEngineCurve, levelsFrom, RGB_CHANNELS, toEngineCurve, type RgbChannel } from '../dialogs/levels'
 
 /**
  * An adjustment layer's settings in the Properties panel (upstream `adjust_editors::layer_editor`
  * and `adjust_ui`'s Selective Color and Color Lookup editors), as slider rows, drop-downs, and
  * check boxes: each change runs `layer.setAdjustment` with only what changed (the engine merges it
- * over the layer's settings), one history step per gesture. Upstream's graphical editors (the
- * Levels histogram and sliders, the Curves graph, the hue-range bar, gradient stops) come in a
- * later version; Levels shows its composite's five numbers meanwhile.
+ * over the layer's settings), one history step per gesture. Levels and Curves use the editors of
+ * their dialogs (`dialogs/ToneEditors.tsx`: the histogram, Levels' handles, the Curves graph);
+ * the hue-range bar and gradient stops come in a later version.
  */
 
 type Params = Record<string, unknown>
@@ -99,8 +101,10 @@ export function AdjustmentSettings({ layer, foreground, background }: { layer: P
   const [tone, setTone] = useState('midtones')
   const [output, setOutput] = useState(0)
   const [selective, setSelective] = useState(0)
+  const [channel, setChannel] = useState<RgbChannel>('rgb')
   const [useColor, setUseColor] = useState<boolean | null>(null)
   const kind = layer.adjustment?.kind ?? ''
+  const histograms = useHistograms(kind === 'levels' || kind === 'curves')
   const p = layer.adjustment?.params ?? {}
   /** Runs one change; a gesture's changes (and a picker's ending, `{}`) share its key. */
   const set: Set = (patch, field, final) => {
@@ -127,18 +131,27 @@ export function AdjustmentSettings({ layer, foreground, background }: { layer: P
       )
     }
     case 'levels':
+      // Every channel goes with each change: the engine merges, so a channel set back to its identity must say so.
       return (
         <div className="photo-props-fields">
-          <Hint>{t('properties.levelsLater')}</Hint>
-          {field('inBlack', t('properties.inBlack'), 0, 253, 0, undefined, 1, false)}
-          {field('gamma', t('properties.gamma'), 0.01, 9.99, 1, undefined, 0.01, false)}
-          {field('inWhite', t('properties.inWhite'), 2, 255, 255, undefined, 1, false)}
-          {field('outBlack', t('properties.outBlack'), 0, 255, 0, undefined, 1, false)}
-          {field('outWhite', t('properties.outWhite'), 0, 255, 255, undefined, 1, false)}
+          <LevelsEditor levels={levelsFrom(p)} channel={channel} onChannel={setChannel} histograms={histograms} onChange={(next, final) => set({ ...next.rgb, red: next.red, green: next.green, blue: next.blue }, `levels-${channel}`, final)} testId="photo-adjustment" />
         </div>
       )
-    case 'curves':
-      return <Hint testId="photo-adjustment-later">{t('properties.curvesLater')}</Hint>
+    case 'curves': {
+      const curves = { rgb: fromEngineCurve(p.points), red: fromEngineCurve(p.red), green: fromEngineCurve(p.green), blue: fromEngineCurve(p.blue) }
+      return (
+        <div className="photo-props-fields">
+          <CurvesEditor
+            curves={curves}
+            channel={channel}
+            onChannel={setChannel}
+            histograms={histograms}
+            onChange={(next, final) => set({ points: toEngineCurve(next.rgb), red: toEngineCurve(next.red), green: toEngineCurve(next.green), blue: toEngineCurve(next.blue) }, `curves-${channel}`, final)}
+            testId="photo-adjustment"
+          />
+        </div>
+      )
+    }
     case 'exposure':
       return (
         <div className="photo-props-fields">
@@ -331,6 +344,32 @@ export function AdjustmentSettings({ layer, foreground, background }: { layer: P
       // An adjustment kept as imported (upstream `Unsupported`): nothing to edit.
       return <Hint>{t('properties.unsupported')}</Hint>
   }
+}
+
+/**
+ * The image's histogram per channel for Levels and Curves, read once when the section opens (the
+ * engine's `histogram` extra, as the Histogram panel reads it).
+ */
+function useHistograms(wanted: boolean): Histograms | null {
+  const { session } = useKitEditor()
+  const doc = session.doc
+  const [shown, setShown] = useState<Histograms | null>(null)
+  useEffect(() => {
+    if (!wanted || !doc) return undefined
+    let stale = false
+    void Promise.all(RGB_CHANNELS.map((channel) => doc.invoke<Uint32Array>('histogram', channel).catch(() => null))).then((bins) => {
+      if (stale) return
+      const out: Histograms = {}
+      RGB_CHANNELS.forEach((channel, index) => {
+        if (bins[index]) out[channel] = bins[index]
+      })
+      setShown(out)
+    })
+    return () => {
+      stale = true
+    }
+  }, [wanted, doc])
+  return shown
 }
 
 /** The largest look file the editor reads (a 65-point .cube is about 9 MB). */

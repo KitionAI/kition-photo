@@ -1,7 +1,7 @@
 import { Button, Dialog, useKitEditor, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS } from '../tools/catalog'
 import { PHOTO_MENUS } from './catalog'
-import { isHiddenOnWeb } from './hidden'
+import { isHiddenInMenus } from './hidden'
 
 export type HelpTopic = 'about' | 'shortcuts'
 
@@ -35,7 +35,7 @@ export function HelpDialog({ topic, version, onClose }: { topic: HelpTopic; vers
   }
   // Rows Photo runs (the engine's and Kition's own), once each: a row the engine lacks does nothing.
   const seen = new Set<string>()
-  const rows = PHOTO_MENUS.filter((row) => (row.command.startsWith('kit:') || byId.has(row.command)) && !isHiddenOnWeb(row))
+  const rows = PHOTO_MENUS.filter((row) => (row.command.startsWith('kit:') || byId.has(row.command)) && !isHiddenInMenus(row))
     .map((row) => ({ row, shortcut: row.shortcut ?? byId.get(row.command)?.shortcut ?? null }))
     .filter((item) => item.shortcut && !seen.has(item.row.command) && seen.add(item.row.command))
   return (

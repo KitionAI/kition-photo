@@ -3,8 +3,8 @@ import { catalogMenuTree, CommandButton, commandIcon, RibbonButton, RibbonGroup,
 const rowId = (row: MenuRow) => row.command.startsWith('kit:') ? `control:${row.command.slice(4)}` : `command:${row.command}`
 const rowsIn = (nodes: readonly CatalogNode[]): MenuRow[] => nodes.flatMap((node) => node.kind === 'row' ? [node.row] : node.kind === 'submenu' ? rowsIn(node.children) : [])
 
-/** A catalog action in Photo's ribbon, with the same menu policies and dispatch as its menu row. */
-function PhotoMenuAction({ row, tree, primary }: { row: MenuRow; tree: MenuTree; primary: boolean }) {
+/** A catalog action in Photo's ribbon, with the same menu policies and dispatch as its menu row (`onCommand`: a "…" row asks first). */
+function PhotoMenuAction({ row, tree, primary, onCommand }: { row: MenuRow; tree: MenuTree; primary: boolean; onCommand: (command: string) => void }) {
   const { byId, phrase, testId } = useKitEditor()
   const ui = useUi()
   const id = rowId(row)
@@ -16,7 +16,7 @@ function PhotoMenuAction({ row, tree, primary }: { row: MenuRow; tree: MenuTree;
   if (row.command.startsWith('kit:')) {
     return <RibbonButton label={label} icon={icon} primary={primary} pressed={pressed} disabled={state.disabled} onClick={() => { if (!state.denied) tree.onKitCommand?.(row.command) }} data-testid={`${testId}-${id.replace(':', '-')}`} data-kit-ui-id={id} />
   }
-  return <CommandButton command={row.command} label={label} icon={icon} primary={primary} pressed={pressed} disabled={state.disabled} />
+  return <CommandButton command={row.command} label={label} icon={icon} primary={primary} pressed={pressed} disabled={state.disabled} onRun={onCommand} />
 }
 
 /**
@@ -24,7 +24,7 @@ function PhotoMenuAction({ row, tree, primary }: { row: MenuRow; tree: MenuTree;
  * popover and in Classic. Use the SDK's public ribbon composition API: catalogTabs has no
  * menu-level primary option. Menus mode continues to use the tab's original catalog.
  */
-export function PhotoMenuRibbon({ tab, tree, primary }: { tab: FrameTab; tree: MenuTree; primary: readonly string[] }) {
+export function PhotoMenuRibbon({ tab, tree, primary, onCommand }: { tab: FrameTab; tree: MenuTree; primary: readonly string[]; onCommand: (command: string) => void }) {
   const { phrase } = useKitEditor()
   const ui = useUi()
   const nodes = catalogMenuTree(tree.rows,
@@ -38,7 +38,7 @@ export function PhotoMenuRibbon({ tab, tree, primary }: { tab: FrameTab; tree: M
   return <>{groups.filter((group) => group.rows.length || ui.buttons(`menu:${group.path}`).length).map((group) => (
     <RibbonGroup key={group.path} id={`menu:${group.path}`} label={group.label}>
       <RibbonStack>
-        {group.rows.map((row, index) => <PhotoMenuAction key={`${row.command}@${index}`} row={row} tree={tree} primary={primary.includes(row.command)} />)}
+        {group.rows.map((row, index) => <PhotoMenuAction key={`${row.command}@${index}`} row={row} tree={tree} primary={primary.includes(row.command)} onCommand={onCommand} />)}
       </RibbonStack>
     </RibbonGroup>
   ))}</>
