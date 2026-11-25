@@ -441,35 +441,6 @@ fn toggle_mask(s: &mut Session, p: &Value, key: &str) -> Result<Value> {
     Ok(json!({ key: v }))
 }
 
-/// Properties › Masks: the layer mask's Density (0 to 100 %: how much the mask hides) and Feather
-/// (a blur radius in pixels the compositor applies to the mask), one history step. Absent values
-/// stay as they are; out-of-range or non-finite ones are errors.
-fn mask_properties(s: &mut Session, p: &Value) -> Result<Value> {
-    const CMD: &str = "layer.layerMask.properties";
-    let number = |key: &str, max: f64| -> Result<Option<f32>> {
-        match p.get(key) {
-            None | Some(Value::Null) => Ok(None),
-            Some(v) => match v.as_f64() {
-                Some(x) if x.is_finite() && (0.0..=max).contains(&x) => Ok(Some(x as f32)),
-                _ => Err(EngineError::Other(format!("{CMD}: `{key}` must be a number from 0 to {max}"))),
-            },
-        }
-    };
-    let density = number("density", 100.0)?;
-    let feather = number("feather", 1000.0)?;
-    let id = layer_param(s, p)?;
-    s.edit("Mask Properties", |doc, _| {
-        let m = doc.layer_mut(id).and_then(|l| l.mask.as_mut()).ok_or(EngineError::Other("the layer has no layer mask".into()))?;
-        if let Some(x) = density {
-            m.density = x / 100.0;
-        }
-        if let Some(x) = feather {
-            m.feather = x;
-        }
-        Ok(json!({ "density": f64::from(m.density * 100.0).round(), "feather": f64::from(m.feather) }))
-    })
-}
-
 fn set_all_effects(s: &mut Session, enabled: bool) -> Result<Value> {
     s.edit(if enabled { "Show All Effects" } else { "Hide All Effects" }, |doc, _| {
         fn rec(ls: &mut [Layer], on: bool) {
@@ -800,15 +771,6 @@ pub fn specs() -> Vec<CommandSpec> {
             |s, p| toggle_mask(s, p, "enabled")
         ),
         spec!(
-            "layer.layerMask.properties",
-            "Mask Properties",
-            &[],
-            None,
-            r##"{"layer":id?,"density":0..100? (% the mask hides),"feather":0..1000? (px)}"##,
-            has_mask,
-            mask_properties
-        ),
-        spec!(
             "layer.layerMask.linked",
             "Unlink Layer Mask",
             &["Layer", "Layer Mask"],
@@ -944,25 +906,33 @@ mod tests {
     }
 
     #[test]
-    fn mask_properties_set_density_and_feather_in_one_step() {
+    fn set_props_sets_the_mask_density_and_feather_in_one_step() {
         let mut s = session(8);
-        assert!(s.execute("layer.layerMask.properties", json!({"density": 50})).is_err(), "no mask yet");
+        assert!(s.execute("layer.setProps", json!({"maskDensity": 0.5})).is_err(), "no mask yet");
         s.execute("layer.layerMask.hideAll", json!({})).unwrap();
         let past = s.active().unwrap().history.past_len();
-        let r = s.execute("layer.layerMask.properties", json!({"density": 40, "feather": 3.5})).unwrap();
-        assert_eq!((r["density"].as_f64(), r["feather"].as_f64()), (Some(40.0), Some(3.5)));
+        s.execute("layer.setProps", json!({"maskDensity": 0.4, "maskFeather": 3.5})).unwrap();
         let m = active(&s).mask.as_ref().unwrap();
         assert!((m.density - 0.4).abs() < 1e-6 && (m.feather - 3.5).abs() < 1e-6);
         assert_eq!(s.active().unwrap().history.past_len(), past + 1);
-        let inspected = s.execute("file.inspect", json!({})).unwrap();
-        let layer = inspected["layers"].as_array().unwrap().iter().find(|l| l["hasMask"] == true).unwrap().clone();
-        assert_eq!((layer["maskDensity"].as_f64(), layer["maskFeather"].as_f64()), (Some(40.0), Some(3.5)));
+        let layer = crate::inspect::layer(active(&s));
+        assert!((layer["maskDensity"].as_f64().unwrap() - 0.4).abs() < 1e-6);
+        assert_eq!(layer["maskFeather"].as_f64(), Some(3.5));
         // Only what is given changes; bad values are refused and change nothing.
-        s.execute("layer.layerMask.properties", json!({"feather": 0})).unwrap();
+        s.execute("layer.setProps", json!({"maskFeather": 0})).unwrap();
         assert!((active(&s).mask.as_ref().unwrap().density - 0.4).abs() < 1e-6);
-        for bad in [json!({"density": 101}), json!({"density": -1}), json!({"feather": "x"}), json!({"feather": 1e9})] {
-            assert!(s.execute("layer.layerMask.properties", bad.clone()).is_err(), "{bad}");
+        for bad in [
+            json!({"maskDensity": 1.5}),
+            json!({"maskDensity": -1}),
+            json!({"maskFeather": "x"}),
+            json!({"maskFeather": 1e9}),
+            json!({"opacity": 0.2, "maskDensity": 2}),
+        ] {
+            let before = s.active().unwrap().history.past_len();
+            assert!(s.execute("layer.setProps", bad.clone()).is_err(), "{bad}");
+            assert_eq!(s.active().unwrap().history.past_len(), before, "{bad}");
         }
+        assert!((active(&s).opacity - 1.0).abs() < 1e-6, "a refused call sets nothing");
         s.undo();
         assert!((active(&s).mask.as_ref().unwrap().feather - 3.5).abs() < 1e-6);
     }

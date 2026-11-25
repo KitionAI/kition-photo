@@ -621,16 +621,28 @@ fn build() -> Vec<CommandSpec> {
             "Layer Properties",
             [],
             None,
-            r##"{"layer":id?,"name":str?,"visible":bool?,"opacity":0..1?,"fill":0..1?,"blend":"Multiply|…"?,"clipped":bool?,"locked":bool?,"locks":{"transparency","pixels","position","artboard","all":bool}?,"channels":[bool,…]? (Advanced Blending: which colour channels blend, R G B / C M Y K / L a b)}"##,
+            r##"{"layer":id?,"name":str?,"visible":bool?,"opacity":0..1?,"fill":0..1?,"blend":"Multiply|…"?,"clipped":bool?,"locked":bool?,"locks":{"transparency","pixels","position","artboard","all":bool}?,"channels":[bool,…]? (Advanced Blending: which colour channels blend, R G B / C M Y K / L a b),"maskDensity":0..1? (Properties › Masks: how much the layer mask hides),"maskFeather":0..1000? (px, the layer mask's feather)}"##,
             has_layer,
             |s, p| {
                 let id = layer_param(s, p)?;
+                // Properties › Masks: finite and in range, or refused before anything changes.
+                let mask_number = |key: &str, max: f64| -> Result<Option<f32>> {
+                    match p.get(key) {
+                        None | Some(Value::Null) => Ok(None),
+                        Some(v) => match v.as_f64() {
+                            Some(x) if x.is_finite() && (0.0..=max).contains(&x) => Ok(Some(x as f32)),
+                            _ => Err(bad("layer.setProps", format!("`{key}` must be a number from 0 to {max}"))),
+                        },
+                    }
+                };
+                let mask_density = mask_number("maskDensity", 1.0)?;
+                let mask_feather = mask_number("maskFeather", 1000.0)?;
                 let only_visibility =
                     p.as_object().is_some_and(|o| o.contains_key("visible") && o.keys().all(|k| matches!(k.as_str(), "layer" | "visible" | "coalesce")));
                 let label = if only_visibility { "Layer Visibility" } else { "Layer Properties" };
                 let before = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
                 // Clipping and channel changes reach the layers around it: recomposite everything.
-                let local = p.get("clipped").is_none() && p.get("channels").is_none();
+                let local = p.get("clipped").is_none() && p.get("channels").is_none() && mask_feather.is_none() && mask_density.is_none();
                 s.edit(label, |doc, _| {
                     let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
                     if let Some(v) = p.get("name").and_then(Value::as_str) {
@@ -669,6 +681,15 @@ fn build() -> Vec<CommandSpec> {
                                 "all" => l.locks.all = v,
                                 other => return Err(bad("layer.setProps", format!("unknown lock `{other}`"))),
                             }
+                        }
+                    }
+                    if mask_density.is_some() || mask_feather.is_some() {
+                        let m = l.mask.as_mut().ok_or_else(|| bad("layer.setProps", "the layer has no layer mask"))?;
+                        if let Some(x) = mask_density {
+                            m.density = x;
+                        }
+                        if let Some(x) = mask_feather {
+                            m.feather = x;
                         }
                     }
                     Ok(())

@@ -276,13 +276,15 @@ function BoundValue({ value, label, disabled, onCommit, testId }: { value: numbe
 
 /**
  * Properties › Masks (Photoshop's): the layer mask's Density and Feather (one history step a
- * drag, `layer.layerMask.properties`), Invert, and buttons to load it as a selection, disable or
+ * drag, `layer.setProps`'s `maskDensity` and `maskFeather`), Invert, and buttons to load it as a selection, disable or
  * enable it and delete it.
  */
 function MaskSection({ layer }: { layer: PhotoLayer }) {
   const { run, phrase, t } = useKitEditor()
   const gestures = useGestures(`mask-${layer.id}`)
-  const set = (key: 'density' | 'feather') => (value: number, final: boolean) => void run('layer.layerMask.properties', { layer: layer.id, [key]: value, coalesce: gestures.key(key, final) })
+  // Layer Properties carry the mask's density (0 to 1) and feather (px).
+  const set = (key: 'density' | 'feather') => (value: number, final: boolean) =>
+    void run('layer.setProps', { layer: layer.id, ...(key === 'density' ? { maskDensity: value / 100 } : { maskFeather: value }), coalesce: gestures.key(key, final) })
   return (
     <Section id="masks" title={phrase('Masks')}>
       <div className="photo-props-fields">

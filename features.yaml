@@ -544,7 +544,7 @@ features:
     dimension: [function]
     priority: P1
     status: partial
-    commands: [layer.releaseClippingMask, layer.layerMask.revealAll, layer.layerMask.hideAll, layer.layerMask.delete, layer.vectorMask.add, layer.vectorMask.fromPath, layer.vectorMask.edit, layer.vectorMask.delete, layer.vectorMask.revealAll, layer.vectorMask.hideAll, layer.vectorMask.currentPath, layer.vectorMask.enabled, layer.vectorMask.linked, layer.vectorMask.info, layer.layerMask.enabled, layer.layerMask.linked, layer.layerMask.properties, layer.layerMask.apply, layer.layerMask.fromTransparency, layer.layerMask.hideSelection, layer.maskAllObjects, view.layerMask, layer.toggleMaskOverlay]
+    commands: [layer.releaseClippingMask, layer.layerMask.revealAll, layer.layerMask.hideAll, layer.layerMask.delete, layer.vectorMask.add, layer.vectorMask.fromPath, layer.vectorMask.edit, layer.vectorMask.delete, layer.vectorMask.revealAll, layer.vectorMask.hideAll, layer.vectorMask.currentPath, layer.vectorMask.enabled, layer.vectorMask.linked, layer.vectorMask.info, layer.layerMask.enabled, layer.layerMask.linked, layer.layerMask.apply, layer.layerMask.fromTransparency, layer.layerMask.hideSelection, layer.maskAllObjects, view.layerMask, layer.toggleMaskOverlay]
     paths: [crates/engine/engine/src/vector_cmds.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/layer_menu_cmds.rs]
     target: "Photoshop 2026"
     gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
@@ -786,11 +786,11 @@ features:
     cases: [photo.editor.gradient-editor/model]
     since: "2026-11-25"
   - id: photo.editor.properties-masks
-    title: "Properties' X, Y, W and H to click and type (the Move tool's layer.translate, Free Transform's edit.transform from the top left corner) and its Masks section (Density and Feather, one history step a drag, Select, Invert, Disable or Enable, Delete); the dock at 1440 × 900 and 1165 px wide shows Color's whole square, Properties' X to Fill and four Layers rows (plan 2026-11-24, stage 5)"
+    title: "Properties' X, Y, W and H to click and type (the Move tool's layer.translate, Free Transform's edit.transform from the top left corner) and its Masks section (Density and Feather through layer.setProps, one history step a drag, Select, Invert, Disable or Enable, Delete); the dock at 1440 × 900 and 1165 px wide shows Color's whole square, Properties' X to Fill and four Layers rows (plan 2026-11-24, stage 5)"
     dimension: [function]
     priority: P1
     status: has
-    commands: [layer.layerMask.properties, layer.translate, edit.transform, layer.layerMask.enabled, layer.layerMask.delete, select.loadSelection]
+    commands: [layer.setProps, layer.translate, edit.transform, layer.layerMask.enabled, layer.layerMask.delete, select.loadSelection]
     paths: [crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/inspect.rs, web/src/panels/PropertiesPanel.tsx, web/src/panels/properties.ts, web/src/panels/dock.tsx, web/tests/layer-style.mjs]
     target: "Photoshop 2026"
     gap: "No Select and Mask… or Color Range… buttons, vector mask density and feather, or mask feather previewed while dragging beyond the engine's own; X, Y, W and H scale from the top left corner (no reference point), and a typed W does not keep the aspect ratio (no link button)."

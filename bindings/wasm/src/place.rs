@@ -11,7 +11,8 @@
 //!
 //! **Premises** ([`premises`]), for the families whose code was read:
 //! - `layer.setProps`: the fields it sets (`name`, `visible`, `opacity`, `fillOpacity`, `blend`,
-//!   `clipped`, `locks`, `extra.excluded_channels`), no position.
+//!   `clipped`, `locks`, `extra.excluded_channels`, `mask.props.density`, `mask.props.feather`), no
+//!   position.
 //! - pixel writes in an area of one layer (`edit.fill` and `edit.delete` on the layer's pixels,
 //!   `paint.stroke`, `eraser.stroke`, the per-pixel `image.adjustments.*`): the layer's `kind`,
 //!   effective `locks`, `data`, `text` and the 256-pixel tiles of its `tiles` map that the area
@@ -484,6 +485,8 @@ fn premises(doc: &PhotoDocument, command: &str, params: &Value, id: LayerId) -> 
                 ("locked", "locks"),
                 ("locks", "locks"),
                 ("channels", "extra.excluded_channels"),
+                ("maskDensity", "mask.props.density"),
+                ("maskFeather", "mask.props.feather"),
             ] {
                 if params.get(key).is_some() && !fields.contains(&field) {
                     fields.push(field);

@@ -151,7 +151,7 @@ function flatten(layers: readonly InspectedLayer[] | undefined, depth: number, f
       hasMask: layer.hasMask ?? false,
       maskEnabled: layer.maskEnabled ?? true,
       maskLinked: layer.maskLinked ?? true,
-      maskDensity: layer.maskDensity ?? 100,
+      maskDensity: Math.round((layer.maskDensity ?? 1) * 1000) / 10,
       maskFeather: layer.maskFeather ?? 0,
       linked: layer.linkGroup != null,
       expanded: layer.kind === 'Group' ? (layer.expanded ?? true) : undefined,

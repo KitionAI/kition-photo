@@ -65,7 +65,9 @@ fn describe(id: &str) -> &'static str {
         "layer.select" => {
             "Selects layer `layer` (id from file.inspect), replacing the layer selection or adding, toggling or extending a range; commands without `layer` act on it."
         }
-        "layer.setProps" => "Sets a layer's name, visibility, opacity (0..1), fill opacity, blend mode, lock and color label.",
+        "layer.setProps" => {
+            "Sets a layer's name, visibility, opacity (0..1), fill opacity, blend mode, lock and color label, and its layer mask's density (0..1) and feather (px), as Properties › Masks does."
+        }
         "arrange.bringForward" => "Bring Forward: moves `layer` (else the active layer) in the layer stack.",
         "arrange.sendBackward" => "Send Backward: moves `layer` (else the active layer) in the layer stack.",
         "arrange.bringToFront" => "Bring to Front: moves `layer` (else the active layer) in the layer stack.",
@@ -233,9 +235,6 @@ fn describe(id: &str) -> &'static str {
         }
         "layer.layerStyle.get" => {
             "Answers the layer style of `layer` (the active layer by default): whether its effects show, and each effect in order with its kind, label, whether it is on, its settings in the layer.layerStyle.<kind> params' units (`params`) and its snapshot (`fx`, to send back through layer.layerStyle.replace so settings no parameter names survive). Changes nothing."
-        }
-        "layer.layerMask.properties" => {
-            "Sets the layer mask's Density (0 to 100: how much of what the mask hides it hides) and Feather (a blur radius in pixels applied to the mask) of `layer` (the active layer by default), as Properties › Masks does, in one history step; values left out stay. Needs a layer mask."
         }
         "layer.layerStyle.defaultFor" => {
             "Answers the default settings of the layer effect `kind` ({params, user}): the user default saved by layer.layerStyle.makeDefault, else the factory defaults (`user` false); changes nothing."

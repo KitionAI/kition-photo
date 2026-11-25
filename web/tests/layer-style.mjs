@@ -274,7 +274,7 @@ try {
     return now.layers.find((layer) => layer.id === now.activeLayer)
   }
   const masked = await activeLayer()
-  step("a hidden mask's Density 50 shows half of the layer", masks && halfShown && masked.maskDensity === 50, `${await sample(60, 60)} vs ${half}, density ${masked.maskDensity}`)
+  step("a hidden mask's Density 50 shows half of the layer", masks && halfShown && Math.abs(masked.maskDensity - 0.5) < 1e-6, `${await sample(60, 60)} vs ${half}, density ${masked.maskDensity}`)
   const feather = kit.getByTestId('photo-props-mask-feather').locator('input')
   await feather.fill('12')
   await feather.press('Enter')

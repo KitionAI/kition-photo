@@ -237,6 +237,7 @@ pub const ACTIVE: &[&str] = &[
     "layer.layerStyle.copyLayerStyle",
     "layer.layerStyle.convertToLayer",
     "layer.layerStyle.dropShadow",
+    "layer.layerStyle.get",
     "layer.layerStyle.gradientOverlay",
     "layer.layerStyle.innerGlow",
     "layer.layerStyle.innerShadow",

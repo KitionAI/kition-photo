@@ -117,8 +117,8 @@ fn layer_sel(l: &Layer, selected: &[kition_photo_doc::LayerId], canvas: Rect) ->
         "maskEnabled": l.mask.as_ref().map(|m| m.enabled),
         // Whether the layer mask moves with the layer (the chain between the thumbnails).
         "maskLinked": l.mask.as_ref().map(|m| m.linked),
-        // Properties › Masks: how much the mask hides (0 to 100 %) and its feather (px); null without a mask.
-        "maskDensity": l.mask.as_ref().map(|m| f64::from(m.density * 100.0).round()),
+        // Properties › Masks: how much the mask hides (0 to 1) and its feather (px); null without a mask.
+        "maskDensity": l.mask.as_ref().map(|m| m.density),
         "maskFeather": l.mask.as_ref().map(|m| f64::from(m.feather)),
         "bounds": bounds,
         "selected": selected.contains(&l.id),
