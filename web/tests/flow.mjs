@@ -331,16 +331,25 @@ try {
   await setNumber('size', 20)
   await setNumber('opacity', 100)
   // The brush's preview stays on the document: a drag past the canvas edge shows no paint there.
-  const overlayAlpha = async (point) => {
-    const box = await kit.locator('.kui-canvas-overlay').boundingBox()
-    return kit.locator('.kui-canvas-overlay').evaluate((canvas, [fx, fy]) => {
-      // The most opaque pixel near the point: a zoomed-out brush is a thin line.
+  // The preview is drawn on the document's canvas (the engine paints the stroke while the pointer
+  // moves), so the step reads that canvas: the pixels near a point, as [r, g, b] triples.
+  const surfacePatch = async (point) => {
+    const surface = kit.getByTestId('kit-canvas-surface')
+    const box = await surface.boundingBox()
+    return surface.evaluate((canvas, [fx, fy]) => {
+      // The pixels near the point: a zoomed-out brush is a thin line.
       const x = Math.round(fx * canvas.width)
       const y = Math.round(fy * canvas.height)
       const { data } = canvas.getContext('2d').getImageData(x - 4, y - 4, 9, 9)
-      return Math.max(...data.filter((_, index) => index % 4 === 3))
+      const pixels = []
+      for (let index = 0; index < data.length; index += 4) pixels.push([data[index], data[index + 1], data[index + 2]])
+      return pixels
     }, [(point.x - box.x) / box.width, (point.y - box.y) / box.height])
   }
+  // How many pixels near the point took the stroke's colour since `before` was read.
+  const painted = (before, now, colour) => now.filter((pixel, index) =>
+    pixel.every((value, channel) => Math.abs(value - colour[channel]) <= 24)
+    && !before[index].every((value, channel) => Math.abs(value - colour[channel]) <= 24)).length
   {
     // Zoomed out, the canvas's corner is past the document's edge.
     const zoom = kit.getByTestId('photo-status-zoom').locator('input')
@@ -350,10 +359,18 @@ try {
     const box = await kit.locator('.kui-canvas-overlay').boundingBox()
     const inside = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
     const outside = { x: box.x + 12, y: box.y + 12 }
+    const hex = await kit.getByTestId('photo-foreground').inputValue()
+    const colour = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16))
+    const blank = { inside: await surfacePatch(inside), outside: await surfacePatch(outside) }
     await page.mouse.move(inside.x, inside.y)
     await page.mouse.down()
     await page.mouse.move(outside.x, outside.y, { steps: 8 })
-    const shown = { inside: await overlayAlpha(inside), outside: await overlayAlpha(outside) }
+    // The engine paints the preview a frame or two after the pointer moves.
+    await until(async () => painted(blank.inside, await surfacePatch(inside), colour) > 0, 40)
+    const shown = {
+      inside: painted(blank.inside, await surfacePatch(inside), colour),
+      outside: painted(blank.outside, await surfacePatch(outside), colour),
+    }
     const before = (await inspect()).revision
     await page.mouse.up()
     await until(async () => (await inspect()).revision > before, 40)
