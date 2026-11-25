@@ -534,7 +534,7 @@ features:
     dimension: [function]
     priority: P1
     status: partial
-    commands: [layer.layerStyle.innerShadow, layer.layerStyle.outerGlow, layer.layerStyle.innerGlow, layer.layerStyle.colorOverlay, layer.layerStyle.gradientOverlay, layer.layerStyle.patternOverlay, layer.layerStyle.bevelEmboss, layer.layerStyle.satin, layer.layerStyle.replace, layer.layerStyle.makeDefault, layer.layerStyle.defaultFor, layer.layerStyle.clear, layer.layerStyle.copyLayerStyle, layer.layerStyle.pasteLayerStyle, layer.layerStyle.hideAllEffects, layer.layerStyle.showAllEffects, layer.layerStyle.blendingOptions, layer.layerStyle.globalLight, layer.layerStyle.createLayer, layer.layerStyle.scaleEffects, layer.layerStyle.transferEffects]
+    commands: [layer.layerStyle.innerShadow, layer.layerStyle.outerGlow, layer.layerStyle.innerGlow, layer.layerStyle.colorOverlay, layer.layerStyle.gradientOverlay, layer.layerStyle.patternOverlay, layer.layerStyle.bevelEmboss, layer.layerStyle.satin, layer.layerStyle.replace, layer.layerStyle.get, layer.layerStyle.makeDefault, layer.layerStyle.defaultFor, layer.layerStyle.clear, layer.layerStyle.copyLayerStyle, layer.layerStyle.pasteLayerStyle, layer.layerStyle.hideAllEffects, layer.layerStyle.showAllEffects, layer.layerStyle.blendingOptions, layer.layerStyle.globalLight, layer.layerStyle.createLayer, layer.layerStyle.scaleEffects, layer.layerStyle.transferEffects]
     paths: [crates/engine/engine/src/layer_style.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/layer_menu_cmds.rs, crates/engine/engine/examples/designer_psd.rs]
     target: "Photoshop 2026"
     gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."
@@ -544,7 +544,7 @@ features:
     dimension: [function]
     priority: P1
     status: partial
-    commands: [layer.releaseClippingMask, layer.layerMask.revealAll, layer.layerMask.hideAll, layer.layerMask.delete, layer.vectorMask.add, layer.vectorMask.fromPath, layer.vectorMask.edit, layer.vectorMask.delete, layer.vectorMask.revealAll, layer.vectorMask.hideAll, layer.vectorMask.currentPath, layer.vectorMask.enabled, layer.vectorMask.linked, layer.vectorMask.info, layer.layerMask.enabled, layer.layerMask.linked, layer.layerMask.apply, layer.layerMask.fromTransparency, layer.layerMask.hideSelection, layer.maskAllObjects, view.layerMask, layer.toggleMaskOverlay]
+    commands: [layer.releaseClippingMask, layer.layerMask.revealAll, layer.layerMask.hideAll, layer.layerMask.delete, layer.vectorMask.add, layer.vectorMask.fromPath, layer.vectorMask.edit, layer.vectorMask.delete, layer.vectorMask.revealAll, layer.vectorMask.hideAll, layer.vectorMask.currentPath, layer.vectorMask.enabled, layer.vectorMask.linked, layer.vectorMask.info, layer.layerMask.enabled, layer.layerMask.linked, layer.layerMask.properties, layer.layerMask.apply, layer.layerMask.fromTransparency, layer.layerMask.hideSelection, layer.maskAllObjects, view.layerMask, layer.toggleMaskOverlay]
     paths: [crates/engine/engine/src/vector_cmds.rs, crates/engine/engine/src/commands.rs, crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/layer_menu_cmds.rs]
     target: "Photoshop 2026"
     gap: "The engine has these commands; no case yet shows the area working end to end in the editor and surviving save and reopen."

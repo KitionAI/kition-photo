@@ -231,6 +231,12 @@ fn describe(id: &str) -> &'static str {
         "layer.layerStyle.makeDefault" => {
             "Stores `params` as the user default for the layer effect `kind` (the Layer Style dialog's Make Default), which Reset to Default and layer.layerStyle.defaultFor return; changes no layer."
         }
+        "layer.layerStyle.get" => {
+            "Answers the layer style of `layer` (the active layer by default): whether its effects show, and each effect in order with its kind, label, whether it is on, its settings in the layer.layerStyle.<kind> params' units (`params`) and its snapshot (`fx`, to send back through layer.layerStyle.replace so settings no parameter names survive). Changes nothing."
+        }
+        "layer.layerMask.properties" => {
+            "Sets the layer mask's Density (0 to 100: how much of what the mask hides it hides) and Feather (a blur radius in pixels applied to the mask) of `layer` (the active layer by default), as Properties › Masks does, in one history step; values left out stay. Needs a layer mask."
+        }
         "layer.layerStyle.defaultFor" => {
             "Answers the default settings of the layer effect `kind` ({params, user}): the user default saved by layer.layerStyle.makeDefault, else the factory defaults (`user` false); changes nothing."
         }
@@ -1889,6 +1895,9 @@ fn output(id: &str) -> Option<Value> {
         }
         "layer.layerStyle.makeDefault" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#
+        }
+        "layer.layerStyle.get" => {
+            r#"{"type":"object","additionalProperties":true,"properties":{"layer":{"type":"integer"},"enabled":{"type":"boolean"},"items":{"type":"array","items":{"type":"object","additionalProperties":true,"properties":{"kind":{"type":"string"},"label":{"type":"string"},"enabled":{"type":"boolean"},"params":{"type":"json"},"fx":{"type":"json"}}}}}}"#
         }
         "layer.layerStyle.defaultFor" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#

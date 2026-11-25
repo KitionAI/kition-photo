@@ -480,6 +480,194 @@ pub fn kind_of(e: &Effect) -> &'static str {
 fn same_kind(a: &Effect, b: &Effect) -> bool {
     std::mem::discriminant(a) == std::mem::discriminant(b)
 }
+/// A colour as `#rrggbb` (in RGB, whatever the document's mode).
+fn hex_of(c: &Color) -> String {
+    crate::adjust_params::hex(c.to_rgb())
+}
+
+/// A blend mode as the commands name it (`multiply`, `colorBurn`, `linearDodge`).
+fn blend_name(m: BlendMode) -> String {
+    let debug = format!("{m:?}");
+    let mut chars = debug.chars();
+    chars.next().map(|first| first.to_ascii_lowercase().to_string() + chars.as_str()).unwrap_or_default()
+}
+
+fn style_name(g: GradientStyle) -> &'static str {
+    match g {
+        GradientStyle::Linear => "linear",
+        GradientStyle::Radial => "radial",
+        GradientStyle::Angle => "angle",
+        GradientStyle::Reflected => "reflected",
+        GradientStyle::Diamond => "diamond",
+    }
+}
+
+/// Rounds to two decimals, so a percentage read back is what a person typed.
+fn r2(x: f32) -> f64 {
+    (f64::from(x) * 100.0).round() / 100.0
+}
+
+/// An effect's settings in the command's parameter units (what `layer.layerStyle.<kind>` and
+/// `layer.layerStyle.replace` take): the Layer Style dialog's fields, read back. The inverse of
+/// [`overlay_effect`] for everything the dialog models; `enabled` says whether it is switched on.
+pub fn effect_params(e: &Effect) -> Value {
+    fn common(c: &FxCommon, v: &mut Value) {
+        v["enabled"] = json!(c.enabled);
+        v["blend"] = json!(blend_name(c.blend));
+        v["opacity"] = json!(r2(c.opacity * 100.0));
+    }
+    fn paint(p: &FxPaint, v: &mut Value) {
+        match p {
+            FxPaint::Color(c) => {
+                v["fill"] = json!("color");
+                v["color"] = json!(hex_of(c));
+            }
+            FxPaint::Gradient(g) => {
+                v["fill"] = json!("gradient");
+                if let (Some(first), Some(last)) = (g.stops.first(), g.stops.last()) {
+                    v["from"] = json!(hex_of(&first.1));
+                    v["to"] = json!(hex_of(&last.1));
+                }
+                v["style"] = json!(style_name(g.style));
+                v["angle"] = json!(r2(g.angle));
+            }
+            FxPaint::Pattern { name, .. } => {
+                v["fill"] = json!("pattern");
+                v["pattern"] = json!(name);
+            }
+        }
+    }
+    let mut v = json!({});
+    match e {
+        Effect::DropShadow(sh) | Effect::InnerShadow(sh) => {
+            let inner = matches!(e, Effect::InnerShadow(_));
+            common(&sh.common, &mut v);
+            v["color"] = json!(hex_of(&sh.color));
+            v["angle"] = json!(r2(sh.angle));
+            v["useGlobalLight"] = json!(sh.use_global_light);
+            v["distance"] = json!(r2(sh.distance));
+            v[if inner { "choke" } else { "spread" }] = json!(r2(sh.spread * 100.0));
+            v["size"] = json!(r2(sh.size));
+            v["contour"] = contour_param(&sh.contour);
+            v["noise"] = json!(r2(sh.noise * 100.0));
+            if !inner {
+                v["knocksOut"] = json!(sh.knocks_out);
+            }
+        }
+        Effect::OuterGlow(g) | Effect::InnerGlow(g) => {
+            let inner = matches!(e, Effect::InnerGlow(_));
+            common(&g.common, &mut v);
+            paint(&g.paint, &mut v);
+            v["technique"] = json!(if g.technique == GlowTechnique::Precise { "precise" } else { "softer" });
+            v[if inner { "choke" } else { "spread" }] = json!(r2(g.spread * 100.0));
+            v["size"] = json!(r2(g.size));
+            v["range"] = json!(r2(g.range * 100.0));
+            v["contour"] = contour_param(&g.contour);
+            v["noise"] = json!(r2(g.noise * 100.0));
+            if inner {
+                v["source"] = json!(if g.source == GlowSource::Center { "center" } else { "edge" });
+            }
+        }
+        Effect::Stroke(st) => {
+            common(&st.common, &mut v);
+            v["size"] = json!(r2(st.size));
+            v["position"] = json!(match st.position {
+                StrokePosition::Inside => "inside",
+                StrokePosition::Center => "center",
+                StrokePosition::Outside => "outside",
+            });
+            paint(&st.paint, &mut v);
+        }
+        Effect::ColorOverlay { common: c, color } => {
+            common(c, &mut v);
+            v["color"] = json!(hex_of(color));
+        }
+        Effect::GradientOverlay { common: c, gradient: g, dither } => {
+            common(c, &mut v);
+            if let (Some(first), Some(last)) = (g.stops.first(), g.stops.last()) {
+                v["from"] = json!(hex_of(&first.1));
+                v["to"] = json!(hex_of(&last.1));
+            }
+            v["style"] = json!(style_name(g.style));
+            v["angle"] = json!(r2(g.angle));
+            v["scale"] = json!(r2(g.scale * 100.0));
+            v["reverse"] = json!(g.reverse);
+            v["dither"] = json!(dither);
+        }
+        Effect::PatternOverlay { common: c, name, scale, angle, link, phase, .. } => {
+            common(c, &mut v);
+            v["pattern"] = json!(name);
+            v["scale"] = json!(r2(scale * 100.0));
+            v["angle"] = json!(r2(*angle));
+            v["link"] = json!(link);
+            v["phaseX"] = json!(r2(phase.0));
+            v["phaseY"] = json!(r2(phase.1));
+        }
+        Effect::Satin(sa) => {
+            common(&sa.common, &mut v);
+            v["color"] = json!(hex_of(&sa.color));
+            v["angle"] = json!(r2(sa.angle));
+            v["distance"] = json!(r2(sa.distance));
+            v["size"] = json!(r2(sa.size));
+            v["invert"] = json!(sa.invert);
+            v["contour"] = contour_param(&sa.contour);
+        }
+        Effect::BevelEmboss(bv) => {
+            v["enabled"] = json!(bv.enabled);
+            v["style"] = json!(match bv.style {
+                BevelStyle::OuterBevel => "outer",
+                BevelStyle::InnerBevel => "inner",
+                BevelStyle::Emboss => "emboss",
+                BevelStyle::PillowEmboss => "pillow",
+                BevelStyle::StrokeEmboss => "stroke",
+            });
+            v["technique"] = json!(match bv.technique {
+                BevelTechnique::Smooth => "smooth",
+                BevelTechnique::ChiselHard => "chiselHard",
+                BevelTechnique::ChiselSoft => "chiselSoft",
+            });
+            v["depth"] = json!(r2(bv.depth * 100.0));
+            v["direction"] = json!(if bv.up { "up" } else { "down" });
+            v["size"] = json!(r2(bv.size));
+            v["soften"] = json!(r2(bv.soften));
+            v["angle"] = json!(r2(bv.angle));
+            v["altitude"] = json!(r2(bv.altitude));
+            v["useGlobalLight"] = json!(bv.use_global_light);
+            v["contour"] = json!(bv.contour.is_some());
+            if let Some(c) = &bv.contour {
+                v["contourRange"] = json!(r2(c.range * 100.0));
+            }
+            if let Some(t) = &bv.texture {
+                v["texture"] = json!(t.name);
+                v["textureScale"] = json!(r2(t.scale * 100.0));
+                v["textureDepth"] = json!(r2(t.depth * 100.0));
+                v["textureInvert"] = json!(t.invert);
+                v["textureLink"] = json!(t.link);
+            }
+        }
+    }
+    v
+}
+
+/// `layer.layerStyle.get`: a layer's whole layer style as the Layer Style dialog opens it, each
+/// effect's settings in the command's units (`params`) and its snapshot (`fx`, to send back
+/// through `layer.layerStyle.replace` so what the dialog does not model survives). Changes nothing.
+fn get_effects(s: &mut Session, p: &Value) -> Result<Value> {
+    let id = match p.get("layer").and_then(Value::as_u64) {
+        Some(id) => kition_photo_doc::LayerId(id),
+        None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into()))?,
+    };
+    let d = s.active().ok_or(EngineError::Other("no document open".into()))?;
+    let l = d.doc.layer(id).ok_or(EngineError::NoLayer(id))?;
+    let items = l
+        .effects
+        .items
+        .iter()
+        .map(|e| json!({ "kind": kind_of(e), "label": e.label(), "enabled": e.enabled(), "params": effect_params(e), "fx": serde_json::to_value(e).unwrap_or(Value::Null) }))
+        .collect::<Vec<_>>();
+    Ok(json!({ "layer": id.0, "enabled": l.effects.enabled, "items": items }))
+}
+
 /// Upper bound on the effects one `layer.layerStyle.replace` call accepts, so an
 /// automation mistake can't ask for an unbounded document change.
 const MAX_EFFECTS: usize = 256;
@@ -673,6 +861,16 @@ pub fn specs() -> Vec<CommandSpec> {
             journal: true,
         },
         CommandSpec {
+            id: "layer.layerStyle.get",
+            label: "Layer Style Settings",
+            menu: &[],
+            shortcut: None,
+            params: r##"{"layer":id?} → {"layer":id,"enabled":bool,"items":[{"kind","label","enabled","params":{…layer.layerStyle.<kind> params…},"fx":<snapshot for layer.layerStyle.replace>}]} (changes nothing)"##,
+            enabled: has_layer,
+            run: get_effects,
+            journal: false,
+        },
+        CommandSpec {
             id: "layer.layerStyle.makeDefault",
             label: "Make Layer Style Default",
             menu: &[],
@@ -731,6 +929,50 @@ mod tests {
     fn effects(s: &Session) -> Vec<Effect> {
         let d = s.active().unwrap();
         d.doc.layer(d.active_layer.unwrap()).unwrap().effects.items.clone()
+    }
+
+    #[test]
+    fn get_reads_back_what_each_command_set() {
+        let mut s = session();
+        for kind in ["dropShadow", "innerShadow", "outerGlow", "innerGlow", "stroke", "colorOverlay", "gradientOverlay", "satin", "bevelEmboss"] {
+            s.execute(&format!("layer.layerStyle.{kind}"), json!({"add": true})).unwrap();
+        }
+        s.execute(
+            "layer.layerStyle.dropShadow",
+            json!({"color": "#ff8000", "opacity": 40, "distance": 9, "spread": 20, "size": 12, "angle": 45, "blend": "colorBurn", "noise": 5}),
+        )
+        .unwrap();
+        let got = s.execute("layer.layerStyle.get", json!({})).unwrap();
+        let items = got["items"].as_array().unwrap();
+        assert_eq!(items.len(), 9);
+        let shadow = &items[0]["params"];
+        assert_eq!(items[0]["kind"], "dropShadow");
+        assert_eq!((shadow["color"].as_str(), shadow["opacity"].as_f64(), shadow["distance"].as_f64()), (Some("#ff8000"), Some(40.0), Some(9.0)));
+        assert_eq!(
+            (shadow["spread"].as_f64(), shadow["size"].as_f64(), shadow["angle"].as_f64(), shadow["noise"].as_f64()),
+            (Some(20.0), Some(12.0), Some(45.0), Some(5.0))
+        );
+        assert_eq!(shadow["blend"], "colorBurn");
+        assert_eq!(got["enabled"], true);
+        // Every effect's params rebuild it exactly, and its snapshot round-trips through replace.
+        for item in items {
+            let kind = item["kind"].as_str().unwrap();
+            let rebuilt = effect_from_params(kind, &item["params"]).unwrap();
+            assert_eq!(effect_params(&rebuilt), item["params"], "{kind}");
+        }
+        let before = effects(&s);
+        let entries: Vec<Value> = items.iter().map(|item| json!({"kind": item["kind"], "fx": item["fx"], "params": item["params"]})).collect();
+        s.execute("layer.layerStyle.replace", json!({ "effects": entries })).unwrap();
+        assert_eq!(effects(&s), before);
+    }
+
+    #[test]
+    fn get_refuses_a_missing_layer_gracefully() {
+        let mut s = session();
+        assert!(s.execute("layer.layerStyle.get", json!({"layer": 999})).is_err());
+        assert!(s.execute("layer.layerStyle.get", json!({"layer": "nonsense"})).is_ok());
+        let empty = s.execute("layer.layerStyle.get", json!({})).unwrap();
+        assert_eq!(empty["items"], json!([]));
     }
 
     #[test]
