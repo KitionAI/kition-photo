@@ -36,6 +36,7 @@ import { BrushCursor, outlineDiameter, type CanvasPoint } from './tools/BrushCur
 import { previewEngine, useFreeTransform } from './tools/useFreeTransform'
 import { Nudges, digitTarget } from './tools/canvasKeys'
 import { toBitmap } from './panels/thumbnails'
+import { usePhotoPrefs, type PhotoPrefs } from './prefs'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
 import { TOOL_FIELDS, optionsFor, toolParams, type ToolOptions } from './tools/options'
@@ -115,6 +116,15 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [toolGeneration, setToolGeneration] = useState(0)
   const toolGenerationNow = useRef(0)
   const [optionsState, setToolOptions] = useToolOptions()
+  // Preferences › General (Cmd+K): saved, Show Transform Controls goes to the Move tool at once.
+  const [prefs, setPrefs] = usePhotoPrefs()
+  const savePrefs = useCallback(
+    (next: PhotoPrefs) => {
+      setPrefs(next)
+      setToolOptions('Move', { showTransform: next.showTransform })
+    },
+    [setPrefs, setToolOptions],
+  )
   // The Crop tool's frame (plan 2026-11-24, stage 2): the whole canvas when the tool is chosen.
   const [crop, setCrop] = useState<CropFrame | null>(null)
   const cropNow = useRef<CropFrame | null>(null)
@@ -209,7 +219,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const say = useCallback((key: string) => toast('info', t(key)), [t])
   const sessionRunNow = useRef<(command: string, params: Record<string, unknown>) => Promise<unknown>>(() => Promise.resolve(null))
   const revisionNow = useCallback(() => docNow.current?.info.revision ?? 0, [])
-  const transform = useFreeTransform({ info: () => stateNow.current, run: (command, params) => sessionRunNow.current(command, params), revision: revisionNow, say, redraw })
+  // The box's drags recompute the marks (`syncMarks`, defined below) and redraw them.
+  const syncMarksNow = useRef<() => void>(() => undefined)
+  const remark = useCallback(() => syncMarksNow.current(), [])
+  const transform = useFreeTransform({ info: () => stateNow.current, run: (command, params) => sessionRunNow.current(command, params), revision: revisionNow, say, redraw: remark })
   const transformNow = useRef(transform)
   transformNow.current = transform
   const nudges = useMemo(() => new Nudges((command) => previewEngine(command, (name, params) => sessionRunNow.current(name, params), revisionNow), () => say('nudge.failed')), [revisionNow, say])
@@ -288,7 +301,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     const frame = cropNow.current
     const bounds = now?.activeBounds
     const markLayer = markNow.current.tool === 'Move' && !markNow.current.moving && bounds && active && !active.background
-    marks.current = {
+    const next: CanvasMarks = {
       crop: markNow.current.tool === 'Crop' && frame ? { frame, thirds: markNow.current.thirds } : null,
       transform: box
         ? { quad: box.quad, handles: true, reference: box.reference }
@@ -297,10 +310,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           : null,
       hideAnts: marks.current.hideAnts,
     }
+    // Redraw only when a mark changed (the editor renders often; the canvas need not).
+    if (JSON.stringify(next) === JSON.stringify(marks.current)) return
+    marks.current = next
     redraw()
   }, [redraw])
   const markNow = useRef({ tool, moving, thirds: options.cropOverlay, handles: options.showTransform })
   markNow.current = { tool, moving, thirds: options.cropOverlay, handles: options.showTransform }
+  syncMarksNow.current = syncMarks
   useLayoutEffect(syncMarks)
   /** A crop frame from a drag: drawn at once, and kept (for the options bar) when `settled`. */
   const updateCrop = useCallback(
@@ -453,7 +470,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // The brush outline: the brush tools' cursor, unless a held key gives the press to something else.
   const brushLike = Boolean(toolFor(tool)?.brush) && !transformOpen
   const altOwn = keys.alt && !keys.meta && (ALT_PICKS.has(tool) || tool === 'CloneStamp' || tool === 'Healing')
-  const outline = brushLike && !keys.space && !(keys.meta && temporaryMove) && !altOwn && !keys.capsLock ? outlineDiameter(options.size, zoom) : null
+  // Caps Lock gives the other of the two cursors Preferences › General chooses (outline or precise).
+  const precise = (prefs.brushCursor === 'precise') !== keys.capsLock
+  const outline = brushLike && !keys.space && !(keys.meta && temporaryMove) && !altOwn && !precise ? outlineDiameter(options.size, zoom) : null
 
   /** Makes `next` the tool; `PhotoToolRail` has checked that the host allows it. */
   const chooseTool = async (next: PhotoToolId) => {
@@ -779,13 +798,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           }
         >
           <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} dialogs={dialogs} />
-          <PhotoDialogs api={dialogApi} info={state} colors={colors} />
+          <PhotoDialogs api={dialogApi} info={state} colors={colors} prefs={{ value: prefs, save: savePrefs }} />
           <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
             <PhotoCanvas
               activeTool={tool}
               onDenied={cancelToolDrafts}
               held={held}
               temporaryMove={temporaryMove}
+              wheelZooms={prefs.zoomWithWheel}
               cursor={toolCursor ?? (outline != null ? 'none' : null)}
               viewport={viewport}
               canvas={canvas}

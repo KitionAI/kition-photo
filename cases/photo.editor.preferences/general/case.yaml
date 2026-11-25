@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.preferences/general
+feature: photo.editor.preferences
+intent: >-
+  Edit › Preferences › General… is back in the Edit menu as the only Preferences row, and Cmd+K opens it; turning on
+  Zoom with Scroll Wheel and pressing OK makes a plain wheel notch zoom the canvas about the pointer, and the setting
+  is kept in the kit's store (plan 2026-11-24, stage 2, the coordinator's decision for the Help shortcuts step).
+layer: gate
+source:
+  kind: probe
+  from: web/tests/dialogs.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/dialogs.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 120
+since: "2026-11-25"

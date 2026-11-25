@@ -32,11 +32,14 @@ test('the purpose-built dialogs serve the destructive adjustment and its adjustm
 })
 
 test('rows with nothing behind them are hidden and open no dialog', () => {
-  for (const command of ['edit.preferences.general', 'edit.preferences.rawDefaults', 'edit.keyboardShortcuts', 'filter.filterGallery', 'view.newGuide', 'image.variables.define', 'filter.distort.displace']) {
+  for (const command of ['edit.preferences.interface', 'edit.preferences.rawDefaults', 'edit.keyboardShortcuts', 'filter.filterGallery', 'view.newGuide', 'image.variables.define', 'filter.distort.displace']) {
     assert.ok(notBuiltReason(command)?.trim(), command)
     assert.equal(isHiddenCommand(command), true, command)
     assert.equal(dialogFor({ id: command, title: 'x…', asks: true }), null, command)
   }
+  // Preferences › General is the editor's own settings dialog (plan 2026-11-24, stage 2): shown, and it asks.
+  assert.equal(isHiddenCommand('edit.preferences.general'), false)
+  assert.equal(dialogFor({ id: 'edit.preferences.general', title: 'General…', asks: false }), 'preferences')
   // The web-hidden rows stay hidden as well.
   assert.equal(isHiddenCommand('file.saveACopy'), true)
   assert.equal(notBuiltReason('filter.blur.gaussianBlur'), null)

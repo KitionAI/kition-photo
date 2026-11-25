@@ -4,6 +4,8 @@ import type { PhotoInfo } from '../photo'
 import { BrightnessContrastDialog, ColorBalanceDialog, CurvesDialog, HueSaturationDialog, LevelsDialog } from './AdjustmentDialogs'
 import { FillDialog, StrokeDialog } from './FillStrokeDialogs'
 import { NewDocumentDialog } from './NewDocumentDialog'
+import { PreferencesDialog } from './PreferencesDialog'
+import type { PhotoPrefs } from '../prefs'
 import { paramFields } from './params'
 import { ParamsDialog } from './ParamsDialog'
 import { dialogFor, type DialogKind } from './routes'
@@ -50,7 +52,7 @@ type Open = { serial: number; command: KitCommand | null; kind: DialogKind | 'ne
  * editor's provider). Levels and Curves read the image's histograms before they open, so the
  * histogram shows the image before the preview changes it.
  */
-export function PhotoDialogs({ api, info, colors }: { api: RefObject<Dialogs | null>; info: PhotoInfo | null; colors: { foreground: string; background: string } }) {
+export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dialogs | null>; info: PhotoInfo | null; colors: { foreground: string; background: string }; prefs: { value: PhotoPrefs; save: (next: PhotoPrefs) => void } }) {
   const editor = useKitEditor()
   const ui = useUi()
   const [open, setOpen] = useState<Open | null>(null)
@@ -128,6 +130,8 @@ export function PhotoDialogs({ api, info, colors }: { api: RefObject<Dialogs | n
         return <FillDialog {...props} info={info} colors={colors} />
       case 'stroke':
         return <StrokeDialog {...props} info={info} colors={colors} />
+      case 'preferences':
+        return <PreferencesDialog prefs={prefs.value} onSave={prefs.save} onClose={close} />
       case 'params':
         return <ParamsDialog {...props} info={info} values={open.values} />
     }

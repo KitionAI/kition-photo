@@ -8,7 +8,8 @@ intent: >-
   adds exactly one step and keeps what the preview showed. Levels (Cmd+L, with the image's histogram), Curves,
   Hue/Saturation and Color Balance open their own dialogs by their keys; Add Noise… gets the generic dialog; a Levels
   adjustment layer is edited in Properties with the same Levels editor; Image Size keeps proportions; Canvas Size has
-  a nine-way anchor; Fill asks for its contents; the Preferences pages are gone from the Edit menu.
+  a nine-way anchor; Fill asks for its contents; the Preferences pages but General are gone from the Edit menu, and
+  General (Cmd+K) makes the plain wheel zoom with Zoom with Scroll Wheel.
 layer: gate
 source:
   kind: probe

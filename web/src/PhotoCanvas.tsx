@@ -15,6 +15,8 @@ type CanvasProps = ComponentProps<typeof KitDocumentCanvas> & {
   temporaryMove: KitTool | null
   /** A cursor the active tool asks for now (a handle's arrows, the brush outline's none), over its own. */
   cursor: string | null
+  /** Preferences › General's Zoom with Scroll Wheel: the plain wheel zooms too. */
+  wheelZooms?: boolean
   /** The canvas's viewport, as the tools last saw it (for the wheel's zoom about the pointer). */
   viewport: MutableRefObject<Parameters<KitTool['begin']>[1]['viewport'] | null>
 }
@@ -30,7 +32,7 @@ export type SpaceMoves = { spaceMove?: (dx: number, dy: number) => void }
  * moves instead; Cmd turns a press into the Move tool's (plan 2026-11-24, stage 2); and the wheel
  * zooms with Alt as with Cmd, a mouse notch by at most 1.2 times.
  */
-export function PhotoCanvas({ activeTool, tool, onDenied, held, temporaryMove, cursor, viewport, ...props }: CanvasProps) {
+export function PhotoCanvas({ activeTool, tool, onDenied, held, temporaryMove, cursor, viewport, wheelZooms = false, ...props }: CanvasProps) {
   const ui = useUi()
   const { host } = useKitEditor()
   const allowed = !host.readOnly && !ui.state(`tool:${activeTool}`).denied
@@ -158,12 +160,15 @@ export function PhotoCanvas({ activeTool, tool, onDenied, held, temporaryMove, c
   }, [held])
 
   // The wheel over the canvas: Cmd, Ctrl (and a trackpad's pinch) or Alt zooms about the pointer,
-  // a mouse notch by at most 1.2 times; other wheels pan as the shared canvas does.
+  // a mouse notch by at most 1.2 times (with Zoom with Scroll Wheel, the plain wheel too); other
+  // wheels pan as the shared canvas does.
+  const wheelZoomsNow = useRef(wheelZooms)
+  wheelZoomsNow.current = wheelZooms
   useEffect(() => {
     const wheel = (event: WheelEvent) => {
       const target = event.target
       if (!(target instanceof Element) || target.getAttribute('data-testid') !== 'kit-canvas-surface') return
-      if (!(event.ctrlKey || event.metaKey || event.altKey)) return
+      if (!(event.ctrlKey || event.metaKey || event.altKey || (wheelZoomsNow.current && !event.shiftKey && event.deltaY))) return
       const view = viewport.current
       if (!view) return
       event.preventDefault()

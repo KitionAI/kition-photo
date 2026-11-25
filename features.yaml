@@ -710,3 +710,13 @@ features:
     gap: "The outline is a circle for every tip (no shaped or angled tips, no Precise/Full-Size preference); strokes still land on release (live strokes are stage 3)."
     cases: [photo.editor.brush-keys/brush-keys]
     since: "2026-11-24"
+  - id: photo.editor.preferences
+    title: "Edit › Preferences › General… (Cmd+K): the editor's own settings that take effect, kept across sessions: the painting cursor (brush outline or precise crosshair, Caps Lock the other), Zoom with Scroll Wheel (the plain wheel zooms about the pointer), and the Move tool's Show Transform Controls"
+    dimension: [function]
+    priority: P1
+    status: has
+    paths: [web/src/prefs.ts, web/src/dialogs/PreferencesDialog.tsx, web/src/dialogs/routes.ts, web/src/menus/hidden.ts, web/tests/dialogs.mjs]
+    target: "Photoshop 2026"
+    gap: "Only these three settings; the other Preferences pages stay out of the menus until they have settings that work."
+    cases: [photo.editor.preferences/general]
+    since: "2026-11-25"

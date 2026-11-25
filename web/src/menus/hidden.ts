@@ -90,7 +90,7 @@ const MEASUREMENT = 'Measurement needs the Measurement Log panel, cut for the la
  */
 const NOT_BUILT: Readonly<Record<string, string>> = {
   ...Object.fromEntries(
-    ['general', 'integrations', 'interface', 'workspace', 'tools', 'fileHandling', 'export', 'performance', 'scratchDisks', 'cursors', 'transparencyAndGamut', 'unitsAndRulers', 'guidesGridAndSlices', 'plugIns', 'type', 'enhancedControls', 'rawDefaults'].map((page) => [`edit.preferences.${page}`, PREFERENCES]),
+    ['integrations', 'interface', 'workspace', 'tools', 'fileHandling', 'export', 'performance', 'scratchDisks', 'cursors', 'transparencyAndGamut', 'unitsAndRulers', 'guidesGridAndSlices', 'plugIns', 'type', 'enhancedControls', 'rawDefaults'].map((page) => [`edit.preferences.${page}`, PREFERENCES]),
   ),
   'file.export.exportPreferences': PREFERENCES,
   'edit.keyboardShortcuts': 'The keyboard shortcut editor is not built yet (Help › Keyboard Shortcuts lists them).',

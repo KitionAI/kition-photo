@@ -401,6 +401,8 @@ try {
   await setNumber('tolerance', 32)
 
   // Marquee: the bar's New, Add, and Subtract buttons combine the selections without modifier keys.
+  // From no selection: a drag inside one moves its outline (plan 2026-11-24, stage 2).
+  await deselectForPerson()
   await choose('RectMarquee')
   const marquee = async (fx, fy, dx, dy) => {
     const before = (await inspect()).revision

@@ -59,6 +59,13 @@ try {
     const now = await details()
     return JSON.stringify({ states: now.history, index: now.historyIndex, redo: now.historyRedo ?? [] })
   }
+  /** Waits until the dialog's preview has run (no "updating" status for 300 ms): a slow machine may still be blurring. */
+  const previewIdle = async () => {
+    for (let quiet = 0, i = 0; quiet < 2 && i < 100; i += 1) {
+      await page.waitForTimeout(150)
+      quiet = (await count('photo-dialog-status')) === 0 ? quiet + 1 : 0
+    }
+  }
   /** Waits for the canvas to settle (two equal fingerprints in a row) and answers it. */
   const settled = async () => {
     let last = await picture()
@@ -122,6 +129,7 @@ try {
   const box2 = await again.boundingBox()
   await page.mouse.click(box2.x + box2.width * 0.3, box2.y + box2.height / 2)
   await page.waitForTimeout(400)
+  await previewIdle()
   const shown = await settled()
   await kit.getByTestId('photo-dialog-ok').click()
   await until(async () => (await dialog.count()) === 0, 40)
@@ -225,12 +233,38 @@ try {
   await kit.getByTestId('photo-dialog-cancel').click()
   step('Canvas Size has a nine-way anchor and Fill asks for its contents', anchored && fillOpen)
 
-  // Rows with nothing behind them are gone: the Preferences pages and the keyboard shortcut editor.
+  // Rows with nothing behind them are gone: the Preferences pages but General (the editor's own
+  // settings, plan 2026-11-24 stage 2) and the keyboard shortcut editor.
   await kit.getByTestId('photo-menu-Edit').click()
-  const preferences = await kit.locator('[data-kit-ui-id="menu:Edit/Preferences"]').count()
+  await kit.locator('[data-kit-ui-id="menu:Edit/Preferences"]').first().hover()
+  await until(async () => (await count('photo-cmd-edit.preferences.general')) === 1, 20)
+  const preferences = await kit.locator('[data-testid^="photo-cmd-edit.preferences."]').evaluateAll((rows) => rows.map((row) => row.getAttribute('data-testid')))
   const shortcuts = await count('photo-cmd-edit.keyboardShortcuts')
   await page.keyboard.press('Escape')
-  step('the Edit menu leaves out the Preferences pages and the shortcut editor', preferences === 0 && shortcuts === 0, JSON.stringify({ preferences, shortcuts }))
+  await page.keyboard.press('Escape')
+  step('the Edit menu leaves out the Preferences pages but General, and the shortcut editor', JSON.stringify(preferences) === JSON.stringify(['photo-cmd-edit.preferences.general']) && shortcuts === 0, JSON.stringify({ preferences, shortcuts }))
+
+  // Preferences › General (Cmd+K): Zoom with Scroll Wheel makes the plain wheel zoom, and is kept.
+  await kit.getByTestId('photo-workspace').focus()
+  await page.keyboard.press(`${await primaryKey()}+k`)
+  const prefsOpen = await until(async () => (await count('photo-dialog-pref-zoomWithWheel')) === 1, 40)
+  await kit.getByTestId('photo-dialog-pref-zoomWithWheel').check()
+  await kit.getByTestId('photo-dialog-ok').click()
+  await until(async () => (await dialog.count()) === 0, 40)
+  const zoomOf = async () => Number((await kit.getByTestId('photo-workspace').getAttribute('data-view')).split(' ')[0])
+  const surfaceBox = await kit.getByTestId('kit-canvas-surface').boundingBox()
+  await page.mouse.move(surfaceBox.x + surfaceBox.width / 2, surfaceBox.y + surfaceBox.height / 2)
+  const zoomBefore = await zoomOf()
+  await page.mouse.wheel(0, -100)
+  const zoomed = await until(async () => (await zoomOf()) > zoomBefore * 1.1, 30)
+  const stored = await kit.locator('body').evaluate(() => Object.keys(localStorage).filter((key) => key.includes('preferences')).map((key) => localStorage.getItem(key)).join(''))
+  step('Preferences › General opens on Cmd+K, and Zoom with Scroll Wheel makes the plain wheel zoom and is kept', prefsOpen && zoomed && stored.includes('"zoomWithWheel":true'), JSON.stringify({ prefsOpen, zoomBefore, after: await zoomOf(), stored }))
+  // Back to the default, for the next run in this browser profile.
+  await page.keyboard.press(`${await primaryKey()}+k`)
+  await until(async () => (await count('photo-dialog-pref-zoomWithWheel')) === 1, 40)
+  await kit.getByTestId('photo-dialog-pref-zoomWithWheel').uncheck()
+  await kit.getByTestId('photo-dialog-ok').click()
+  await until(async () => (await dialog.count()) === 0, 40)
 
   step('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '))
 } catch (error) {

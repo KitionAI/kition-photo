@@ -552,6 +552,12 @@ const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['transform.angle', 'Angle', '角度'],
   ['transform.commit', 'Commit transform (Enter)', '提交变换（回车）'],
   ['transform.cancel', 'Cancel transform (Esc)', '取消变换（Esc）'],
+  ['prefs.title', 'Preferences: General', '首选项：常规'],
+  ['prefs.brushCursor', 'Painting cursor', '绘画光标'],
+  ['prefs.brushCursor.outline', 'Brush outline (Caps Lock: crosshair)', '画笔轮廓（Caps Lock：十字）'],
+  ['prefs.brushCursor.precise', 'Precise crosshair (Caps Lock: outline)', '精确十字（Caps Lock：轮廓）'],
+  ['prefs.zoomWithWheel', 'Zoom with scroll wheel', '用滚轮缩放'],
+  ['prefs.showTransform', 'Show Transform Controls with the Move tool', '移动工具显示变换控件'],
 ]
 
 const enUS: Catalog = {
