@@ -4,12 +4,12 @@ import { explainError } from './errors'
 
 /**
  * The engine's errors as the person reads them (plan 2026-11-24, stage 6): a notice with the
- * editor's own sentence (`errors.ts`), in the editor's language; an error the editor does not know
- * shows a general sentence and, folded under Details, what the engine said. A known error closes
- * by itself after a while; an unknown one stays until closed, so its detail can be read.
+ * editor's own sentence (`errors.ts`), in the editor's language, or a general one for an error the
+ * editor does not know; what the engine said is folded under Details, for a report. A known error
+ * closes by itself after a while; an unknown one stays until closed, so its detail can be read.
  */
 
-export type Notice = { id: number; title: string; message: string; detail: string | null }
+export type Notice = { id: number; title: string; message: string; detail: string | null; stays: boolean }
 
 let notices: readonly Notice[] = []
 let serial = 0
@@ -28,20 +28,23 @@ export function dismissNotice(id: number) {
   emit()
 }
 
-/** Shows `message` (and `detail`, folded) under `title`. */
-export function pushNotice(title: string, message: string, detail: string | null = null): number {
+/** Shows `message` (and `detail`, folded) under `title`; one that `stays` waits to be closed. */
+export function pushNotice(title: string, message: string, detail: string | null = null, stays = false): number {
+  // The same error again (a refused step retried at once) is the notice already there.
+  const same = notices.find((notice) => notice.title === title && notice.message === message && notice.detail === detail)
+  if (same) return same.id
   serial += 1
   const id = serial
-  notices = [...notices, { id, title, message, detail }].slice(-MOST)
+  notices = [...notices, { id, title, message, detail, stays }].slice(-MOST)
   emit()
-  if (!detail) setTimeout(() => dismissNotice(id), KNOWN_MS)
+  if (!stays) setTimeout(() => dismissNotice(id), KNOWN_MS)
   return id
 }
 
 /** Reports `error` under `title` in the editor's words (`t`): the `report` the editor state takes. */
 export function reportError(t: Strings, title: string, error: unknown): number {
   const explained = explainError(error)
-  return pushNotice(title || t('error.title'), t(explained.key), explained.detail)
+  return pushNotice(title || t('error.title'), t(explained.key), explained.detail, !explained.known)
 }
 
 const subscribe = (listener: () => void) => {

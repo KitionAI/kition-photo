@@ -265,9 +265,11 @@ try {
   await drag('drop', dropAt, [{ name: 'broken.png', type: 'image/png', text: 'this is not an image' }])
   await kit.getByTestId('photo-error').first().waitFor({ timeout: 10000 })
   const message = await kit.getByTestId('photo-error-message').first().textContent()
-  const card = await kit.getByTestId('photo-error').first().textContent()
+  // What shows (innerText): the editor's sentence; the engine's own text is folded under Details.
+  const shownText = await kit.getByTestId('photo-error').first().innerText()
+  const folded = (await kit.getByTestId('photo-error-detail').first().getAttribute('open')) === null
   await shot('error-translated')
-  step('an engine error shows translated, without command ids or the engine’s English', message === '此文件不是 Kition Photo 能读取的图像。' && !/file\.placeEmbedded|`|invalid parameters|decode/i.test(card) && (await layerCount()) === beforeBroken, card)
+  step('an engine error shows translated, without command ids or the engine’s English, its text folded', message === '此文件不是 Kition Photo 能读取的图像。' && folded && !/file\.placeEmbedded|`|invalid parameters|decode|base64/i.test(shownText) && (await layerCount()) === beforeBroken, shownText)
   await kit.getByTestId('photo-error-close').first().click()
   // A file that is not an image at all is refused by name, before the engine sees it.
   await drag('drop', dropAt, [{ name: 'notes.txt', type: 'text/plain', text: 'hello' }])

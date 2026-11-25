@@ -2,8 +2,8 @@
  * The engine's errors as a person reads them (plan 2026-11-24, stage 6): the engine answers in
  * English with command ids (`command \`edit.paste\` is not available right now: the clipboard is
  * empty`); the editor shows a sentence of its own catalog instead (`error.<kind>`, en-US and
- * zh-CN in `strings.ts`), and only an error it does not know shows its text, folded under the
- * generic sentence. Pure, so `node --test` checks it.
+ * zh-CN in `strings.ts`), a general one for an error it does not know. The engine's own text stays
+ * folded under it (Details), for a report. Pure, so `node --test` checks it.
  */
 
 /** The kinds of error the editor words itself, each with what in the engine's text gives it away (first match wins). */
@@ -33,8 +33,10 @@ const KINDS: ReadonlyArray<readonly [string, RegExp]> = [
 export type ExplainedError = {
   /** The catalog key of the sentence to show (`error.<kind>`, `error.generic` when unknown). */
   key: string
-  /** The engine's own text, for an error the editor does not know; null when the sentence says it all. */
+  /** The engine's own text, folded under the sentence; null when there is none. */
   detail: string | null
+  /** Whether the editor knows the error (its sentence says what went wrong). */
+  known: boolean
 }
 
 /** The text of `error` (an Error, a string, or a JSON-RPC style `{message}`). */
@@ -45,24 +47,11 @@ export function errorText(error: unknown): string {
   return String(error)
 }
 
-/** `text` without the engine's command ids and wrappers: what is left says what went wrong. */
-export function withoutIds(text: string): string {
-  return text
-    .replace(/^(?:step \d+ \(`[^`]*`\) failed(?: on the draft)?:\s*)+/i, '')
-    .replace(/command `[^`]*` is not available right now:\s*/gi, '')
-    .replace(/invalid parameters for `[^`]*`:\s*/gi, '')
-    .replace(/automation command `[^`]*`\s*/gi, '')
-    .replace(/`[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)+`:?\s*/g, '')
-    .trim()
-}
-
 /** What to tell the person about `error`. */
 export function explainError(error: unknown): ExplainedError {
-  const text = errorText(error)
+  const text = errorText(error).trim()
   const kind = KINDS.find(([, pattern]) => pattern.test(text))
-  if (kind) return { key: `error.${kind[0]}`, detail: null }
-  const detail = withoutIds(text)
-  return { key: 'error.generic', detail: detail || null }
+  return { key: kind ? `error.${kind[0]}` : 'error.generic', detail: text || null, known: kind != null }
 }
 
 /** The kinds `explainError` words (each needs `error.<kind>` in both catalogs). */

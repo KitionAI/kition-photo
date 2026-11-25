@@ -3,7 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { defaultSettings, exportName, exportParams, exportPath, fileSize, hasQuality, outputSize, validSize, withScale, withSide } from './exportOptions.ts'
-import { ERROR_KINDS, explainError, withoutIds } from './errors.ts'
+import { ERROR_KINDS, explainError } from './errors.ts'
 import { Busy } from './busy.ts'
 import { dragHasFiles, dropCenters, fingerprint, fromBase64, isPlaceable, nameFor, toBase64 } from './files.ts'
 import { CATALOGS } from '../strings.ts'
@@ -56,7 +56,7 @@ test('file sizes read as B, KB and MB', () => {
   assert.equal(fileSize(3.25 * 1024 * 1024), '3.3 MB')
 })
 
-test("the engine's errors become the editor's sentences, without command ids", () => {
+test("the engine's errors become the editor's sentences, without command ids, the engine's text kept as the detail", () => {
   const cases = [
     ['command `edit.paste` is not available right now: the clipboard is empty', 'error.clipboardEmpty'],
     ['no document open', 'error.noDocument'],
@@ -73,12 +73,11 @@ test("the engine's errors become the editor's sentences, without command ids", (
   ]
   for (const [text, key] of cases) {
     const explained = explainError(new Error(text))
-    assert.equal(explained.key, key, text)
-    assert.equal(explained.detail, null, text)
+    assert.deepEqual(explained, { key, detail: text, known: true }, text)
   }
   const unknown = explainError(new Error('step 2 (`layer.zap`) failed: the zapper overheated'))
-  assert.deepEqual(unknown, { key: 'error.generic', detail: 'the zapper overheated' })
-  assert.equal(withoutIds('command `image.mode.cmyk` is not available right now: `image.mode.cmyk`: odd'), 'odd')
+  assert.deepEqual(unknown, { key: 'error.generic', detail: 'step 2 (`layer.zap`) failed: the zapper overheated', known: false })
+  assert.deepEqual(explainError(''), { key: 'error.generic', detail: null, known: false })
   for (const locale of ['en-US', 'zh-CN']) {
     for (const kind of ERROR_KINDS) assert.ok(CATALOGS[locale][`error.${kind}`], `${locale} error.${kind}`)
     for (const kind of ERROR_KINDS) assert.doesNotMatch(CATALOGS[locale][`error.${kind}`], /`|[a-z]+\.[a-z]+[A-Z]/, `${locale} error.${kind} names no command`)
