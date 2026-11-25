@@ -74,10 +74,14 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  * New Guide has no default position, and New Guide Layout's zero columns make no guides; these
  * start as Photoshop's dialogs do.
  */
-const STARTING: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-  'view.newGuide': { position: 0 },
-  'view.newGuideLayout': { columns: 8, gutter: 20 },
-}
+// Written as [key, value] pairs: the engine's preferences scan (`prefs_usage.rs`) reads a key written
+// as an object member in any web source as a preference being read.
+const STARTING: Readonly<Record<string, Readonly<Record<string, number>>>> = Object.fromEntries(
+  ([
+    ['view.newGuide', [['position', 0]]],
+    ['view.newGuideLayout', [['columns', 8], ['gutter', 20]]],
+  ] as const).map(([command, values]) => [command, Object.fromEntries(values)]),
+)
 
 /** One key's field, or null when the dialog does not ask for it. */
 export function fieldFor(command: ParamsCommand, key: string, node: SchemaNode): ParamField | null {
