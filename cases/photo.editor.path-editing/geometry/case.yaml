@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.path-editing/geometry
+feature: photo.editor.path-editing
+intent: >-
+  Path geometry (plan 2026-11-24, stage 7): cubic points, segment counts of open and closed subpaths, the nearest
+  point on a segment, hits on anchors before segments within reach, direction points only on selected anchors, Path
+  Selection's subpath, a segment split keeping the curve, anchors deleted (an empty subpath dropped), anchors and the
+  path moved, a smooth point's other direction point turning to stay in line (Alt breaking it), points converted, a
+  marquee's anchors; the path store's targets, command names and pruned selection.
+layer: gate
+source:
+  kind: probe
+  from: web/src/paths/bezier.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/paths/bezier.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

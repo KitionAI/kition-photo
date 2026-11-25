@@ -1,0 +1,25 @@
+format: 1
+id: photo.editor.guides/geometry
+feature: photo.editor.guides
+intent: >-
+  Rulers and snapping arithmetic (plan 2026-11-24, stage 7): ruler numbers at 1, 2 or 5 times a power of ten at least
+  50 screen pixels apart with small ticks between, ticks following the view; a guide dropped on a whole pixel or with
+  Shift on a tick; the nearer guide is hit; a point snaps to a guide or the grid within reach, ties to a guide,
+  nothing when off; a moved box snaps by its edges or centre to other layers and the document with a line across both;
+  View's rows toggle their settings and check marks, Show items need the extras; stored settings read back; the grid
+  every inch in four.
+layer: gate
+source:
+  kind: probe
+  from: web/src/guides/guides.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/guides/guides.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

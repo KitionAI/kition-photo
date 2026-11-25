@@ -1,0 +1,29 @@
+format: 1
+id: photo.editor.guides/guides
+feature: photo.editor.guides
+intent: >-
+  Real drags and keys (plan 2026-11-24, stage 7). Cmd+R shows rulers along the top and the left, the canvas moving in
+  by their thickness, the pointer marked on them, following the zoom; a drag out of the top ruler makes a horizontal
+  guide where it is let go (drawn during the drag, one New Guide step), out of the left one a vertical guide, Alt the
+  other way, and none when let go over the ruler; the Move tool shows the guide cursor and drags a guide without
+  moving a layer, Cmd does with another tool, a guide dragged back onto the ruler is deleted; Lock Guides keeps them;
+  Cmd+; hides and shows them; Cmd+' draws the grid; from 600 % the pixel grid shows; a marquee corner and a Move drag
+  snap to a guide and Ctrl held stops it; with Smart Guides a layer's centre snaps to the document's with a magenta
+  line during the drag; View › New Guide… asks orientation and position; View › Clear Guides deletes them.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/guides.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/guides.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 400
+since: "2026-11-25"

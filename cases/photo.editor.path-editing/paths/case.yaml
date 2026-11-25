@@ -1,0 +1,30 @@
+format: 1
+id: photo.editor.path-editing/paths
+feature: photo.editor.path-editing
+intent: >-
+  Real clicks, drags and keys (plan 2026-11-24, stage 7). The Pen's drag pulls direction lines drawn on both sides; a
+  click on the first anchor closes the path in one step, the dragged anchor smooth and mirrored; over a segment the
+  Pen shows its add cursor, a click there adds an anchor and a click on an anchor deletes it; Alt-click makes a smooth
+  anchor a corner, Alt-drag pulls smooth lines out; Cmd lends Direct Selection; Direct Selection drags an anchor with
+  its direction points in one step (the path following during the drag), drags a direction point keeping a smooth
+  point's lines in line, selects anchors with a marquee, nudges only them (Shift+arrows, presses in a row one step),
+  Delete takes them out; Escape finishes the Pen's path as another component of the work path; Path Selection drags
+  the component under the press; Direct Selection moves a shape layer's anchor and it stays a shape; the Pen adds an
+  anchor on a shape layer's segment.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/paths.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/paths.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 400
+since: "2026-11-25"

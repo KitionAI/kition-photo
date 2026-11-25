@@ -807,3 +807,35 @@ features:
     gap: "The engine cannot be stopped mid-command in the browser (its worker runs a command to the end): Cancel takes the result away when it ends, and the bar shows no fraction done. No export presets, metadata or colour-profile choices, export of layers or artboards, or several sizes at once; the preview is the full export, not a small proxy. A file dropped on the canvas is always placed, never opened as a document of its own; Edit › Paste from the menu reads the system clipboard only where the browser allows it, and stays off while the engine's own clipboard is empty."
     cases: [photo.editor.file-io/io, photo.editor.file-io/model, photo.editor.file-io/export, photo.editor.file-io/place]
     since: "2026-11-25"
+  - id: photo.editor.context-menu
+    title: "The canvas's right-click menu by tool (plan 2026-11-24, stage 7): Move lists the layers under the pointer to choose from, then the layer commands; Cmd-right-click lists the layers with any tool; selection tools offer Deselect, Select Inverse, Feather…, Save Selection…, Make Work Path…, Layer via Copy and Cut, New Layer…, Free Transform, Fill…, Stroke…, Last Filter and Fade… (Select All, Reselect, Color Range… and Load Selection… without a selection); Type offers commit and cancel, Edit Type, Rasterize Type, Create Work Path, Convert to Shape, point and paragraph text, orientation and anti-aliasing; the path and shape tools Delete or Add Anchor Point under the pointer, Close Path, Make Selection, Fill and Stroke Path, Create Vector Mask, Delete Path, Free Transform Path; Crop commits or cancels; the Eyedropper's sample sizes; the Hand and Zoom tools' zoom rows; other tools the layer commands; a \"…\" row opens its dialog; brush tools keep the brush preset picker; the menu key and Shift+F10 open the same menu"
+    dimension: [function]
+    priority: P0
+    status: has
+    paths: [web/src/canvasMenu/rows.ts, web/src/canvasMenu/CanvasMenu.tsx, web/src/App.tsx, web/src/strings.ts, web/tests/context-menu.mjs, web/tests/canvas-harness.mjs]
+    target: "Photoshop 2026"
+    gap: "No submenus (anti-aliasing and the sample sizes are rows of their own); Make Selection, Fill Path and Stroke Path run with their defaults instead of asking; no Spelling, Warp Text, Transform Selection, Select and Mask or Define Custom Shape rows; the shared canvas still drops right presses, so the editor listens on the page itself."
+    cases: [photo.editor.context-menu/context-menu, photo.editor.context-menu/rows]
+    since: "2026-11-25"
+  - id: photo.editor.guides
+    title: "Rulers, guides, grid and snapping (plan 2026-11-24, stage 7): View › Rulers (Cmd+R) along the top and the left following the zoom and the scroll with the pointer marked; a drag out of a ruler makes a guide (Alt the other way, Shift to the ticks), the Move tool or Cmd moves it, dragged back to a ruler it is deleted; Lock Guides (Cmd+Alt+;), Show › Guides (Cmd+;), Clear Guides, New Guide… and New Guide Layout…; Show › Grid (Cmd+'), the pixel grid from 600 %, Extras (Cmd+H), Selection Edges, Target Path, Layer Edges, Smart Guides and All; View › Snap and Snap To (guides, grid, layers, document bounds) for the Move tool, Free Transform, the marquees and Crop, Ctrl held suspending it; Smart Guides snap a moved layer to the other layers' and the document's edges and centres with magenta lines; View's rows with nothing behind them are out of the menu"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [view.newGuide, view.moveGuide, view.deleteGuide, view.clearGuides, view.newGuideLayout]
+    paths: [bindings/wasm/src/lib.rs, bindings/wasm/tests/guides.rs, web/src/guides/view.ts, web/src/guides/snap.ts, web/src/guides/draw.ts, web/src/guides/Rulers.tsx, web/src/guides/useGuides.ts, web/src/overlays.ts, web/src/menus/hidden.ts, web/src/menus/photoMenus.tsx, web/src/dialogs/params.ts, web/src/tools/canvas/move.ts, web/src/tools/canvas/select.ts, web/src/tools/canvas/crop.ts, web/src/App.tsx, web/tests/guides.mjs]
+    target: "Photoshop 2026"
+    gap: "Snap To Layers, Document Bounds and Smart Guides start off (on, existing drags near a layer's edge would land elsewhere than dragged); rulers count pixels only (no units or moved origin); no guide colours, no Edit Selected Guides, no artboard guides; Smart Guides show alignment lines, not the distances between layers; snapping does not apply to the shape tools, the Pen or the slice tools."
+    cases: [photo.editor.guides/guides, photo.editor.guides/geometry, photo.editor.guides/binding]
+    since: "2026-11-25"
+  - id: photo.editor.path-editing
+    title: "The Pen, Direct Selection and Path Selection edit paths (plan 2026-11-24, stage 7): the Pen's drag pulls direction lines (Alt only the outgoing one, Shift 45°), a click on the first anchor closes the path, Enter or Escape finishes it (a new component of the work path when there is one); with no path being drawn a click on a segment adds an anchor and one on an anchor deletes it, Alt on an anchor converts it, Cmd lends Direct Selection; Direct Selection selects anchors (Shift adds, a marquee takes those inside), drags anchors, direction points (a smooth point keeps its lines in line, Alt breaks them) and segments, arrows nudge and Delete removes the selected anchors; Path Selection drags the component under the press or another shape layer's path; all of it on the work path and on shape layers' paths, the anchors, direction lines and segments drawn at any zoom, one history step per gesture"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [path.set, path.moveAnchors, path.moveHandle, path.bendSegment, path.convertPoint, path.transform, shape.edit, shape.info, path.info]
+    paths: [web/src/paths/bezier.ts, web/src/paths/store.ts, web/src/paths/draw.ts, web/src/tools/canvas/pathTools.ts, web/src/tools/canvas/shape.ts, web/src/tools/canvas/common.ts, web/src/overlays.ts, web/src/App.tsx, web/tests/paths.mjs]
+    target: "Photoshop 2026"
+    gap: "No Freeform or Curvature Pen, no path operations (combine, subtract…), no rubber-band option, no Alt-drag of a whole component; a shape layer edited anchor by anchor becomes a plain path shape (its live rectangle or ellipse settings go, as in Photoshop); vector masks and saved paths are reached only through the work path."
+    cases: [photo.editor.path-editing/paths, photo.editor.path-editing/geometry]
+    since: "2026-11-25"

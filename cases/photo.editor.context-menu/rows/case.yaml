@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.context-menu/rows
+feature: photo.editor.context-menu
+intent: >-
+  The canvas menu's rows by tool and state (plan 2026-11-24, stage 7): Move's layers under the pointer then the layer
+  commands, Cmd's layers only, a selection tool's rows with and without a selection, the Type tool's commit and cancel
+  and type commands, the path tools' anchor, segment, work path and shape rows, Crop, the Eyedropper's sample sizes,
+  the Hand and Zoom tools' view rows; separators tidied; every label has a Chinese name; every command a row runs is
+  the engine's.
+layer: gate
+source:
+  kind: probe
+  from: web/src/canvasMenu/rows.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/canvasMenu/rows.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

@@ -1,0 +1,29 @@
+format: 1
+id: photo.editor.context-menu/context-menu
+feature: photo.editor.context-menu
+intent: >-
+  Real right clicks on the canvas (plan 2026-11-24, stage 7). The Move tool lists the layers under the pointer,
+  topmost first, and choosing one makes it active; Cmd-right-click lists only the layers with any tool; opening the
+  menu and Escape change nothing; a "…" row (Duplicate Layer…, Feather…) opens its dialog instead of running, its OK
+  runs once and Escape leaves the history; a brush tool still opens the brush preset picker; a marquee offers Select
+  All, Reselect, Color Range…, Load Selection… without a selection and Deselect, Select Inverse, Feather…, Layer via
+  Copy and Cut, Free Transform, Fill…, Stroke… with one, which act on the engine; Shift+F10 opens the same menu; the
+  Eyedropper's sample sizes set the options bar; the Hand tool's 100% and Fit on Screen zoom; the Type tool's
+  Rasterize Type makes a pixel layer; the Crop tool's menu commits the frame.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/context-menu.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/context-menu.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

@@ -1,0 +1,21 @@
+format: 1
+id: photo.editor.guides/binding
+feature: photo.editor.guides
+intent: >-
+  The WebAssembly binding's guides (plan 2026-11-24, stage 7): `guides()` answers each orientation's positions in the
+  order view.moveGuide and view.deleteGuide count them, follows undo, and reading changes nothing.
+layer: gate
+source:
+  kind: probe
+  from: bindings/wasm/tests/guides.rs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, kition-photo-kit, --test, guides]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 600
+since: "2026-11-25"
