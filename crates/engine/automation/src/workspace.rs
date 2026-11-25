@@ -165,6 +165,16 @@ pub fn authorize_engine_command(id: &str, params: &Value) -> Result<(), Automati
             | "file.scripts.flattenAllMasks"
             | "file.scripts.deleteAllEmptyLayers"
             | "file.export.exportPreferences"
+            // The open documents and the session's document presets: no file is read or written.
+            | "file.inspect"
+            | "file.activate"
+            | "file.move"
+            | "file.pixel"
+            | "file.sampleColor"
+            | "file.presets.list"
+            | "file.presets.get"
+            | "file.presets.save"
+            | "file.presets.delete"
     );
     if id.starts_with("file.") && !safe_file_command {
         return Err(command_error(id));

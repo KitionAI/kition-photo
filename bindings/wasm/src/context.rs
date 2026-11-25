@@ -188,7 +188,9 @@ pub(crate) fn targets_mask(params: &Value) -> bool {
 /// Commands whose work is moving the editor (the pixel selection, the layer selection, the
 /// targeted channel, the colors, the brush, the view): they keep their effect for an agent too.
 pub(crate) fn moves_the_editor(command: &str) -> bool {
-    ["select.", "view.", "tool.", "brush.", "channel.target", "layer.select", "symmetry."].iter().any(|prefix| command.starts_with(prefix))
+    // `tool.` is the tool colors and brush; the tool presets (`tool.presets.*`) are not the editor.
+    (["select.", "view.", "tool.", "brush.", "channel.target", "layer.select", "symmetry."].iter().any(|prefix| command.starts_with(prefix))
+        && !command.starts_with("tool.presets."))
         || matches!(command, "edit.selectAll" | "edit.deselectAll" | "layer.showOnly" | "layer.isolate" | "layer.setEffectsExpanded")
 }
 

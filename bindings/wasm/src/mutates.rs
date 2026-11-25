@@ -32,8 +32,14 @@ const PERSONAL_COMMANDS: &[&str] = &[
     "layer.selectLinkedLayers",
 ];
 
-/// Families of [`PERSONAL_COMMANDS`].
+/// Families of [`PERSONAL_COMMANDS`]. `tool.` is the tool colors and brush (`tools.*` before the
+/// 2026-11-25 rename); the tool presets (`tool.presets.*`) were never in it ([`personal_family`]).
 const PERSONAL_FAMILIES: &[&str] = &["select.", "tool.", "channel.target", "edit.purge.", "file.export."];
+
+/// Whether `id` is in one of the [`PERSONAL_FAMILIES`].
+fn personal_family(id: &str) -> bool {
+    !id.starts_with("tool.presets.") && PERSONAL_FAMILIES.iter().any(|family| id.starts_with(family))
+}
 
 /// Selection commands that do change the document: they make a path, shape, channel or layer.
 const SELECTION_EDITS: &[&str] = &["select.toWorkPath", "select.convertToShape", "select.saveSelection", "select.float", "select.drop"];
@@ -51,5 +57,5 @@ pub(crate) fn changes_document(spec: &kition_photo_engine::CommandSpec) -> bool 
     if UNJOURNALED_EDITS.contains(&id) || SELECTION_EDITS.contains(&id) {
         return true;
     }
-    spec.journal && !PERSONAL_COMMANDS.contains(&id) && !PERSONAL_FAMILIES.iter().any(|family| id.starts_with(family))
+    spec.journal && !PERSONAL_COMMANDS.contains(&id) && !personal_family(id)
 }

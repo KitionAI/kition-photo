@@ -65,7 +65,7 @@ export function SwatchesPanel({ colors }: { colors: PhotoColorStore }) {
       <PanelFooter
         end={
           <>
-            <KitElement id="control:swatches.new">
+            <KitElement id="control:swatch.new">
               <IconButton icon={Plus} label={phrase('Create new swatch')} onClick={() => void colors.addSwatch(colors.foreground)} data-testid="photo-swatches-new" />
             </KitElement>
             <KitElement id="control:swatch.delete">

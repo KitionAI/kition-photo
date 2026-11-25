@@ -255,7 +255,8 @@ pub enum Started {
 fn independent_of_document(id: &str) -> bool {
     const PREFIXES: &[&str] = &["job.", "tool.", "view.", "window.", "help.", "brush.presets.", "gradient.presets."];
     const IDS: &[&str] = &["file.new", "file.close", "file.closeAll", "edit.preferences", "edit.colorSettings", "edit.keyboardShortcuts", "edit.menus"];
-    PREFIXES.iter().any(|p| id.starts_with(p)) || IDS.contains(&id)
+    // `tool.` is the tool colors and brush; the tool presets (`tool.presets.*`) were never in it.
+    (PREFIXES.iter().any(|p| id.starts_with(p)) && !id.starts_with("tool.presets.")) || IDS.contains(&id)
 }
 
 #[cfg(not(target_arch = "wasm32"))]

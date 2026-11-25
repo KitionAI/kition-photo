@@ -315,10 +315,28 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:016x}", hasher.finish())
 }
 
-/// Commands the probe leaves alone: they reach files or the machine, or exist to fail.
+/// Commands the probe leaves alone: they reach files or the machine, or exist to fail. The open
+/// documents and the document presets (`document.*` before the 2026-11-25 rename) are probed.
 fn skipped(id: &str) -> bool {
-    id.starts_with("file.") || id.starts_with("plugins.") || id.starts_with("prefs.") || id.starts_with("presets.import") || id == "test.panic"
+    (id.starts_with("file.") && !FILE_BUT_NO_FILES.contains(&id))
+        || id.starts_with("plugins.")
+        || id.starts_with("prefs.")
+        || id.starts_with("presets.import")
+        || id == "test.panic"
 }
+
+/// `file.*` commands that reach no file: they were `document.*` until the 2026-11-25 rename.
+const FILE_BUT_NO_FILES: &[&str] = &[
+    "file.inspect",
+    "file.activate",
+    "file.move",
+    "file.pixel",
+    "file.sampleColor",
+    "file.presets.list",
+    "file.presets.get",
+    "file.presets.save",
+    "file.presets.delete",
+];
 
 #[derive(Default)]
 struct Found {
