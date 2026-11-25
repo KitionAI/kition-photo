@@ -417,6 +417,22 @@ pub fn place_bytes(s: &mut Session, name: &str, bytes: Vec<u8>, linked: Option<S
         _ => (cw / 2.0, ch / 2.0),
     };
     let (dx, dy) = ((center.0 - w * scale / 2.0).round(), (center.1 - h * scale / 2.0).round());
+    if linked.is_none() && p.get("pixels").and_then(Value::as_bool) == Some(true) {
+        // A pixel layer, as Paste makes from an image another app copied (plan 2026-11-24, stage 6).
+        let target = PixelFormat::new(fmt.mode, fmt.sample, true);
+        let mut px = flattened(&src, target);
+        if (scale - 1.0).abs() > 1e-9 {
+            px = resize_surface(&px, scale, scale, Resample::Bicubic);
+        }
+        let px = translate_surface(&px, dx as i32, dy as i32);
+        let layer_name = stem(name);
+        let id = s.edit("Paste", |doc, active| {
+            let id = doc.insert_new(*active, Layer::new(layer_name, LayerContent::Raster(px)));
+            *active = Some(id);
+            Ok(id)
+        })?;
+        return Ok(json!({"layer": id.0, "scale": scale * 100.0, "bounds": [dx, dy, w * scale, h * scale]}));
+    }
     let mut px = flattened(&src, fmt);
     if (scale - 1.0).abs() > 1e-9 {
         px = resize_surface(&px, scale, scale, Resample::Bicubic);
@@ -441,8 +457,22 @@ pub fn place_bytes(s: &mut Session, name: &str, bytes: Vec<u8>, linked: Option<S
     Ok(json!({"layer": id.0, "scale": scale * 100.0, "bounds": [dx, dy, w * scale, h * scale]}))
 }
 
+/// The name a placed file's bytes go by when `name` is missing: its layer's name and decoder hint.
+const PLACED_NAME: &str = "Placed Image";
+
 fn place(s: &mut Session, p: &Value, linked: bool) -> Result<Value> {
     let cmd = if linked { "file.placeLinked" } else { "file.placeEmbedded" };
+    // Place Embedded takes the file's bytes too (`data`, base64), as a browser editor has them from
+    // a picker, a drop or the system clipboard: no file system is needed then.
+    if !linked && let Some(data) = p.get("data") {
+        let data = data.as_str().ok_or_else(|| EngineError::BadParams { cmd: cmd.into(), msg: "`data` is the file's bytes as base64 text".into() })?;
+        let bytes = kition_photo_paint::tile::b64_decode(data)
+            .filter(|bytes| !bytes.is_empty())
+            .ok_or_else(|| EngineError::BadParams { cmd: cmd.into(), msg: "`data` is not valid base64".into() })?;
+        let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|name| !name.is_empty()).unwrap_or(PLACED_NAME).to_owned();
+        return place_bytes(s, &name, bytes, None, p);
+    }
+    native(s).map_err(EngineError::Other)?;
     let path = str_param(p, "path", cmd)?.to_string();
     let bytes = read_file(&path)?;
     place_bytes(s, &path, bytes, linked.then(|| path.clone()), p)
@@ -1288,8 +1318,8 @@ pub fn specs() -> Vec<CommandSpec> {
             "Place Embedded…",
             &["File"],
             None,
-            r##"{"path":str,"scale":%? (default: fit when larger than the canvas),"fit":bool=true,"center":[x,y]?}"##,
-            native_doc,
+            r##"{"path":str?,"data":base64 bytes? (the file instead of a path, with its "name"),"name":str?,"pixels":bool=false (a pixel layer, as Paste makes, not an object layer),"scale":%? (default: fit when larger than the canvas),"fit":bool=true,"center":[x,y]?}"##,
+            has_doc,
             |s, p| place(s, p, false)
         ),
         spec!("file.placeLinked", "Place Linked…", &["File"], None, r##"{"path":str,"scale":%?,"fit":bool=true,"center":[x,y]?}"##, native_doc, |s, p| place(

@@ -852,7 +852,9 @@ fn describe(id: &str) -> &'static str {
         "file.revert" => "The File › Revert command (changes the document) (reloads the saved file as one undoable step).",
         "file.saveACopy" => "The File › Save a Copy command (reads, or changes only the view or selection); takes `path`, `quality`, `layers`, `tiffLayers`.",
         "file.openAs" => "The File › Open As command (changes the document); takes `path`, `as`.",
-        "file.placeEmbedded" => "The File › Place Embedded command (changes the document); takes `path`, `scale`, `fit`, `center`.",
+        "file.placeEmbedded" => {
+            "The File › Place Embedded command (changes the document); takes `path`, or the file itself as base64 `data` with its `name`, and `scale`, `fit`, `center`."
+        }
         "file.placeLinked" => "The File › Place Linked command (changes the document); takes `path`, `scale`, `fit`, `center`.",
         "file.fileInfo" => "Sets document metadata (title, author, description, keywords, copyright and more), saved with the file.",
         "file.automate.fitImage" => "Resizes the image proportionally to fit within `width`×`height` px; `dontEnlarge` keeps smaller images as they are.",
@@ -1587,7 +1589,9 @@ fn describe(id: &str) -> &'static str {
         "action.stop" => "Stops recording; answers {action, steps}. Queries and action-editing commands are not recorded.",
         "action.play" => "Runs action `action` from step `from` (0-based), stopping at the first error; answers {action, ran, failed?}.",
         "action.delete" => "Deletes action `action`, or only step `step` of it.",
-        "file.exportImage" => "Answers the flattened document encoded as PNG, JPEG, TIFF or WebP (`format`) as base64 {data, mime, bytes}; writes no file.",
+        "file.exportImage" => {
+            "Answers the flattened document encoded as PNG, JPEG, TIFF or WebP (`format`; `quality`, WebP `lossless`, `width`/`height`, `transparency` and its `matte`) as base64 {data, mime, bytes, width, height}; writes no file."
+        }
         _ => "",
     }
 }
@@ -1870,7 +1874,7 @@ fn output(id: &str) -> Option<Value> {
         "action.list" => r#"{"type":"object","additionalProperties":true,"properties":{"actions":{"type":"array"},"recording":{"type":"json"}}}"#,
         "action.record" => r#"{"type":"object","additionalProperties":true,"properties":{"action":{"type":"string"},"index":{"type":"integer"}}}"#,
         "file.exportImage" => {
-            r#"{"type":"object","additionalProperties":true,"properties":{"bytes":{"type":"integer"},"data":{"type":"string"},"mime":{"type":"string"}}}"#
+            r#"{"type":"object","additionalProperties":true,"properties":{"bytes":{"type":"integer"},"data":{"type":"string"},"height":{"type":"integer"},"mime":{"type":"string"},"width":{"type":"integer"}}}"#
         }
         "edit.deselectAll" => {
             r#"{"type":"object","additionalProperties":true,"properties":{},"description":"an object; the command's description says what it holds"}"#

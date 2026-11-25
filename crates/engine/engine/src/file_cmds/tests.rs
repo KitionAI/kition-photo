@@ -158,6 +158,49 @@ fn place_embedded_centres_fits_and_embeds() {
     }
 }
 
+/// Plan 2026-11-24, stage 6: Place Embedded takes the file's bytes (a browser's picker, drop or
+/// clipboard) as base64 `data`, at `center`, in one step; bad bytes are refused before any change.
+#[test]
+fn place_embedded_takes_the_bytes_and_a_centre() {
+    let dir = tmp("place-data");
+    let small = std::fs::read(png(&dir, "dot.png", 10, 10, "#00ff00")).unwrap();
+    let data = kition_photo_paint::tile::b64_encode(&small);
+    let mut s = session(100, 100, 8);
+    let r = s.execute("file.placeEmbedded", json!({"data": data, "name": "Dropped dot.png", "center": [20, 30]})).unwrap();
+    assert_eq!(r["bounds"], json!([15.0, 25.0, 10.0, 10.0]));
+    let d = s.active().unwrap();
+    let l = d.doc.layer(d.active_layer.unwrap()).unwrap();
+    assert_eq!(l.name, "Dropped dot");
+    assert!(matches!(&l.content, LayerContent::Smart(so) if matches!(&so.source, SmartSource::Embedded { file_name, .. } if file_name == "Dropped dot.png")));
+    assert!(
+        composite(&s, 20, 30)[1] > 0.99 && composite(&s, 50, 50)[1] > 0.99 && composite(&s, 50, 50)[0] > 0.99,
+        "green at the centre given, white elsewhere"
+    );
+    assert!(s.undo());
+    assert_eq!(doc(&s).layers.len(), 1);
+    // `pixels`: a pixel layer, as Paste makes, at 100% even where it would not fit, in one step "Paste".
+    let big = std::fs::read(png(&dir, "wide.png", 300, 20, "#0000ff")).unwrap();
+    let r = s
+        .execute(
+            "file.placeEmbedded",
+            json!({"data": kition_photo_paint::tile::b64_encode(&big), "name": "Pasted Image.png", "pixels": true, "fit": false, "center": [50, 50]}),
+        )
+        .unwrap();
+    assert_eq!(r["bounds"], json!([-100.0, 40.0, 300.0, 20.0]));
+    let d = s.active().unwrap();
+    let l = d.doc.layer(d.active_layer.unwrap()).unwrap();
+    assert!(matches!(&l.content, LayerContent::Raster(_)), "a pixel layer");
+    assert_eq!(l.name, "Pasted Image");
+    assert!(composite(&s, 50, 50)[0] < 0.01 && composite(&s, 50, 50)[2] > 0.99 && composite(&s, 50, 35)[0] > 0.99, "blue rows 40..60, white above");
+    assert_eq!(s.active().unwrap().history.entries().last().map(|e| e.as_str()), Some("Paste"));
+    assert!(s.undo());
+    let layers = doc(&s).layers.len();
+    for bad in [json!({"data": "%%%"}), json!({"data": ""}), json!({"data": 12}), json!({"data": kition_photo_paint::tile::b64_encode(b"not an image")})] {
+        assert!(s.execute("file.placeEmbedded", bad.clone()).is_err(), "{bad}");
+        assert_eq!(doc(&s).layers.len(), layers, "{bad}");
+    }
+}
+
 /// A 40×20 JPEG (left half red, right half blue) tagged EXIF Orientation = 6: shown upright it
 /// is 20×40, red on top.
 fn rotated_jpeg(dir: &str) -> String {

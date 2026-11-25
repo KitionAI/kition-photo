@@ -21,6 +21,7 @@ mod content;
 mod context;
 pub mod described;
 pub mod document_text;
+pub mod export;
 pub mod files;
 mod mutates;
 mod names;
@@ -230,21 +231,26 @@ impl PhotoDocument {
     }
 }
 
-/// `file.exportImage {format}`: the image flattened to PNG, JPEG, TIFF or WebP, its bytes in the
-/// answer (base64 `data`), for the agent's `<prefix>_export` (KHP A41). The document is unchanged.
+/// `file.exportImage {format, quality, width, height, transparency, matte}`: the image flattened to
+/// PNG, JPEG, TIFF or WebP ([`export`]), its bytes in the answer (base64 `data`), for the agent's
+/// `<prefix>_export` (KHP A41) and the editor's Export dialog. The document is unchanged.
 const EXPORT_IMAGE: &str = "file.exportImage";
 
 impl PhotoDocument {
     fn export_image(&self, params: &Value) -> Result<Value, String> {
-        let format = params.get("format").and_then(Value::as_str).unwrap_or("png");
-        let bytes = KitDocument::export(self, format, params)?;
-        let mime = match format {
-            "jpg" => "image/jpeg",
-            "tiff" => "image/tiff",
-            "webp" => "image/webp",
-            _ => "image/png",
-        };
-        Ok(json!({ "data": base64_encode(&bytes), "mime": mime, "bytes": bytes.len() }))
+        let doc = &self.state()?.doc;
+        let options = export::options(params, doc.size.width, doc.size.height)?;
+        let exported = export::export(doc, &options)?;
+        Ok(export::answer(&exported, options.mime, base64_encode))
+    }
+
+    /// The engine's clipboard (what Copy, Copy Merged or Cut took) as PNG `{data, width, height}`,
+    /// or `null` when it is empty: the editor puts it on the system clipboard too.
+    pub fn clipboard_image(&self) -> Result<Value, String> {
+        let Some(doc) = export::clipboard_document(&self.session) else { return Ok(Value::Null) };
+        let options = export::options(&json!({"format": "png"}), doc.size.width, doc.size.height)?;
+        let exported = export::export(&doc, &options)?;
+        Ok(export::answer(&exported, options.mime, base64_encode))
     }
 }
 
@@ -580,7 +586,10 @@ impl KitDocument for PhotoDocument {
                 id: EXPORT_IMAGE.to_owned(),
                 title: "Export Image".to_owned(),
                 menu: Some(vec!["File".to_owned(), "Export".to_owned()]),
-                params: Some(r#"{"format": "png|jpg|tiff|webp"} → {data: base64, mime, bytes}"#.to_owned()),
+                params: Some(
+                    r##"{"format": "png|jpg|tiff|webp"="png", "quality": 1..100? (JPEG, lossy WebP), "lossless": bool=false (WebP), "width": px?, "height": px? (one side keeps the aspect ratio), "transparency": bool=true (off: flattened onto `matte`), "matte": "#rrggbb"="#ffffff"} → {data: base64, mime, bytes, width, height}"##
+                        .to_owned(),
+                ),
                 mutates: false,
                 enabled: self.state().is_ok(),
                 ..Default::default()
@@ -632,15 +641,17 @@ impl KitDocument for PhotoDocument {
         vec!["png", "jpg", "tiff", "webp"]
     }
 
-    /// The image flattened to `format`, with the exporter's defaults; the document is unchanged.
-    fn export(&self, format: &str, _options: &Value) -> Result<Vec<u8>, String> {
+    /// The image flattened to `format`, with `file.exportImage`'s options (quality, size,
+    /// transparency, matte; [`export::options`]); the document is unchanged.
+    fn export(&self, format: &str, options: &Value) -> Result<Vec<u8>, String> {
         if !Self::exports().contains(&format) {
             return Err(format!("Photo exports png, jpg, tiff or webp, not {format}"));
         }
-        let state = self.state()?;
-        let exported =
-            kition_photo_io::export(&state.doc, &format!("export.{format}"), &kition_photo_io::ExportOptions::default()).map_err(|error| error.to_string())?;
-        Ok(exported.bytes)
+        let doc = &self.state()?.doc;
+        let mut params = if options.is_object() { options.clone() } else { json!({}) };
+        params["format"] = json!(format);
+        let options = export::options(&params, doc.size.width, doc.size.height)?;
+        Ok(export::export(doc, &options)?.bytes)
     }
 
     /// What is wrong with the image (KHP A21): see [`kition_photo_engine::check`].
@@ -741,6 +752,13 @@ pub mod web {
 
         /// Leaves layer `layer` out of the canvas's renders until the document changes; a negative
         /// `layer` puts it back.
+        /// The engine's clipboard as PNG `{data, width, height}` (JSON), or `null` when it is empty
+        /// ([`crate::PhotoDocument::clipboard_image`]).
+        #[wasm_bindgen(js_name = clipboardImage)]
+        pub fn clipboard_image(&self) -> Result<String, JsError> {
+            self.0.clipboard_image().map(|answer| answer.to_string()).map_err(error)
+        }
+
         #[wasm_bindgen(js_name = omitLayer)]
         pub fn omit_layer(&mut self, layer: i32) -> Result<(), JsError> {
             self.0.omit_layer(u32::try_from(layer).ok()).map_err(error)
