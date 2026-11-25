@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Checkbox, Choice, GradientSlider } from '@kition/sdk/editor'
+import { ColorWell } from '../color/ColorWell'
 
 /**
  * The dialogs' controls, on kit-editor's: a slider row (label, track, value to type), a drop-down,
@@ -40,11 +41,10 @@ export function FieldRow({ label, children, htmlFor }: { label: string; children
 }
 
 export function ColorRow({ label, value, onChange, disabled, testId }: { label: string; value: string; onChange: (value: string) => void; disabled?: boolean; testId?: string }) {
+  // The chip opens the Color Picker over the dialog (plan 2026-11-24, stage 5).
   return (
     <FieldRow label={label}>
-      <span className="photo-swatch" style={{ background: value }} title={label} data-disabled={disabled}>
-        <input type="color" value={value} disabled={disabled} aria-label={label} onChange={(event) => onChange(event.target.value)} data-testid={testId} />
-      </span>
+      <ColorWell value={value} label={label} disabled={disabled} onChange={(next) => onChange(next)} testId={testId} />
     </FieldRow>
   )
 }

@@ -12,6 +12,8 @@ import { dialogFor, type DialogKind } from './routes'
 import { CanvasSizeDialog, ImageSizeDialog } from './SizeDialogs'
 import { RGB_CHANNELS } from './levels'
 import type { Histograms } from './ToneEditors'
+import { LayerStyleDialog, type LayerStyleStart } from './LayerStyleDialog'
+import { EFFECT_KINDS, isEffectKind, type StyleAnswer } from './layerStyle'
 
 /**
  * The dialog host (plan 2026-11-24, stage 1): every way to run a command as a person does (a menu
@@ -45,7 +47,7 @@ export function routeOf(command: KitCommand | undefined): DialogKind | null {
   return command ? dialogFor({ id: command.id, title: command.title, asks: paramFields(command).length > 0 }) : null
 }
 
-type Open = { serial: number; command: KitCommand | null; kind: DialogKind | 'newDocument'; values?: Record<string, unknown>; histograms: Histograms | null }
+type Open = { serial: number; command: KitCommand | null; kind: DialogKind | 'newDocument'; values?: Record<string, unknown>; histograms: Histograms | null; style?: LayerStyleStart }
 
 /**
  * Holds the open dialog and answers `api` (which App passes to the menus, built outside the
@@ -83,6 +85,25 @@ export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dial
               if (bins[index]) histograms[channel] = bins[index]
             })
             show({ command, kind, values, histograms })
+          })
+          .finally(() => {
+            busy.current = false
+          })
+        return true
+      }
+      if (kind === 'layerStyle') {
+        // The layer's style and each effect's defaults, read before the dialog's preview runs.
+        busy.current = true
+        const kindOf = id.slice('layer.layerStyle.'.length)
+        void Promise.all([now.query<StyleAnswer>('layer.layerStyle.get', {}), ...EFFECT_KINDS.map((effect) => now.query<{ params?: Record<string, unknown> }>('layer.layerStyle.defaultFor', { kind: effect }))])
+          .then(([answer, ...defaults]) => {
+            if (!answer) return
+            const style: LayerStyleStart = {
+              answer,
+              defaults: Object.fromEntries(EFFECT_KINDS.map((effect, index) => [effect, defaults[index]?.params ?? {}])),
+              open: isEffectKind(kindOf) ? kindOf : 'blending',
+            }
+            show({ command, kind, values, histograms: null, style })
           })
           .finally(() => {
             busy.current = false
@@ -130,6 +151,10 @@ export function PhotoDialogs({ api, info, colors, prefs }: { api: RefObject<Dial
         return <FillDialog {...props} info={info} colors={colors} />
       case 'stroke':
         return <StrokeDialog {...props} info={info} colors={colors} />
+      case 'layerStyle': {
+        const layer = info.layers.find((item) => item.id === info.activeLayer)
+        return layer && open.style ? <LayerStyleDialog {...props} layer={layer} start={open.style} /> : null
+      }
       case 'preferences':
         return <PreferencesDialog prefs={prefs.value} onSave={prefs.save} onClose={close} />
       case 'params':

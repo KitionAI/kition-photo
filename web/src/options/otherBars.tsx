@@ -5,6 +5,7 @@ import { useFontChoices } from './typeLayer'
 import { useTypeStyle } from '../panels/useTypeStyle'
 import { antiAliasChoices } from '../panels/TypeSections'
 import { ColorSwatch } from '../panels/PropsParts'
+import { ColorWell } from '../color/ColorWell'
 import { Act, BlendMode, Check, Choice, FillSampling, Hint, Icon, Icons, Num, Opt, Sep, Toggle, bare, fill, useBar } from './fields'
 
 
@@ -408,9 +409,7 @@ export function MeasureBar() {
           </Opt>
           <Opt field="noteColor" option="noteColor">
             <span className="photo-options-label">{phrase('Color:')}</span>
-            <label className="photo-swatch" style={{ background: o.noteColor }}>
-              <input type="color" value={o.noteColor} onChange={(event) => set({ noteColor: event.target.value })} aria-label={bare(phrase('Color:'))} data-testid="photo-option-noteColor" />
-            </label>
+            <ColorWell value={o.noteColor} label={bare(phrase('Color:'))} onChange={(noteColor) => set({ noteColor })} testId="photo-option-noteColor" />
           </Opt>
           {button('clearAll', phrase('Clear All'), 'notes.delete', { all: true })}
         </>

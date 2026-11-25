@@ -67,6 +67,9 @@ import { HomeTab } from './HomeTab'
 import { usePhotoViewState } from './viewState'
 import { PhotoCanvas } from './PhotoCanvas'
 import { DialogsProvider, PhotoDialogs, type Dialogs } from './dialogs/DialogHost'
+import { ColorPickerOutlet, ColorPickerProvider, type SampleAt } from './color/ColorPickerHost'
+import { ColorWell } from './color/ColorWell'
+import { GradientEditorOutlet, GradientEditorProvider } from './gradient/GradientEditorHost'
 import manifest from '../../kit.json'
 
 
@@ -275,6 +278,24 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   useEffect(() => () => nudges.close(), [nudges])
   const fg = colors.foreground
   const bg = colors.background
+  // The Color Picker's eyedropper: the picture's colour under a page point over the canvas.
+  const sampleAt = useCallback<SampleAt>(
+    (clientX, clientY) => {
+      const surface = workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')
+      const shownView = canvas.current?.view()
+      const size = stateNow.current
+      if (!surface || !shownView || !size) return null
+      const box = surface.getBoundingClientRect()
+      if (clientX < box.left || clientX >= box.right || clientY < box.top || clientY >= box.bottom) return null
+      const x = Math.floor(shownView.x + (clientX - box.left) / (shownView.zoom || 1))
+      const y = Math.floor(shownView.y + (clientY - box.top) / (shownView.zoom || 1))
+      if (x < 0 || y < 0 || x >= size.width || y >= size.height) return Promise.resolve(null)
+      return query<number[]>('document.sampleColor', { x, y, size: 'point', sampleLayer: 'all' }).then((rgba) =>
+        Array.isArray(rgba) && rgba.length >= 3 ? rgbToHex(rgba.slice(0, 3).map((value) => value * 255) as [number, number, number]) : null,
+      )
+    },
+    [query],
+  )
   // The canvas tools read the colours when they act, so a colour field's drag rebuilds no tool.
   const colorsNow = useRef(colors)
   colorsNow.current = colors
@@ -974,6 +995,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     <KitEditorProvider editor={{ ...editor, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
       <TypeEditingContext.Provider value={typeEditingApi}>
       <DialogsProvider value={dialogs}>
+      <ColorPickerProvider sample={sampleAt}>
+      <GradientEditorProvider colors={colors}>
         <EditorFrame
           tabs={tabs}
           defaultTab="home"
@@ -1016,12 +1039,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             <PhotoToolRail active={tool} onChoose={chooseTool} shown={windows.toolbar} keys={toolKeys} onView={(fit) => (fit ? canvas.current?.fit() : canvas.current?.zoomTo(1))}>
               <KitElement id="control:colors">
                 <div className="photo-colors" title={t('colors')}>
-                  <label className="photo-color photo-color-background" style={{ background: bg }} title={phrase('Set background color')}>
-                    <input type="color" value={bg} onChange={(event) => colors.set({ background: event.target.value })} aria-label={phrase('Set background color')} data-testid="photo-background" />
-                  </label>
-                  <label className="photo-color photo-color-foreground" style={{ background: fg }} title={phrase('Set foreground color')}>
-                    <input type="color" value={fg} onChange={(event) => colors.set({ foreground: event.target.value })} aria-label={phrase('Set foreground color')} data-testid="photo-foreground" />
-                  </label>
+                  {/* Each chip opens the Color Picker; the colour follows the picker as it moves (plan 2026-11-24, stage 5). */}
+                  <ColorWell className="photo-color photo-color-background" value={bg} label={phrase('Set background color')} title={t('color.title.background')} onChange={(value) => colors.set({ background: value })} onLive={(value) => colors.set({ background: value })} testId="photo-background" />
+                  <ColorWell className="photo-color photo-color-foreground" value={fg} label={phrase('Set foreground color')} title={t('color.title.foreground')} onChange={(value) => colors.set({ foreground: value })} onLive={(value) => colors.set({ foreground: value })} testId="photo-foreground" />
                   <span className="photo-color-actions">
                     <IconButton icon={ArrowLeftRight} label={t('swapColors')} onClick={colors.swap} data-testid="photo-colors-swap" />
                     <IconButton icon={RotateCcw} label={t('defaultColors')} onClick={colors.reset} data-testid="photo-colors-reset" />
@@ -1066,6 +1086,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         >
           <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} dialogs={dialogs} />
           <PhotoDialogs api={dialogApi} info={state} colors={colors} prefs={{ value: prefs, save: savePrefs }} />
+          <GradientEditorOutlet />
+          <ColorPickerOutlet />
           <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
             <PhotoCanvas
               activeTool={tool}
@@ -1114,6 +1136,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           ) : null}
           {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
         </EditorFrame>
+      </GradientEditorProvider>
+      </ColorPickerProvider>
       </DialogsProvider>
       </TypeEditingContext.Provider>
     </KitEditorProvider>

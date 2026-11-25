@@ -1,4 +1,5 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { ColorWell } from '../color/ColorWell'
 import { TesseraIcons } from '@kition/sdk/editor'
 import { KitElement, useReadOnly } from '@kition/sdk/editor'
 
@@ -72,26 +73,6 @@ export function EditingControls({ children }: { children: ReactNode }) {
 }
 
 export function ColorSwatch({ label, value, disabled, onChange, testId }: { label: string; value: string; disabled?: boolean; onChange: (value: string, final: boolean) => void; testId?: string }) {
-  const last = useRef<string | null>(null)
-  const end = () => {
-    if (last.current != null) onChange(last.current, true)
-    last.current = null
-  }
-  return (
-    <label className="photo-swatch" style={{ background: value }} title={label} data-disabled={disabled}>
-      <input
-        type="color"
-        value={value}
-        disabled={disabled}
-        aria-label={label}
-        onClick={end}
-        onBlur={end}
-        onChange={(event) => {
-          last.current = event.target.value
-          onChange(event.target.value, false)
-        }}
-        data-testid={testId}
-      />
-    </label>
-  )
+  // The chip opens the Color Picker (plan 2026-11-24, stage 5): its OK is one final change.
+  return <ColorWell value={value} label={label} disabled={disabled} onChange={onChange} testId={testId} />
 }

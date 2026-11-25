@@ -561,6 +561,33 @@ const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['prefs.showTransform', 'Show Transform Controls with the Move tool', '移动工具显示变换控件'],
 ]
 
+/** Plan 2026-11-24, stage 5: the Color Picker, the brush picker and Brush Settings, Layer Style, Properties' Masks, the gradient editor. [key, English, Chinese] */
+const STAGE5_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
+  ['color.title.foreground', 'Color Picker (Foreground Color)', '拾色器（前景色）'],
+  ['color.title.background', 'Color Picker (Background Color)', '拾色器（背景色）'],
+  ['color.title', 'Color Picker', '拾色器'],
+  ['color.square', 'Saturation and brightness', '饱和度和亮度'],
+  ['color.hue', 'Hue', '色相'],
+  ['color.saturation', 'Saturation', '饱和度'],
+  ['color.brightness', 'Brightness', '亮度'],
+  ['color.new', 'new', '新的'],
+  ['color.current', 'current', '当前'],
+  ['color.backToCurrent', 'Back to the current color', '回到当前颜色'],
+  ['color.eyedropperHint', 'Click the picture to pick a color from it.', '单击画面可从中取色。'],
+  ['layerStyle.noTexture', 'None', '无'],
+  ['gradient.title', 'Gradient Editor', '渐变编辑器'],
+  ['gradient.edit', 'Click to edit the gradient', '单击可编辑渐变'],
+  ['gradient.presets', 'Presets', '预设'],
+  ['gradient.addColorStop', 'Click to add a color stop', '单击可添加色标'],
+  ['gradient.addOpacityStop', 'Click to add an opacity stop', '单击可添加不透明度色标'],
+  ['gradient.midpoint', 'Midpoint', '中点'],
+  ['gradient.stops', 'Stops', '色标'],
+  ['gradient.stopColor', 'Stop Color', '色标颜色'],
+  ['gradient.location', 'Location (%)', '位置（%）'],
+  ['gradient.hint', 'Click under the bar to add a color stop, above it to add an opacity stop; drag a stop off the bar to remove it.', '在渐变条下方单击添加色标，在上方单击添加不透明度色标；把色标拖离渐变条即可删除。'],
+  ['gradient.deleteStop', 'Delete', '删除'],
+]
+
 const enUS: Catalog = {
   "noLayers": "No layers",
   "colors": "Foreground and background colors",
@@ -636,6 +663,7 @@ const enUS: Catalog = {
   "home.newLayer": "New Layer",
   ...words(DIALOG_STRINGS, '', 1),
   ...words(CANVAS_STRINGS, '', 1),
+  ...words(STAGE5_STRINGS, '', 1),
   ...words(PARAM_WORDS, 'param', 1),
   ...words(OPTION_WORDS, 'option', 1),
 }
@@ -715,6 +743,7 @@ const zhCN: Catalog = {
   "home.newLayer": "新建图层",
   ...words(DIALOG_STRINGS, '', 2),
   ...words(CANVAS_STRINGS, '', 2),
+  ...words(STAGE5_STRINGS, '', 2),
   ...words(PARAM_WORDS, 'param', 2),
   ...words(OPTION_WORDS, 'option', 2),
 }
