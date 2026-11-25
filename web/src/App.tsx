@@ -209,6 +209,11 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // Someone else's change (an undo, a panel, an agent) ends the edit where it is; so does another
   // layer becoming the active one (Photoshop commits then).
   useEffect(() => typeSession.checkExternal(), [change.revision, typeSession])
+  // A denied tool drops its drafts and commits text being edited (a stable callback: the canvas runs it from an effect).
+  const denyTools = useCallback(() => {
+    cancelToolDrafts()
+    void typeSession.commit()
+  }, [cancelToolDrafts, typeSession])
   const activeBefore = useRef<number | null | undefined>(undefined)
   useEffect(() => {
     const before = activeBefore.current
@@ -1064,10 +1069,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
             <PhotoCanvas
               activeTool={tool}
-              onDenied={() => {
-                cancelToolDrafts()
-                void typeSession.commit()
-              }}
+              onDenied={denyTools}
               held={held}
               temporaryMove={temporaryMove}
               wheelZooms={prefs.zoomWithWheel}
