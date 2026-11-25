@@ -18,6 +18,39 @@ export function canvasResizeParams(old: { width: number; height: number }, width
 /** A layer's content box: `[x0, y0, x1, y1]`. */
 export type Box = readonly [number, number, number, number]
 
+/**
+ * A typed X, Y, W or H as the command the Move tool or Free Transform would run (plan 2026-11-24,
+ * stage 5): X and Y move the layer (`layer.translate`), W and H scale its content from its top
+ * left corner (`edit.transform`); null when the value is the same, or not a size.
+ */
+export function boundsEdit(layer: number, box: Box, field: 'x' | 'y' | 'w' | 'h', value: number): { command: string; params: Record<string, unknown> } | null {
+  if (!Number.isFinite(value)) return null
+  const typed = Math.round(value)
+  const [x0, y0, x1, y1] = box
+  if (field === 'x' || field === 'y') {
+    const delta = typed - (field === 'x' ? x0 : y0)
+    if (delta === 0) return null
+    return { command: 'layer.translate', params: { layer, dx: field === 'x' ? delta : 0, dy: field === 'y' ? delta : 0 } }
+  }
+  if (typed < 1 || typed === (field === 'w' ? x1 - x0 : y1 - y0)) return null
+  const right = field === 'w' ? x0 + typed : x1
+  const bottom = field === 'h' ? y0 + typed : y1
+  return {
+    command: 'edit.transform',
+    params: {
+      layer,
+      rect: [x0, y0, x1, y1],
+      quad: [
+        [x0, y0],
+        [right, y0],
+        [right, bottom],
+        [x0, bottom],
+      ],
+      interpolation: 'bicubic',
+    },
+  }
+}
+
 /** The Quick Actions each layer kind offers (upstream `props_layout::quick_actions`): label and command. */
 export const QUICK_ACTIONS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
   Pixel: [

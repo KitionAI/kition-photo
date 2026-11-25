@@ -2047,3 +2047,24 @@ select.kui-field.photo-kerning-presets {
 .photo-workspace {
   position: relative;
 }
+
+/* Properties: X, Y, W and H as values to click and type (plan 2026-11-24, stage 5). */
+.photo-props-bound-value {
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: text;
+}
+
+.photo-props-bound-value:hover:not(:disabled) {
+  border-color: var(--kit-border);
+}
+
+.photo-props-bound-input {
+  width: 72px;
+  height: 20px;
+  padding: 0 4px;
+}

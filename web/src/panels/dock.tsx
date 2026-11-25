@@ -37,8 +37,10 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
       { id: 'gradients', label: 'Gradients' },
       { id: 'patterns', label: 'Patterns' },
     ],
-    defaultHeight: 190,
-    compactHeight: 130,
+    // Its whole saturation and brightness square shows (120 px under the tab strip) even in a short
+    // column; the hex, RGB and HSB rows scroll under it (plan 2026-11-24, stage 5).
+    defaultHeight: 166,
+    compactHeight: 162,
   },
   {
     group: 'properties',
@@ -48,7 +50,8 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
     ],
     // Include the tab strip so the type layer's Character heading remains fully visible.
     defaultHeight: 260,
-    compactHeight: 160,
+    // X, Y, W, H, Opacity and Fill stay in view in a short column.
+    compactHeight: 200,
   },
   {
     group: 'character',
@@ -89,8 +92,10 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
     defaultHeight: 320,
     compactHeight: 200,
     minHeight: 140,
-    // Leave room for Properties' full Character heading at the default editor height.
-    preferredFill: 480,
+    // Its header, about four rows and its footer: at 1440 × 900 Color keeps its square, Properties its
+    // X, Y, W, H, Opacity and Fill, and Layers the rest (plan 2026-11-24, stage 5). With Color
+    // hidden, Properties keeps its default height and the type layer's Character heading shows.
+    preferredFill: 340,
   },
 ]
 
@@ -158,6 +163,7 @@ export const PANEL_CONTROLS: KitUiItem[] = [
     ['shape', 'Shape'],
     ['quickActions', 'Quick Actions'],
     ['adjustment', 'Adjustment Properties'],
+    ['masks', 'Masks'],
   ].map(([id, label]) => ({ id: `control:properties.${id}`, label, parent: 'panel:properties' })),
   ...ADJUSTMENT_CONTROLS,
   ...[

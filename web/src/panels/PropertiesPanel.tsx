@@ -1,3 +1,4 @@
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { type IconComponent } from '@kition/sdk/editor'
 import { TesseraIcons } from '@kition/sdk/editor'
 import { Button, Checkbox, Choice, IconButton, KitElement, NumberField, useEngineQuery, useKitEditor } from '@kition/sdk/editor'
@@ -9,7 +10,7 @@ import { useGestures } from './gesture'
 import { CharacterSection, ParagraphSection, TypeOptionsSection } from './TypeSections'
 import { useTypeStyle, type TypeTarget } from './useTypeStyle'
 import { ColorSwatch, EditingControls, Row, Section, useRemembered } from './PropsParts'
-import { DEPTHS, MODES, QUICK_ACTIONS, canvasResizeParams, kindLabel, type Box } from './properties'
+import { DEPTHS, MODES, QUICK_ACTIONS, boundsEdit, canvasResizeParams, kindLabel, type Box } from './properties'
 import { useDialogs } from '../dialogs/DialogHost'
 
 const AlignCenterHorizontal = TesseraIcons.AlignCenterHorizontalIcon
@@ -172,8 +173,9 @@ function LayerProperties({ layer, info, foreground, background, typeTarget }: Pr
         </KitElement>
       ) : (
         <>
-          {box ? <Bounds box={box} /> : null}
+          {box ? <Bounds box={box} layer={id} locked={layer.locks.position || layer.locks.all} /> : null}
           <Blending layer={layer} />
+          {layer.hasMask ? <MaskSection layer={layer} /> : null}
           {layer.kind === 'Type' ? <TypeProperties target={typeTarget} /> : null}
           {layer.kind === 'Shape' ? <ShapeSections layer={id} /> : null}
           <Section id="align" title={phrase('Align and Distribute')}>
@@ -201,25 +203,104 @@ function LayerProperties({ layer, info, foreground, background, typeTarget }: Pr
   )
 }
 
-/** The content box's X, Y, W, and H, read only (upstream `layer_controls`): the Move tool and Free Transform change them. */
-function Bounds({ box }: { box: Box }) {
-  const values: [string, number][] = [
-    ['X', box[0]],
-    ['Y', box[1]],
-    ['W', box[2] - box[0]],
-    ['H', box[3] - box[1]],
+/**
+ * The content box's X, Y, W, and H (upstream `layer_controls`), each a value to click and type
+ * (plan 2026-11-24, stage 5): Enter or leaving the field runs what the Move tool or Free Transform
+ * would (`layer.translate`, `edit.transform` from the top left corner), Escape keeps the value.
+ */
+function Bounds({ box, layer, locked }: { box: Box; layer: number; locked: boolean }) {
+  const { run, t } = useKitEditor()
+  const values: ['x' | 'y' | 'w' | 'h', string, number][] = [
+    ['x', 'X', box[0]],
+    ['y', 'Y', box[1]],
+    ['w', 'W', box[2] - box[0]],
+    ['h', 'H', box[3] - box[1]],
   ]
+  const commit = (field: 'x' | 'y' | 'w' | 'h', value: number) => {
+    const edit = boundsEdit(layer, box, field, value)
+    if (edit) void run(edit.command, edit.params)
+  }
   return (
     <KitElement id="control:properties.transform">
       <dl className="photo-props-bounds" data-testid="photo-props-bounds">
-        {values.map(([name, value]) => (
+        {values.map(([field, name, value]) => (
           <div key={name} className="photo-props-bound">
             <dt>{name}</dt>
-            <dd data-testid={`photo-props-bounds-${name.toLowerCase()}`}>{`${value} px`}</dd>
+            <dd data-testid={`photo-props-bounds-${field}`}>
+              <BoundValue value={value} label={t('properties.editBound', { name })} disabled={locked} onCommit={(next) => commit(field, next)} testId={`photo-props-bounds-${field}-edit`} />
+            </dd>
           </div>
         ))}
       </dl>
     </KitElement>
+  )
+}
+
+/** A number shown as text ("87 px"); a click turns it into a field, Enter or leaving commits, Escape keeps it. */
+function BoundValue({ value, label, disabled, onCommit, testId }: { value: number; label: string; disabled: boolean; onCommit: (value: number) => void; testId: string }) {
+  const [typing, setTyping] = useState<string | null>(null)
+  if (typing == null)
+    return (
+      <button type="button" className="photo-props-bound-value tabular-nums" title={label} aria-label={label} disabled={disabled} onClick={() => setTyping(String(value))} data-testid={testId}>
+        {`${value} px`}
+      </button>
+    )
+  const finish = (keep: boolean) => {
+    const number = Number(typing)
+    setTyping(null)
+    if (keep && typing.trim() !== '' && Number.isFinite(number)) onCommit(number)
+  }
+  return (
+    <input
+      className="kui-field photo-props-bound-input tabular-nums"
+      type="number"
+      autoFocus
+      value={typing}
+      aria-label={label}
+      onChange={(event) => setTyping(event.target.value)}
+      onBlur={() => finish(true)}
+      onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') finish(true)
+        else if (event.key === 'Escape') {
+          event.stopPropagation()
+          finish(false)
+        }
+      }}
+      data-testid={`${testId}-input`}
+    />
+  )
+}
+
+/**
+ * Properties › Masks (Photoshop's): the layer mask's Density and Feather (one history step a
+ * drag, `layer.layerMask.properties`), Invert, and buttons to load it as a selection, disable or
+ * enable it and delete it.
+ */
+function MaskSection({ layer }: { layer: PhotoLayer }) {
+  const { run, phrase, t } = useKitEditor()
+  const gestures = useGestures(`mask-${layer.id}`)
+  const set = (key: 'density' | 'feather') => (value: number, final: boolean) => void run('layer.layerMask.properties', { layer: layer.id, [key]: value, coalesce: gestures.key(key, final) })
+  return (
+    <Section id="masks" title={phrase('Masks')}>
+      <div className="photo-props-fields">
+        <NumberField label={t('properties.maskDensity')} value={Math.round(layer.maskDensity)} min={0} max={100} unit="%" track onChange={set('density')} testId="photo-props-mask-density" />
+        <NumberField label={t('properties.maskFeather')} value={Math.round(layer.maskFeather * 10) / 10} min={0} max={1000} step={0.1} unit="px" track onChange={set('feather')} testId="photo-props-mask-feather" />
+      </div>
+      <div className="photo-props-actions">
+        <Button onClick={() => void run('select.loadSelection', { channel: 'mask', layer: layer.id })} data-testid="photo-props-mask-select">
+          {t('properties.maskSelect')}
+        </Button>
+        <Button onClick={() => void run('image.adjustments.invert', { target: 'mask' })} data-testid="photo-props-mask-invert">
+          {phrase('Invert')}
+        </Button>
+        <Button onClick={() => void run('layer.layerMask.enabled', { layer: layer.id })} data-testid="photo-props-mask-enabled">
+          {t(layer.maskEnabled ? 'properties.maskDisable' : 'properties.maskEnable')}
+        </Button>
+        <Button onClick={() => void run('layer.layerMask.delete', {})} data-testid="photo-props-mask-delete">
+          {t('properties.maskDelete')}
+        </Button>
+      </div>
+    </Section>
   )
 }
 

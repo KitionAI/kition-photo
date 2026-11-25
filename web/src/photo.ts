@@ -29,6 +29,9 @@ export type PhotoLayer = {
   /** Whether the layer mask applies, and whether it moves with the layer (meaningless without a mask). */
   maskEnabled: boolean
   maskLinked: boolean
+  /** The layer mask's Density (0 to 100 %) and Feather (px), Properties › Masks; 100 and 0 without a mask. */
+  maskDensity: number
+  maskFeather: number
   linked: boolean
   /** A group's disclosure; undefined for other layers. */
   expanded?: boolean
@@ -91,6 +94,8 @@ type InspectedLayer = {
   hasMask?: boolean
   maskEnabled?: boolean | null
   maskLinked?: boolean | null
+  maskDensity?: number | null
+  maskFeather?: number | null
   linkGroup?: number | null
   expanded?: boolean
   bounds?: [number, number, number, number] | null
@@ -146,6 +151,8 @@ function flatten(layers: readonly InspectedLayer[] | undefined, depth: number, f
       hasMask: layer.hasMask ?? false,
       maskEnabled: layer.maskEnabled ?? true,
       maskLinked: layer.maskLinked ?? true,
+      maskDensity: layer.maskDensity ?? 100,
+      maskFeather: layer.maskFeather ?? 0,
       linked: layer.linkGroup != null,
       expanded: layer.kind === 'Group' ? (layer.expanded ?? true) : undefined,
       folded,
