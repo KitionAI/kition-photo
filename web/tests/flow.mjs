@@ -48,6 +48,13 @@ const attempt = async (name, fn) => {
     step(name, false, error instanceof Error ? error.message.split('\n')[0] : String(error))
   }
 }
+// A "…" command opens its dialog (plan 2026-11-24, stage 1): wait for it and press OK.
+const okDialog = async () => {
+  const kit = page.frameLocator('#kit')
+  await kit.getByTestId('photo-dialog').waitFor({ timeout: 10000 })
+  await kit.getByTestId('photo-dialog-ok').click()
+  await kit.getByTestId('photo-dialog').waitFor({ state: 'detached', timeout: 10000 })
+}
 const inspect = () => page.evaluate(async () => window.devHost.connection().ai.inspect())
 const details = async () => (await inspect()).details
 
@@ -491,6 +498,8 @@ try {
   const layers = (await details()).layers.length
   await kit.getByTestId('photo-menu-Layer').click()
   await kit.getByTestId('photo-cmd-layer.duplicate').click()
+  // "Duplicate Layer…" asks first (plan 2026-11-24, stage 1): OK duplicates with the dialog's values.
+  await okDialog()
   await until(async () => (await details()).layers.length === layers + 1)
   step('Layer > Duplicate from the menu bar', (await details()).layers.length === layers + 1)
 
@@ -1047,6 +1056,7 @@ try {
   const kept = await layerCount()
   await kit.getByTestId('photo-menu-Layer').click()
   await kit.getByTestId('photo-cmd-layer.duplicate').click()
+  await okDialog()
   await until(async () => (await layerCount()) === kept + 1, 30)
   step("ignores Close All's key, hidden on the web, and keeps the document open", kept > 0 && (await layerCount()) === kept + 1, `layers ${kept} -> ${await layerCount()}`)
   await kit.getByTestId('photo-menu-Window').click()
@@ -1127,6 +1137,8 @@ try {
   const unfeathered = (await inspect()).revision
   await kit.getByTestId('photo-tool-Brush').click()
   await page.keyboard.press('Shift+F6')
+  // Feather… asks for its radius first (plan 2026-11-24, stage 1): OK feathers.
+  await okDialog()
   const feathered = await until(async () => (await inspect()).revision > unfeathered, 30)
   step("Shift+F6 feathers the selection (upstream's key)", feathered && (await details()).hasSelection === true, `selection: ${(await details()).hasSelection}`)
 
