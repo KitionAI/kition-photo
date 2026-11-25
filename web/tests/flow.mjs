@@ -120,7 +120,9 @@ try {
   step('chooses a tool from a flyout', (await kit.getByTestId('photo-tool-PaintBucket').getAttribute('aria-pressed')) === 'true')
 
   await kit.getByTestId('photo-tool-Type').click()
-  const t = at(0.4, 0.75)
+  // New text goes on empty canvas: since plan 2026-11-24 stage 4 a Type click on the sample's
+  // title (at 0.4, 0.75) edits the title instead, as Photoshop's does.
+  const t = at(0.8, 0.75)
   await page.mouse.click(t.x, t.y)
   await kit.getByTestId('photo-text-field').waitFor()
   if (which === 'chromium') {

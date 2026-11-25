@@ -1,0 +1,27 @@
+format: 1
+id: photo.editor.type-on-canvas/session
+feature: photo.editor.type-on-canvas
+intent: >-
+  The editor's side of editing type (plan 2026-11-24, stage 4), against a fake engine and as pure functions: every
+  command of one edit session carries the session's coalesce key, so the session is one history step; after Enter
+  on new text the line break goes in with the first thing typed (Backspace takes it back without an edit); an input
+  method's composition replaces itself as it changes, then gives way to the result; a style goes to the selected
+  range in the session's step, with no range to the whole layer; Escape takes the step back, new text left empty
+  is removed on commit, an untouched session records nothing; someone else's edit ends the session without
+  touching the history; presses count as double and triple clicks; characters are counted as the engine counts
+  them; words, paragraphs, keys, the selection's highlight per line and a paragraph box's handles.
+layer: gate
+source:
+  kind: probe
+  from: web/src/type/session.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/type/session.test.mjs, src/type/text.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

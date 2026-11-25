@@ -1,0 +1,30 @@
+format: 1
+id: photo.editor.type-on-canvas/type
+feature: photo.editor.type-on-canvas
+intent: >-
+  Real pointer and keyboard input on dev.html (plan 2026-11-24, stage 4): new point text typed as Hello, Enter, World
+  and committed with Cmd+Enter is one type layer of two lines in one history step; a click on that text puts the
+  caret at the character clicked and typing goes in there, in one step; Shift+End, Shift+Home, an arrow, Down,
+  Shift+Up and Cmd+A move and select without recording anything; Chinese through an input method shows its
+  composition in the text, underlined, then the result, in one step; a double click selects a word and the bar's
+  colour changes that word only; Escape after typing puts the text back with no history step; copy, paste and cut
+  go through the clipboard events; a dragged box makes paragraph text that wraps and its handle widens it while
+  editing, in one step; Escape on new paragraph text removes it; the Move tool's double click and a type
+  thumbnail's double click start editing; a click away from the text commits it.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/type.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/type.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 240
+since: "2026-11-25"

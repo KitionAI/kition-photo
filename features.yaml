@@ -730,3 +730,14 @@ features:
     gap: "Spot Healing, the Mixer Brush and the Background Eraser have no live preview in the engine and still paint on release (with the line of the brush's width meanwhile), as do Blur, Sharpen and Smudge with Sample All Layers; the release paints the whole stroke again in the engine (the preview is not handed over); layer effects outside the stroke's area show on release; on a 6000 px picture a 500 px brush stays behind the pointer (see kition-plan kit-docs/photo/walkthrough/measurements.md)."
     cases: [photo.editor.live-stroke/live-stroke, photo.editor.live-stroke/traffic, photo.editor.live-stroke/binding]
     since: "2026-11-25"
+  - id: photo.editor.type-on-canvas
+    title: "Type edited on the canvas: a Type click on type edits it at the character clicked, shown as the engine renders it, with a caret, a selection highlight, drag, double-click (word), triple-click (paragraph) and Shift selection, arrows, Home/End, Cmd+A, copy/cut/paste and input-method composition at the caret; Enter starts a new line (also after new point text), Cmd+Enter, the bar's commit or a click elsewhere commits, Escape restores; a drag makes a paragraph box that wraps, with handles to resize it while editing; a selected range takes the bar's and the panels' font, size, colour, style, alignment, leading and tracking; one history step per edit session; the Move tool's double click and a type thumbnail's double click start editing"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [type.edit, type.create, type.setStyle, type.caret, type.hitTest, type.navigate, type.info]
+    paths: [web/src/type/text.ts, web/src/type/session.ts, web/src/type/TypeEditor.tsx, web/src/type/context.ts, web/src/tools/canvas/type.ts, web/src/tools/canvas/move.ts, web/src/TextField.tsx, web/src/panels/useTypeStyle.ts, web/src/options/typeStyle.ts, web/src/options/otherBars.tsx, web/src/panels/LayersPanel.tsx, web/src/App.tsx, web/tests/type.mjs]
+    target: "Photoshop 2026"
+    gap: "New point text is typed in an inline field matched to the type's font, size, colour and place until its first Enter (the editor's draft rules, which many cases pin); from then on, and for paragraph boxes and existing type at once, the canvas shows the engine's rendering. Cmd+Z while editing commits and undoes the whole edit, not one keystroke. With only a caret, a style change restyles the whole layer, not the next characters typed. No moving or transforming the text with Cmd held while editing, no Alt-drag for an exact paragraph size, no type on a path or type masks. A click away from the text commits it and starts new text there, as a click does while new text is typed (Photoshop only commits)."
+    cases: [photo.editor.type-on-canvas/type, photo.editor.type-on-canvas/session]
+    since: "2026-11-25"
