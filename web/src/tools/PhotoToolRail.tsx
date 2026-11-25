@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { useLayoutEffect, useMemo, type KeyboardEvent, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { ToolRail, useEngineQuery, useKitEditor, useKitStore, useUi } from '@kition/sdk/editor'
 import { PHOTO_TOOLS, isToolKey, toolFor, toolForKey, type PhotoToolId } from './catalog'
 
@@ -21,7 +21,7 @@ const columnCount = (raw: unknown) => (raw === 1 || raw === 2 ? raw : undefined)
  * cycling as the engine's Use Shift Key for Tool Switch preference says. Every choice, from a slot,
  * a flyout, a key, or Shift and a key, goes through `choose`, which refuses a tool the host denies.
  */
-export function PhotoToolRail({ active, onChoose, shown, keys, children }: { active: PhotoToolId; onChoose: (id: PhotoToolId) => void; shown: boolean; keys: RefObject<ToolKeys | null>; children?: ReactNode }) {
+export function PhotoToolRail({ active, onChoose, shown, keys, onView, children }: { active: PhotoToolId; onChoose: (id: PhotoToolId) => void; shown: boolean; keys: RefObject<ToolKeys | null>; onView?: (fit: boolean) => void; children?: ReactNode }) {
   const { phrase } = useKitEditor()
   const ui = useUi()
   const [columns, setColumns] = useKitStore<1 | 2>('kit.photo', 'railColumns', { initial: 2, validate: columnCount })
@@ -44,8 +44,15 @@ export function PhotoToolRail({ active, onChoose, shown, keys, children }: { act
     }
   })
   if (!shown) return null
+  // Double-clicking the Hand tool fits the image on screen; the Zoom tool shows it at 100 % (upstream's `toolbar.rs`).
+  const doubleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || !(event.target instanceof Element)) return
+    const id = event.target.closest('[data-testid^="photo-tool-"]')?.getAttribute('data-testid')?.slice('photo-tool-'.length)
+    if (id === 'Hand') onView?.(true)
+    else if (id === 'Zoom') onView?.(false)
+  }
   return (
-    <div className="photo-rail">
+    <div className="photo-rail" onDoubleClick={doubleClick}>
       <ToolRail tools={tools} active={active} onSelect={choose} columns={columns} onColumns={(next) => void setColumns(next)} columnsUiId="control:toolRail.columns" flyoutPressMs={FLYOUT_PRESS_MS} />
       {children}
     </div>

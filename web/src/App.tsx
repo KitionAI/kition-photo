@@ -17,6 +17,7 @@ import {
   type KitViewState,
   type KitCanvasHandle,
   type KitCanvasView,
+  type KitTool,
   type Phrases,
   type Strings,
   type RasterRect,
@@ -27,17 +28,24 @@ import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
 import { describe, pictureArea, picturePanBounds } from './photo'
 import { CanvasScrollbars } from './CanvasScrollbars'
-import { photoCanvasTool, type PendingClicks } from './tools/canvas'
+import { forgetStrokeEnd, photoCanvasTool, transformTool, ALT_PICKS, type CropFrame, type PendingClicks, type PhotoToolEnv } from './tools/canvas'
+import { brushSizeStep, cropParams, digitPercent, hardnessStep, nudgeStep, type DigitEntry } from './tools/canvas/geometry'
+import { livePreview } from './tools/canvas/live'
+import { createHeldKeys } from './tools/held'
+import { BrushCursor, outlineDiameter, type CanvasPoint } from './tools/BrushCursor'
+import { previewEngine, useFreeTransform } from './tools/useFreeTransform'
+import { Nudges, digitTarget } from './tools/canvasKeys'
+import { toBitmap } from './panels/thumbnails'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
 import { TOOL_FIELDS, optionsFor, toolParams, type ToolOptions } from './tools/options'
 import { PhotoToolRail, type ToolKeys } from './tools/PhotoToolRail'
 import { toolFor, type PhotoToolId } from './tools/catalog'
-import { usePhotoOverlays, type CropArea } from './overlays'
+import { NO_MARKS, usePhotoOverlays, type CanvasMarks } from './overlays'
 import { OptionsBar } from './options/OptionsBar'
 import { useToolOptions } from './options/store'
 import { PhotoDock, dockGroupId } from './panels/dock'
-import { createLive, trackPointer, type DocPoint } from './panels/live'
+import { createLive, trackPointer, useLive, type DocPoint } from './panels/live'
 import { usePhotoColors } from './colors'
 import { useMaskTarget } from './panels/useMaskTarget'
 import { pendingFontChoices, pendingTypeFont } from './panels/useTypeStyle'
@@ -56,6 +64,14 @@ import manifest from '../../kit.json'
 
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
+
+/** Tools whose Cmd (Ctrl) is their own, so holding it does not turn a press into the Move tool's (upstream's list). */
+const CMD_IS_OWN: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['Move', 'Type', 'VerticalType', 'Hand', 'Zoom', 'Crop', 'Slice', 'SliceSelect', 'Pen', 'PathSelection', 'DirectSelection', 'Rectangle', 'EllipseShape', 'Triangle', 'Polygon', 'Line', 'CustomShape'])
+/** Tools whose arrow keys nudge the selection's outline while there is one. */
+const OUTLINE_TOOLS: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['RectMarquee', 'EllipseMarquee', 'Lasso', 'PolygonLasso', 'MagneticLasso', 'ObjectSelection', 'QuickSelection', 'MagicWand'])
+const ARROWS: Readonly<Record<string, readonly [number, number]>> = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }
+/** Where arrow and number keys stay the control's own (a menu, a slider, a list). */
+const OWN_KEYS = 'input, select, textarea, [role="menu"], [role="menubar"], [role="menuitem"], [role="slider"], [role="listbox"], [role="option"], [role="tree"], [role="treeitem"], [role="grid"], [role="row"], [role="tablist"], [role="tab"], [role="radiogroup"], [role="scrollbar"], .kui-popover'
 const RotateCcw = TesseraIcons.RotateCcwIcon
 const SquareDashed = TesseraIcons.SquareDashedIcon
 
@@ -99,7 +115,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [toolGeneration, setToolGeneration] = useState(0)
   const toolGenerationNow = useRef(0)
   const [optionsState, setToolOptions] = useToolOptions()
-  const [crop, setCrop] = useState<CropArea | null>(null)
+  // The Crop tool's frame (plan 2026-11-24, stage 2): the whole canvas when the tool is chosen.
+  const [crop, setCrop] = useState<CropFrame | null>(null)
+  const cropNow = useRef<CropFrame | null>(null)
+  cropNow.current = crop
   const [textDraft, setTextDraft] = useState<TextDraft | null>(null)
   const [textPending, setTextPending] = useState(false)
   const [textDirty, setTextDirty] = useState(false)
@@ -148,8 +167,20 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     // asynchronous tool continuations still belong to the engine that created them.
     cancelToolDrafts()
     setCloneSource(null)
+    forgetStrokeEnd()
+    transformNow.current.forget()
   }, [doc, cancelToolDrafts])
   const { run, query } = editor
+  // Keys work as soon as the picture shows: the editor takes the keyboard focus once, on open.
+  const focused = useRef(false)
+  useEffect(() => {
+    if (!state || focused.current) return
+    focused.current = true
+    const active = document.activeElement
+    if (active && active !== document.body && active !== document.documentElement) return
+    window.focus()
+    workspace.current?.focus({ preventScroll: true })
+  }, [state])
   // The foreground and background colours live in the engine (`usePhotoColors`).
   const sayLocalSwatches = useCallback(() => toast('info', t('swatches.local')), [t])
   const colors = usePhotoColors(doc, change.revision, query, sayLocalSwatches)
@@ -163,9 +194,26 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   optionsNow.current = options
   const activeLayer = state?.layers.find((layer) => layer.id === state.activeLayer)
   const quickMask = state?.channels?.quickMask != null
-  // Show Transform Controls: the active layer's box, except the Background's and during a drag.
-  const transformBox = tool === 'Move' && options.showTransform && !moving && !activeLayer?.background ? (state?.activeBounds ?? null) : null
-  const overlays = usePhotoOverlays(doc, change, state?.hasSelection ?? false, zoom, tool === 'Crop' && crop ? { area: crop, thirds: options.cropOverlay } : null, tool === 'Pen' || tool === 'PathSelection' || tool === 'DirectSelection', transformBox)
+  // The canvas's marks (crop frame, transform box, the selected layer's mark), read on every frame.
+  const marks = useRef<CanvasMarks>(NO_MARKS)
+  const viewport = useRef<Parameters<KitTool['begin']>[1]['viewport'] | null>(null)
+  const redraw = useCallback(() => viewport.current?.draw(), [])
+  const overlays = usePhotoOverlays(doc, change, state?.hasSelection ?? false, zoom, tool === 'Pen' || tool === 'PathSelection' || tool === 'DirectSelection', marks)
+  // The keys held now, the pointer over the canvas (the brush outline follows it), and the cursor a tool asks for.
+  const held = useMemo(createHeldKeys, [])
+  const keys = useLive(held)
+  const canvasPointer = useMemo(() => createLive<CanvasPoint>(null), [])
+  const [toolCursor, setToolCursor] = useState<string | null>(null)
+  const docNow = useRef(doc)
+  docNow.current = doc
+  const say = useCallback((key: string) => toast('info', t(key)), [t])
+  const sessionRunNow = useRef<(command: string, params: Record<string, unknown>) => Promise<unknown>>(() => Promise.resolve(null))
+  const revisionNow = useCallback(() => docNow.current?.info.revision ?? 0, [])
+  const transform = useFreeTransform({ info: () => stateNow.current, run: (command, params) => sessionRunNow.current(command, params), revision: revisionNow, say, redraw })
+  const transformNow = useRef(transform)
+  transformNow.current = transform
+  const nudges = useMemo(() => new Nudges((command) => previewEngine(command, (name, params) => sessionRunNow.current(name, params), revisionNow), () => say('nudge.failed')), [revisionNow, say])
+  useEffect(() => () => nudges.close(), [nudges])
   const fg = colors.foreground
   const bg = colors.background
   // The canvas tools read the colours when they act, so a colour field's drag rebuilds no tool.
@@ -174,6 +222,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // The tools read the document's state and the mask target when they act, so neither rebuilds a tool.
   const stateNow = useRef(state)
   stateNow.current = state
+  sessionRunNow.current = (command, params) => session.run(command, params)
   const maskTargetNow = useRef(maskTarget)
   maskTargetNow.current = maskTarget
   // A pixel tool's strokes lease the layer they paint while the document is co-edited (`layerLeases.ts`).
@@ -206,15 +255,67 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- session.run is stable
     [t, paintLease],
   )
-  // [ and ] size the active tool's brush, when it has one.
-  const resizeBrush = (scale: (size: number) => number) => {
-    if (TOOL_FIELDS[tool].includes('size')) setToolOptions(tool, { size: Math.min(5000, Math.max(1, Math.round(scale(options.size)))) })
+  // [ and ] step the brush's size through Photoshop's sizes, Shift+[ and Shift+] its hardness by quarters.
+  const stepBrush = (direction: 1 | -1, hardness: boolean) => {
+    const fields = TOOL_FIELDS[tool]
+    if (hardness) {
+      if (fields.includes('hardness')) setToolOptions(tool, { hardness: hardnessStep(options.hardness, direction) })
+    } else if (fields.includes('size')) setToolOptions(tool, { size: brushSizeStep(options.size, direction) })
   }
+  // Number keys: Opacity (Shift: Flow), two quick keys an exact value; other tools the layer's.
+  const digitEntry = useRef<DigitEntry>(null)
+  const typeDigit = (digit: number, shift: boolean) => {
+    const typed = digitPercent(digitEntry.current, digit, Date.now())
+    digitEntry.current = typed.entry
+    const target = digitTarget(tool, shift)
+    if (!target) return
+    if ('option' in target) {
+      const [low, high] = target.option === 'flow' ? [1, 100] : [0, 100]
+      setToolOptions(tool, { [target.option]: Math.min(high, Math.max(low, typed.percent)) })
+      return
+    }
+    const active = stateNow.current?.layers.find((layer) => layer.id === stateNow.current?.activeLayer)
+    if (!active || active.background) return
+    void run('layer.setProps', { [target.layer]: typed.percent / 100 })
+  }
+
+  // The crop frame and Free Transform's box, as the canvas marks them; the selected layer's mark
+  // (the Move tool's: Show Transform Controls' handles, or a thin outline).
+  const syncMarks = useCallback(() => {
+    const box = transformNow.current.boxNow.current
+    const now = stateNow.current
+    const active = now?.layers.find((layer) => layer.id === now.activeLayer)
+    const frame = cropNow.current
+    const bounds = now?.activeBounds
+    const markLayer = markNow.current.tool === 'Move' && !markNow.current.moving && bounds && active && !active.background
+    marks.current = {
+      crop: markNow.current.tool === 'Crop' && frame ? { frame, thirds: markNow.current.thirds } : null,
+      transform: box
+        ? { quad: box.quad, handles: true, reference: box.reference }
+        : markLayer
+          ? { quad: [{ x: bounds.x0, y: bounds.y0 }, { x: bounds.x1, y: bounds.y0 }, { x: bounds.x1, y: bounds.y1 }, { x: bounds.x0, y: bounds.y1 }], handles: markNow.current.handles && !active.locks.position && !active.locks.all, reference: null }
+          : null,
+      hideAnts: marks.current.hideAnts,
+    }
+    redraw()
+  }, [redraw])
+  const markNow = useRef({ tool, moving, thirds: options.cropOverlay, handles: options.showTransform })
+  markNow.current = { tool, moving, thirds: options.cropOverlay, handles: options.showTransform }
+  useLayoutEffect(syncMarks)
+  /** A crop frame from a drag: drawn at once, and kept (for the options bar) when `settled`. */
+  const updateCrop = useCallback(
+    (frame: CropFrame | null, settled: boolean) => {
+      cropNow.current = frame
+      syncMarks()
+      if (settled) setCrop(frame)
+    },
+    [syncMarks],
+  )
+  const applyCropNow = useRef<() => void>(() => undefined)
 
   // The session's `run` takes a repaint area, which tells the canvas what to redraw; a failed tool
   // command says why. A tool that paints pixels asks first to rasterize a layer that has none.
-  const canvasTool = useMemo(() => {
-    const made = photoCanvasTool(tool, {
+  const env = useMemo<PhotoToolEnv>(() => ({
         get options() {
           return optionsNow.current
         },
@@ -229,7 +330,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         get layer() {
           const now = stateNow.current
           const active = now?.layers.find((layer) => layer.id === now.activeLayer)
-          return active ? { id: active.id, kind: active.kind, bounds: now?.activeBounds ?? null } : null
+          if (!active) return null
+          return { id: active.id, kind: active.kind, bounds: now?.activeBounds ?? null, locked: active.background || active.locks.position || active.locks.all, background: active.background, opacity: active.opacity ?? 1 }
         },
         get hasLayerEffects() {
           return stateNow.current?.layers.some((layer) => layer.visible && layer.effects?.enabled && layer.effects.items.some((effect) => effect.enabled)) ?? false
@@ -245,7 +347,36 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         pick: (rgb, toBackground) => {
           if (toolGeneration === toolGenerationNow.current) colorsNow.current.set({ [toBackground ? 'background' : 'foreground']: rgbToHex(rgb) })
         },
-        proposeCrop: setCrop,
+        proposeCrop: (area) => updateCrop({ ...area, angle: 0, initial: false }, true),
+        crop: {
+          get frame() {
+            return cropNow.current
+          },
+          update: updateCrop,
+          commit: () => applyCropNow.current(),
+        },
+        transform: {
+          get box() {
+            return transformNow.current.boxNow.current
+          },
+          start: () => transformNow.current.start(),
+          update: (quad, reference, settled) => transformNow.current.update(quad, reference, settled),
+        },
+        preview: (command) => livePreview(previewEngine(command, (name, params) => sessionRunNow.current(name, params), revisionNow), () => toast('error', t('commandFailed'))),
+        setCursor: setToolCursor,
+        get selectionOutline() {
+          return overlays.outline.current
+        },
+        hideSelection: (hidden) => {
+          marks.current = { ...marks.current, hideAnts: hidden }
+          redraw()
+        },
+        say,
+        redraw,
+        layerImage: (layer) => {
+          const open = docNow.current
+          return open ? open.invoke<Uint8Array>('layerThumbnail', layer, 1024).then(toBitmap, () => null) : Promise.resolve(null)
+        },
         beginText: (pointer, orientation) => {
           // The old draft can be unfocused after visiting its options. Finish it before
           // replacing it; a rejected command keeps the old draft available for retry.
@@ -265,17 +396,64 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         setCloneSource,
         pending,
         moving: setMoving,
-    })
+    }),
+    // The getters read refs; what is passed by value is in the list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline],
+  )
+  const transformOpen = transform.box != null
+  // While Free Transform's box is open the canvas is the box's: asked on every press, so a box a
+  // press opens (a Show Transform Controls handle) keeps that press's drag.
+  const boxTool = useMemo(() => transformTool(env, () => void transformNow.current.commit()), [env])
+  const canvasTool = useMemo(() => {
+    const made = photoCanvasTool(tool, env)
     const needed = () => (paintsPixels(tool, optionsNow.current.gradientClassic) ? rasterizeNeeded(stateNow.current, maskTargetNow.current) : null)
     // Alt-click with the Clone Stamp or Healing Brush only sets the source: it paints nothing.
-    const paints = (pointer: { alt: boolean }) => paintsPixels(tool, optionsNow.current.gradientClassic) && !((tool === 'CloneStamp' || tool === 'Healing') && pointer.alt)
-    return withRasterizePrompt(withPaintLease(made, paints, paintLease), tool, needed, (ask) => {
+    const paints = (pointer: { alt: boolean; meta: boolean }) => paintsPixels(tool, optionsNow.current.gradientClassic) && !((tool === 'CloneStamp' || tool === 'Healing' || ALT_PICKS.has(tool)) && pointer.alt && !pointer.meta)
+    const own = withRasterizePrompt(withPaintLease(made, paints, paintLease), tool, needed, (ask) => {
       if (!rasterizeOpen.current) setRasterize({ ...ask, generation: toolGeneration })
       rasterizeOpen.current = true
     })
-  }, [cloneSource, paintLease, query, runTool, tool, toolGeneration])
-  // The Info panel reads the pointer on every move over the canvas, whatever the tool or the view is doing.
-  const trackedTool = useMemo(() => trackPointer(canvasTool, pointer.set), [canvasTool, pointer])
+    const boxed = () => transformNow.current.boxNow.current != null
+    const toolNow: KitTool = {
+      ...own,
+      begin: (pointer, context) => (boxed() ? boxTool.begin(pointer, context) : own.begin(pointer, context)),
+      hover: (pointer, context) => (boxed() ? boxTool.hover?.(pointer, context) : own.hover?.(pointer, context)),
+      doubleClick: (pointer, context) => (boxed() ? boxTool.doubleClick?.(pointer, context) : own.doubleClick?.(pointer, context)),
+      leave: (context) => {
+        boxTool.leave?.(context)
+        own.leave?.(context)
+      },
+    }
+    return toolNow
+  }, [env, paintLease, tool, toolGeneration, boxTool])
+  // Cmd held turns a press into the Move tool's (Photoshop's), except for tools whose Cmd is their own.
+  const moveOptionsNow = useRef(optionsFor(optionsState, 'Move'))
+  moveOptionsNow.current = optionsFor(optionsState, 'Move')
+  const temporaryMove = useMemo(
+    () => (CMD_IS_OWN.has(tool) || transformOpen ? null : photoCanvasTool('Move', Object.create(env, { options: { get: () => moveOptionsNow.current } }) as PhotoToolEnv)),
+    [env, tool, transformOpen],
+  )
+  // The Info panel reads the pointer on every move over the canvas, whatever the tool or the view is
+  // doing; the brush outline follows it in the canvas's pixels.
+  const trackedTool = useMemo(() => {
+    const tracked = trackPointer(canvasTool, pointer.set)
+    return {
+      ...tracked,
+      track: (at: Parameters<NonNullable<KitTool['track']>>[0], context: Parameters<NonNullable<KitTool['track']>>[1]) => {
+        canvasPointer.set({ x: at.canvasX, y: at.canvasY })
+        tracked.track?.(at, context)
+      },
+      leave: (context: Parameters<NonNullable<KitTool['leave']>>[0]) => {
+        canvasPointer.set(null)
+        tracked.leave?.(context)
+      },
+    }
+  }, [canvasTool, pointer, canvasPointer])
+  // The brush outline: the brush tools' cursor, unless a held key gives the press to something else.
+  const brushLike = Boolean(toolFor(tool)?.brush) && !transformOpen
+  const altOwn = keys.alt && !keys.meta && (ALT_PICKS.has(tool) || tool === 'CloneStamp' || tool === 'Healing')
+  const outline = brushLike && !keys.space && !(keys.meta && temporaryMove) && !altOwn && !keys.capsLock ? outlineDiameter(options.size, zoom) : null
 
   /** Makes `next` the tool; `PhotoToolRail` has checked that the host allows it. */
   const chooseTool = async (next: PhotoToolId) => {
@@ -289,23 +467,36 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       if (navigation !== textNavigation.current) return
       pending.current?.cancel()
     }
+    // Choosing another tool applies an open Free Transform, as Photoshop's does.
+    if (transformNow.current.boxNow.current && !(await transformNow.current.commit().then(() => true, () => false))) return
+    if (navigation !== textNavigation.current) return
     setTool(next)
-    setCrop(null)
+    setToolCursor(null)
+    // The Crop tool starts with a frame round the whole canvas.
+    const size = stateNow.current
+    updateCrop(next === 'Crop' && size ? { x: 0, y: 0, width: size.width, height: size.height, angle: 0, initial: true } : null, true)
   }
   const applyCrop = async () => {
-    if (!crop) return
-    const area = crop
+    const frame = cropNow.current
+    // The untouched first frame is the whole canvas: there is nothing to crop.
+    if (!frame || frame.initial) return
     // Move focus before disabling Apply, while the command may still be waiting on the worker.
     // Do not focus again on completion: the user may have moved to another control meanwhile.
     workspace.current?.focus()
-    setCrop(null)
-    if (await run('image.crop', { ...area, ...toolParams('Crop', options) })) {
+    updateCrop(null, true)
+    if (await run('image.crop', { ...cropParams(frame), ...toolParams('Crop', options) })) {
       canvas.current?.fit()
     }
   }
+  applyCropNow.current = () => void applyCrop()
   const cancelCrop = () => {
     workspace.current?.focus()
-    setCrop(null)
+    updateCrop(null, true)
+  }
+  /** Edit › Free Transform (Cmd+T). */
+  const startTransform = () => {
+    if (!transformNow.current.start()) return
+    workspace.current?.focus({ preventScroll: true })
   }
   // View's zoom rows, as upstream's (`menus.rs`, `view_cmds.rs`); Print Size assumes a 72 ppi screen.
   const viewCommand = (command: string) => {
@@ -351,7 +542,16 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     [],
   )
   // File › New… (the engine's row is the host's): Kition's own action, at the top of the File menu.
-  const fileActions = useMemo(() => ({ File: [{ label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' }] }), [t, dialogs])
+  // Edit › Free Transform (Cmd+T): Kition's own row at the top of Edit (the engine's transform takes the box the canvas draws).
+  const startTransformNow = useRef(startTransform)
+  startTransformNow.current = startTransform
+  const fileActions = useMemo(
+    () => ({
+      File: [{ label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' }],
+      Edit: [{ label: phrase('Free Transform'), onSelect: () => startTransformNow.current(), testId: 'photo-edit-free-transform' }],
+    }),
+    [t, dialogs, phrase],
+  )
   const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase])
   // Home's tool buttons choose as the rail does (the latest `chooseTool`); the tabs are built again when the tool changes, for its pressed state.
   const chooseToolNow = useRef(chooseTool)
@@ -423,21 +623,66 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     return saving
   }
 
-  // Photoshop's keys (kit-editor's canvas drops the drag under way on Escape): Enter and Escape finish or drop a crop or a
-  // several-click tool (Pen, Polygonal Lasso), [ and ] size the brush, X swaps the colors, D resets
-  // them, letters choose tools. An Escape with none of these to drop is not taken, so in Focus it
-  // leaves Focus (KitPointer 4.4).
+  // Arrow keys nudge (plan 2026-11-24, stage 2): Free Transform's box, the crop frame, the active
+  // layer (its selected pixels with a selection) with the Move tool or Cmd held, and the selection's
+  // outline with a selection tool; 1 screen pixel, 10 document pixels with Shift. Bundled presses are one step.
+  const nudge = (event: KeyboardEvent<HTMLDivElement>, command: boolean): boolean => {
+    const arrow = ARROWS[event.key.toLowerCase()]
+    if (!arrow || (event.target instanceof Element && event.target.closest(OWN_KEYS))) return false
+    const step = nudgeStep(canvas.current?.view()?.zoom ?? 1, event.shiftKey)
+    const [dx, dy] = [arrow[0] * step, arrow[1] * step]
+    const box = transformNow.current.boxNow.current
+    if (box) {
+      transformNow.current.update(box.quad.map((p) => ({ x: p.x + dx, y: p.y + dy })) as typeof box.quad, { x: box.reference.x + dx, y: box.reference.y + dy }, true)
+      return true
+    }
+    const frame = cropNow.current
+    if (frame && !frame.initial) {
+      updateCrop({ ...frame, x: frame.x + dx, y: frame.y + dy }, true)
+      return true
+    }
+    const now = stateNow.current
+    const active = now?.layers.find((layer) => layer.id === now.activeLayer)
+    if (tool === 'Move' || (command && temporaryMove)) {
+      if (!active) return true
+      if (now?.hasSelection && active.kind === 'Pixel') {
+        if ((active.locks.position || active.locks.all) && !active.background) say('move.locked')
+        else nudges.nudge('float', 'select.float', dx, dy, { copy: false })
+      } else if (active.background || active.locks.position || active.locks.all) say('move.locked')
+      else nudges.nudge('layer', 'layer.translate', dx, dy)
+      return true
+    }
+    if (OUTLINE_TOOLS.has(tool) && now?.hasSelection && !pending.current && !command) {
+      nudges.nudge('outline', 'select.transformSelection', dx, dy)
+      return true
+    }
+    return false
+  }
+
+  // Photoshop's keys (kit-editor's canvas drops the drag under way on Escape): Enter and Escape finish
+  // or drop Free Transform, a crop or a several-click tool (Pen, Polygonal Lasso; Backspace takes its
+  // last point back), Cmd+T opens Free Transform, arrows nudge, [ and ] size the brush (Shift: its
+  // hardness), number keys set its opacity (Shift: flow), X swaps the colors, D resets them, letters
+  // choose tools. An Escape with none of these to drop is not taken, so in Focus it leaves Focus
+  // (KitPointer 4.4); nor is one on the crop tool's untouched first frame.
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const command = event.metaKey || event.ctrlKey
     const key = event.key.toLowerCase()
-    if (menuKeys.current?.(event)) return true
-    if (crop && key === 'enter') void applyCrop()
-    else if (crop && key === 'escape') cancelCrop()
+    const box = transformNow.current.boxNow.current
+    const frame = cropNow.current
+    if (box && key === 'enter') void transformNow.current.commit()
+    else if (box && key === 'escape') void transformNow.current.cancel()
+    else if (command && !event.altKey && !event.shiftKey && key === 't') startTransform()
+    else if (menuKeys.current?.(event)) return true
+    else if (frame && !frame.initial && key === 'enter') void applyCrop()
+    else if (frame && !frame.initial && key === 'escape') cancelCrop()
     else if (pending.current && key === 'enter') pending.current.finish()
     else if (pending.current && key === 'escape') pending.current.cancel()
+    else if (pending.current?.back && (key === 'backspace' || key === 'delete')) pending.current.back()
+    else if (nudge(event, command)) return true
     else if (command || event.altKey) return false
-    else if (key === '[') resizeBrush((size) => size / 1.2)
-    else if (key === ']') resizeBrush((size) => size * 1.2)
+    else if (event.code === 'BracketLeft' || event.code === 'BracketRight') stepBrush(event.code === 'BracketRight' ? 1 : -1, event.shiftKey)
+    else if (/^Digit[0-9]$/.test(event.code) && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) typeDigit(Number(event.code.slice(5)), event.shiftKey)
     else if (key === 'x') colors.swap()
     else if (key === 'd') colors.reset()
     else return toolKeys.current?.(event) ?? false
@@ -462,7 +707,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 background={bg}
                 setForeground={(value) => colors.set({ foreground: value })}
                 layer={activeLayer ? { id: activeLayer.id, kind: activeLayer.kind } : null}
-                crop={{ proposed: crop != null, commit: () => void applyCrop(), cancel: cancelCrop }}
+                crop={{ proposed: crop != null && !crop.initial, commit: () => void applyCrop(), cancel: cancelCrop }}
+                transform={transform.fields ? { fields: transform.fields, set: transform.setFields, commit: () => void transform.commit(), cancel: () => void transform.cancel() } : null}
                 text={{ editing: textDraft != null, submitting: textPending, commit: () => textActions.current?.commit(), cancel: () => textActions.current?.cancel() }}
                 cloneSourceSet={cloneSource != null}
                 view={{ fit: () => canvas.current?.fit(), actual: () => canvas.current?.zoomTo(1) }}
@@ -473,7 +719,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           statusBar={windows.status}
           hiddenCommands={isHiddenCommand}
           onKeyDown={keyDown}
-          status={state ? <PhotoStatus info={state} zoom={zoom} canvas={canvas} tool={tool} /> : null}
+          status={state ? <PhotoStatus info={state} zoom={zoom} canvas={canvas} tool={tool} onZoomDone={() => workspace.current?.focus({ preventScroll: true })} /> : null}
           statusEnd={
             <span className="tabular-nums" data-testid="photo-web-stats">
               {[session.openMs != null ? t('stats.open', { ms: session.openMs }) : null, stats ? t('stats.render', { ms: stats.renderMs }) : null].filter(Boolean).join(' · ')}
@@ -481,7 +727,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           }
           focusTool={railTool ? { label: phrase(railTool.label), icon: railTool.icon } : null}
           rail={
-            <PhotoToolRail active={tool} onChoose={chooseTool} shown={windows.toolbar} keys={toolKeys}>
+            <PhotoToolRail active={tool} onChoose={chooseTool} shown={windows.toolbar} keys={toolKeys} onView={(fit) => (fit ? canvas.current?.fit() : canvas.current?.zoomTo(1))}>
               <KitElement id="control:colors">
                 <div className="photo-colors" title={t('colors')}>
                   <label className="photo-color photo-color-background" style={{ background: bg }} title={phrase('Set background color')}>
@@ -534,10 +780,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         >
           <PhotoMenuKeys onKitCommand={runKitCommand} keys={menuKeys} dialogs={dialogs} />
           <PhotoDialogs api={dialogApi} info={state} colors={colors} />
-          <div className="kui-row" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
+          <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace">
             <PhotoCanvas
               activeTool={tool}
               onDenied={cancelToolDrafts}
+              held={held}
+              temporaryMove={temporaryMove}
+              cursor={toolCursor ?? (outline != null ? 'none' : null)}
+              viewport={viewport}
               canvas={canvas}
               viewMemory={viewMemory}
               panBounds={panBounds}
@@ -553,9 +803,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 if (nextStats) setStats(nextStats)
               }}
             >
+              {outline != null ? <BrushCursor pointer={canvasPointer} diameter={outline} hardness={TOOL_FIELDS[tool].includes('hardness') ? options.hardness : 100} /> : null}
               {textDraft ? <TextField key={textDraft.id} draft={textDraft} submitting={textPending} focusOnMount={focusText.current} size={options.fontSize} view={view} color={fg} placeholder={t('typePlaceholder')} label={phrase(textDraft.orientation === 'vertical' ? 'Vertical Type Tool' : 'Horizontal Type Tool')} actions={textActions} onTextChange={(text) => setTextDirty(text.trim().length > 0)} onCommit={placeText} onCancel={cancelText} /> : null}
               {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
-              <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} />
+              <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} picture={state ? { width: state.width, height: state.height } : null} />
             </PhotoCanvas>
           </div>
           {rasterize ? (

@@ -18,7 +18,7 @@ const ZOOM_MAX = 3200
  * depth, the document's size, its layer count, and the active tool's hint. The shell adds the
  * unsaved and agent marks after it, and the render timing at the end.
  */
-export function PhotoStatus({ info, zoom, canvas, tool }: { info: PhotoInfo; zoom: number | null; canvas: RefObject<KitCanvasHandle | null>; tool: PhotoToolId }) {
+export function PhotoStatus({ info, zoom, canvas, tool, onZoomDone }: { info: PhotoInfo; zoom: number | null; canvas: RefObject<KitCanvasHandle | null>; tool: PhotoToolId; onZoomDone?: () => void }) {
   const { phrase } = useKitEditor()
   const hint = TOOL_HINTS[tool]
   // Upstream's plural phrase: "one|other" in English, one form in Chinese.
@@ -29,7 +29,8 @@ export function PhotoStatus({ info, zoom, canvas, tool }: { info: PhotoInfo; zoo
       <span className="photo-status" data-testid="photo-status">
         {zoom != null ? (
           <KitElement id="control:status.zoom">
-            <span className="photo-status-zoom">
+            {/* Enter in the zoom field gives the keyboard back to the editor, so the next key picks a tool, not a digit. */}
+            <span className="photo-status-zoom" onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) setTimeout(() => onZoomDone?.(), 0) }}>
               <NumberField label="" name={phrase('Zoom')} value={Math.round(zoom * 10000) / 100} min={ZOOM_MIN} max={ZOOM_MAX} unit="%" width={72} onChange={(percent) => canvas.current?.zoomTo(percent / 100)} testId="photo-status-zoom" />
             </span>
           </KitElement>

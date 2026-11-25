@@ -1,7 +1,10 @@
 import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoToolId } from '../catalog'
 import { selectionModeFor, toolParams } from '../options'
-import { NO_REPAINT, accentTint, clipToDocument, lineDrag, strokeArea, tracePolyline, type PhotoToolEnv } from './common'
+import { NO_REPAINT, accentTint, clipToDocument, lineDrag, strokeArea, tracePolyline, type KitGesture, type PhotoToolEnv } from './common'
+import { lockAxis } from './geometry'
+import { picksColour } from '../altPicks'
+import type { LivePreview } from './live'
 
 /** Brush-like tools with no colour of their own show their reach in the accent at this opacity while painting. */
 const REACH_ALPHA = 0.35
@@ -28,43 +31,78 @@ function strokeExtras(id: string, env: PhotoToolEnv, start: KitPointer): Record<
 }
 
 /**
+ * Where the last brush stroke of the document ended, as [x, y, pressure] (Photoshop's Shift-click
+ * draws a straight stroke from there): shared by every brush tool and layer; the editor forgets it
+ * when another document opens (`forgetStrokeEnd`).
+ */
+let strokeEnd: number[] | null = null
+
+export function forgetStrokeEnd() {
+  strokeEnd = null
+}
+
+
+/**
  * The one factory every brush-like tool shares: it collects the stroke's points and runs
- * `command` with the tool's options (`toolParams`) and its own extras.
+ * `command` with the tool's options (`toolParams`) and its own extras. Shift keeps a drag to the
+ * axis it set out along (after 3 screen pixels) and a Shift-press starts with a straight line from
+ * the last stroke's end; Alt picks the foreground colour on the tools that have no Alt of their own.
  */
 export function brushTool(id: PhotoToolId, command: string, env: PhotoToolEnv): KitTool {
   return {
     id,
     cursor: 'crosshair',
-    begin: (start, { overlay, viewport }) => {
+    begin: (start, context) => {
+      if (picksColour(id, start)) return eyedropperGesture(env, start)
+      const { overlay, viewport } = context
       const size = env.options.size
       const extras = strokeExtras(id, env, start)
       if (!extras) return
-      const points: number[][] = [[start.x, start.y, start.pressure]]
-      let last = start
-      const segment = (to: KitPointer) =>
-        overlay.add((context, toScreen) => {
-          const from = toScreen(last.x, last.y)
-          const next = toScreen(to.x, to.y)
-          clipToDocument(context, toScreen, env.documentSize)
-          context.lineCap = id === 'Pencil' ? 'square' : 'round'
-          context.lineJoin = 'round'
-          context.lineWidth = Math.max(1, size * viewport.view.zoom)
-          context.strokeStyle = COLOURED.has(id) ? env.foreground : id === 'Eraser' ? ERASE_TINT : accentTint(REACH_ALPHA)
-          context.beginPath()
-          context.moveTo(from.x, from.y)
-          context.lineTo(next.x, next.y)
-          context.stroke()
+      const from = start.shift && strokeEnd ? strokeEnd : null
+      const points: number[][] = from ? [[from[0], from[1], from[2]], [start.x, start.y, start.pressure]] : [[start.x, start.y, start.pressure]]
+      let last = from ? { x: from[0], y: from[1] } : { x: start.x, y: start.y }
+      // Shift's lock: from where the drag (or Shift, pressed mid-drag) began.
+      let origin: { x: number; y: number } | null = null
+      let locked: 'h' | 'v' | null = null
+      const segment = (to: { x: number; y: number }) =>
+        overlay.add((canvas, toScreen) => {
+          const a = toScreen(last.x, last.y)
+          const b = toScreen(to.x, to.y)
+          clipToDocument(canvas, toScreen, env.documentSize)
+          canvas.lineCap = id === 'Pencil' ? 'square' : 'round'
+          canvas.lineJoin = 'round'
+          canvas.lineWidth = Math.max(1, size * viewport.view.zoom)
+          canvas.strokeStyle = COLOURED.has(id) ? env.foreground : id === 'Eraser' ? ERASE_TINT : accentTint(REACH_ALPHA)
+          canvas.beginPath()
+          canvas.moveTo(a.x, a.y)
+          canvas.lineTo(b.x, b.y)
+          canvas.stroke()
         })
-      segment(start)
+      segment({ x: start.x, y: start.y })
+      last = { x: start.x, y: start.y }
+      const place = (pointer: KitPointer, zoom: number) => {
+        if (!pointer.shift) {
+          origin = null
+          locked = null
+          return { x: pointer.x, y: pointer.y }
+        }
+        origin ??= { ...last }
+        const held = lockAxis(origin, pointer, zoom, locked)
+        locked = held.locked
+        return held.point
+      }
       return {
-        move: (pointer) => {
-          points.push([pointer.x, pointer.y, pointer.pressure])
-          segment(pointer)
-          last = pointer
+        move: (pointer, now) => {
+          const at = place(pointer, now.viewport.view.zoom)
+          points.push([at.x, at.y, pointer.pressure])
+          segment(at)
+          last = at
         },
-        end: (pointer) => {
+        end: (pointer, now) => {
           // Release may be newer than the last move; a click must still produce only one dab.
-          if (pointer.x !== last.x || pointer.y !== last.y) points.push([pointer.x, pointer.y, pointer.pressure])
+          const at = place(pointer, now.viewport.view.zoom)
+          if (at.x !== last.x || at.y !== last.y) points.push([at.x, at.y, pointer.pressure])
+          strokeEnd = points[points.length - 1]
           // Effects on this layer, its group or a clipped layer can extend beyond the brush tip.
           const damage = env.hasLayerEffects ? null : strokeArea(points, size)
           void env.run(command, { points, ...toolParams(id, env.options), ...extras }, damage)
@@ -74,13 +112,42 @@ export function brushTool(id: PhotoToolId, command: string, env: PhotoToolEnv): 
   }
 }
 
-/** Quick Selection: brushes a selection on (Alt brushes it off). */
+/** The temporary Eyedropper: the press and the drag after it set the foreground colour, sampled as the Eyedropper's options say. */
+export function eyedropperGesture(env: PhotoToolEnv, start: KitPointer): KitGesture {
+  let asked = 0
+  const sample = (pointer: KitPointer) => {
+    const mine = ++asked
+    void env.query<number[]>('document.sampleColor', { x: Math.floor(pointer.x), y: Math.floor(pointer.y), ...toolParams('Eyedropper', env.options) }).then((rgba) => {
+      if (rgba && mine === asked) env.pick([0, 1, 2].map((channel) => Math.round(rgba[channel] * 255)) as [number, number, number], false)
+    })
+  }
+  sample(start)
+  return { move: sample, end: sample }
+}
+
+/** A tool whose Alt-press picks the foreground colour (Paint Bucket, Gradient) and otherwise does its own. */
+export function withAltPick(id: PhotoToolId, tool: KitTool, env: PhotoToolEnv): KitTool {
+  return { ...tool, begin: (pointer, context) => (picksColour(id, pointer) ? eyedropperGesture(env, pointer) : tool.begin(pointer, context)) }
+}
+
+/** How often (ms) Quick Selection grows the selection during a drag. */
+const QUICK_EVERY_MS = 120
+
+/**
+ * Quick Selection: brushes a selection on (Alt brushes it off). The selection grows while the
+ * drag runs (the editor previews `select.quick` with the points so far, one history step for the
+ * stroke); a click runs it once.
+ */
 export function quickSelectionTool(env: PhotoToolEnv): KitTool {
   return {
     id: 'QuickSelection',
     cursor: 'crosshair',
     begin: (start, { overlay, viewport }) => {
       const points: number[][] = [[Math.round(start.x), Math.round(start.y)]]
+      const mode = selectionModeFor('QuickSelection', 'add', start)
+      const params = () => ({ points: points.map((point) => [...point]), ...toolParams('QuickSelection', env.options), mode })
+      let live: LivePreview | null = null
+      let shownAt = 0
       const draw = () =>
         overlay.draw((context, toScreen) => {
           clipToDocument(context, toScreen, env.documentSize)
@@ -96,12 +163,19 @@ export function quickSelectionTool(env: PhotoToolEnv): KitTool {
         move: (pointer) => {
           points.push([Math.round(pointer.x), Math.round(pointer.y)])
           draw()
+          const now = Date.now()
+          if (now - shownAt < QUICK_EVERY_MS) return
+          shownAt = now
+          live ??= env.preview('select.quick')
+          live.push(params())
         },
+        cancel: () => void live?.cancel(),
         end: (pointer) => {
           const x = Math.round(pointer.x), y = Math.round(pointer.y)
           const last = points[points.length - 1]
           if (x !== last[0] || y !== last[1]) points.push([x, y])
-          void env.run('select.quick', { points, ...toolParams('QuickSelection', env.options), mode: selectionModeFor('QuickSelection', 'add', start) }, NO_REPAINT)
+          if (live) void live.finish(params()).then(() => overlay.clear())
+          else void env.run('select.quick', params(), NO_REPAINT)
         },
       }
     },

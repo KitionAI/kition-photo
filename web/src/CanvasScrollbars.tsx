@@ -37,10 +37,12 @@ function useViewNextFrame(views: ViewStore) {
  * (`content`, in document pixels at the view's zoom) is longer than the view along its axis; it
  * shows where the view is in the content and moves it. Rendered inside the canvas (its children).
  */
-export function CanvasScrollbars({ views, content, canvas }: {
+export function CanvasScrollbars({ views, content, canvas, picture }: {
   views: ViewStore
   content: (view: KitCanvasView) => RasterRect | null
   canvas: RefObject<KitCanvasHandle | null>
+  /** The picture's own size in document pixels: while it all fits in view, the bars keep out of sight until reached. */
+  picture?: { width: number; height: number } | null
 }) {
   const { t } = useKitEditor()
   const view = useViewNextFrame(views)
@@ -54,8 +56,10 @@ export function CanvasScrollbars({ views, content, canvas }: {
   const horizontal = maxX * view.zoom > 1
   const vertical = maxY * view.zoom > 1
   if (!horizontal && !vertical) return null
+  // The whole picture (without its margin) is in view: only the margin is left to scroll.
+  const fits = picture ? picture.width * view.zoom <= view.width + 1 && picture.height * view.zoom <= view.height + 1 : false
   return (
-    <div className="photo-scrollbars" data-both={horizontal && vertical ? true : undefined} data-testid="photo-scrollbars">
+    <div className="photo-scrollbars" data-both={horizontal && vertical ? true : undefined} data-fits={fits || undefined} data-testid="photo-scrollbars">
       {vertical ? <Scrollbar label={t('verticalScroll')} value={view.y - area.y0} max={maxY} page={pageY} onChange={(value) => canvas.current?.panTo(view.x, area.y0 + value)} /> : null}
       {horizontal ? <Scrollbar label={t('horizontalScroll')} orientation="horizontal" value={view.x - area.x0} max={maxX} page={pageX} onChange={(value) => canvas.current?.panTo(area.x0 + value, view.y)} /> : null}
     </div>

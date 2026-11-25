@@ -2,16 +2,21 @@ import { HAND_TOOL, type KitTool } from '@kition/sdk/editor'
 import { toolFor, type PhotoToolId } from '../catalog'
 import { toolParams } from '../options'
 import type { PhotoToolEnv } from './common'
-import { brushTool, clickFill, gradientTool, quickSelectionTool } from './paint'
+import { brushTool, clickFill, gradientTool, quickSelectionTool, withAltPick } from './paint'
 import { magicWandTool, marqueeTool, objectSelectionTool } from './select'
 import { clickLassoTool, lassoTool } from './lasso'
-import { cropTool, moveTool, selectionDragTool, sliceSelectTool, sliceTool } from './transformLike'
+import { selectionDragTool, sliceSelectTool, sliceTool } from './transformLike'
+import { cropTool } from './crop'
+import { moveTool } from './move'
 import { directSelectionTool, lineTool, pathSelectionTool, penTool, shapeTool } from './shape'
 import { typeTool } from './type'
 import { eyedropperTool, markTool, rulerTool, zoomTool } from './view'
 
-export type { PendingClicks, PhotoToolEnv } from './common'
+export type { CropFrame, PendingClicks, PhotoToolEnv, TransformBox } from './common'
 export { drawCropProposal, drawPathOutline, drawSelectionAnts, drawTransformBox, type PathData } from './common'
+export { transformTool } from './move'
+export { forgetStrokeEnd } from './paint'
+export { ALT_PICKS, picksColour } from '../altPicks'
 
 type Factory = (env: PhotoToolEnv) => KitTool
 
@@ -51,8 +56,8 @@ const FACTORIES: Record<PhotoToolId, Factory> = {
   Eraser: brush('Eraser'),
   BackgroundEraser: brush('BackgroundEraser'),
   MagicEraser: (env) => clickFill('MagicEraser', 'paint.magicEraser', () => toolParams('MagicEraser', env.options), env),
-  Gradient: gradientTool,
-  PaintBucket: (env) => clickFill('PaintBucket', 'paint.bucket', () => ({ ...toolParams('PaintBucket', env.options), color: env.foreground }), env),
+  Gradient: (env) => withAltPick('Gradient', gradientTool(env), env),
+  PaintBucket: (env) => withAltPick('PaintBucket', clickFill('PaintBucket', 'paint.bucket', () => ({ ...toolParams('PaintBucket', env.options), color: env.foreground }), env), env),
   Blur: brush('Blur'),
   Sharpen: brush('Sharpen'),
   Smudge: brush('Smudge'),

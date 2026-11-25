@@ -1,6 +1,7 @@
 import type { KitPointer, KitTool } from '@kition/sdk/editor'
 import type { PhotoInfo, PhotoLayer } from '../photo'
 import type { PhotoToolId } from './catalog'
+import { picksColour } from './altPicks.ts'
 
 /**
  * The "Rasterize?" prompt (upstream's `rasterize_prompt`): painting the pixels of a type, shape,
@@ -83,7 +84,8 @@ export function withRasterizePrompt(tool: KitTool, id: PhotoToolId, ask: () => (
     ...tool,
     begin(pointer, context) {
       const setsSource = (id === 'CloneStamp' || id === 'Healing') && pointer.alt
-      const needed = setsSource ? null : ask()
+      // An Alt-press of a brush, the Paint Bucket or the Gradient picks a colour: it paints nothing.
+      const needed = setsSource || picksColour(id, pointer) ? null : ask()
       if (!needed) return tool.begin(pointer, context)
       open({ ...needed, tool, pointer, context })
     },

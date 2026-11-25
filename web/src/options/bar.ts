@@ -19,4 +19,8 @@ export type BarProps = {
   cloneSourceSet: boolean
   /** The view: fit the image on screen, or show it at 100 %. */
   view: { fit: () => void; actual: () => void }
+  /** Free Transform's open box, as the bar's numbers (its reference point, W and H in %, the angle), or null. */
+  transform?: { fields: TransformFields; set: (patch: Partial<TransformFields>) => void; commit: () => void; cancel: () => void } | null
 }
+
+export type TransformFields = { x: number; y: number; w: number; h: number; angle: number }

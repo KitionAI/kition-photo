@@ -125,6 +125,20 @@ const NOT_BUILT: Readonly<Record<string, string>> = {
   'layer.new.artboardFromGroup': 'Needs the artboard dialog, not built yet.',
 }
 
+/**
+ * Upstream rows a Kition row of its own stands for, with why: Edit › Free Transform is Kition's
+ * action at the top of the Edit menu (the engine's `edit.transform` takes the box the canvas draws,
+ * plan 2026-11-24, stage 2), so upstream's row, which the engine lacks, is not drawn twice.
+ */
+const KIT_OWN: Readonly<Record<string, string>> = {
+  'edit.freeTransform': "Kition's own Edit › Free Transform row (Cmd+T) opens the box on the canvas.",
+}
+
+/** Why the menus leave out `command` for a Kition row of its own, or null. */
+export function kitOwnReason(command: string): string | null {
+  return KIT_OWN[command] ?? null
+}
+
 /** Why the menus leave out `command` until its dialog or panel is built, or null. */
 export function notBuiltReason(command: string): string | null {
   return NOT_BUILT[command] ?? null
@@ -132,7 +146,7 @@ export function notBuiltReason(command: string): string | null {
 
 /** Whether the menus leave out `command`: never shown on the web, or not built yet. */
 export function isHiddenCommand(command: string) {
-  return hiddenReason(command) != null || notBuiltReason(command) != null
+  return hiddenReason(command) != null || notBuiltReason(command) != null || kitOwnReason(command) != null
 }
 
 /** Whether the menus leave out a catalog row (`catalogTabs`'s `hidden`): never shown on the web, or not built yet. */

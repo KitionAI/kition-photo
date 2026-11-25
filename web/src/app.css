@@ -1302,6 +1302,32 @@ select.kui-field.photo-kerning-presets {
   right: 14px;
 }
 
+/* While the whole picture is in view the scrollbars stay out of sight (there is only the margin to
+   scroll); they show where the pointer reaches them, or while they have the keyboard. */
+.photo-scrollbars[data-fits] > .kui-scrollbar {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.photo-scrollbars[data-fits] > .kui-scrollbar:hover,
+.photo-scrollbars[data-fits] > .kui-scrollbar:focus-within {
+  opacity: 1;
+}
+
+/* The brush outline cursor (plan 2026-11-24, stage 2): over the canvas at the pointer, never in its way. */
+.photo-brush-cursor {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* The canvas area takes the keyboard on a press; that is no place for a focus ring. */
+.photo-workspace:focus,
+.photo-workspace:focus-visible {
+  outline: none;
+}
+
 /* Command dialogs (`dialogs/`): rows of labelled controls in a PreviewDialog. */
 .photo-dialog {
   display: flex;

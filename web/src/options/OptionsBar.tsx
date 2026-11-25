@@ -1,10 +1,10 @@
 import type { ComponentType } from 'react'
-import { BarSeparator, KitElement, useKitEditor } from '@kition/sdk/editor'
+import { BarSeparator, IconButton, KitElement, NumberField, TesseraIcons, useKitEditor } from '@kition/sdk/editor'
 import { toolFor, type PhotoToolId } from '../tools/catalog'
 import type { BarProps } from './bar'
 import { BackgroundEraserBar, BrushBar, MagicEraserBar, MixerBar, PencilBar, RetouchBar } from './brushBars'
 import { LassoBar, MagicWandBar, MarqueeBar, ObjectSelectionBar, QuickSelectionBar } from './selectionBars'
-import { BarProvider } from './fields'
+import { BarProvider, Opt, bare } from './fields'
 import { BucketBar, CropBar, EyedropperBar, GradientBar, MeasureBar, MoveBar, PathSelectionBar, PenBar, ShapeBar, TypeBar, ViewBar } from './otherBars'
 
 type Bar = ComponentType
@@ -62,11 +62,58 @@ const BARS: Record<PhotoToolId, Bar> = {
   Zoom: ViewBar,
 }
 
-/** Photoshop's options bar (Kit UI `control:options`): the active tool, then its options as upstream draws them. */
+/**
+ * Free Transform's bar while its box is open (plan 2026-11-24, stage 2): the reference point's X and
+ * Y, W and H in % of the layer's, the angle, and Cancel and Commit (Escape, Enter).
+ */
+function TransformBar({ transform }: { transform: NonNullable<BarProps['transform']> }) {
+  const { t } = useKitEditor()
+  const { fields, set } = transform
+  const round = (value: number) => Math.round(value * 100) / 100
+  const field = (key: 'x' | 'y' | 'w' | 'h' | 'angle', control: 'transformX' | 'transformY' | 'transformW' | 'transformH' | 'transformAngle', unit: string, min: number, max: number) => (
+    <Opt field={control}>
+      <NumberField label={bare(t(`transform.${key}`))} value={round(fields[key])} min={min} max={max} step={key === 'angle' ? 0.1 : 1} unit={unit} onChange={(value) => set({ [key]: value })} testId={`photo-transform-${key}`} />
+    </Opt>
+  )
+  return (
+    <>
+      {field('x', 'transformX', 'px', -300000, 300000)}
+      {field('y', 'transformY', 'px', -300000, 300000)}
+      <BarSeparator />
+      {field('w', 'transformW', '%', 0.1, 100000)}
+      {field('h', 'transformH', '%', 0.1, 100000)}
+      <BarSeparator />
+      {field('angle', 'transformAngle', '°', -180, 180)}
+      <span className="photo-options-end">
+        <Opt field="cancel">
+          <IconButton icon={TesseraIcons.BanIcon} label={t('transform.cancel')} onClick={transform.cancel} data-testid="photo-transform-cancel" />
+        </Opt>
+        <Opt field="commit">
+          <IconButton icon={TesseraIcons.CheckIcon} label={t('transform.commit')} onClick={transform.commit} data-testid="photo-transform-commit" />
+        </Opt>
+      </span>
+    </>
+  )
+}
+
+/** Photoshop's options bar (Kit UI `control:options`): the active tool, then its options as upstream draws them (Free Transform's while its box is open). */
 export function OptionsBar(props: BarProps) {
   const { phrase } = useKitEditor()
   const tool = toolFor(props.tool)
   const Bar = BARS[props.tool]
+  if (props.transform) {
+    return (
+      <KitElement id="control:options">
+        <div className="photo-options" data-testid="photo-options-bar" data-transform="">
+          <strong className="photo-options-tool" data-testid="photo-options-tool" data-tool="FreeTransform">
+            {phrase('Free Transform')}
+          </strong>
+          <BarSeparator />
+          <TransformBar transform={props.transform} />
+        </div>
+      </KitElement>
+    )
+  }
   return (
     <KitElement id="control:options">
       <div className="photo-options" data-testid="photo-options-bar">

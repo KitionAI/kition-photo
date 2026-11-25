@@ -148,7 +148,7 @@ export class ThumbnailCache<T extends Closable> {
 }
 
 /** Decodes off the main path: `createImageBitmap` turns the pixels into a bitmap the browser draws at once. */
-async function toBitmap(bytes: Uint8Array): Promise<ImageBitmap | null> {
+export async function toBitmap(bytes: Uint8Array): Promise<ImageBitmap | null> {
   const decoded = decodeThumbnail(bytes)
   return decoded ? createImageBitmap(new ImageData(decoded.rgba, decoded.width, decoded.height)) : null
 }

@@ -538,6 +538,22 @@ const DIALOG_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
 
 
 /** The editor's own strings (`en-US` is required; others fall back to it). */
+/** The canvas's own words (plan 2026-11-24, stage 2): Free Transform's bar and what a refused gesture says. [key, English, Chinese] */
+const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
+  ['move.locked', 'Could not use the Move tool because the layer is locked.', '无法使用移动工具，因为图层已锁定。'],
+  ['nudge.failed', 'Could not nudge it there.', '无法移动到那里。'],
+  ['transform.locked', 'Could not transform: the layer is locked.', '无法变换：图层已锁定。'],
+  ['transform.empty', 'Could not transform: the layer has no pixels there.', '无法变换：图层在那里没有像素。'],
+  ['transform.failed', 'Could not transform the layer that way.', '无法这样变换图层。'],
+  ['transform.x', 'X', 'X'],
+  ['transform.y', 'Y', 'Y'],
+  ['transform.w', 'W', '宽'],
+  ['transform.h', 'H', '高'],
+  ['transform.angle', 'Angle', '角度'],
+  ['transform.commit', 'Commit transform (Enter)', '提交变换（回车）'],
+  ['transform.cancel', 'Cancel transform (Esc)', '取消变换（Esc）'],
+]
+
 const enUS: Catalog = {
   "noLayers": "No layers",
   "colors": "Foreground and background colors",
@@ -610,6 +626,7 @@ const enUS: Catalog = {
   "home.paint": "Paint",
   "home.newLayer": "New Layer",
   ...words(DIALOG_STRINGS, '', 1),
+  ...words(CANVAS_STRINGS, '', 1),
   ...words(PARAM_WORDS, 'param', 1),
   ...words(OPTION_WORDS, 'option', 1),
 }
@@ -686,6 +703,7 @@ const zhCN: Catalog = {
   "home.paint": "绘画",
   "home.newLayer": "新建图层",
   ...words(DIALOG_STRINGS, '', 2),
+  ...words(CANVAS_STRINGS, '', 2),
   ...words(PARAM_WORDS, 'param', 2),
   ...words(OPTION_WORDS, 'option', 2),
 }

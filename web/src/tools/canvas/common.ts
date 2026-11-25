@@ -1,5 +1,7 @@
 import { dragRect, type KitPointer, type KitTool, type RasterRect } from '@kition/sdk/editor'
 import type { ToolOptions } from '../options'
+import { CORNERS, EDGES, HANDLE_AT, cropQuad, quadPoint, snap45, type CropBox, type Point, type Quad } from './geometry'
+import type { LivePreview } from './live'
 
 /** An image area that needs no repaint: the change touched no pixels (selections, paths, notes). */
 export const NO_REPAINT: RasterRect = { x0: 0, y0: 0, x1: 0, y1: 0 }
@@ -16,8 +18,31 @@ export type KitOverlay = Parameters<KitTool['begin']>[1]['overlay']
 /** One drag a tool's press starts. */
 export type KitGesture = Exclude<ReturnType<KitTool['begin']>, void>
 
-/** A tool that takes several clicks (Pen, Polygonal and Magnetic Lasso): Enter finishes it, Escape drops it. */
-export type PendingClicks = { tool: string; finish: () => void; cancel: () => void }
+/** A tool that takes several clicks (Pen, Polygonal and Magnetic Lasso): Enter finishes it, Escape drops it, Backspace takes its last point back. */
+export type PendingClicks = { tool: string; finish: () => void; cancel: () => void; back?: () => void }
+
+/** Free Transform's box (plan 2026-11-24, stage 2): the source rectangle [x0, y0, x1, y1], where its corners go, and the reference point. */
+export type TransformBox = { layer: number; rect: [number, number, number, number]; quad: Quad; reference: Point; mode: 'free' | 'skew' | 'distort' }
+
+/** Free Transform as the tools reach it: the open box (null when none), a drag's new box, and how to open one. */
+export type TransformControl = {
+  readonly box: TransformBox | null
+  /** Opens the box on the active layer (or its selected part); false, saying why, when it cannot. */
+  start: () => boolean
+  /** The box during a drag: drawn and previewed at once; `settled` on release (the options bar follows). */
+  update: (quad: Quad, reference: Point, settled: boolean) => void
+}
+
+/** The Crop tool's frame (`initial`: the whole canvas, not yet touched, which a drag inside replaces). */
+export type CropFrame = CropBox & { initial: boolean }
+
+/** The Crop tool's frame as the tool reaches it. */
+export type CropControl = {
+  readonly frame: CropFrame | null
+  /** A drag's new frame: drawn at once; `settled` on release. */
+  update: (frame: CropFrame | null, settled: boolean) => void
+  commit: () => void
+}
 
 /** What Photo's tools need from the editor. */
 export type PhotoToolEnv = {
@@ -25,8 +50,8 @@ export type PhotoToolEnv = {
   options: ToolOptions
   foreground: string
   background: string
-  /** The active layer's id, kind (`Pixel`, `Shape`, `Type`…), and bounds, for Move and Path Selection. */
-  layer: { id: number | undefined; kind: string; bounds: RasterRect | null } | null
+  /** The active layer's id, kind (`Pixel`, `Shape`, `Type`…), and bounds, for Move and Path Selection; `locked` when its position may not move (the Background, a position or full lock). */
+  layer: { id: number | undefined; kind: string; bounds: RasterRect | null; locked: boolean; background: boolean; opacity: number } | null
   /** Enabled layer styles can expand painted pixels, including effects on groups or clipped layers. */
   hasLayerEffects: boolean
   /** Runs an engine command; false when it failed (the editor has said why). */
@@ -39,8 +64,26 @@ export type PhotoToolEnv = {
   documentSize: { width: number; height: number }
   /** The Eyedropper picked a colour: the foreground, or with Alt the background. */
   pick: (rgb: [number, number, number], background: boolean) => void
-  /** The Crop tool proposes an area; the editor confirms it (Enter) or drops it (Escape). */
+  /** The Crop tool proposes a new frame (a drawn area, unturned). */
   proposeCrop: (area: Area) => void
+  /** The Crop tool's frame; the editor commits it (Enter, a double click) or drops it (Escape). */
+  crop: CropControl
+  /** Free Transform's box. */
+  transform: TransformControl
+  /** A command's result shown while a gesture is under way, one history step for the whole gesture. */
+  preview: (command: string) => LivePreview
+  /** A cursor for now (a handle's arrows), or null for the tool's own. */
+  setCursor: (cursor: string | null) => void
+  /** The selection's outline as the canvas traced it (segments in document pixels), or null. */
+  selectionOutline: Int32Array | null
+  /** Hides the selection's marching ants while a gesture draws them moved. */
+  hideSelection: (hidden: boolean) => void
+  /** Tells the person something (Photo's string `key`), as a toast. */
+  say: (key: string) => void
+  /** Redraws the canvas's marks (the transform box, the crop frame) after a change to them. */
+  redraw: () => void
+  /** The layer's own pixels on the canvas (the Layers panel's thumbnail, up to 1024 pixels on its longer side), for the Move tool's drag. */
+  layerImage: (layer: number) => Promise<ImageBitmap | null>
   /** The Type tools ask for text at a document point. */
   beginText: (pointer: KitPointer, orientation: 'horizontal' | 'vertical') => void
   /** The Clone Stamp's and Healing Brush's source, set with Alt-click; null until then. */
@@ -139,39 +182,66 @@ export function rectDrag(
   id: string,
   cursor: string,
   done: (area: Area, start: KitPointer, end: KitPointer) => void | false,
-  options: { square?: boolean; area?: (start: KitPointer, pointer: KitPointer) => Area; outline?: (context: CanvasRenderingContext2D, a: { x: number; y: number }, b: { x: number; y: number }) => void; fill?: () => string | null } = {},
+  options: { square?: boolean; area?: (start: KitPointer, pointer: KitPointer) => Area; outline?: (context: CanvasRenderingContext2D, a: { x: number; y: number }, b: { x: number; y: number }) => void; fill?: () => string | null; readout?: boolean } = {},
 ): KitTool {
   return {
     id,
     cursor,
-    begin: (start, { overlay }) => {
+    begin: (pressed, { overlay }) => {
+      // Space held mid-drag moves the box: the press point travels with it.
+      let start = pressed
       const areaAt = (pointer: KitPointer) => options.area ? options.area(start, pointer) : dragRect(start, pointer, pointer.shift && Boolean(options.square))
-      return {
-        move: (pointer) => {
-          const area = areaAt(pointer)
-          overlay.draw((context, toScreen) => {
-            const a = toScreen(area.x, area.y)
-            const b = toScreen(area.x + area.width, area.y + area.height)
-            context.beginPath()
-            if (options.outline) options.outline(context, a, b)
-            else context.rect(a.x + 0.5, a.y + 0.5, b.x - a.x, b.y - a.y)
-            const fill = options.fill?.()
-            if (fill) {
-              context.globalAlpha = 0.6
-              context.fillStyle = fill
-              context.fill()
-              context.globalAlpha = 1
-            }
-            dashed(context)
-          })
+      let last = pressed
+      const show = (pointer: KitPointer) => {
+        last = pointer
+        const area = areaAt(pointer)
+        overlay.draw((context, toScreen) => {
+          const a = toScreen(area.x, area.y)
+          const b = toScreen(area.x + area.width, area.y + area.height)
+          context.beginPath()
+          if (options.outline) options.outline(context, a, b)
+          else context.rect(a.x + 0.5, a.y + 0.5, b.x - a.x, b.y - a.y)
+          const fill = options.fill?.()
+          if (fill) {
+            context.globalAlpha = 0.6
+            context.fillStyle = fill
+            context.fill()
+            context.globalAlpha = 1
+          }
+          dashed(context)
+          if (options.readout) drawReadout(context, `${area.width} × ${area.height} px`, { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) })
+        })
+      }
+      const gesture: KitGesture & { spaceMove: (dx: number, dy: number) => void } = {
+        move: show,
+        spaceMove: (dx, dy) => {
+          start = { ...start, x: start.x + dx, y: start.y + dy }
+          last = { ...last, x: last.x + dx, y: last.y + dy }
         },
         // A fixed-size selection also works on a click; release may have no preceding move.
         end: (pointer) => {
           if (done(areaAt(pointer), start, pointer) === false) overlay.clear()
         },
       }
+      return gesture
     },
   }
+}
+
+/** A small label by the pointer (a marquee's size), on a dark chip. */
+export function drawReadout(context: CanvasRenderingContext2D, text: string, at: { x: number; y: number }) {
+  context.save()
+  context.setLineDash([])
+  context.font = '11px system-ui, sans-serif'
+  const width = context.measureText(text).width + 10
+  const x = at.x + 10
+  const y = at.y + 10
+  context.fillStyle = 'rgba(20, 20, 24, 0.82)'
+  context.fillRect(x, y, width, 18)
+  context.fillStyle = '#ffffff'
+  context.textBaseline = 'middle'
+  context.fillText(text, x + 5, y + 9)
+  context.restore()
 }
 
 /** An ellipse inscribed in the screen box `a`–`b`. */
@@ -200,8 +270,17 @@ export function clickTool<P extends number[]>(
     drag?: (last: P, pointer: KitPointer) => void
     /** How far (screen pixels) the pointer runs from the last point before it fastens one by itself (the Magnetic Lasso's Frequency). */
     fastenAfter?: () => number
+    /** Shift holds a new point (and the rubber band) to 45° from the last one (the lassos). */
+    shiftSnaps?: boolean
   },
 ): KitTool {
+  /** The pointer, held to 45° from the last point when Shift asks it. */
+  const snapped = (pointer: KitPointer, points: readonly P[]): KitPointer => {
+    const last = points[points.length - 1]
+    if (!options.shiftSnaps || !pointer.shift || !last) return pointer
+    const at = snap45({ x: last[0], y: last[1] }, pointer)
+    return { ...pointer, x: at.x, y: at.y }
+  }
   type State = PendingClicks & { points: P[]; first: KitPointer; overlay: KitOverlay }
   const current = () => (env.pending.current?.tool === id ? (env.pending.current as State) : null)
   const redraw = (state: State, hover: KitPointer | null) => state.overlay.draw((context, toScreen) => options.draw(context, toScreen, state.points, hover))
@@ -235,6 +314,11 @@ export function clickTool<P extends number[]>(
             env.pending.current = null
             overlay.clear()
           },
+          back: () => {
+            created.points.pop()
+            if (created.points.length) redraw(created, null)
+            else created.cancel()
+          },
         }
         env.pending.current = created
         state = created
@@ -245,7 +329,7 @@ export function clickTool<P extends number[]>(
         finish(true)
         return
       }
-      state.points.push(options.point(pointer))
+      state.points.push(options.point(snapped(pointer, state.points)))
       redraw(state, null)
       const drag = options.drag
       if (!drag) return
@@ -262,7 +346,7 @@ export function clickTool<P extends number[]>(
       if (!state) return
       const last = state.points[state.points.length - 1]
       if (options.fastenAfter && last && Math.hypot(last[0] - pointer.x, last[1] - pointer.y) * viewport.view.zoom >= options.fastenAfter()) state.points.push(options.point(pointer))
-      redraw(state, pointer)
+      redraw(state, snapped(pointer, state.points))
     },
     doubleClick: options.closeOnDoubleClick ? () => finish(true) : undefined,
   }
@@ -301,46 +385,109 @@ export function accentTint(alpha: number) {
   return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`
 }
 
-/** The proposed crop: the rest of the image dimmed, the kept area outlined, with the rule-of-thirds lines when `thirds`. */
-export function drawCropProposal(area: Area, context: CanvasRenderingContext2D, toScreen: ToScreen, documentSize: { width: number; height: number }, thirds: boolean) {
-  const a = toScreen(area.x, area.y)
-  const b = toScreen(area.x + area.width, area.y + area.height)
-  const d0 = toScreen(0, 0)
-  const d1 = toScreen(documentSize.width, documentSize.height)
-  context.fillStyle = 'rgba(15, 15, 30, 0.45)'
-  context.beginPath()
-  context.rect(d0.x, d0.y, d1.x - d0.x, d1.y - d0.y)
-  context.rect(a.x, a.y, b.x - a.x, b.y - a.y)
-  context.fill('evenodd')
-  context.strokeStyle = '#ffffff'
+/** The handles' side, in screen pixels. */
+const HANDLE_SIDE = 7
+
+/** Eight square handles on a box's corners and edges (white, outlined). */
+function drawHandles(context: CanvasRenderingContext2D, screen: Quad) {
+  context.setLineDash([])
   context.lineWidth = 1
-  context.strokeRect(a.x + 0.5, a.y + 0.5, b.x - a.x, b.y - a.y)
-  if (!thirds) return
-  context.globalAlpha = 0.6
-  context.beginPath()
-  for (const k of [1 / 3, 2 / 3]) {
-    const x = Math.round(a.x + (b.x - a.x) * k) + 0.5
-    const y = Math.round(a.y + (b.y - a.y) * k) + 0.5
-    context.moveTo(x, a.y)
-    context.lineTo(x, b.y)
-    context.moveTo(a.x, y)
-    context.lineTo(b.x, y)
+  for (const handle of [...CORNERS, ...EDGES]) {
+    const [s, t] = HANDLE_AT[handle]
+    const p = quadPoint(screen, s, t)
+    const x = Math.round(p.x - HANDLE_SIDE / 2) + 0.5
+    const y = Math.round(p.y - HANDLE_SIDE / 2) + 0.5
+    context.fillStyle = '#ffffff'
+    context.fillRect(x, y, HANDLE_SIDE, HANDLE_SIDE)
+    context.strokeStyle = '#1b1b1f'
+    context.strokeRect(x, y, HANDLE_SIDE, HANDLE_SIDE)
   }
-  context.stroke()
-  context.globalAlpha = 1
+}
+
+function traceQuad(context: CanvasRenderingContext2D, screen: Quad) {
+  context.beginPath()
+  context.moveTo(screen[0].x, screen[0].y)
+  for (let index = 1; index < 4; index += 1) context.lineTo(screen[index].x, screen[index].y)
+  context.closePath()
 }
 
 /**
- * The Move tool's transform box (Show Transform Controls): the layer's bounds in the accent colour.
- * Upstream's handles start Free Transform, a later wave's canvas transform, so none are drawn yet.
+ * The Crop tool's frame: the rest of the image dimmed, the kept area outlined with eight handles,
+ * turned with the frame, with the rule-of-thirds lines when `thirds`.
  */
-export function drawTransformBox(bounds: RasterRect, context: CanvasRenderingContext2D, toScreen: ToScreen) {
-  const a = toScreen(bounds.x0, bounds.y0)
-  const b = toScreen(bounds.x1, bounds.y1)
-  context.setLineDash([])
+export function drawCropProposal(frame: CropBox, context: CanvasRenderingContext2D, toScreen: ToScreen, documentSize: { width: number; height: number }, thirds: boolean) {
+  const screen = cropQuad(frame).map((p) => toScreen(p.x, p.y)) as Quad
+  const d0 = toScreen(0, 0)
+  const d1 = toScreen(documentSize.width, documentSize.height)
+  const margin = 4000
+  context.fillStyle = 'rgba(15, 15, 30, 0.45)'
+  context.beginPath()
+  context.rect(Math.min(d0.x, screen[0].x) - margin, Math.min(d0.y, screen[0].y) - margin, Math.abs(d1.x - d0.x) + margin * 3, Math.abs(d1.y - d0.y) + margin * 3)
+  context.moveTo(screen[0].x, screen[0].y)
+  for (let index = 3; index >= 1; index -= 1) context.lineTo(screen[index].x, screen[index].y)
+  context.closePath()
+  context.fill('evenodd')
+  traceQuad(context, screen)
+  context.strokeStyle = '#ffffff'
   context.lineWidth = 1
-  context.strokeStyle = accent()
-  context.strokeRect(Math.round(a.x) + 0.5, Math.round(a.y) + 0.5, Math.round(b.x - a.x), Math.round(b.y - a.y))
+  context.setLineDash([])
+  context.stroke()
+  if (thirds) {
+    context.globalAlpha = 0.6
+    context.beginPath()
+    for (const k of [1 / 3, 2 / 3]) {
+      const a = quadPoint(screen, k, 0), b = quadPoint(screen, k, 1)
+      const c = quadPoint(screen, 0, k), d = quadPoint(screen, 1, k)
+      context.moveTo(a.x, a.y)
+      context.lineTo(b.x, b.y)
+      context.moveTo(c.x, c.y)
+      context.lineTo(d.x, d.y)
+    }
+    context.stroke()
+    context.globalAlpha = 1
+  }
+  drawHandles(context, screen)
+}
+
+/**
+ * A layer's box on the canvas in the accent colour: Free Transform's and Show Transform Controls'
+ * with eight handles (and the reference point when given), or, with neither, a thin dotted mark of
+ * where the selected layer is (the Move tool's).
+ */
+export function drawTransformBox(quad: Quad, context: CanvasRenderingContext2D, toScreen: ToScreen, handles: boolean, reference: Point | null = null) {
+  const screen = quad.map((p) => toScreen(p.x, p.y)) as Quad
+  const round = screen.map((p) => ({ x: Math.round(p.x) + 0.5, y: Math.round(p.y) + 0.5 })) as Quad
+  traceQuad(context, round)
+  context.lineWidth = 1
+  if (handles) {
+    context.setLineDash([])
+    context.strokeStyle = accent()
+    context.stroke()
+    drawHandles(context, screen)
+  } else {
+    context.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+    context.setLineDash([])
+    context.stroke()
+    context.strokeStyle = accent()
+    context.setLineDash([2, 3])
+    context.stroke()
+    context.setLineDash([])
+  }
+  if (reference) {
+    const p = toScreen(reference.x, reference.y)
+    context.beginPath()
+    context.arc(p.x, p.y, 4.5, 0, Math.PI * 2)
+    context.moveTo(p.x - 7, p.y)
+    context.lineTo(p.x + 7, p.y)
+    context.moveTo(p.x, p.y - 7)
+    context.lineTo(p.x, p.y + 7)
+    context.strokeStyle = '#ffffff'
+    context.lineWidth = 3
+    context.stroke()
+    context.strokeStyle = '#1b1b1f'
+    context.lineWidth = 1
+    context.stroke()
+  }
 }
 
 /** A path's knots as the engine's `path.info` gives them. */

@@ -93,6 +93,12 @@ export const OPTION_CONTROLS = {
   actualPixels: '100%',
   straightenLayer: 'Straighten Layer',
   slicesFromGuides: 'Slices From Guides',
+  // Free Transform's bar (plan 2026-11-24, stage 2).
+  transformX: 'transform.x',
+  transformY: 'transform.y',
+  transformW: 'transform.w',
+  transformH: 'transform.h',
+  transformAngle: 'transform.angle',
 } as const
 
 export type OptionControl = keyof typeof OPTION_CONTROLS
