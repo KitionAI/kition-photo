@@ -24,6 +24,8 @@ export type BarProps = {
   view: { fit: () => void; actual: () => void }
   /** Free Transform's open box, as the bar's numbers (its reference point, W and H in %, the angle), or null. */
   transform?: { fields: TransformFields; set: (patch: Partial<TransformFields>) => void; commit: () => void; cancel: () => void } | null
+  /** Opens the brush preset picker under a point (the brush chip's), plan 2026-11-24, stage 5. */
+  brushPicker?: (at: { x: number; y: number }) => void
 }
 
 export type TransformFields = { x: number; y: number; w: number; h: number; angle: number }

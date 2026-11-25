@@ -5,6 +5,7 @@ import {
   KitElement,
   rgbToHex,
   EditorFrame,
+  FloatingPanels,
   KitEditorProvider,
   createKitStrings,
   kitLeases,
@@ -12,6 +13,7 @@ import {
   useKitEditorState,
   useKitSession,
   type DockAreaHandle,
+  type FloatingPanel,
   type FrameTab,
   type HostConnection,
   type KitViewState,
@@ -70,6 +72,8 @@ import { DialogsProvider, PhotoDialogs, type Dialogs } from './dialogs/DialogHos
 import { ColorPickerOutlet, ColorPickerProvider, type SampleAt } from './color/ColorPickerHost'
 import { ColorWell } from './color/ColorWell'
 import { GradientEditorOutlet, GradientEditorProvider } from './gradient/GradientEditorHost'
+import { BrushPickerPopover, BrushPresets, BrushSettingsPanel, type BrushOptions } from './brushes/BrushPicker'
+import { SMOOTHING_TOOLS } from './tools/options'
 import manifest from '../../kit.json'
 
 
@@ -179,6 +183,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const panBounds = useMemo(() => picturePanBounds(state?.width ?? 0, state?.height ?? 0, shown), [state?.width, state?.height, shown])
   const [windows, setWindows] = useState(DEFAULT_WINDOWS)
   const [help, setHelp] = useState<HelpTopic | null>(null)
+  // The brush preset picker's place (the brush chip's, a right click's), and the brush windows open (plan 2026-11-24, stage 5).
+  const [brushPicker, setBrushPicker] = useState<{ x: number; y: number } | null>(null)
+  const [floating, setFloating] = useState<readonly string[]>([])
+  const [floatingFocus, setFloatingFocus] = useState<string | null>(null)
+  const toggleFloating = useCallback((id: string) => {
+    setFloating((open) => (open.includes(id) ? open.filter((item) => item !== id) : [...open, id]))
+    setFloatingFocus(id)
+  }, [])
   const [moving, setMoving] = useState(false)
   // The "Rasterize?" prompt a press on a type, shape, object or fill layer opened; one at a time.
   const [rasterize, setRasterize] = useState<(RasterizeAsk & { generation: number }) | null>(null)
@@ -567,6 +579,23 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const precise = (prefs.brushCursor === 'precise') !== keys.capsLock
   const outline = brushLike && !keys.space && !(keys.meta && temporaryMove) && !altOwn && !precise ? outlineDiameter(options.size, zoom) : null
 
+  // A right click on the canvas with a brush tool opens the brush preset picker there (the shared
+  // canvas drops right presses: Photo listens itself, as for Space and the wheel).
+  const brushLikeNow = useRef(brushLike)
+  brushLikeNow.current = brushLike
+  useEffect(() => {
+    const menu = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Element) || target.getAttribute('data-testid') !== 'kit-canvas-surface' || !workspace.current?.contains(target)) return
+      if (!brushLikeNow.current) return
+      event.preventDefault()
+      event.stopPropagation()
+      setBrushPicker({ x: event.clientX, y: event.clientY })
+    }
+    window.addEventListener('contextmenu', menu, true)
+    return () => window.removeEventListener('contextmenu', menu, true)
+  }, [])
+
   /** Makes `next` the tool; `PhotoToolRail` has checked that the host allows it. */
   const chooseTool = async (next: PhotoToolId) => {
     const navigation = ++textNavigation.current
@@ -663,8 +692,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     () => ({
       File: [{ label: t('dialog.newDocumentMenu'), onSelect: dialogs.newDocument, testId: 'photo-file-new-document' }],
       Edit: [{ label: phrase('Free Transform'), onSelect: () => startTransformNow.current(), testId: 'photo-edit-free-transform' }],
+      // Window › Brush Settings (F5) and Brushes: Kition's own floating windows (plan 2026-11-24, stage 5).
+      Window: [
+        { label: phrase('Brush Settings'), onSelect: () => toggleFloating('brushSettings'), testId: 'photo-window-brush-settings' },
+        { label: phrase('Brushes'), onSelect: () => toggleFloating('brushes'), testId: 'photo-window-brushes' },
+      ],
     }),
-    [t, dialogs, phrase],
+    [t, dialogs, phrase, toggleFloating],
   )
   const menuTabs = useMemo(() => photoMenuTabs({ windows, dock: dockTabs, onKitCommand: runKitCommand, onCommand: dialogs.invoke, before: fileActions, phrase }), [windows, dockTabs, runKitCommand, dialogs, fileActions, phrase])
   // Home's tool buttons choose as the rail does (the latest `chooseTool`); the tabs are built again when the tool changes, for its pressed state.
@@ -983,6 +1017,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     else if (command || event.altKey) return false
     else if (event.code === 'BracketLeft' || event.code === 'BracketRight') stepBrush(event.code === 'BracketRight' ? 1 : -1, event.shiftKey)
     else if (/^Digit[0-9]$/.test(event.code) && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) typeDigit(Number(event.code.slice(5)), event.shiftKey)
+    else if (event.key === 'F5') toggleFloating('brushSettings')
     else if (key === 'x') colors.swap()
     else if (key === 'd') colors.reset()
     else return toolKeys.current?.(event) ?? false
@@ -990,6 +1025,19 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   }
 
   const railTool = toolFor(tool)
+  // The brush panels change the shared brush's options (size, hardness, pressure) as the bar does.
+  const brushOptions = useMemo<BrushOptions>(() => ({ size: options.size, hardness: options.hardness, set: (patch) => setToolOptions(tool, patch) }), [options.size, options.hardness, setToolOptions, tool])
+  const smoothing = useMemo(() => ((SMOOTHING_TOOLS as readonly string[]).includes(tool) ? { value: options.smoothing, set: (value: number) => setToolOptions(tool, { smoothing: value }) } : null), [tool, options.smoothing, setToolOptions])
+  const brushSettingsBody = useCallback(() => <BrushSettingsPanel options={brushOptions} smoothing={smoothing} />, [brushOptions, smoothing])
+  const brushesBody = useCallback(() => <BrushPresets options={brushOptions} testId="photo-brushes" />, [brushOptions])
+  const floatingPanels = useMemo<FloatingPanel[]>(
+    () =>
+      floating.flatMap((id): FloatingPanel[] =>
+        id === 'brushSettings' ? [{ id, title: phrase('Brush Settings'), render: brushSettingsBody }] : id === 'brushes' ? [{ id, title: phrase('Brushes'), render: brushesBody }] : [],
+      ),
+    [floating, phrase, brushSettingsBody, brushesBody],
+  )
+  const closeFloating = useCallback((id: string) => setFloating((open) => open.filter((item) => item !== id)), [])
 
   return (
     <KitEditorProvider editor={{ ...editor, save: saveWithText, session: { ...session, dirty: session.dirty || textDirty } }}>
@@ -1021,6 +1069,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 }}
                 cloneSourceSet={cloneSource != null}
                 view={{ fit: () => canvas.current?.fit(), actual: () => canvas.current?.zoomTo(1) }}
+                brushPicker={setBrushPicker}
               />
             ) : undefined
           }
@@ -1118,6 +1167,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
               {/* The scrollbars: there only while the picture and its margin are longer than the view. */}
               <CanvasScrollbars views={view} content={(shownView) => pictureArea(state?.width ?? 0, state?.height ?? 0, shownView.zoom)} canvas={canvas} picture={state ? { width: state.width, height: state.height } : null} />
             </PhotoCanvas>
+            {floatingPanels.length ? <FloatingPanels kit="kit.photo" store="floating" panels={floatingPanels} onClose={closeFloating} focused={floatingFocus} onFocus={setFloatingFocus} defaultSize={{ width: 300, height: 420 }} minSize={{ width: 260, height: 220 }} testId="photo-floating" /> : null}
           </div>
           {rasterize ? (
             <RasterizePrompt
@@ -1135,6 +1185,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             />
           ) : null}
           {help ? <HelpDialog topic={help} version={manifest.version} onClose={() => setHelp(null)} /> : null}
+          {brushPicker ? <BrushPickerPopover at={brushPicker} options={brushOptions} onClose={() => setBrushPicker(null)} /> : null}
         </EditorFrame>
       </GradientEditorProvider>
       </ColorPickerProvider>

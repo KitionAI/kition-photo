@@ -29,11 +29,26 @@ function TipPreview({ size, hardness }: { size: number; hardness: number | null 
 
 /** The brush tip (the engine's one brush): its preview, Size, and (unless the tool is always hard) Hardness. */
 export function BrushTip({ hardness = true }: { hardness?: boolean }) {
-  const { phrase } = useKitEditor()
-  const { o } = useBar()
+  const { phrase, t } = useKitEditor()
+  const { o, brushPicker } = useBar()
   return (
     <>
-      <TipPreview size={o.size} hardness={hardness ? o.hardness : null} />
+      {/* The chip opens the brush preset picker (plan 2026-11-24, stage 5). */}
+      <button
+        type="button"
+        className="photo-brush-chip"
+        title={t('brush.openPicker')}
+        aria-label={t('brush.openPicker')}
+        aria-haspopup="dialog"
+        disabled={!brushPicker}
+        onClick={(event) => {
+          const box = event.currentTarget.getBoundingClientRect()
+          brushPicker?.({ x: box.left, y: box.bottom + 4 })
+        }}
+        data-testid="photo-brush-chip"
+      >
+        <TipPreview size={o.size} hardness={hardness ? o.hardness : null} />
+      </button>
       <Num k="size" label={phrase('Size')} unit="px" />
       {hardness ? <Num k="hardness" label={phrase('Hardness')} unit="%" /> : null}
       <Sep />
