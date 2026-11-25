@@ -1,0 +1,28 @@
+format: 1
+id: photo.editor.dialogs/preview-dialog
+feature: photo.editor.dialogs
+intent: >-
+  A "…" menu row opens its dialog instead of running with the engine's defaults (plan 2026-11-24, stage 1): Filter ›
+  Blur › Gaussian Blur… shows its Radius labelled in Chinese; with Preview off the picture and history are as before
+  the click; moving the slider changes the picture; Cancel restores it with no history step left (Redo included); OK
+  adds exactly one step and keeps what the preview showed. Levels (Cmd+L, with the image's histogram), Curves,
+  Hue/Saturation and Color Balance open their own dialogs by their keys; Add Noise… gets the generic dialog; a Levels
+  adjustment layer is edited in Properties with the same Levels editor; Image Size keeps proportions; Canvas Size has
+  a nine-way anchor; Fill asks for its contents; the Preferences pages are gone from the Edit menu.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/dialogs.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/dialogs.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 120
+since: "2026-11-24"

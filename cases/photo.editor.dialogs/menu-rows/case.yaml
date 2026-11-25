@@ -1,0 +1,25 @@
+format: 1
+id: photo.editor.dialogs/menu-rows
+feature: photo.editor.dialogs
+intent: >-
+  No "…" menu row runs bare with the engine's defaults: each opens a purpose-built or the generic parameter dialog,
+  takes no values at all (Layer from Background, New Adjustment Layer › Invert), or is left out of the menus with a
+  reason (the Preferences pages, the shortcut editor, the rows that failed with an English engine error and cannot be
+  asked for). Every generic dialog's control and choice has a Chinese label, and its starting values run in the engine.
+  The preview runs, undoes on a change, leaves no step on Cancel and exactly one on OK, and never undoes a step it did
+  not make; Levels, Curves and the size dialogs compute what Photoshop's do.
+layer: gate
+source:
+  kind: probe
+  from: web/src/dialogs/dialogs.test.mjs, web/src/dialogs/menuRows.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/dialogs/dialogs.test.mjs, src/dialogs/menuRows.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-24"

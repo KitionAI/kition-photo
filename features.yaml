@@ -1,6 +1,6 @@
 format: 1
 kit: photo
-updated: "2026-11-20"
+updated: "2026-11-24"
 gate_budget_s: 600
 protected: []
 features:
@@ -680,3 +680,13 @@ features:
     gap: "The margin is 96 screen pixels on every side."
     cases: [regressions/issue-scroll-past-picture]
     since: "2026-11-22"
+  - id: photo.editor.dialogs
+    title: "A \"…\" menu row asks before it runs: filters and adjustments open a dialog that previews on the canvas (Cancel leaves no step, OK exactly one), Levels, Curves, Hue/Saturation, Brightness/Contrast, Color Balance, Image Size, Canvas Size, Fill, Stroke and New have their own, and rows with nothing behind them are left out"
+    dimension: [function]
+    priority: P0
+    status: has
+    paths: [web/src/dialogs/**, web/src/menus/hidden.ts, web/src/menus/photoMenus.tsx, web/src/menus/PhotoMenuRibbon.tsx, web/src/HomeTab.tsx, web/src/panels/AdjustmentSettings.tsx, web/tests/dialogs.mjs]
+    target: "Photoshop 2026"
+    gap: "The generic dialog draws a control per parameter; the reference's per-filter layouts (thumbnail preview pane, Blur Gallery pins, colour pickers) and the remaining dialogs (Layer Style, Color Range, Select and Mask, Export) come in later stages."
+    cases: [photo.editor.dialogs/menu-rows, photo.editor.dialogs/preview-dialog]
+    since: "2026-11-24"
