@@ -57,8 +57,23 @@ export function moveTool(env: PhotoToolEnv): KitTool {
       })
       let refused = false
       let judged = false
-      let image: { bitmap: ImageBitmap; opacity: number } | null = null
+      let image: { bitmap: ImageBitmap; opacity: number; layer: number } | null = null
       let bounds = env.layer?.bounds ?? null
+      // The layer the canvas leaves out while its pixels follow the pointer (plan 2026-11-24,
+      // stage 3): a whole layer's move only (a copy, or floating pixels, leave the layer where it is).
+      let omitted: number | null = null
+      // Where it was drawn: the layer's box, or the whole view when effects reach past it.
+      const omittedArea = () => (env.hasLayerEffects ? null : bounds)
+      const omit = () => {
+        if (omitted != null || !image || floating || start.alt || !env.omitLayer) return
+        omitted = image.layer
+        env.omitLayer(omitted, viewport, omittedArea())
+      }
+      const putBack = () => {
+        if (omitted == null) return
+        omitted = null
+        env.omitLayer?.(null, viewport, omittedArea())
+      }
       const judge = () => {
         if (judged || pickedLayer === undefined) return
         const active = env.layer
@@ -74,7 +89,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
         }
         const layer = active.id
         void env.layerImage(layer).then((bitmap) => {
-          if (bitmap && !refused) image = { bitmap, opacity: active.opacity }
+          if (bitmap && !refused) image = { bitmap, opacity: active.opacity, layer }
           else bitmap?.close()
           if (image && moved) draw()
         })
@@ -95,6 +110,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
       }
       const draw = () => {
         if (refused) return
+        omit()
         const box = bounds
         const clip = floating ? env.selection : null
         overlay.draw((canvas, toScreen) => {
@@ -137,6 +153,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
         cancel: () => {
           env.moving(false)
           refused = true
+          putBack()
           image?.bitmap.close()
           image = null
         },
@@ -152,7 +169,12 @@ export function moveTool(env: PhotoToolEnv): KitTool {
           image = null
           done?.bitmap.close()
           tell()
-          if (refused || !moved) return void overlay.clear()
+          // A move that changes nothing puts the left-out layer back; one that runs draws it at its new place.
+          const nothing = () => {
+            putBack()
+            overlay.clear()
+          }
+          if (refused || !moved) return nothing()
           const { x: dx, y: dy } = delta
           if (floating) {
             if (!(await env.run('select.float', { dx, dy, copy: start.alt }))) overlay.clear()
@@ -161,9 +183,9 @@ export function moveTool(env: PhotoToolEnv): KitTool {
           if (start.alt) {
             if (!(await env.run('layer.duplicate', {}))) return void overlay.clear()
           }
-          if (!dx && !dy) return void overlay.clear()
+          if (!dx && !dy) return nothing()
           // The engine also moves other selected/linked layers and their effects.
-          if (!(await env.run('layer.translate', { dx, dy }))) overlay.clear()
+          if (!(await env.run('layer.translate', { dx, dy }))) nothing()
         },
       }
     },
