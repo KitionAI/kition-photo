@@ -37,10 +37,10 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
       { id: 'gradients', label: 'Gradients' },
       { id: 'patterns', label: 'Patterns' },
     ],
-    // Its whole saturation and brightness square shows (120 px under the tab strip) even in a short
-    // column; the hex, RGB and HSB rows scroll under it (plan 2026-11-24, stage 5).
+    // Its whole saturation and brightness square shows (120 px under the tab strip) at its default
+    // height; the hex, RGB and HSB rows scroll under it (plan 2026-11-24, stage 5).
     defaultHeight: 166,
-    compactHeight: 162,
+    compactHeight: 130,
   },
   {
     group: 'properties',
@@ -50,8 +50,7 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
     ],
     // Include the tab strip so the type layer's Character heading remains fully visible.
     defaultHeight: 260,
-    // X, Y, W, H, Opacity and Fill stay in view in a short column.
-    compactHeight: 200,
+    compactHeight: 160,
   },
   {
     group: 'character',
@@ -164,6 +163,7 @@ export const PANEL_CONTROLS: KitUiItem[] = [
     ['quickActions', 'Quick Actions'],
     ['adjustment', 'Adjustment Properties'],
     ['masks', 'Masks'],
+    ['gradientFill', 'Gradient Fill'],
   ].map(([id, label]) => ({ id: `control:properties.${id}`, label, parent: 'panel:properties' })),
   ...ADJUSTMENT_CONTROLS,
   ...[
