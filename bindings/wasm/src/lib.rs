@@ -252,6 +252,16 @@ impl PhotoDocument {
         let exported = export::export(&doc, &options)?;
         Ok(export::answer(&exported, options.mime, base64_encode))
     }
+
+    /// The document's guides as `{horizontal: [px…], vertical: [px…]}`, in the order
+    /// `view.moveGuide` and `view.deleteGuide` count them: the editor draws them, moves them and
+    /// snaps to them (plan 2026-11-24, stage 7). Reading them changes nothing.
+    pub fn guides(&self) -> Result<Value, String> {
+        let guides = &self.state()?.doc.guides;
+        let horizontal: Vec<f32> = guides.horizontal.iter().map(|guide| guide.position).collect();
+        let vertical: Vec<f32> = guides.vertical.iter().map(|guide| guide.position).collect();
+        Ok(json!({ "horizontal": horizontal, "vertical": vertical }))
+    }
 }
 
 impl kition_kit::session::BlobSource for PhotoDocument {
@@ -757,6 +767,11 @@ pub mod web {
         #[wasm_bindgen(js_name = clipboardImage)]
         pub fn clipboard_image(&self) -> Result<String, JsError> {
             self.0.clipboard_image().map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// The document's guides `{horizontal, vertical}` (JSON) ([`crate::PhotoDocument::guides`]).
+        pub fn guides(&self) -> Result<String, JsError> {
+            self.0.guides().map(|answer| answer.to_string()).map_err(error)
         }
 
         #[wasm_bindgen(js_name = omitLayer)]
