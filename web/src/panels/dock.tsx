@@ -39,7 +39,7 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
     ],
     // Its whole saturation and brightness square shows (120 px under the tab strip) at its default
     // height; the hex, RGB and HSB rows scroll under it (plan 2026-11-24, stage 5).
-    defaultHeight: 166,
+    defaultHeight: 161,
     compactHeight: 130,
   },
   {
@@ -94,7 +94,7 @@ export const DOCK: ReadonlyArray<{ group: DockGroupId; tabs: readonly { id: stri
     // Its header, about four rows and its footer: at 1440 × 900 Color keeps its square, Properties its
     // X, Y, W, H, Opacity and Fill, and Layers the rest (plan 2026-11-24, stage 5). With Color
     // hidden, Properties keeps its default height and the type layer's Character heading shows.
-    preferredFill: 340,
+    preferredFill: 347,
   },
 ]
 

@@ -764,6 +764,8 @@ export const CATALOGS: Record<string, Catalog> = { 'en-US': enUS, 'zh-CN': zhCN 
 export const PHRASES: Record<string, Record<string, string>> = {
   'zh-CN': {
     'Status Bar': '状态栏',
+    'Masks': '蒙版',
+    'Gradient Fill': '渐变填充',
     '{mode} Color · {bits} bit': '{mode} 颜色 · {bits} 位',
     'Drag to select  ·  {add} add  ·  {sub} subtract  ·  {both} intersect  ·  click to deselect': '拖动以选择  ·  {add} 添加  ·  {sub} 减去  ·  {both} 交叉  ·  单击取消选择',
     'Click, then move along an edge · click to fasten a point · {alt}-click for a straight segment · double-click to close': '单击后沿边缘移动 · 单击以固定一个点 · 按 {alt} 单击绘制直线段 · 双击闭合',

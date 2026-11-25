@@ -230,6 +230,20 @@ export function gradientTool(env: PhotoToolEnv): KitTool {
       const params = (end: KitPointer) => ({ from: [start.x, start.y], to: [end.x, end.y], ...toolParams('Gradient', env.options) })
       let live: LivePreview | null = null
       let shownAt = 0
+      let latest: KitPointer | null = null
+      let later: ReturnType<typeof setTimeout> | null = null
+      const show = () => {
+        later = null
+        if (!latest) return
+        shownAt = Date.now()
+        live ??= env.preview(command)
+        live.push(params(latest))
+      }
+      const stop = () => {
+        if (later) clearTimeout(later)
+        later = null
+        latest = null
+      }
       const line = (end: KitPointer) =>
         overlay.draw((context, toScreen) => {
           tracePolyline(context, toScreen, [
@@ -242,17 +256,19 @@ export function gradientTool(env: PhotoToolEnv): KitTool {
         move: (pointer) => {
           line(pointer)
           if (Math.hypot(pointer.x - start.x, pointer.y - start.y) < 1) return
-          const now = Date.now()
-          if (now - shownAt < GRADIENT_EVERY_MS) return
-          shownAt = now
-          live ??= env.preview(command)
-          live.push(params(pointer))
+          latest = pointer
+          // At most one run per interval; the last position of a fast drag still shows.
+          const wait = GRADIENT_EVERY_MS - (Date.now() - shownAt)
+          if (wait <= 0) show()
+          else later ??= setTimeout(show, wait)
         },
         cancel: () => {
+          stop()
           overlay.clear()
           void live?.cancel()
         },
         end: (pointer) => {
+          stop()
           overlay.clear()
           if (Math.hypot(pointer.x - start.x, pointer.y - start.y) < 1) return void live?.cancel()
           if (live) void live.finish(params(pointer))

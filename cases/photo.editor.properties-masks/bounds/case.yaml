@@ -1,0 +1,23 @@
+format: 1
+id: photo.editor.properties-masks/bounds
+feature: photo.editor.properties-masks
+intent: >-
+  Properties' typed X, Y, W and H as the commands they run (plan 2026-11-24, stage 5): X and Y move the layer by
+  the difference (layer.translate), W and H scale it from its top left corner (edit.transform with its rectangle and
+  the new corners); the same value, a size under one pixel or not a number runs nothing. The fields, the Masks
+  section and the dock's heights are driven with real input in photo.editor.layer-style/dialog.
+layer: gate
+source:
+  kind: probe
+  from: web/src/panels/properties.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/panels/properties.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

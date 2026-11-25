@@ -1,0 +1,23 @@
+format: 1
+id: photo.editor.color-picker/conversions
+feature: photo.editor.color-picker
+intent: >-
+  The Color Picker's arithmetic as pure functions (plan 2026-11-24, stage 5): hex round-trips through RGB and is
+  written one way; HSB is Photoshop's (degrees and percent) and every 8-bit colour comes back from it, a grey keeping
+  its hue; Lab is D50 through the Bradford adaptation (white, black, sRGB red) and round-trips the RGB cube; a typed
+  field moves the others while HSB stays as typed; the square and the strip map points to colours and back.
+layer: gate
+source:
+  kind: probe
+  from: web/src/color/colorMath.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/color/colorMath.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

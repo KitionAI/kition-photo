@@ -2,7 +2,7 @@
 // `props_layout.rs` tests). Run with `pnpm --dir web test:parity`.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { QUICK_ACTIONS, canvasResizeParams, kindLabel } from './properties.ts'
+import { QUICK_ACTIONS, boundsEdit, canvasResizeParams, kindLabel } from './properties.ts'
 
 test('canvas size keeps the aspect ratio when linked, and changes nothing below half a pixel', () => {
   const size = { width: 2400, height: 1500 }
@@ -17,4 +17,20 @@ test("the header names an adjustment by its kind, an artboard as such, and other
   assert.equal(kindLabel('Group', null, true), 'Artboard')
   assert.equal(kindLabel('Object', null, false), 'Object Layer')
   assert.deepEqual(Object.keys(QUICK_ACTIONS).sort(), ['Fill', 'Group', 'Object', 'Pixel', 'Shape', 'Type'])
+})
+
+test("typed X, Y, W and H run the Move tool's and Free Transform's commands (plan 2026-11-24, stage 5)", () => {
+  const box = [100, 50, 300, 250]
+  assert.deepEqual(boundsEdit(7, box, 'x', 140), { command: 'layer.translate', params: { layer: 7, dx: 40, dy: 0 } })
+  assert.deepEqual(boundsEdit(7, box, 'y', 20.4), { command: 'layer.translate', params: { layer: 7, dx: 0, dy: -30 } })
+  assert.deepEqual(boundsEdit(7, box, 'w', 100), {
+    command: 'edit.transform',
+    params: { layer: 7, rect: [100, 50, 300, 250], quad: [[100, 50], [200, 50], [200, 250], [100, 250]], interpolation: 'bicubic' },
+  })
+  assert.deepEqual(boundsEdit(7, box, 'h', 400).params.quad, [[100, 50], [300, 50], [300, 450], [100, 450]])
+  // The same value, no size, or not a number: nothing to run.
+  assert.equal(boundsEdit(7, box, 'x', 100), null)
+  assert.equal(boundsEdit(7, box, 'w', 200), null)
+  assert.equal(boundsEdit(7, box, 'w', 0), null)
+  assert.equal(boundsEdit(7, box, 'h', Number.NaN), null)
 })

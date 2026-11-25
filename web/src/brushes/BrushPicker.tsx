@@ -70,7 +70,7 @@ export function BrushPresets({ options, onPicked, testId }: { options: BrushOpti
     onPicked?.()
   }
   return (
-    <div className="photo-brush-presets" data-testid={testId}>
+    <div className="photo-brush-presets" data-testid={`${testId}-presets`}>
       <GradientSlider label={`${phrase('Size')} (px)`} value={options.size} min={1} max={5000} softMax={500} onChange={(size) => options.set({ size })} testId={`${testId}-size`} />
       <GradientSlider label={`${phrase('Hardness')} (%)`} value={options.hardness} min={0} max={100} onChange={(hardness) => options.set({ hardness })} testId={`${testId}-hardness`} />
       <ul className="photo-brush-preset-list" role="listbox" aria-label={t('brush.presets')}>

@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.gradient-editor/model
+feature: photo.editor.gradient-editor
+intent: >-
+  The gradient editor's model as pure functions (plan 2026-11-24, stage 5): the engine's form read sorted with a
+  midpoint per segment and written back with midpoints only when bent; colours and opacities between stops, a
+  midpoint bending the mix; a stop added takes the colour or opacity there; stops move, take values and go, keeping
+  two colour stops; midpoints sit between their stops and bake into stops for targets that keep none. The editor and
+  the Gradient tool's drag are driven with real input in photo.editor.color-picker/color.
+layer: gate
+source:
+  kind: probe
+  from: web/src/gradient/gradient.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/gradient/gradient.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

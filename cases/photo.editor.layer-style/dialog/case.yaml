@@ -1,0 +1,30 @@
+format: 1
+id: photo.editor.layer-style/dialog
+feature: photo.editor.layer-style
+intent: >-
+  Real pointer input on dev.html (plan 2026-11-24, stage 5): the fx menu's Drop Shadow opens Layer Style on Drop
+  Shadow, switched on, and the canvas shows it; Cancel restores the picture and the history; a double click beside
+  a layer's name opens it on Blending Options; a stroke, a colour overlay chosen in the Color Picker and half the
+  opacity are one history step on OK, shown on the canvas, taken back by one Undo and brought back by Redo; an
+  effect's eye under the layer row switches it off; Layer › Layer Style › Stroke opens on the stroke with its own
+  size; a gradient overlay takes its gradient from the gradient editor, Escape there leaving Layer Style open.
+  Properties' X and W typed move and scale the layer; a hidden mask's Density 50 shows half of the layer, its
+  Feather is kept and Disable shows the whole layer; at 1440 and 1165 by 900 the dock shows Color's whole square,
+  Properties' X to Fill and four layer rows.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/layer-style.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/layer-style.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

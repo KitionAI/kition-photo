@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.brush-picker/settings
+feature: photo.editor.brush-picker
+intent: >-
+  The brush picker's and Brush Settings' arithmetic as pure functions (plan 2026-11-24, stage 5): the engine's
+  brush shows in degrees and percent; each field becomes the tools.setBrush patch, a jitter switching its section
+  on; a picked preset gives the options bar its size, hardness and pressure toggles; the preset list reads what
+  the engine lists and each thumbnail's stroke stays in its row. The picker, the right click and F5 are driven
+  with real input in photo.editor.color-picker/color.
+layer: gate
+source:
+  kind: probe
+  from: web/src/brushes/brushes.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/brushes/brushes.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

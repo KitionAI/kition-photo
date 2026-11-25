@@ -1,0 +1,29 @@
+format: 1
+id: photo.editor.color-picker/color
+feature: photo.editor.color-picker
+intent: >-
+  Real pointer and keyboard input on dev.html (plan 2026-11-24, stage 5): the foreground chip opens the Color Picker
+  on the foreground; a typed hex moves the RGB, HSB and Lab fields and the foreground follows at once; typed RGB and
+  HSB values move the hex; Cancel puts the foreground back; the hue strip and a drag in the square choose a colour
+  and OK keeps it; a brush stroke paints with it; a press on the canvas while the picker is open picks the colour
+  there and paints nothing; Escape in the picker over Fill closes only the picker; the Color panel's Brightness
+  slider sets the foreground; the brush chip's picker sets the size, a preset its size and hardness, its presets
+  show their strokes; a right click on the canvas opens it there; Brush Settings (F5) sets the engine's roundness;
+  the gradient editor adds and colours a stop, and the Gradient's drag shows and then fills with it in one step.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/color.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/color.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

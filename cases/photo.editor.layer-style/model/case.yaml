@@ -1,0 +1,24 @@
+format: 1
+id: photo.editor.layer-style/model
+feature: photo.editor.layer-style
+intent: >-
+  The Layer Style dialog's model as pure functions (plan 2026-11-24, stage 5): it opens from what the layer has
+  (unknown kinds left out, blend labels read as command names); the list has every kind in Photoshop's order and a
+  row per effect; checking an empty row adds the effect from its defaults; OK sends every effect the layer had and
+  the added ones left on, each over its snapshot; blending options run only when changed; a gradient overlay's
+  stops go in its snapshot; every Layer › Layer Style row with a dialog opens Layer Style.
+layer: gate
+source:
+  kind: probe
+  from: web/src/dialogs/layerStyle.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/dialogs/layerStyle.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 60
+since: "2026-11-25"

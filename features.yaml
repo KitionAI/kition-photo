@@ -741,3 +741,58 @@ features:
     gap: "New point text is typed in an inline field matched to the type's font, size, colour and place until its first Enter (the editor's draft rules, which many cases pin); from then on, and for paragraph boxes and existing type at once, the canvas shows the engine's rendering. Cmd+Z while editing commits and undoes the whole edit, not one keystroke. With only a caret, a style change restyles the whole layer, not the next characters typed. No moving or transforming the text with Cmd held while editing, no Alt-drag for an exact paragraph size, no type on a path or type masks. A click away from the text commits it and starts new text there, as a click does while new text is typed (Photoshop only commits)."
     cases: [photo.editor.type-on-canvas/type, photo.editor.type-on-canvas/session]
     since: "2026-11-25"
+  - id: photo.editor.color-picker
+    title: "The Color Picker (plan 2026-11-24, stage 5): a saturation and brightness square with a hue strip, HSB, RGB, Lab and hex fields that follow each other, the new colour over the current one, and an eyedropper on the canvas while it is open; every colour chip opens it (the tool rail's foreground and background, which follow it live and come back on Cancel, Fill, Stroke, the generic dialogs, the type colour, shape fill and stroke, adjustment colours, Layer Style's colours and gradient stops); Escape closes only the dialog on top; the Color panel's Hue, Saturation and Brightness sliders, and a double click on its chips opens the picker"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [tools.setColors, document.sampleColor]
+    paths: [web/src/color/colorMath.ts, web/src/color/ColorPickerDialog.tsx, web/src/color/ColorPickerHost.tsx, web/src/color/ColorWell.tsx, web/src/color/escapeStack.ts, web/src/panels/ColorPanel.tsx, web/src/dialogs/controls.tsx, web/src/panels/PropsParts.tsx, web/src/App.tsx, web/tests/color.mjs]
+    target: "Photoshop 2026"
+    gap: "No CMYK fields, Only Web Colors, gamut warning, Add to Swatches or Color Libraries in the picker; the eyedropper samples the composite at one pixel (the Eyedropper tool's sample size and layer choice are not used); the Color panel has the field and HSB sliders, not Photoshop's other slider modes or its colour ramp."
+    cases: [photo.editor.color-picker/color, photo.editor.color-picker/conversions]
+    since: "2026-11-25"
+  - id: photo.editor.layer-style
+    title: "The Layer Style dialog (plan 2026-11-24, stage 5): Blending Options (mode, opacity, fill opacity) and every effect (bevel and emboss, stroke, inner shadow, inner glow, satin, colour overlay, gradient overlay with the gradient editor, pattern overlay, outer glow, drop shadow) with a check box on the left, the selected one's fields on the right, a live preview on the canvas, one history step on OK, Cancel restoring the layer; opened by Layer › Layer Style's rows, the Layers panel's fx menu and a double click beside a layer's name; the effects listed under a layer row with an eye each"
+    dimension: [function]
+    priority: P0
+    status: has
+    commands: [layer.layerStyle.get, layer.layerStyle.replace, layer.layerStyle.blendingOptions, layer.layerStyle.defaultFor, layer.setEffectsVisible]
+    paths: [crates/engine/engine/src/layer_style.rs, web/src/dialogs/layerStyle.ts, web/src/dialogs/LayerStyleDialog.tsx, web/src/dialogs/DialogHost.tsx, web/src/dialogs/routes.ts, web/src/dialogs/useCommandPreview.ts, web/src/panels/LayersPanel.tsx, web/tests/layer-style.mjs]
+    target: "Photoshop 2026"
+    gap: "No Styles list, New Style, Make Default or Reset to Default buttons, Global Light shared across effects, contour editor (the six built-in contours only), Blend If or advanced blending in the dialog, + buttons for a second effect of a kind (a layer's second stroke shows and edits), or texture and gradient choices for strokes and glows (kept as they are)."
+    cases: [photo.editor.layer-style/dialog, photo.editor.layer-style/model]
+    since: "2026-11-25"
+  - id: photo.editor.brush-picker
+    title: "Brush presets and Brush Settings (plan 2026-11-24, stage 5): the options bar's brush chip and a right click on the canvas with a brush tool open the preset picker (Size, Hardness, every preset with its stroke as the engine paints it); a preset becomes the brush and gives the bar its size, hardness and pressure; Window › Brushes and Window › Brush Settings (F5) are floating windows; Brush Settings sets the tip's size, hardness, angle, roundness and spacing, Shape Dynamics' size jitter, Transfer's opacity jitter and Smoothing"
+    dimension: [function]
+    priority: P1
+    status: has
+    commands: [tools.setBrush, brush.get, brush.presets.list, paint.stroke]
+    paths: [web/src/brushes/brushes.ts, web/src/brushes/BrushPicker.tsx, web/src/brushes/thumbnails.ts, web/src/options/brushBars.tsx, web/src/menus/hidden.ts, web/src/App.tsx, web/tests/color.mjs]
+    target: "Photoshop 2026"
+    gap: "No preset folders, search, new, rename or delete in the picker; Brush Settings has no tip shapes list, scattering, texture, dual brush, colour dynamics, noise, wet edges, build-up or the control drop-downs (fade, pen pressure) of the dynamics, and no preview stroke; the windows float, they do not dock."
+    cases: [photo.editor.brush-picker/settings]
+    since: "2026-11-25"
+  - id: photo.editor.gradient-editor
+    title: "The gradient editor (plan 2026-11-24, stage 5): presets, colour stops under the bar and opacity stops over it (a press adds one, a drag moves it, dragged off it goes), midpoints, the selected stop's colour (the Color Picker), opacity and location; used by the Gradient tool's swatch (the current gradient, for the live and the classic gradient), a gradient overlay and a gradient fill layer's Properties (with its style, angle, scale and Reverse); the Gradient tool shows the gradient under the drag before the release, one history step"
+    dimension: [function]
+    priority: P1
+    status: has
+    commands: [gradient.presets.select, gradient.presets.list, gradient.fill.create, gradient.fill.get, gradient.fill.set, paint.gradient]
+    paths: [web/src/gradient/gradient.ts, web/src/gradient/GradientEditorDialog.tsx, web/src/gradient/GradientEditorHost.tsx, web/src/options/otherBars.tsx, web/src/tools/canvas/paint.ts, web/src/panels/PropertiesPanel.tsx, web/tests/color.mjs]
+    target: "Photoshop 2026"
+    gap: "No noise gradients, smoothness, named saving of a new preset or preset management in the editor; targets other than a gradient fill layer keep no midpoints (the editor adds a stop at each bent midpoint instead); no on-canvas gradient controls after the drag."
+    cases: [photo.editor.gradient-editor/model]
+    since: "2026-11-25"
+  - id: photo.editor.properties-masks
+    title: "Properties' X, Y, W and H to click and type (the Move tool's layer.translate, Free Transform's edit.transform from the top left corner) and its Masks section (Density and Feather, one history step a drag, Select, Invert, Disable or Enable, Delete); the dock at 1440 × 900 and 1165 px wide shows Color's whole square, Properties' X to Fill and four Layers rows (plan 2026-11-24, stage 5)"
+    dimension: [function]
+    priority: P1
+    status: has
+    commands: [layer.layerMask.properties, layer.translate, edit.transform, layer.layerMask.enabled, layer.layerMask.delete, select.loadSelection]
+    paths: [crates/engine/engine/src/extra_cmds.rs, crates/engine/engine/src/inspect.rs, web/src/panels/PropertiesPanel.tsx, web/src/panels/properties.ts, web/src/panels/dock.tsx, web/tests/layer-style.mjs]
+    target: "Photoshop 2026"
+    gap: "No Select and Mask… or Color Range… buttons, vector mask density and feather, or mask feather previewed while dragging beyond the engine's own; X, Y, W and H scale from the top left corner (no reference point), and a typed W does not keep the aspect ratio (no link button)."
+    cases: [photo.editor.properties-masks/bounds]
+    since: "2026-11-25"
