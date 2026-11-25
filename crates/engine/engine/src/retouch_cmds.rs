@@ -689,7 +689,7 @@ fn color_dab(fmt: &PixelFormat, work: &mut Region, fp: &Footprint, strength: f32
 /// brush stroke, capped at full coverage, so Exposure caps a stroke the way Opacity caps a paint
 /// stroke: overlapping dabs and passes within one stroke don't compound the tone curve, and a
 /// new stroke builds on the last.
-fn tone_stroke(fmt: PixelFormat, toned: impl Fn([f32; 3]) -> [f32; 3] + 'static) -> DabEffect {
+fn tone_stroke(fmt: PixelFormat, toned: impl Fn([f32; 3]) -> [f32; 3] + Send + Sync + 'static) -> DabEffect {
     /// Side of the cells that remember, per touched pixel, the coverage applied so far and the
     /// original pixel (copied from the working pixels the first time a dab reaches it). Dense
     /// cells rather than a map per pixel: a map lookup per covered pixel made long strokes with
@@ -775,7 +775,8 @@ enum DabTool {
 }
 
 /// One dab's edit of the working copy.
-type DabEffect = Box<dyn FnMut(&mut Region, &Footprint)>;
+/// `Send` and `Sync`, so a live stroke can sit in a document a host shares between threads.
+type DabEffect = Box<dyn FnMut(&mut Region, &Footprint) + Send + Sync>;
 
 impl DabTool {
     /// The tool for `cmd` and its history label.

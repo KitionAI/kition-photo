@@ -9,8 +9,9 @@
 //! [`kition_kit::export_kit_document!`]; the native tests check it with
 //! [`kition_kit::testing::check_contract`]. Photo's own extras (`selectionOutline`, and the panels'
 //! `layerThumbnail`, `maskThumbnail`, `channelThumbnails`, `maskTargetCommands`, `histogram`,
-//! `navigatorImage`, and `viewState`, the person's view for the host's `view-state` store) sit in
-//! [`web`].
+//! `navigatorImage`, `viewState`, the person's view for the host's `view-state` store, and the
+//! canvas's live strokes `strokeBegin`, `strokePush`, `strokeEnd`, `strokeCancel` and `omitLayer`,
+//! see [`stroke`]) sit in [`web`].
 #![forbid(unsafe_code)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -31,6 +32,7 @@ mod point;
 mod render;
 mod resource_rests;
 mod rests;
+mod stroke;
 
 use kition_kit::{KitCommand, KitDocument, MAX_RENDER_SIDE};
 use kition_photo_engine::{Session, command_specs};
@@ -83,6 +85,8 @@ pub struct PhotoDocument {
     /// The editor states answered to hosts, for putting one back ([`context`]).
     kept: std::sync::Mutex<context::Kept>,
     pick_snapshots: std::sync::Mutex<point::Snapshots>,
+    /// The stroke being drawn and the layer a drag leaves out ([`stroke`]).
+    strokes: stroke::LiveState,
 }
 
 impl PhotoDocument {
@@ -94,7 +98,7 @@ impl PhotoDocument {
         if let Some(state) = session.active_mut() {
             state.psd_values = lower.ends_with(".psd") || lower.ends_with(".psb");
         }
-        Self { session, name: name.to_owned(), kept: Default::default(), pick_snapshots: Default::default() }
+        Self { session, name: name.to_owned(), kept: Default::default(), pick_snapshots: Default::default(), strokes: Default::default() }
     }
 
     /// The file as every host saves it: [`KitDocument::prepare_save`] (which seals the replica),
@@ -384,8 +388,11 @@ impl KitDocument for PhotoDocument {
         self.state().is_ok_and(kition_photo_engine::DocState::is_dirty)
     }
 
+    /// Draws what the canvas shows: with a live stroke so far, without a layer a drag leaves out
+    /// ([`stroke`]); the document itself otherwise.
     fn render(&self, x: f64, y: f64, scale: f64, width: u32, height: u32) -> Result<Vec<u8>, String> {
-        let doc = &self.state()?.doc;
+        let shown = self.shown()?;
+        let doc: &kition_photo_engine::doc::Document = &shown;
         let (width, height) = (width.clamp(1, MAX_RENDER_SIDE), height.clamp(1, MAX_RENDER_SIDE));
         let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
         let x0 = x.floor() as i32;
@@ -423,7 +430,8 @@ impl KitDocument for PhotoDocument {
     }
 
     fn render_area(&self, x0: i32, y0: i32, x1: i32, y1: i32, width: u32, height: u32) -> Result<Vec<u8>, String> {
-        let doc = &self.state()?.doc;
+        let shown = self.shown()?;
+        let doc: &kition_photo_engine::doc::Document = &shown;
         let (width, height) = (width.clamp(1, MAX_RENDER_SIDE), height.clamp(1, MAX_RENDER_SIDE));
         let area = Rect::new(x0, y0, x1.max(x0.saturating_add(1)), y1.max(y0.saturating_add(1)));
         Ok(kition_photo_compose::render_reduced_rect(doc, area, width, height).to_rgba8().pixels)
@@ -703,6 +711,39 @@ pub mod web {
         #[wasm_bindgen(js_name = selectionOutline)]
         pub fn selection_outline(&self, x0: i32, y0: i32, x1: i32, y1: i32, step: u32) -> Result<Vec<i32>, JsError> {
             self.0.selection_outline(x0, y0, x1, y1, step).map_err(error)
+        }
+
+        /// Begins a live stroke of `command` with `params` (JSON, with the points so far): answers
+        /// `{stroke, damage, seed}` as JSON ([`crate::PhotoDocument::stroke_begin`]).
+        #[wasm_bindgen(js_name = strokeBegin)]
+        pub fn stroke_begin(&mut self, command: &str, params: &str) -> Result<String, JsError> {
+            let params = kition_kit::parse_params(params).map_err(error)?;
+            self.0.stroke_begin(command, params).map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// Appends `[x, y, pressure, …]` to stroke `stroke`; answers the changed `[x0, y0, x1, y1]`.
+        #[wasm_bindgen(js_name = strokePush)]
+        pub fn stroke_push(&mut self, stroke: u32, points: &[f64]) -> Result<Vec<i32>, JsError> {
+            self.0.stroke_push(stroke, points).map(Vec::from).map_err(error)
+        }
+
+        /// Ends stroke `stroke`: one history step, the command's answer as JSON.
+        #[wasm_bindgen(js_name = strokeEnd)]
+        pub fn stroke_end(&mut self, stroke: u32) -> Result<String, JsError> {
+            self.0.stroke_end(stroke).map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// Drops stroke `stroke`; answers the `[x0, y0, x1, y1]` to draw again.
+        #[wasm_bindgen(js_name = strokeCancel)]
+        pub fn stroke_cancel(&mut self, stroke: u32) -> Vec<i32> {
+            Vec::from(self.0.stroke_cancel(stroke))
+        }
+
+        /// Leaves layer `layer` out of the canvas's renders until the document changes; a negative
+        /// `layer` puts it back.
+        #[wasm_bindgen(js_name = omitLayer)]
+        pub fn omit_layer(&mut self, layer: i32) -> Result<(), JsError> {
+            self.0.omit_layer(u32::try_from(layer).ok()).map_err(error)
         }
 
         /// The person's view of the image for the host's `view-state` store:

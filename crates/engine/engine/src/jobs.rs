@@ -603,6 +603,41 @@ impl Session {
         }
     }
 
+    /// The params command `id` would run with now, checked as [`Self::execute`] checks a call
+    /// before it runs it (the gate, the agent's rules, the Channels panel target, the command's
+    /// precondition, a background job, a hidden layer), without running it or changing anything:
+    /// for a preview of the command (a live stroke) that must show only what the command will do.
+    /// A call on another layer than the active one, or while a piece floats (the command would
+    /// drop it first), is refused: no preview can show that.
+    pub fn preflight(&self, id: &str, params: &Value) -> Result<Value> {
+        let spec = crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
+        if !params.is_object() {
+            return Err(EngineError::BadParams { cmd: id.to_string(), msg: "params must be a JSON object".into() });
+        }
+        if let Some(gate) = self.authorize {
+            gate(id, params)?;
+        }
+        self.agent_check(id, params)?;
+        let st = self.active().ok_or(EngineError::NoDocument)?;
+        if crate::float_cmds::floating(st).is_some() {
+            return Err(EngineError::Disabled(id.to_string(), "a floating selection is dropped before the command runs".into()));
+        }
+        let run_params = crate::channel_cmds::inject_target(self, id, crate::commands::inject_kind(id, params.clone()));
+        if let Some(target) = run_params.get("layer").and_then(Value::as_u64).map(LayerId)
+            && Some(target) != st.active_layer
+        {
+            return Err(EngineError::Disabled(id.to_string(), "a preview paints the active layer only".into()));
+        }
+        self.precondition(spec, &run_params).map_err(|why| EngineError::Disabled(id.to_string(), why))?;
+        if let Some(why) = self.job_conflict(id, spec.journal) {
+            return Err(EngineError::Disabled(id.to_string(), why));
+        }
+        if let Some(why) = crate::hidden_target::refusal(self, id, params) {
+            return Err(EngineError::Other(why.into()));
+        }
+        Ok(run_params)
+    }
+
     /// Run the command `id`: inline, or (with `background`) as a job when it is one.
     pub(crate) fn dispatch(&mut self, id: &str, params: Value, background: bool) -> Result<Started> {
         let spec = crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
