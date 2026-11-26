@@ -90,10 +90,14 @@ try {
   step('the Brush shows its outline at the brush size × zoom, instead of the system cursor', Math.abs(diameter - (await value('size')) * zoom) <= 1 && hidden === 'none', `diameter ${diameter}, size ${await value('size')}, zoom ${zoom}, cursor ${hidden}`)
 
   // [ and ] step through Photoshop's sizes; Shift with them steps the hardness by quarters.
+  // Each key's step lands before the next is read (the options bar follows the engine a frame later).
   await page.keyboard.press(']')
+  await until(async () => (await value('size')) === 25, 20)
   await page.keyboard.press(']')
+  await until(async () => (await value('size')) === 30, 20)
   const bigger = await value('size')
   await page.keyboard.press('[')
+  await until(async () => (await value('size')) === 25, 20)
   const smaller = await value('size')
   step('] and [ step the size (20 → 25 → 30 → 25)', bigger === 30 && smaller === 25, `${bigger}, ${smaller}`)
   await page.keyboard.press('Shift+BracketLeft')

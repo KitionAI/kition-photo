@@ -337,6 +337,9 @@ try {
     await kit.getByTestId('photo-menu-Edit').click()
     const editRows = await kit.locator('[role="menu"] [data-kit-ui-id]').evaluateAll((rows) => rows.map((row) => row.getAttribute('data-kit-ui-id')))
     const placed = editRows.indexOf('control:edit.freeTransform') >= 0 && editRows[editRows.indexOf('control:edit.freeTransform') + 1] === 'menu:Edit/Transform'
+    await kit.locator('[data-kit-ui-id="menu:Edit/Transform"]').first().hover()
+    await shot('edit-menu-transform')
+    await page.keyboard.press('Escape')
     await page.keyboard.press('Escape')
     step('Edit › Free Transform sits right above the Transform submenu', placed, editRows.slice(Math.max(0, editRows.indexOf('control:edit.freeTransform') - 1), editRows.indexOf('control:edit.freeTransform') + 2).join(', '))
     const openMode = async (command) => {

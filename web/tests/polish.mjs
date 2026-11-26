@@ -85,6 +85,7 @@ try {
   await kit.getByTestId('photo-menu-Window').click()
   const windowRows = await kit.locator('[role="menu"] [data-kit-ui-id^="command:window.panel."], [role="menu"] [data-testid^="photo-cmd-window.panel."]').count()
   const disabledPanels = await kit.locator('[role="menu"] [aria-disabled="true"]').evaluateAll((rows) => rows.map((row) => row.textContent?.trim() ?? '').filter(Boolean))
+  await shot('window-menu')
   await page.keyboard.press('Escape')
   await workspace.focus()
   step('the Window menu lists no panel Kition Photo does not have, and nothing in it is greyed out', windowRows === 0 && disabledPanels.length === 0, JSON.stringify({ windowRows, disabledPanels }))
@@ -155,7 +156,8 @@ try {
   await page.mouse.up()
   const gaps = []
   const started = Date.now()
-  while (Date.now() - started < 2500) {
+  // Watched for 2.5 s, and on a slower machine until the stroke's last step has landed (at most 20 s).
+  while (Date.now() - started < 2500 || ((await details()).history.length !== quickFrom + 1 && Date.now() - started < 20_000)) {
     if ((await workspace.getAttribute('data-ants')) === null) gaps.push(Date.now() - started)
     await page.waitForTimeout(40)
   }
