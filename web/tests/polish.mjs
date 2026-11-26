@@ -229,6 +229,20 @@ try {
   const kindText = placed ? ((await kit.getByTestId(`photo-layer-kind-${objectId}`).textContent()) ?? '').trim() : ''
   step('an object layer’s kind under its name is translated (对象 in Chinese, not “Object”)', placed && kindText === '对象', kindText)
 
+  // ---------------------------------------------------------------- 11. File › New… standalone
+  // The development host opens the document File › New… writes, so a blank canvas is a click away.
+  await kit.getByTestId('photo-menu-File').click()
+  await kit.getByTestId('photo-file-new-document').click()
+  await kit.getByTestId('photo-dialog').waitFor()
+  await kit.getByTestId('photo-dialog-ok').click()
+  const opened = await page
+    .waitForFunction(() => /\.psd open in /.test(document.getElementById('status')?.textContent ?? '') && !(document.getElementById('status')?.textContent ?? '').includes('Sample.psd'), null, { timeout: 30_000 })
+    .then(() => true, () => false)
+  await page.waitForTimeout(800)
+  const blank = opened ? await details() : null
+  await shot('stage8-standalone-new')
+  step('standalone, File › New… opens the new blank document in the page', opened && blank?.width === 1920 && blank?.height === 1080 && blank.layers.length === 1, JSON.stringify({ opened, status: await page.locator('#status').textContent(), size: blank && [blank.width, blank.height] }))
+
   await e.finish()
 } catch (error) {
   await e.fail(error)

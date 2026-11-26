@@ -10,7 +10,8 @@ intent: >-
   Layers panel's search; Quick Selection's outline shows during the drag and stays through the release; Alt-click on
   the line between two Layers rows clips and releases (with the clipping cursor); Delete with no selection deletes the
   selected layer, Backspace with one clears pixels; the dock's divider and left edge drag a group's height and the
-  column's width, both kept on reopening; an object layer's kind reads 对象 in Chinese.
+  column's width, both kept on reopening; an object layer's kind reads 对象 in Chinese; in the development host File ›
+  New… opens the new blank document.
 layer: gate
 source:
   kind: probe
