@@ -155,6 +155,56 @@ try {
   await page.keyboard.press(`${e.primary}+d`)
   await workspace.focus()
 
+  // ---------------------------------------------------------------- 8. the Layers panel
+  // Alt over the line between two rows shows the clipping cursor; a click clips the layer above
+  // the line to the one below, another releases it.
+  while (await kit.getByTestId('photo-error-close').count()) await kit.getByTestId('photo-error-close').first().click()
+  await until(async () => !(await details()).hasSelection, 30)
+  const order = await kit.locator('[data-layer-row]').evaluateAll((rows) => rows.map((row) => Number(row.getAttribute('data-layer-row'))))
+  const upperId = order[0]
+  const lowerRow = await kit.locator(`[data-layer-row="${order[1]}"]`).boundingBox()
+  const line = { x: lowerRow.x + lowerRow.width * 0.6, y: lowerRow.y }
+  await page.mouse.move(line.x, line.y + 12)
+  await page.keyboard.down('Alt')
+  await page.mouse.move(line.x, line.y + 1, { steps: 3 })
+  const rowsList = kit.getByTestId('photo-layers-rows')
+  const cursorShown = await until(async () => (await rowsList.getAttribute('data-clip-line')) !== null && (await rowsList.evaluate((element) => getComputedStyle(element).cursor)).startsWith('url('), 20)
+  await page.mouse.down()
+  await page.mouse.up()
+  const clipped = await until(async () => (await details()).layers.find((layer) => layer.id === upperId)?.clipped === true, 40)
+  await page.mouse.down()
+  await page.mouse.up()
+  const released = await until(async () => (await details()).layers.find((layer) => layer.id === upperId)?.clipped === false, 40)
+  await page.keyboard.up('Alt')
+  step('Alt-click on the line between two rows clips the layer above to the one below (with the clipping cursor); again releases it', cursorShown && clipped && released, JSON.stringify({ cursorShown, clipped, released }))
+  // Delete with no selection deletes the selected layer; with a selection it clears pixels as before.
+  await selectLayer(pixel.id)
+  const layersNow = (await details()).layers.length
+  await page.keyboard.press('Delete')
+  const deleted = await until(async () => (await details()).layers.length === layersNow - 1 && !(await details()).layers.some((layer) => layer.id === pixel.id), 40)
+  step('Delete with no selection deletes the selected layer (one step)', deleted && (await details()).history.at(-1) === 'Delete Layer', (await details()).history.at(-1))
+  await page.keyboard.press(`${e.primary}+z`)
+  await until(async () => (await details()).layers.length === layersNow, 40)
+  await selectLayer(pixel.id)
+  await page.keyboard.press(`${e.primary}+a`)
+  await until(async () => (await details()).hasSelection, 30)
+  await page.keyboard.press('Backspace')
+  const cleared = await until(async () => (await details()).history.at(-1) === 'Clear', 40)
+  step('Backspace with a selection clears the pixels as before, and keeps the layer', cleared && (await details()).layers.length === layersNow, (await details()).history.at(-1))
+  await page.keyboard.press(`${e.primary}+d`)
+
+  // A placed (object) layer's kind is in the interface's language: Chinese here.
+  await page.goto(page.url().replace('locale=en-US', 'locale=zh-CN'))
+  await page.waitForFunction(() => document.getElementById('status')?.textContent?.includes(' open in '), null, { timeout: 60_000 })
+  await page.waitForTimeout(800)
+  const object = (await details()).layers.find((layer) => layer.kind === 'Shape') ?? (await details()).layers[0]
+  await e.query('layer.select', { layer: object.id, mode: 'replace' })
+  await e.query('layer.objectLayers.convertToObjectLayer', {})
+  const placed = await until(async () => (await details()).layers.some((layer) => layer.kind === 'Object'), 40)
+  const objectId = (await details()).layers.find((layer) => layer.kind === 'Object')?.id
+  const kindText = placed ? ((await kit.getByTestId(`photo-layer-kind-${objectId}`).textContent()) ?? '').trim() : ''
+  step('an object layer’s kind under its name is translated (对象 in Chinese, not “Object”)', placed && kindText === '对象', kindText)
+
   await e.finish()
 } catch (error) {
   await e.fail(error)

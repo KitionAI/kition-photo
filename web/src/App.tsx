@@ -1402,6 +1402,12 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       paths.set({ ...paths.get(), selected: null })
     }
     else if (nudge(event, command)) return true
+    // Delete or Backspace with no selection deletes the selected layers (Photoshop's); with one the
+    // engine's Clear takes the key, as before (plan 2026-11-24, stage 8).
+    else if ((key === 'backspace' || key === 'delete') && !command && !event.altKey && !event.shiftKey && !stateNow.current?.hasSelection && !typeSession.active && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) {
+      if (!editor.enabled('layer.delete')) return false
+      void run('layer.delete', {})
+    }
     else if (command || event.altKey) return false
     else if (event.code === 'BracketLeft' || event.code === 'BracketRight') stepBrush(event.code === 'BracketRight' ? 1 : -1, event.shiftKey)
     else if (/^Digit[0-9]$/.test(event.code) && !(event.target instanceof Element && event.target.closest(OWN_KEYS))) typeDigit(Number(event.code.slice(5)), event.shiftKey)

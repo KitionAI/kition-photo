@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { TesseraIcons } from '@kition/sdk/editor'
 import { Choice, ContextMenu, IconButton, KitElement, MenuButton, MenuItem, MenuSeparator, NumberField, PanelFooter, deviceScale, useKitEditor, useLeases, useReadOnly, useUi, type ContextMenuPoint } from '@kition/sdk/editor'
 import type { PhotoInfo, PhotoLayer, PhotoLocks } from '../photo'
@@ -129,6 +129,9 @@ function menuEntries(layer: PhotoLayer, multi: boolean, hasSelection: boolean): 
   ]
 }
 
+/** How near (CSS pixels) the line between two rows Alt must be to clip. */
+const CLIP_REACH = 4
+
 export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInfo; maskTarget: boolean; onMaskTarget: (on: boolean) => void }) {
   const { run, ask, enabled, byId, phrase, t, session } = useKitEditor()
   const typeEditing = useTypeEditing()
@@ -237,6 +240,34 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
     if (layer.background) void run('layer.new.layerFromBackground', {})
     else if (part === 'name') setRenaming({ key: layer.id!, text: layer.name })
     else if (enabled('layer.layerStyle.blendingOptions')) askFirst('layer.layerStyle.blendingOptions')
+  }
+
+  // Alt over the line between two rows (Photoshop's): the clipping cursor, and a click clips the
+  // layer above the line to the one below, or releases it (plan 2026-11-24, stage 8).
+  const [clipLine, setClipLine] = useState(false)
+  const clipClick = useRef(false)
+  const clipAt = (event: ReactPointerEvent<HTMLElement> | ReactMouseEvent<HTMLElement>) => {
+    if (!event.altKey || event.metaKey || event.ctrlKey || listDisabled || readOnly || !list.current) return null
+    const rowsShown = [...list.current.querySelectorAll<HTMLElement>('[data-layer-row]')]
+    for (let index = 1; index < rowsShown.length; index += 1) {
+      const line = rowsShown[index].getBoundingClientRect().top
+      if (Math.abs(event.clientY - line) > CLIP_REACH) continue
+      const upper = info.layers.find((layer) => layer.id === Number(rowsShown[index - 1].dataset.layerRow))
+      return upper && !upper.background ? upper : null
+    }
+    return null
+  }
+  const hoverClipLine = (event: ReactPointerEvent<HTMLElement>) => {
+    const near = clipAt(event) != null
+    if (near !== clipLine) setClipLine(near)
+  }
+  const pressClipLine = (event: ReactPointerEvent<HTMLElement>) => {
+    const upper = event.button === 0 ? clipAt(event) : null
+    if (!upper) return
+    event.preventDefault()
+    event.stopPropagation()
+    clipClick.current = true
+    void run(upper.clipped ? 'layer.releaseClippingMask' : 'layer.addClippingMask', { layer: upper.id })
   }
 
   /** The row menu acts on the selection: a row outside it is selected first (as upstream's), so the menu's states are that row's. */
@@ -349,7 +380,23 @@ export function LayersPanel({ info, maskTarget, onMaskTarget }: { info: PhotoInf
         </div>
       ) : null}
       <KitElement id="control:layers.list">
-        <ul className="photo-layers-rows" ref={list} aria-label={label('Layers')} onKeyDown={keyDown} data-disabled={listDisabled} data-testid="photo-layers-rows">
+        <ul
+          className="photo-layers-rows"
+          ref={list}
+          aria-label={label('Layers')}
+          onKeyDown={keyDown}
+          onPointerMove={hoverClipLine}
+          onPointerLeave={() => setClipLine(false)}
+          onPointerDownCapture={pressClipLine}
+          onClickCapture={(event) => {
+            if (!clipClick.current) return
+            clipClick.current = false
+            event.stopPropagation()
+          }}
+          data-disabled={listDisabled}
+          data-clip-line={clipLine ? '' : undefined}
+          data-testid="photo-layers-rows"
+        >
           {rows.length === 0 ? <li className="kui-muted photo-empty">{t('noLayers')}</li> : null}
           {rows.map((layer) => {
             const id = layer.id!

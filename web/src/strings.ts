@@ -896,6 +896,8 @@ export const PHRASES: Record<string, Record<string, string>> = {
     'Delete Path': '删除路径',
     'Rename Path': '重命名路径',
     'Adjustment Properties': '调整属性',
+    // Plan 2026-11-24, stage 8: the kind of a placed (object) layer under its name in Layers.
+    'Object': '对象',
     // Plan 2026-11-24, stage 7: the canvas's menu and the tools added.
     'Context Menu': '右键菜单',
     'Select a layer': '选择图层',
