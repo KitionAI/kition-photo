@@ -28,14 +28,15 @@ function heldRatio(env: PhotoToolEnv): [number, number] | null {
 let previewLeft = false
 
 /** A point snapped (plan 2026-11-24, stage 7) to guides, the grid, layers and the document, as View › Snap To asks. */
-function snapped(env: PhotoToolEnv, pointer: KitPointer, zoom: number): KitPointer {
+function snapped(env: PhotoToolEnv, pointer: KitPointer, zoom: () => number): KitPointer {
   if (!env.snap) return pointer
-  const at = env.snap.point({ x: pointer.x, y: pointer.y }, zoom)
+  const at = env.snap.point({ x: pointer.x, y: pointer.y }, zoom())
   return { ...pointer, x: at.x, y: at.y }
 }
 
 function drawFrame(env: PhotoToolEnv, press: KitPointer, context: KitToolContext): KitGesture | void {
-  const zoom = context.viewport.view.zoom
+  // Read only when snapping (a tool driven on its own may have no viewport).
+  const zoom = () => context.viewport?.view.zoom ?? 1
   const start = snapped(env, press, zoom)
   const before = env.crop?.frame ?? null
   let proposed = false
@@ -103,12 +104,12 @@ export function cropTool(env: PhotoToolEnv): KitTool {
         context.overlay.clear()
       }
       const from = { x: pointer.x, y: pointer.y }
-      const zoom = viewport.view.zoom
+      const zoom = () => viewport.view.zoom
       // A handle snaps where it is dragged; the moved frame by its edges and centre; a turn does not.
       const snap = (to: KitPointer): KitPointer => {
         if (!env.snap || handle === 'rotate') return to
         if (handle !== 'inside') return snapped(env, to, zoom)
-        const moved = env.snap.move({ x0: frame.x, y0: frame.y, x1: frame.x + frame.width, y1: frame.y + frame.height }, to.x - from.x, to.y - from.y, zoom)
+        const moved = env.snap.move({ x0: frame.x, y0: frame.y, x1: frame.x + frame.width, y1: frame.y + frame.height }, to.x - from.x, to.y - from.y, zoom())
         return { ...to, x: from.x + moved.dx, y: from.y + moved.dy }
       }
       const place = (raw: KitPointer): CropFrame => {
