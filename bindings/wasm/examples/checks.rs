@@ -93,11 +93,10 @@ fn main() -> Result<(), String> {
     let dir = std::env::args().nth(1).unwrap_or_else(|| "conformance".into());
     let dir = Path::new(&dir);
     std::fs::create_dir_all(dir).map_err(|error| error.to_string())?;
-    for (name, mut session) in fixtures()? {
+    for (name, session) in fixtures()? {
         // PSD keeps no linked object layer, empty type layer or font name, so those fixtures are
-        // in the kit's own format, which keeps the whole document. Sealed first, as a host saves.
+        // in the kit's own format, which keeps the whole document.
         let bytes = if name.ends_with(".kphoto") {
-            session.active_mut().ok_or("no image")?.seal().map_err(|error| error.to_string())?;
             session.active().ok_or("no image")?.save_kphoto().map_err(|error| error.to_string())?
         } else {
             kition_photo_io::export(&session.active().ok_or("no image")?.doc, name, &kition_photo_io::ExportOptions::default())

@@ -1,0 +1,21 @@
+format: 1
+id: regressions/issue-merge-changing-nothing
+feature: photo.document.drafts
+dimension: collab
+intent: >-
+  The person deletes a layer's mask (a named step) while an agent's draft gives another layer that
+  mask: merged, the repair clears the reference again, so the merge changes nothing and records
+  nothing. The state, the version, the replica's undo depth and the History panel's steps stay, the
+  answer's scope is null, and the next Undo takes back the person's delete, exactly.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/src/collab.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::a_merge_the_repair_cancels_records_nothing" }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-26"

@@ -28,7 +28,9 @@
     "test:added-tools": "node tests/added-tools.mjs chromium && node tests/added-tools.mjs webkit",
     "test:polish": "node tests/polish.mjs chromium && node tests/polish.mjs webkit",
     "test:fonts": "node tests/fonts.mjs chromium && node tests/fonts.mjs webkit",
+    "test:drafts": "node tests/drafts.mjs chromium && node tests/drafts.mjs webkit",
     "test:parity": "node --test parity/check.test.mjs src/menus/menus.test.mjs src/tools/catalog.test.mjs src/tools/options.test.mjs src/options/controls.test.mjs src/panels/thumbnails.test.mjs src/panels/maskTarget.test.mjs src/panels/properties.test.mjs src/panels/readouts.test.mjs src/tools/rasterize.test.mjs src/layerLeases.test.mjs src/dialogs/dialogs.test.mjs src/dialogs/menuRows.test.mjs src/tools/canvas/geometry.test.mjs src/tools/canvas/stroke.test.mjs src/type/text.test.mjs src/type/session.test.mjs src/color/colorMath.test.mjs src/dialogs/layerStyle.test.mjs src/gradient/gradient.test.mjs src/brushes/brushes.test.mjs src/io/io.test.mjs src/canvasMenu/rows.test.mjs src/guides/guides.test.mjs src/paths/bezier.test.mjs src/fonts/fonts.test.mjs",
+    "test:contract": "node ../../kition-sdk/tools/check-manifest.mjs ../kit.json --module public/engine",
     "test:scenarios:engine": "node --test tests/scenarios/engine.test.mjs",
     "test:scenarios:ui": "playwright test",
     "test:scenarios": "pnpm test:scenarios:engine && pnpm test:scenarios:ui",
@@ -36,7 +38,7 @@
     "test:ci:full": "node scripts/test-ci.mjs --full"
   },
   "dependencies": {
-    "@kition/sdk": "npm:@kitionstage/sdk@0.5.2-stage.21",
+    "@kition/sdk": "npm:@kitionstage/sdk@0.5.2-stage.37",
     "@kition/tessera": "npm:@kitionstage/tessera@0.1.1-stage.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"

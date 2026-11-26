@@ -16,7 +16,7 @@ use serde_json::json;
 async fn an_agents_selection_and_layer_are_not_saved_into_the_file() {
     let mut doc = image_doc("Image.kphoto", 3);
     doc.execute("select.rect", json!({ "x": 5, "y": 6, "width": 7, "height": 8 })).unwrap();
-    let bytes = doc.save_sealed(Some("Image.kphoto")).unwrap();
+    let bytes = doc.save(Some("Image.kphoto")).unwrap();
     let opened = PhotoDocument::open("Image.kphoto", &bytes).unwrap().inspect().unwrap()["selectionBounds"].clone();
     println!("the file opens with selection {opened}");
     let f = Fixture::from_bytes("Image.kphoto", &bytes, CallOptions::default());

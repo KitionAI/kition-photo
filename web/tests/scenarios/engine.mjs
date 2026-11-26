@@ -123,8 +123,6 @@ export async function runScenario(scenario, onStep = () => {}) {
       } else if (step.reopen) {
         const name = `${scenario.id}.${step.reopen}`
         const dirty = doc.dirty
-        // As every host saves: prepareSave (the replica's seal), then the bytes.
-        doc.prepareSave()
         const bytes = doc.save(name)
         assert.ok(bytes.length > 0, 'Save produced bytes')
         assert.equal(doc.dirty, dirty, 'Serializing must not acknowledge a host write')

@@ -13,7 +13,7 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use kition_kit::kdm::{KdmError, ObjectId, Replica, TreeEntry};
+use kition_kit::kdm::{KdmError, ObjectId, Replica, TreeEntry, Tx};
 use kition_kit::session::{BlobSource, IdMap};
 use kition_photo_color::{ColorMode, PixelFormat, SampleType};
 use kition_photo_doc::{AlphaChannel, Document, Effect, Layer, LayerContent, LayerId, LayerMask, MAX_GROUP_DEPTH, Size};
@@ -146,8 +146,44 @@ pub fn read_document_reusing(replica: &Replica, blobs: &dyn BlobSource, reuse: O
 const MAX_NUMBER: u64 = 1 << 53;
 
 /// The number `object` stores, if it is a layer id.
-fn stored_number(replica: &Replica, object: &ObjectId) -> Option<u64> {
-    replica.get(object, "number").ok()?.as_u64().filter(|n| (1..=MAX_NUMBER).contains(n))
+/// What the layer numbering reads: a replica, or a transaction's view of one with its own writes
+/// (so the repair inside a draft's merge numbers the layers the draft made, `in_merge`).
+pub(crate) trait Reads {
+    fn tree_of(&self, id: &ObjectId, field: &str) -> KdmResult<Vec<TreeEntry>>;
+    fn has(&self, id: &ObjectId) -> bool;
+    fn field(&self, id: &ObjectId, field: &str) -> KdmResult<Value>;
+}
+
+impl Reads for Replica {
+    fn tree_of(&self, id: &ObjectId, field: &str) -> KdmResult<Vec<TreeEntry>> {
+        self.tree(id, field)
+    }
+
+    fn has(&self, id: &ObjectId) -> bool {
+        self.exists(id)
+    }
+
+    fn field(&self, id: &ObjectId, field: &str) -> KdmResult<Value> {
+        self.get(id, field)
+    }
+}
+
+impl Reads for Tx<'_> {
+    fn tree_of(&self, id: &ObjectId, field: &str) -> KdmResult<Vec<TreeEntry>> {
+        self.tree(id, field)
+    }
+
+    fn has(&self, id: &ObjectId) -> bool {
+        self.exists(id)
+    }
+
+    fn field(&self, id: &ObjectId, field: &str) -> KdmResult<Value> {
+        self.get(id, field)
+    }
+}
+
+fn stored_number<R: Reads + ?Sized>(replica: &R, object: &ObjectId) -> Option<u64> {
+    replica.field(object, "number").ok()?.as_u64().filter(|n| (1..=MAX_NUMBER).contains(n))
 }
 
 /// The engine id of every layer of one read (see the module docs).
@@ -160,7 +196,7 @@ impl Numbers {
     /// Mints the ids of the layers `order` lists (in reading order): a layer keeps the number it
     /// stores unless another stores it too, in which case the one with the smaller object id
     /// keeps it; every other layer takes the next number above every stored one, in order.
-    fn mint(replica: &Replica, order: &[ObjectId]) -> KdmResult<Self> {
+    fn mint<R: Reads + ?Sized>(replica: &R, order: &[ObjectId]) -> KdmResult<Self> {
         let stored: Vec<Option<u64>> = order.iter().map(|object| stored_number(replica, object)).collect();
         let mut holders: HashMap<u64, &ObjectId> = HashMap::new();
         for (object, number) in order.iter().zip(&stored) {
@@ -193,9 +229,9 @@ impl Numbers {
 
 /// The layers that store no number, with the number every read gives them: for the repair to
 /// store (a layer made through the object model, or by a kit before the numbers were stored).
-/// Layers that lost a number another layer also stores are left to the next edit, so a merge
-/// writes nothing of its own.
-pub(crate) fn number_repairs(replica: &Replica) -> KdmResult<Vec<(ObjectId, u64)>> {
+/// Layers that lost a number another layer also stores are left to the next edit. Reads a replica
+/// or, inside a draft's merge or a restore, the transaction.
+pub(crate) fn number_repairs<R: Reads + ?Sized>(replica: &R) -> KdmResult<Vec<(ObjectId, u64)>> {
     let tree = Tree::read(replica, &image_id())?;
     let numbers = Numbers::mint(replica, &tree.order(replica))?;
     Ok(numbers.unstored.into_iter().filter(|(object, _)| stored_number(replica, object).is_none()).collect())
@@ -228,8 +264,8 @@ struct Tree {
 }
 
 impl Tree {
-    fn read(replica: &Replica, image: &ObjectId) -> KdmResult<Self> {
-        let entries = replica.tree(image, "layers")?;
+    fn read<R: Reads + ?Sized>(replica: &R, image: &ObjectId) -> KdmResult<Self> {
+        let entries = replica.tree_of(image, "layers")?;
         // `TreeEntry::node` has no `Hash` (see `kition_kdm::NodeRef`); matching parents by
         // equality is O(entries) per node, fine at the layer counts documents use.
         let mut children_of: Vec<Vec<usize>> = vec![Vec::new(); entries.len()];
@@ -247,15 +283,15 @@ impl Tree {
     }
 
     /// The layers in reading order (each before its children), as [`read_layers`] reads them.
-    fn order(&self, replica: &Replica) -> Vec<ObjectId> {
-        fn walk(tree: &Tree, index: usize, replica: &Replica, out: &mut Vec<ObjectId>, remaining_depth: usize) {
+    fn order<R: Reads + ?Sized>(&self, replica: &R) -> Vec<ObjectId> {
+        fn walk<R: Reads + ?Sized>(tree: &Tree, index: usize, replica: &R, out: &mut Vec<ObjectId>, remaining_depth: usize) {
             let Some(entry) = tree.entries.get(index) else { return };
-            if remaining_depth == 0 || !replica.exists(&entry.object) {
+            if remaining_depth == 0 || !replica.has(&entry.object) {
                 return;
             }
             out.push(entry.object.clone());
             // Only a group's children are read (a node under another kind of layer is not).
-            if replica.get(&entry.object, "kind").ok().as_ref().and_then(Value::as_str) != Some("group") {
+            if replica.field(&entry.object, "kind").ok().as_ref().and_then(Value::as_str) != Some("group") {
                 return;
             }
             for &child in tree.children_of.get(index).into_iter().flatten() {

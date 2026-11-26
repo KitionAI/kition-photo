@@ -62,7 +62,7 @@ pub fn image_doc(name: &str, layers: usize) -> PhotoDocument {
 }
 
 pub fn image(name: &str, layers: usize) -> Vec<u8> {
-    image_doc(name, layers).save_sealed(Some(name)).unwrap()
+    image_doc(name, layers).save(Some(name)).unwrap()
 }
 
 /// Sets the file's modification time an hour before its own, so that only its content tells the
@@ -79,7 +79,7 @@ pub fn colleague(file: &Path, steps: &[(&str, Value)]) -> Vec<Value> {
     let mut doc = PhotoDocument::open(&name, &std::fs::read(file).unwrap()).unwrap();
     let answers =
         steps.iter().map(|(command, params)| doc.execute(command, params.clone()).unwrap_or_else(|error| panic!("colleague's {command}: {error}"))).collect();
-    std::fs::write(file, doc.save_sealed(Some(&name)).unwrap()).unwrap();
+    std::fs::write(file, doc.save(Some(&name)).unwrap()).unwrap();
     backdate(file, at);
     answers
 }

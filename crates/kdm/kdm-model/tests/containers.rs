@@ -1,15 +1,17 @@
 //! Schema freeze (task schema-freeze): every collection and every text of the `kit.photo` replica
-//! is a container, so two people editing different parts of it at once both keep their edit.
-//! Each test makes two replicas of one document, edits each its own way at the same time,
-//! exchanges the changes, and checks that both edits survive and the replicas are identical.
-//! What is each person's own view (a group's expanded state, an open note, the timeline's
-//! playhead) is not replicated at all.
+//! is a container, so an agent's draft and the person's edit of different parts of it both stay
+//! when the person accepts the draft (kition-sdk data model 6.6: lists by item, maps by key,
+//! fields by field). Each test makes a draft of one document, edits the draft and the document
+//! each its own way, merges the draft, and checks that both edits stay, that the view reads what a
+//! fresh read gives, and that one undo of the person gives back the exact state before the merge.
+//! Both sides changing one text is refused. What is each person's own view (a group's expanded
+//! state, an open note, the timeline's playhead) is not replicated at all.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
 
 use std::sync::Arc;
 
 use kdm_model::PhotoSession;
-use kdm_model::kition_kit::kdm::{ActorId, DocId, Origin, Replica};
+use kdm_model::kition_kit::kdm::{ActorId, DocId, Origin, Replica, UndoScope};
 use kdm_model::kition_kit::session::{IdMap, KitModel, MemoryBlobs};
 use kition_photo_color::{BlendMode, ColorMode, PixelFormat, SampleType};
 use kition_photo_doc::effects::{Effect, FxCommon};
@@ -30,39 +32,67 @@ fn base() -> Document {
     doc
 }
 
-/// `a` holds `doc`; `b` is a second replica of it.
+fn agent() -> Origin {
+    Origin::agent("agent:test")
+}
+
+/// `a` holds `doc`; `b` is an agent's draft of it (a replica opened from `a`'s snapshot, on its
+/// line of changes).
 fn pair(doc: &Document) -> (PhotoSession, PhotoSession) {
     let a = PhotoSession::create(doc).unwrap();
     let b = PhotoSession::open_snapshot(&a.snapshot().unwrap(), a.blobs().clone()).unwrap();
     (a, b)
 }
 
-/// Each replica records its own edit of its own view, then they exchange changes: both converge.
-fn concurrently(a: &mut PhotoSession, b: &mut PhotoSession, edit_a: impl FnOnce(&mut Document), edit_b: impl FnOnce(&mut Document)) {
-    let mut doc_a = a.document().clone();
-    edit_a(&mut doc_a);
-    assert_eq!(a.record(&me(), &doc_a).unwrap(), 1, "a's edit is one step");
-    let mut doc_b = b.document().clone();
-    edit_b(&mut doc_b);
-    assert_eq!(b.record(&me(), &doc_b).unwrap(), 1, "b's edit is one step");
-    let (va, vb) = (a.version(), b.version());
-    let (from_a, from_b) = (a.export_changes(&vb).unwrap(), b.export_changes(&va).unwrap());
-    let (blobs_a, blobs_b) = (a.blobs().clone(), b.blobs().clone());
-    a.add_blobs(&blobs_b);
-    b.add_blobs(&blobs_a);
-    a.import_changes(&from_b).unwrap();
-    b.import_changes(&from_a).unwrap();
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap(), "the replicas converged");
-    assert_eq!(a.model(), b.model(), "both views read the same document");
+/// The draft's changes since it was made (with the blobs they need) taken into `a` as the person
+/// accepts them.
+fn merge(a: &mut PhotoSession, b: &PhotoSession, since: &kdm_model::kition_kit::kdm::Version) -> kdm_model::kition_kit::session::Result<Option<UndoScope>> {
+    let changes = b.export_changes(since).unwrap();
+    a.add_blobs(b.blobs());
+    a.merge_changes(&changes, &agent()).map(|(scope, _)| scope)
 }
 
+/// The agent edits its draft (`edit_b`) while the person edits the document (`edit_a`); the
+/// person accepts the draft: both edits stay, the view is what a fresh read of the merged replica
+/// gives, and the merge is one undo step of the person, exact both ways.
+fn concurrently(a: &mut PhotoSession, b: &mut PhotoSession, edit_a: impl FnOnce(&mut Document), edit_b: impl FnOnce(&mut Document)) {
+    let since = b.version();
+    let mut doc_b = b.document().clone();
+    edit_b(&mut doc_b);
+    assert_eq!(b.record(&agent(), &doc_b).unwrap(), 1, "the draft's edit is one step");
+    let mut doc_a = a.document().clone();
+    edit_a(&mut doc_a);
+    assert_eq!(a.record(&me(), &doc_a).unwrap(), 1, "the person's edit is one step");
+    let before = a.state_hash().unwrap();
+    assert_eq!(merge(a, b, &since).unwrap(), Some(UndoScope::Person), "the merge is the person's step");
+    let after = a.state_hash().unwrap();
+    let fresh = PhotoSession::open_snapshot(&a.snapshot().unwrap(), a.blobs().clone()).unwrap();
+    assert_eq!(a.model(), fresh.model(), "the view reads the merged document");
+    assert!(a.undo_in(UndoScope::Person).unwrap().0);
+    assert_eq!(a.state_hash().unwrap(), before, "one undo gives back the exact state before the merge");
+    assert!(a.redo_in(UndoScope::Person).unwrap().0);
+    assert_eq!(a.state_hash().unwrap(), after, "one redo gives back the merge");
+    assert_eq!(a.model(), fresh.model(), "and the view with it");
+}
+
+/// Both sides changing one text (a note's) collide: the merge is refused and changes nothing.
 #[test]
-fn two_people_typing_in_one_note_both_keep_their_words() {
+fn a_draft_and_the_person_typing_in_one_note_is_refused() {
     let mut doc = base();
     doc.notes.push(Note { author: "Ann".into(), text: "Check the horizon".into(), ..Default::default() });
     let (mut a, mut b) = pair(&doc);
-    concurrently(&mut a, &mut b, |d| d.notes[0].text = "Please check the horizon".into(), |d| d.notes[0].text = "Check the horizon line".into());
-    assert_eq!(a.document().notes[0].text, "Please check the horizon line");
+    let since = b.version();
+    let mut doc_b = b.document().clone();
+    doc_b.notes[0].text = "Check the horizon line".into();
+    b.record(&agent(), &doc_b).unwrap();
+    let mut doc_a = a.document().clone();
+    doc_a.notes[0].text = "Please check the horizon".into();
+    a.record(&me(), &doc_a).unwrap();
+    let (before, version) = (a.state_hash().unwrap(), a.version());
+    assert!(merge(&mut a, &b, &since).is_err(), "one text changed on both sides");
+    assert_eq!(a.state_hash().unwrap(), before, "a refused merge changes nothing");
+    assert_eq!(a.version(), version);
+    assert_eq!(a.document().notes[0].text, "Please check the horizon");
 }
 
 #[test]
@@ -217,40 +247,6 @@ fn typed(doc: &Document) -> &TextLayer {
     }
 }
 
-fn retype(d: &mut Document, f: impl FnOnce(&mut TextLayer)) {
-    if let LayerContent::Text(text) = &mut d.layers[1].content {
-        f(text);
-    }
-}
-
-#[test]
-fn two_people_typing_in_one_type_layer_both_keep_their_words() {
-    let mut doc = base();
-    doc.layers.push(type_layer("Hello world"));
-    let (mut a, mut b) = pair(&doc);
-    concurrently(
-        &mut a,
-        &mut b,
-        |d| {
-            retype(d, |t| {
-                t.text = "Big Hello world".into();
-                t.runs[0].len = t.text.len();
-            })
-        },
-        |d| {
-            retype(d, |t| {
-                t.text = "Hello world!".into();
-                t.runs[0].len = t.text.len();
-            })
-        },
-    );
-    let text = typed(a.document());
-    assert_eq!(text.text, "Big Hello world!");
-    assert_eq!(text.runs.len(), 1, "the typed characters joined the run: {:?}", text.runs);
-    assert_eq!(text.runs[0].len, "Big Hello world!".len());
-    assert_eq!(text.runs[0].style.size_pt, 18.0);
-}
-
 #[test]
 fn style_runs_round_trip_as_marks() {
     let mut doc = base();
@@ -265,32 +261,6 @@ fn style_runs_round_trip_as_marks() {
     let session = PhotoSession::create(&doc).unwrap();
     let fresh = PhotoSession::open_snapshot(&session.snapshot().unwrap(), session.blobs().clone()).unwrap();
     assert_eq!(typed(fresh.document()), typed(&doc));
-}
-
-#[test]
-fn a_run_restyled_while_text_is_typed_elsewhere_keeps_both() {
-    let mut doc = base();
-    let mut layer = type_layer("one two");
-    if let LayerContent::Text(text) = &mut layer.content {
-        text.runs = vec![TextRun { len: 4, style: CharStyle::default() }, TextRun { len: 3, style: CharStyle::default() }];
-    }
-    doc.layers.push(layer);
-    let (mut a, mut b) = pair(&doc);
-    concurrently(
-        &mut a,
-        &mut b,
-        |d| retype(d, |t| t.runs[1].style.italic = true),
-        |d| {
-            retype(d, |t| {
-                t.text = "zero one two".into();
-                t.runs[0].len += 5;
-            })
-        },
-    );
-    let text = typed(a.document());
-    assert_eq!(text.text, "zero one two");
-    assert!(text.runs.last().unwrap().style.italic, "{:?}", text.runs);
-    assert_eq!(text.runs.last().unwrap().len, 3, "{:?}", text.runs);
 }
 
 #[test]
@@ -310,11 +280,11 @@ fn each_persons_view_is_not_replicated() {
     view.timeline.as_mut().unwrap().current = 7;
     assert_eq!(a.record(&me(), &view).unwrap(), 0, "a view change is no step");
     assert_eq!(a.version(), version, "nothing was written");
-    // A collaborator's edit arrives: the view keeps its own state.
+    // An agent's draft is accepted: the view keeps its own state.
     let mut other = b.document().clone();
     other.layers[0].name = "Renamed".into();
-    b.record(&me(), &other).unwrap();
-    a.import_changes(&b.export_changes(&a.version()).unwrap()).unwrap();
+    b.record(&agent(), &other).unwrap();
+    merge(&mut a, &b, &version).unwrap();
     let now = a.document();
     assert_eq!(now.layers[0].name, "Renamed");
     assert!(matches!(&now.layers[1].content, LayerContent::Group(group) if !group.expanded), "the group stays collapsed here");

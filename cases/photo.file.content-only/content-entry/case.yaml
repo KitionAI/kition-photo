@@ -1,0 +1,25 @@
+format: 1
+id: photo.file.content-only/content-entry
+feature: photo.file.content-only
+intent: >-
+  A .kphoto's replica entry is content.json (kition-sdk data model 7.4), written by
+  Replica::content_snapshot: the state alone, with no version or line of changes; text typed then
+  deleted, a deleted layer and an overwritten layer name are in the session's changes and in
+  neither content.json nor the manifest. In the ZIP form content.json is a DEFLATE entry at a fixed
+  level, so the same content saves the same bytes; in the folder form it is written as it is. An
+  agent's batches through the headless kit save content alone too.
+layer: gate
+source:
+  kind: synthetic
+  from: bindings/wasm/tests/content_file.rs, bindings/headless/tests/content_file.rs, crates/formats/format/tests/kdm.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, test: content_file, filter: the_file_holds_the_content_and_none_of_the_history }
+  - cargo-test: { package: kition-photo-format, test: kdm, filter: the_zip_form_deflates_its_content_entry_at_a_fixed_level }
+  - cargo-test: { package: kition-photo-format, test: kdm, filter: directory_save_writes_and_then_garbage_collects_kdm_blobs }
+  - cargo-test: { package: kition-photo, test: content_file, filter: an_agents_batches_save_content_only }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-26"

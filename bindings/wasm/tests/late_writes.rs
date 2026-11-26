@@ -27,8 +27,9 @@ fn replay(command: &str) {
     doc.execute("filter.blur.gaussianBlur", json!({"radius":2})).unwrap();
     doc.execute("edit.transform", json!({"matrix":[1,0,0,1,4,0]})).unwrap();
     let version = doc.version().unwrap();
-    let bytes = doc.save_sealed(Some("Late.kphoto")).unwrap();
-    let mut colleague = PhotoDocument::open("Late.kphoto", &bytes).unwrap();
+    let bytes = doc.save(Some("Late.kphoto")).unwrap();
+    // The colleague's copy continues this document's line of changes (the replica its host stored).
+    let mut colleague = PhotoDocument::open_with_replica("Late.kphoto", &bytes, &doc.snapshot().unwrap(), &doc.blobs().unwrap()).unwrap();
     colleague.execute("select.rect", json!({"x":20,"y":20,"width":4,"height":4})).unwrap();
     colleague.execute("edit.fill", json!({"color":"#0000ff"})).unwrap();
     colleague.execute("edit.deselectAll", json!({})).unwrap();

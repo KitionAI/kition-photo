@@ -226,7 +226,7 @@ fn fresh_ids_option() {
 
 /// Owner decision: no thumbnail or preview image in the content file, which is a layered bundle
 /// no other program opens as a picture. A bundle holds its manifest, its tiles and blobs, and
-/// (with a replica) `kdm.bin`, nothing else.
+/// (with a replica) `content.json`, nothing else.
 #[test]
 fn the_bundle_holds_no_preview() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);

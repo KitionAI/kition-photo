@@ -31,7 +31,7 @@ fn fixture(pattern: bool) -> Vec<u8> {
     } else {
         doc.execute("layer.layerStyle.dropShadow", json!({"useGlobalLight":true,"distance":8,"size":0,"opacity":100})).unwrap();
     }
-    doc.save_sealed(Some(FILE)).unwrap()
+    doc.save(Some(FILE)).unwrap()
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -81,7 +81,7 @@ async fn derived_resource_matrix() {
                         let state = reference.editor_state();
                         reference.execute(command, params).unwrap();
                         reference.restore_editor_state(&state).unwrap();
-                        assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save_sealed(Some(FILE)).unwrap()), "{label}: saved merge");
+                        assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save(Some(FILE)).unwrap()), "{label}: saved merge");
                         applied += 1;
                     }
                 }

@@ -8,7 +8,7 @@ fn reread_keeps_active_selection_and_agent_history() {
     let layer = live.execute("layer.new.layer", json!({"name":"Target"})).unwrap()["layer"].clone();
     live.execute("layer.select", json!({"layer":layer})).unwrap();
     live.mark_saved();
-    let mut fresh = PhotoDocument::open("reread.kphoto", &live.save_sealed(None).unwrap()).unwrap();
+    let mut fresh = PhotoDocument::open("reread.kphoto", &live.save(None).unwrap()).unwrap();
     fresh.execute("note.add", json!({"text":"outside","x":1,"y":2})).unwrap();
     fresh.carry_replica_objects(&live).unwrap();
     fresh.restore_editor_state(&live.editor_state()).unwrap();
@@ -25,7 +25,7 @@ fn reread_keeps_active_selection_and_agent_history() {
 fn reread_deleted_active_keeps_the_missing_target_identity() {
     let mut live = PhotoDocument::create("deleted.kphoto", 32, 32).unwrap();
     let layer = live.execute("layer.new.layer", json!({"name":"Target"})).unwrap()["layer"].clone();
-    let mut fresh = PhotoDocument::open("deleted.kphoto", &live.save_sealed(None).unwrap()).unwrap();
+    let mut fresh = PhotoDocument::open("deleted.kphoto", &live.save(None).unwrap()).unwrap();
     fresh.execute("layer.delete", json!({"layer":layer})).unwrap();
     fresh.carry_replica_objects(&live).unwrap();
     fresh.restore_editor_state(&live.editor_state()).unwrap();

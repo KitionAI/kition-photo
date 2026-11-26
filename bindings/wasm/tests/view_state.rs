@@ -18,9 +18,8 @@ fn layer(answer: &Value) -> u64 {
     answer["layer"].as_u64().unwrap_or_else(|| panic!("no layer in {answer}"))
 }
 
-/// The file as a host saves it: sealed first (`prepare_save`), then the bytes.
+/// The file as a host saves it.
 fn host_save(doc: &mut PhotoDocument) -> Vec<u8> {
-    doc.prepare_save().unwrap();
     doc.save(Some(FILE)).unwrap()
 }
 

@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 fn saved_diff(doc: &mut PhotoDocument, exchange: &mut Exchange, name: &str) -> Value {
     let before = exchange.replica(doc).unwrap().state_json().unwrap();
-    let mut again = PhotoDocument::open(name, &doc.save_sealed(None).unwrap()).unwrap();
+    let mut again = PhotoDocument::open(name, &doc.save(None).unwrap()).unwrap();
     let after = Exchange::new().replica(&mut again).unwrap().state_json().unwrap();
     kition_kit::kdm::reread::diff_paired(&kdm_model::PhotoModel::schema(), &before, &after).to_json()
 }

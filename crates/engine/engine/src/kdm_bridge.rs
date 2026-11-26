@@ -208,13 +208,19 @@ impl DocState {
             self.synced = snapshot.clone();
             return snapshot;
         }
-        for _ in 0..steps {
-            let scope = self.history_scope;
-            if (if undo { kdm.undo_in(scope) } else { kdm.redo_in(scope) }).is_err() {
-                // The view may no longer match the replica: leave it, and step from the
-                // snapshots, which are this person's own history.
-                self.detach_kdm();
-                return snapshot;
+        // A call may pass over steps with nothing left to change (`UndoOutcome`: their objects
+        // gone since): they count towards this step's, so the history stays in step.
+        let mut left = steps as usize;
+        while left > 0 {
+            match kdm.step_in(self.history_scope, undo) {
+                Ok((outcome, _)) if outcome.is_done() => left = left.saturating_sub(outcome.steps()),
+                Ok(_) => break,
+                Err(_) => {
+                    // The view may no longer match the replica: leave it, and step from the
+                    // snapshots, which are this person's own history.
+                    self.detach_kdm();
+                    return snapshot;
+                }
             }
         }
         let mut doc = kdm.document().clone();
@@ -460,6 +466,79 @@ impl Session {
                 Err(kdm_error(refused))
             }
         }
+    }
+
+    /// Takes an agent's draft (its changes since it was made from this document's
+    /// [`Session::snapshot`]) in as one step of the person who accepts it
+    /// (`kdm_model::PhotoSession::merge_changes`; KitModel M12a: the person's step even when
+    /// `origin` is the agent's): the document follows the replica as after an import, and the
+    /// person's history takes one step labelled "Merge Draft" whose undo takes the whole draft
+    /// back, exactly, and leaves what the person did meanwhile. Edits not written yet are written
+    /// first. Add the draft's blobs first ([`Session::add_blobs`]). A refused merge changes
+    /// nothing; a merge that changes nothing records nothing. Answers the scope the step went to.
+    pub fn merge_changes(&mut self, bytes: &[u8], origin: &Origin) -> Result<Option<UndoScope>> {
+        self.take_in_step("Merge Draft", |kdm| kdm.merge_changes(bytes, origin))
+    }
+
+    /// Writes the state a saved version holds (`snapshot`: a snapshot or a file's content of this
+    /// document, as a host's checkpoint keeps it) over the document as one step of `origin`'s
+    /// scope labelled "Restore Version" (`kdm_model::PhotoSession::restore_state`), whose undo
+    /// gives back the exact state before. Nothing changes when the document already holds it.
+    /// Add the snapshot's blobs first. Answers the scope the step went to.
+    pub fn restore_state(&mut self, snapshot: &[u8], origin: &Origin) -> Result<Option<UndoScope>> {
+        self.take_in_step("Restore Version", |kdm| kdm.restore_state(snapshot, origin))
+    }
+
+    /// What merging a draft's changes would change in the active document now, its repair
+    /// included (`kdm_model::PhotoSession::compare_changes`): the draft's preview. Nothing changes.
+    pub fn compare_changes(&mut self, bytes: &[u8]) -> Result<kdm_model::kition_kit::kdm::diff::StateDiff> {
+        self.active_kdm()?.compare_changes(bytes).map_err(kdm_error)
+    }
+
+    /// The canonical state merging a draft's changes would give, its repair included; nothing
+    /// changes.
+    pub fn merged_state(&mut self, bytes: &[u8]) -> Result<serde_json::Value> {
+        self.active_kdm()?.merged_state(bytes).map_err(kdm_error)
+    }
+
+    /// Runs `take` (a merge or a restore of the active document's replica, one change with its
+    /// repair in it) and, when it recorded an undo step, records the same step in the history of
+    /// that scope, labelled `label`: the document before as its snapshot, one replica step. The
+    /// document follows the replica. Nothing is recorded when nothing changed.
+    fn take_in_step(
+        &mut self,
+        label: &str,
+        take: impl FnOnce(&mut PhotoSession) -> kdm_model::kition_kit::session::Result<(Option<UndoScope>, Damage)>,
+    ) -> Result<Option<UndoScope>> {
+        if self.active_job().is_some() {
+            return Err(EngineError::Other("a background job is running on the document".into()));
+        }
+        let origin = self.origin();
+        let own = scope_of(&origin);
+        let st = self.active_mut().ok_or(EngineError::NoDocument)?;
+        st.sync_kdm_loose(&origin);
+        st.coalesce = None;
+        let before = st.doc.clone();
+        let prior = st.layer_target();
+        let kdm = st.ensure_kdm().ok_or_else(|| EngineError::Other("the document can't be held in a replica (layer groups nested too deep?)".into()))?;
+        kdm.end_undo_group();
+        let version = kdm.version();
+        let (scope, _) = take(&mut *kdm).map_err(kdm_error)?;
+        if kdm.version() == version {
+            return Ok(None);
+        }
+        st.follow_kdm();
+        if let Some(scope) = scope {
+            st.use_scope(scope);
+            st.history.set_current_layers(prior);
+            let layers = st.layer_target();
+            st.history.record(label, before, layers);
+            st.history.set_current_external(1);
+            st.history.trim(&st.doc);
+            st.use_scope(own);
+            st.trim_kdm();
+        }
+        Ok(scope)
     }
 
     /// Applies only the file difference, outside both undo histories, retaining local steps.

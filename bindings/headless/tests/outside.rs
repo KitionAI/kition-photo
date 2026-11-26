@@ -212,7 +212,7 @@ async fn s5_paint_on_the_target_inside_and_outside_the_region() {
     let [x, y, width, height] = region(2);
     reference.execute("select.rect", json!({"x":x,"y":y,"width":width,"height":height})).unwrap();
     reference.execute("edit.fill", json!({"layer":mine,"color":"#00ff00"})).unwrap();
-    assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save_sealed(None).unwrap()));
+    assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save(None).unwrap()));
     println!("s5: outside, the same tile: applied; others {}", ran["others"]);
     f.shutdown().await;
 }

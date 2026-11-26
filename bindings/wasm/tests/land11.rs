@@ -42,7 +42,7 @@ fn batch_values_are_the_values_the_file_stores() {
                 false,
             )
             .unwrap();
-        let mut again = PhotoDocument::open(name, &doc.save_sealed(None).unwrap()).unwrap();
+        let mut again = PhotoDocument::open(name, &doc.save(None).unwrap()).unwrap();
         let schema = kdm_model::PhotoModel::schema();
         let before = exchange.replica(&mut doc).unwrap().state_json().unwrap();
         let after = Exchange::new().replica(&mut again).unwrap().state_json().unwrap();
@@ -75,7 +75,7 @@ fn owned_surfaces_delete_with_only_their_owner() {
     let replica = exchange.replica(&mut doc).unwrap();
     assert!(replica.objects_of_type("Channel").is_empty());
     assert!(replica.objects_of_type("Surface").is_empty());
-    let mut reopened = PhotoDocument::open("art.kphoto", &doc.save_sealed(None).unwrap()).unwrap();
+    let mut reopened = PhotoDocument::open("art.kphoto", &doc.save(None).unwrap()).unwrap();
     assert!(Exchange::new().replica(&mut reopened).unwrap().objects_of_type("Surface").is_empty());
 }
 

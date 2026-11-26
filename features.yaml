@@ -93,13 +93,21 @@ features:
     cases: [photo.document.identity/fork, photo.document.identity/no-replica]
     since: "2026-11-20"
   - id: photo.file.content-only
-    title: "A .kphoto holds the image's content and none of its history: the replica entry is the sealed content snapshot (one change, no deleted or overwritten content), with only the blobs the state references; the history stays with the session and the host (kition-sdk data model 7.3, rule M16b)"
+    title: "A .kphoto holds the image's content and none of its history: the replica entry is content.json (the state alone, no version, no deleted or overwritten content; DEFLATE in the ZIP form), with only the blobs the state references; an unchanged image saves the same bytes; the history stays with the session and the host (kition-sdk data model 7.4)"
     dimension: [platform, data-safety]
     priority: P1
     status: has
     paths: [crates/kdm/kdm-model/src/session.rs, crates/engine/engine/src/kition_photo_bridge.rs, crates/engine/engine/src/kdm_bridge.rs, crates/formats/format/src/store.rs, crates/formats/format/src/convert.rs, bindings/wasm/src/lib.rs, bindings/wasm/src/collab.rs, bindings/wasm/tests/content_file.rs, bindings/wasm/tests/view_state.rs, bindings/headless/tests/content_file.rs]
-    cases: [photo.file.content-only/no-history, photo.file.content-only/reopen-and-converge, photo.file.content-only/same-bytes-across-sessions, photo.file.content-only/pixels-stored-once]
+    cases: [photo.file.content-only/no-history, photo.file.content-only/content-entry, photo.file.content-only/reopen-and-converge, photo.file.content-only/same-bytes-across-sessions, photo.file.content-only/pixels-stored-once]
     since: "2026-11-22"
+  - id: photo.document.drafts
+    title: "An agent's draft merges as one undo step of the person (two tiles of one layer both stay, one tile on both sides is refused naming it), its preview runs the repair, a saved version restores as one exact undo step, and a merge that changes nothing records nothing (engine contract K3a: mergeChanges, compareChanges, restoreState, changesSince, modelReply, modelDescribe, modelBatch)"
+    dimension: [platform, collab]
+    priority: P1
+    status: has
+    paths: [crates/kdm/kdm-model/src/session.rs, crates/kdm/kdm-model/src/read.rs, crates/kdm/kdm-model/src/blob_gc.rs, crates/engine/engine/src/kdm_bridge.rs, bindings/wasm/src/collab.rs, bindings/wasm/src/lib.rs]
+    cases: [photo.document.drafts/merge-and-restore, regressions/issue-merge-changing-nothing]
+    since: "2026-11-26"
   - id: photo.view.state
     title: "Each person's view of an image (selection, quick mask, collapsed groups, open notes, the timeline's frame, the last applied layer comp) is kept by the host's view-state store, never in the .kphoto, and put back when the image opens"
     dimension: [platform, data-safety]

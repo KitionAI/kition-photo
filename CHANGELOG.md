@@ -5,20 +5,28 @@ each package is published with a `package-v<version>` tag.
 
 ## Unreleased
 
+- The document model is the plain KDM (kition-sdk d2b39aa, `@kitionstage/sdk@0.5.2-stage.37`): no
+  CRDT. A `.kphoto`'s replica entry is `content.json` (the state alone, as
+  `Replica::content_snapshot` writes it; DEFLATE in the ZIP form, plain in the folder form), read
+  by `Replica::load`; there is no seal and no `prepareSave`. The committed samples are converted,
+  keeping their document and object ids. The engine exports all seven contract 2 members:
+  `mergeChanges` takes an agent's draft in as one undo step of the person ("Merge Draft"; two
+  tiles of one layer both stay, one tile painted on both sides is refused, naming the layer and the
+  tile), `compareChanges` previews it with the repair, `restoreState` restores a saved version as one
+  undo step ("Restore Version"), and `changesSince`, `modelReply`, `modelDescribe`, `modelBatch`.
+  A merge or restore that changes nothing records nothing; the repair (a mask or channel naming a
+  surface gone, a layer's number) runs inside its step.
 - A `.kphoto` stores every tile once: tiles (`tiles/<sha256>`, their encoded bytes) and blobs
   (`blobs/<sha256>.zst`) are named by the SHA-256 of their bytes, as the replica names its blobs,
-  so the manifest and `kdm.bin` share them (no second copy under `blobs/kdm/`). The file holds no
+  so the manifest and the replica entry share them (no second copy under `blobs/kdm/`). The file holds no
   thumbnail or preview, and nobody's view: the selection, the quick mask, expanded groups, open
   notes, the timeline's playhead and the last applied layer comp, the document handle and the title
   are left out, so two people who open a file and save it unedited write the same bytes. The
   editor keeps each person's view with the host (capability `view-state`) and puts it back when
   the image opens.
-- A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.3, rule M16b):
-  `kdm.bin` is the replica's content snapshot (of the history, only the seal; no deleted layers,
-  no overwritten values, no authors) and the replica blobs are only those its state references.
-  Hosts seal the document before saving (`prepareSave`), and a save of edits nobody sealed is
-  refused; the undo history stays in the session and the host's store. A file opens on a stored replica by its changes or, when saved elsewhere, by
-  its state. kition-sdk 82a3224.
+- A `.kphoto` holds the image's content, not its history: no deleted layers, no overwritten
+  values, no authors, and the replica blobs are only those its state references; the undo history
+  stays in the session and the host's store. A file opens on a stored replica by its state.
 - The replica's schema is frozen at version 1: notes, layer comps, saved paths, patterns, layer
   styles and video frames are object lists, a type layer's text is a text with its style runs as
   marks, the guides a map. A `.kphoto` saved by an earlier build opens from its manifest as a new

@@ -37,12 +37,13 @@ pub struct Manifest {
     pub kdm: Option<KdmM>,
 }
 
-/// Where a `.kphoto` bundle's KDM replica lives: the snapshot entry (`kdm.bin`). Its blobs are the
+/// Where a `.kphoto` bundle's KDM replica lives: its content entry (`content.json`, written by
+/// `Replica::content_snapshot`: the state, no history, no version). Its blobs are the
 /// bundle's own `tiles/<sha256>` and `blobs/<sha256>.zst` entries, the ones the manifest names
 /// too (discovered by scanning the archive, not listed here).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct KdmM {
-    pub snapshot: String,
+    pub content: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

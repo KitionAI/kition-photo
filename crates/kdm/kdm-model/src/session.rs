@@ -2,21 +2,23 @@
 //! engine's command bridge.
 //!
 //! It is `kition_kit::session::KitSession<PhotoModel>`'s flow (transactions, per-person undo,
-//! change exchange, post-merge repair through [`KitModel::validate`], the view patched through
-//! [`KitModel::apply`]) on concrete, `Send` parts: `KitSession` keeps its blobs as a
+//! change exchange, a draft's merge and a restore with the repair ([`KitModel::validate`] and the
+//! layer numbers) inside their one undo step, the view patched through [`KitModel::apply`]) on
+//! concrete, `Send` parts: `KitSession` keeps its blobs as a
 //! `Box<dyn BlobSink>`, which is not `Send`, and the engine's session must be (the headless kit
 //! runs commands on a worker thread). Edits are diff-bridged: the engine changes
 //! its own `Document`, and [`PhotoSession::record`] writes what changed as one transaction.
 //!
 //! **Layer numbers.** Layers that store no number (made through the object model, or written
 //! before numbers were stored) get the one every read gives them from a `system` repair, on open
-//! and after every import, undo and redo; a layer that lost a number another layer also stores
-//! gets its new one stored with the replica's next edit, so a merge writes nothing of its own.
+//! and after every import, undo and redo, and inside the step of a draft's merge or a restore; a
+//! layer that lost a number another layer also stores gets its new one stored with the replica's
+//! next edit.
 
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use kition_kit::kdm::{ActorId, DocId, KdmError, ObjectId, Origin, Replica, Tx, UndoScope, Version};
+use kition_kit::kdm::{ActorId, DocId, KdmError, ObjectId, Origin, Replica, Tx, UndoOutcome, UndoScope, Version};
 use kition_kit::session::{BlobSource, Damage, KitError, KitModel, MemoryBlobs};
 use kition_photo_doc::Document;
 
@@ -133,25 +135,12 @@ impl PhotoSession {
         Ok(session)
     }
 
-    /// Seals the replica (`Replica::seal`, kition-sdk data model 7.3) so [`PhotoSession::content`]
-    /// writes its own content snapshot: one `system` change, no edit, no undo step. Answers whether
-    /// it committed one (none when nothing changed since the last seal).
-    pub fn seal(&mut self) -> Result<bool> {
-        let sealed = self.replica.seal().map_err(kit_err)?;
-        self.replica.take_changed();
-        Ok(sealed)
-    }
-
-    /// What a `.kphoto` holds of the replica: its content snapshot (the state and, of the history,
-    /// one seal: no deleted or overwritten content, no author), and the blobs that state
-    /// references. The replica must be sealed: every host calls `prepareSave` (here
-    /// [`PhotoSession::seal`]) right before a save, and a save of an edit nobody sealed is refused.
+    /// What a `.kphoto` holds of the replica: its content (`Replica::content_snapshot`, kition-sdk
+    /// data model 7.4: the state alone, no history, no version, no author), and the blobs that
+    /// state references. The same state gives the same bytes, whoever saves it.
     pub fn content(&self) -> Result<Content> {
-        if !self.replica.is_sealed() {
-            return Err(KitError::new("save before prepare_save: the replica holds edits nobody sealed (hosts call prepareSave before every save)"));
-        }
         let blobs = crate::state_blobs(&self.replica).into_iter().filter_map(|hash| self.blobs.0.get(&hash).cloned().map(|bytes| (hash, bytes))).collect();
-        Ok(Content { snapshot: self.replica.sealed_content_snapshot().map_err(kit_err)?, blobs })
+        Ok(Content { content: self.replica.content_snapshot().map_err(kit_err)?, blobs })
     }
 
     /// The view: the document as of the last record, undo, redo or import.
@@ -240,33 +229,126 @@ impl PhotoSession {
     /// other scope's steps, KitModel 1.1 M12a), repairs the result and patches the view. Answers
     /// whether there was one, and the damage.
     pub fn undo_in(&mut self, scope: UndoScope) -> Result<(bool, Damage)> {
-        if !self.can_undo_in(scope) {
-            return Ok((false, Damage::None));
-        }
-        self.group = None;
-        let done = self.replica.undo_in(scope).map_err(kit_err)?;
-        let (damage, moved) = self.settle();
-        if done {
-            self.log_added(moved.added.iter().cloned());
-            self.index.undone(scope, moved);
-        }
-        self.index.collect_garbage(&mut self.blobs);
-        Ok((done, damage?))
+        self.step_in(scope, true).map(|(outcome, damage)| (outcome.is_done(), damage))
     }
 
     pub fn redo_in(&mut self, scope: UndoScope) -> Result<(bool, Damage)> {
-        if !self.can_redo_in(scope) {
-            return Ok((false, Damage::None));
+        self.step_in(scope, false).map(|(outcome, damage)| (outcome.is_done(), damage))
+    }
+
+    /// Undoes (`undo`) or redoes this replica's last step of `scope`, repairs the result and
+    /// patches the view. Answers which steps the replica took off its stack ([`UndoOutcome`]: the
+    /// steps it passed over, with nothing left to change, and the one it took back), so a history
+    /// kept beside it (the engine's) stays in step, and the damage.
+    pub fn step_in(&mut self, scope: UndoScope, undo: bool) -> Result<(UndoOutcome, Damage)> {
+        if !(if undo { self.can_undo_in(scope) } else { self.can_redo_in(scope) }) {
+            return Ok((UndoOutcome::default(), Damage::None));
         }
         self.group = None;
-        let done = self.replica.redo_in(scope).map_err(kit_err)?;
+        let outcome = if undo { self.replica.undo_in(scope) } else { self.replica.redo_in(scope) }.map_err(kit_err)?;
         let (damage, moved) = self.settle();
-        if done {
+        if outcome.steps() > 0 {
             self.log_added(moved.added.iter().cloned());
-            self.index.redone(scope, moved);
+            if undo {
+                self.index.undone(scope, outcome.steps(), outcome.is_done(), moved);
+            } else {
+                self.index.redone(scope, outcome.steps(), outcome.is_done(), moved);
+            }
         }
         self.index.collect_garbage(&mut self.blobs);
-        Ok((done, damage?))
+        Ok((outcome, damage?))
+    }
+
+    /// Takes a draft's changes (made on a fork of this replica, `Replica::fork` of
+    /// [`PhotoSession::snapshot`]) in as one change of `origin` with the repair of the merged
+    /// state in it ([`in_step`], `Replica::merge_changes_repaired`): one undo step of the person
+    /// (KitModel M12a, also for an agent's `origin`; none for a `system` or `import` one), whose
+    /// one undo gives back the exact state before the merge and whose redo the merged one. Edits
+    /// made here since the draft was made are kept; two sides that painted different tiles of one
+    /// layer both stay (each tile is its own key of the layer's `tiles` map, rule D4), the same
+    /// tile painted on both is refused. Patches the view as an import does; add the draft's blobs
+    /// first ([`PhotoSession::add_blobs`]). A refused merge changes nothing. A merge the repair
+    /// takes back entirely changes nothing either. Answers the undo scope the step was recorded in
+    /// (`None`: no step) and the damage.
+    pub fn merge_changes(&mut self, bytes: &[u8], origin: &Origin) -> Result<(Option<UndoScope>, Damage)> {
+        self.end_undo_group();
+        let before = self.replica.version();
+        let merged = self.replica.merge_changes_repaired(bytes, origin, in_step).map_err(kit_err)?;
+        if self.replica.version() == before {
+            return Ok((None, Damage::None));
+        }
+        let changed = self.replica.take_changed();
+        Ok((merged.scope, self.took(merged.scope, &changed)?))
+    }
+
+    /// What merging a draft's changes would change in the document now, the repair included as
+    /// [`PhotoSession::merge_changes`] runs it (`Replica::compare_changes_repaired`), so a draft's
+    /// preview is what accepting it gives. Nothing changes; refuses what the merge refuses.
+    pub fn compare_changes(&self, bytes: &[u8]) -> Result<kition_kit::kdm::diff::StateDiff> {
+        self.replica.compare_changes_repaired(bytes, in_step).map_err(kit_err)
+    }
+
+    /// The canonical state merging a draft's changes would give, the repair included
+    /// (`Replica::merged_state_repaired`); nothing changes.
+    pub fn merged_state(&self, bytes: &[u8]) -> Result<serde_json::Value> {
+        self.replica.merged_state_repaired(bytes, in_step).map_err(kit_err)
+    }
+
+    /// Writes the state `snapshot` holds (a snapshot, or the content of this document, as a host's
+    /// checkpoint keeps it) over the document as one change of `origin`, keyed by object id
+    /// (`kition_kit::session::write_state`), the repair ([`in_step`]) in it: one undo step of
+    /// `origin`'s scope whose undo gives back the exact state before. Nothing changes (no change,
+    /// no step, the version stays) when the states are equal or the repair takes back all the
+    /// restore wrote. Add the snapshot's blobs first. Refuses another document's snapshot and one of
+    /// another schema version. Answers the undo scope of the step (`None`: no step) and the damage.
+    pub fn restore_state(&mut self, snapshot: &[u8], origin: &Origin) -> Result<(Option<UndoScope>, Damage)> {
+        let schema = <PhotoModel as KitModel>::schema();
+        let loaded = Replica::load(Arc::clone(&schema), snapshot, self.replica.actor()).map_err(kit_err)?;
+        if loaded.doc_id() != self.replica.doc_id() {
+            return Err(kit_err(KdmError::WrongDocument { expected: self.replica.doc_id().to_string(), found: loaded.doc_id().to_string() }));
+        }
+        if !crate::same_schema(&loaded) {
+            return Err(KitError::new("the saved state was written with another schema version"));
+        }
+        self.end_undo_group();
+        let (now, then) = (kition_kit::session::state(&self.replica)?, kition_kit::session::state(&loaded)?);
+        if now == then {
+            return Ok((None, Damage::None));
+        }
+        let changed: BTreeSet<ObjectId> = now.keys().chain(then.keys()).filter(|id| now.get(*id) != then.get(*id)).map(ObjectId::from_string).collect();
+        let mut kit_error = None;
+        let result = self.replica.transact_unless_unchanged(origin, |tx| {
+            kition_kit::session::write_state(tx, &schema, &now, &then).map_err(|error| {
+                let message = error.to_string();
+                kit_error = Some(error);
+                KdmError::Engine(message)
+            })?;
+            in_step(tx, &changed)
+        });
+        let ((), wrote) = match (result, kit_error) {
+            (_, Some(error)) => return Err(error),
+            (result, None) => result.map_err(kit_err)?,
+        };
+        if !wrote {
+            return Ok((None, Damage::None));
+        }
+        let scope = UndoScope::of(origin.kind);
+        let changed = self.replica.take_changed();
+        Ok((scope, self.took(scope, &changed)?))
+    }
+
+    /// After a merge or a restore that wrote `changed` as one step of `scope` (`None`: no step):
+    /// the blob index and log follow, the blobs added for it are kept by the step, and the view
+    /// is patched.
+    fn took(&mut self, scope: Option<UndoScope>, changed: &BTreeSet<ObjectId>) -> Result<Damage> {
+        let moved = self.index.update(&self.replica, changed);
+        self.log_added(moved.added.iter().cloned());
+        if let Some(scope) = scope {
+            self.index.push_step(scope, moved);
+        }
+        self.index.imported();
+        self.index.collect_garbage(&mut self.blobs);
+        self.refresh(changed)
     }
 
     /// Whether `scope` has an undo step to take: one of this replica's, not trimmed by
@@ -299,17 +381,16 @@ impl PhotoSession {
     /// step), repairs the merged state and patches the view.
     ///
     /// Refused changes change nothing (KitAgent A18: a failed call leaves the document as it
-    /// was): ones the replica refuses itself, and ones the view cannot read or the repair cannot
-    /// mend (a field set to a value the engine has no meaning for). For those, the replica is
-    /// rebuilt from its history before the import, as the KDM does for a newer schema; that
-    /// clears its undo and redo steps ([`ImportError::steps_cleared`]).
+    /// was): ones the replica refuses itself (it then changes nothing), and ones the view cannot
+    /// read or the repair cannot mend (a field set to a value the engine has no meaning for). For
+    /// those, the replica is put back as it was before the import (`Replica::fork_at`, inside the
+    /// session's own log); that clears its undo and redo steps ([`ImportError::steps_cleared`]).
     pub fn import_changes(&mut self, bytes: &[u8]) -> std::result::Result<Damage, ImportError> {
         self.end_undo_group();
         let before = self.replica.version();
         let view = (self.model.document.clone(), self.model.layers.clone(), self.model.nodes.clone());
         if let Err(error) = self.replica.import_changes(bytes) {
-            let steps_cleared = matches!(error, KdmError::NewerSchema { .. });
-            return Err(ImportError { error: kit_err(error), steps_cleared, damaged: false });
+            return Err(ImportError { error: kit_err(error), steps_cleared: false, damaged: false });
         }
         let (damage, moved) = self.settle();
         let damage = match damage {
@@ -326,9 +407,9 @@ impl PhotoSession {
     }
 
     /// Puts the session back as it was at `before` with the view `view`, after an import it
-    /// refused: the replica holds its history up to `before` under the same actor (every change
-    /// of this replica's own is in it), without undo or redo steps. Answers whether it could (a
-    /// shallow replica keeps no history to rebuild from).
+    /// refused: the replica holds the state at `before` under the same actor and on the same line
+    /// of changes, without undo or redo steps. Answers whether it could (`before` is in the
+    /// session's log).
     fn restore(&mut self, before: &Version, view: (Document, kition_kit::session::IdMap<kition_photo_doc::LayerId>, Nodes)) -> bool {
         let Ok(replica) = self.replica.fork_at(before, self.replica.actor()) else { return false };
         self.replica = replica;
@@ -454,10 +535,23 @@ impl PhotoSession {
 
 /// What a save writes of the replica ([`PhotoSession::content`]).
 pub struct Content {
-    /// The content snapshot (`kdm.bin`).
-    pub snapshot: Vec<u8>,
+    /// The content (`content.json`).
+    pub content: Vec<u8>,
     /// The blobs its state references.
     pub blobs: Vec<(String, Arc<[u8]>)>,
+}
+
+/// The repair as a draft's merge or a restore runs it inside its own change and undo step
+/// (`Replica::merge_changes_repaired`, `compare_changes_repaired`, `merged_state_repaired`, the
+/// restore's transaction): [`KitModel::validate`] (a mask or channel naming a surface gone since)
+/// and the number every read gives each layer that stores none (one the draft made through the
+/// object model), so one undo gives back the exact state before and the preview of a draft is
+/// what accepting it gives.
+fn in_step(tx: &mut Tx<'_>, changed: &BTreeSet<ObjectId>) -> std::result::Result<(), KdmError> {
+    PhotoModel::validate(tx, changed).map_err(|error| KdmError::Engine(error.to_string()))?;
+    let numbers = read::number_repairs(&*tx)?;
+    write::store_numbers(tx, &numbers)?;
+    Ok(())
 }
 
 /// Stores, in a `system` transaction labelled `repair` (no undo step), the number every read gives

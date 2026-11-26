@@ -93,7 +93,7 @@ async fn a_crop_rests_on_the_canvas() {
 async fn a_note_by_index_rests_on_the_notes() {
     let mut doc = image_doc(FILE, LAYERS);
     doc.execute("note.add", json!({ "x": 10, "y": 10, "text": "first" })).unwrap();
-    let bytes = doc.save_sealed(Some(FILE)).unwrap();
+    let bytes = doc.save(Some(FILE)).unwrap();
     for relevant in [true, false] {
         let f = Fixture::from_bytes(FILE, &bytes, kition_kits::tools::CallOptions::default());
         let (details, basis) = f.inspect().await;

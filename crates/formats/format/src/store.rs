@@ -17,9 +17,10 @@ use crate::zip::{ZipReader, ZipWriter};
 use crate::{FormatError, LoadOptions, Result, SaveOptions};
 
 pub(crate) const MANIFEST: &str = "manifest.json";
-/// The document's KDM replica snapshot, stored next to the manifest rather than
-/// content-addressed: it is the one entry that changes on nearly every save.
-pub(crate) const KDM: &str = "kdm.bin";
+/// The document's KDM content (`Replica::content_snapshot`), stored next to the manifest rather
+/// than content-addressed: it is the one entry that changes on nearly every save. DEFLATE at a
+/// fixed level in the ZIP form ([`crate::zip::DEFLATE_LEVEL`]), plain in the folder form.
+pub(crate) const KDM: &str = "content.json";
 
 /// A tile: its encoded bytes ([`encode_tile`]), stored as they are (they are zstd already).
 fn tile_path(h: &str) -> String {
@@ -236,12 +237,12 @@ fn decompress_capped(data: &[u8], max: usize, what: &str) -> Result<Vec<u8>> {
     Ok(out)
 }
 
-/// The document's KDM replica, if the bundle has one: the snapshot bytes and the bundle's tiles
+/// The document's KDM replica, if the bundle has one: its content (`content.json`) and the bundle's tiles
 /// and blobs, keyed by the SHA-256 hex hash the replica names them by (a tile as its encoded
 /// bytes, a blob decompressed). They are the manifest's too: the file holds each once. Every
 /// entry is checked against its hash.
 pub struct KdmBundle {
-    pub snapshot: Vec<u8>,
+    pub content: Vec<u8>,
     pub blobs: HashMap<String, Vec<u8>>,
 }
 
@@ -250,8 +251,8 @@ pub(crate) fn read_kdm(bytes: &[u8], opts: &LoadOptions) -> Result<Option<KdmBun
     let m = read_manifest(&src, opts)?;
     let Some(kdm) = m.kdm else { return Ok(None) };
     let mut total = 0u64;
-    let snapshot = src.zip.read_by_name(&kdm.snapshot, opts.max_blob_bytes)?;
-    total += snapshot.len() as u64;
+    let content = src.zip.read_by_name(&kdm.content, opts.max_blob_bytes)?;
+    total += content.len() as u64;
     if total > opts.max_total_bytes {
         return Err(FormatError::LimitExceeded(format!("bundle expands beyond {} bytes", opts.max_total_bytes)));
     }
@@ -265,7 +266,7 @@ pub(crate) fn read_kdm(bytes: &[u8], opts: &LoadOptions) -> Result<Option<KdmBun
         }
         blobs.insert(hash, data);
     }
-    Ok(Some(KdmBundle { snapshot, blobs }))
+    Ok(Some(KdmBundle { content, blobs }))
 }
 
 /// A content-addressed entry's hash and the bytes it names (a tile's stored bytes, a blob
@@ -287,12 +288,12 @@ fn object(src: &ZipSource<'_>, entry: &crate::zip::Entry, max_compressed: usize,
     Ok(Some((hash.to_owned(), data)))
 }
 
-/// The bundle's KDM replica snapshot alone (`kdm.bin`), without reading its blobs, or `None` for
+/// The bundle's KDM content alone (`content.json`), without reading its blobs, or `None` for
 /// a bundle saved without one.
-pub(crate) fn read_kdm_snapshot(bytes: &[u8], opts: &LoadOptions) -> Result<Option<Vec<u8>>> {
+pub(crate) fn read_kdm_content(bytes: &[u8], opts: &LoadOptions) -> Result<Option<Vec<u8>>> {
     let src = ZipSource::new(bytes)?;
     let Some(kdm) = read_manifest(&src, opts)?.kdm else { return Ok(None) };
-    src.zip.read_by_name(&kdm.snapshot, opts.max_blob_bytes).map(Some)
+    src.zip.read_by_name(&kdm.content, opts.max_blob_bytes).map(Some)
 }
 
 /// Every hash `value` (a manifest's JSON) names: any string of 64 lowercase hex digits. One that
@@ -311,10 +312,10 @@ fn named_hashes(value: &serde_json::Value, out: &mut HashSet<String>) {
     }
 }
 
-/// `bytes` (a bundle with a replica) with `snapshot` as its replica snapshot, keeping the tiles
+/// `bytes` (a bundle with a replica) with `content` as its replica content, keeping the tiles
 /// and blobs the manifest names or `keep` does and dropping the others; every other entry (the
 /// manifest, entries this build does not know) is kept as it was, in the same order.
-pub(crate) fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool, opts: &LoadOptions) -> Result<Vec<u8>> {
+pub(crate) fn replace_kdm(bytes: &[u8], content: &[u8], keep: &dyn Fn(&str) -> bool, opts: &LoadOptions) -> Result<Vec<u8>> {
     let src = ZipSource::new(bytes)?;
     let Some(kdm) = read_manifest(&src, opts)?.kdm else { return Err(FormatError::corrupt("the bundle holds no replica to replace")) };
     let raw = src.get(MANIFEST, opts.max_manifest_bytes)?;
@@ -328,8 +329,8 @@ pub(crate) fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> 
     let mut out = ZipWriter::new();
     let mut total = 0u64;
     for entry in &src.zip.entries {
-        if entry.name == kdm.snapshot {
-            out.add(&entry.name, snapshot)?;
+        if entry.name == kdm.content {
+            out.add_deflated(&entry.name, content)?;
             continue;
         }
         let hash = entry.name.strip_prefix("tiles/").or_else(|| entry.name.strip_prefix("blobs/").and_then(|rest| rest.strip_suffix(".zst")));
@@ -531,7 +532,7 @@ struct FileSignature {
 struct Prepared {
     manifest: Vec<u8>,
     objects: BTreeMap<String, Object>,
-    /// The KDM replica snapshot (`kdm.bin`), if the save has one; its blobs are among `objects`.
+    /// The KDM content (`content.json`), if the save has one; its blobs are among `objects`.
     kdm: Option<Vec<u8>>,
     stats: SaveStats,
 }
@@ -689,7 +690,7 @@ impl KitionPhotoWriter {
             format_version: FORMAT_VERSION,
             generator: format!("kition-photo-format {}", env!("CARGO_PKG_VERSION")),
             document,
-            kdm: opts.kdm.as_ref().map(|_| KdmM { snapshot: KDM.to_owned() }),
+            kdm: opts.kdm.as_ref().map(|_| KdmM { content: KDM.to_owned() }),
         };
         // serde_json writes NaN and the infinities as `null`, which the manifest's float fields
         // refuse on load (issue #1101): refuse the save instead, naming the value.
@@ -720,7 +721,7 @@ impl KitionPhotoWriter {
                 }
                 objects.insert(blob_path(h), Object::Blob(Arc::new(bytes.to_vec())));
             }
-            kdm = Some(save.snapshot.clone());
+            kdm = Some(save.content.clone());
         }
         Ok(Prepared { manifest, objects, kdm, stats })
     }
@@ -732,7 +733,7 @@ impl KitionPhotoWriter {
         let mut z = ZipWriter::new();
         z.add(MANIFEST, &p.manifest)?;
         if let Some(kdm) = &p.kdm {
-            z.add(KDM, kdm)?;
+            z.add_deflated(KDM, kdm)?;
         }
         let mut next = HashMap::with_capacity(p.objects.len());
         // New blobs are compressed on all cores first (tiles are encoded already).

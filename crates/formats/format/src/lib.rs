@@ -4,19 +4,20 @@
 //!
 //! ```text
 //! manifest.json            versioned description of the image's content (see [`manifest`])
-//! kdm.bin                  optional: the document's KDM replica as its content snapshot
+//! content.json             optional: the document's KDM content (DEFLATE in the ZIP form)
 //! tiles/<sha256>           content-addressed 256×256 tiles (zstd of little-endian samples)
 //! blobs/<sha256>.zst       content-addressed binary data (ICC, EXIF, PSD blocks, object layers)
 //! ```
 //!
 //! **One copy of every tile and blob.** Each entry is named by the SHA-256 of the bytes it
 //! holds (a tile's encoded bytes, [`encode_tile`]; a blob's own bytes), which is how the KDM
-//! replica names its blobs too: the manifest and `kdm.bin` refer to the same entries, and a save
+//! replica names its blobs too: the manifest and `content.json` refer to the same entries, and a save
 //! writes each once.
 //!
-//! `kdm.bin` holds the document's content, not its history (kition-sdk data model 7.3, rule
-//! M16b): the replica's state and, of its history, only the seal; the engine writes it
-//! (`DocState::save_kphoto`). The undo history stays in the session and the host's store.
+//! `content.json` holds the document's content, not its history (kition-sdk data model 7.4): the
+//! replica's state as `Replica::content_snapshot` writes it (one object per line, keys in byte
+//! order, no version, no author, no time), so an unchanged document saves the same bytes; the
+//! engine writes it (`DocState::save_kphoto`). The undo history stays in the session and the host's store.
 //! The manifest stays beside it: it is what a reader without the replica model opens (the PSD
 //! exporter placing a `.kphoto`, the importer, `kition-photo-io`'s export of a document that has
 //! made no replica yet), and it is what opens when this build refuses the replica (another schema
@@ -29,7 +30,7 @@
 //! `view-state` store. Nor does the file hold a thumbnail or a flattened preview: it is not a
 //! composite another program opens, and anything that needs a picture renders one.
 //!
-//! A bundle is either a ZIP archive (STORE entries) or a directory with the
+//! A bundle is either a ZIP archive (STORE entries, `content.json` DEFLATE) or a directory with the
 //! same layout. Saving is incremental: [`KitionPhotoWriter`] remembers what it
 //! already compressed/wrote, so only new tiles are encoded. Directory saves
 //! verify existing content-addressed objects once per writer and folder,
@@ -100,12 +101,12 @@ pub struct SaveOptions {
     pub kdm: Option<KdmSave>,
 }
 
-/// A KDM replica to embed in a `.kphoto` save: the snapshot bytes (written as `kdm.bin`) and the
+/// A KDM replica to embed in a `.kphoto` save: its content (written as `content.json`) and the
 /// blobs it references, keyed by their SHA-256 hex hash. A blob the manifest names too (every
 /// tile of the image) is stored once, as the manifest's entry; the others as `blobs/<sha256>.zst`.
 #[derive(Debug, Clone, Default)]
 pub struct KdmSave {
-    pub snapshot: Vec<u8>,
+    pub content: Vec<u8>,
     pub blobs: Vec<(String, Arc<[u8]>)>,
 }
 
@@ -182,23 +183,23 @@ pub fn read_manifest(bytes: &[u8]) -> Result<Manifest> {
     store::read_manifest(&src, &LoadOptions::default())
 }
 
-/// The bundle's KDM replica, if it has one: the snapshot bytes and the bundle's tiles and blobs,
+/// The bundle's KDM replica, if it has one: its content and the bundle's tiles and blobs,
 /// keyed by their SHA-256 hex hash. `None` for a bundle saved without a replica; such a document
 /// still loads through [`load_from_bytes`], as a new replica.
 pub fn read_kdm(bytes: &[u8]) -> Result<Option<KdmBundle>> {
     store::read_kdm(bytes, &LoadOptions::default())
 }
 
-/// The bundle's KDM replica snapshot (`kdm.bin`) without its blobs, or `None` for a bundle saved
+/// The bundle's KDM content (`content.json`) without its blobs, or `None` for a bundle saved
 /// without a replica: what a `.kphoto` carries as its document's identity (`document.identity`).
-pub fn read_kdm_snapshot(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
-    store::read_kdm_snapshot(bytes, &LoadOptions::default())
+pub fn read_kdm_content(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
+    store::read_kdm_content(bytes, &LoadOptions::default())
 }
 
-/// `bytes` (a bundle with a replica) holding the replica `snapshot` instead of its own
-/// (`document.fork`): `kdm.bin` is `snapshot`, and of the tiles and blobs only those the manifest
+/// `bytes` (a bundle with a replica) holding the replica `content` instead of its own
+/// (`document.fork`): `content.json` is `content`, and of the tiles and blobs only those the manifest
 /// or `keep` names stay; the manifest and entries this build does not know are kept as they were.
 /// A bundle without a replica is an error.
-pub fn replace_kdm(bytes: &[u8], snapshot: &[u8], keep: &dyn Fn(&str) -> bool) -> Result<Vec<u8>> {
-    store::replace_kdm(bytes, snapshot, keep, &LoadOptions::default())
+pub fn replace_kdm(bytes: &[u8], content: &[u8], keep: &dyn Fn(&str) -> bool) -> Result<Vec<u8>> {
+    store::replace_kdm(bytes, content, keep, &LoadOptions::default())
 }

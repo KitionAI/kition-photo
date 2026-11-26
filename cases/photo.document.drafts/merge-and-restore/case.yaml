@@ -1,0 +1,38 @@
+format: 1
+id: photo.document.drafts/merge-and-restore
+feature: photo.document.drafts
+intent: >-
+  The engine's contract 2 members (kition-sdk contract K3a) with real behaviour. mergeChanges takes
+  an agent's draft in as one undo step of the person ("Merge Draft"), also when the host passes the
+  agent's origin: a draft and the person painting different tiles of one layer both stay (each tile
+  is its own key of the layer's tiles map), one Undo gives back the exact state and image before
+  the merge, one Redo the merge, and the agent's undo does not take it; the same tile painted on
+  both sides is refused, naming the layer and the tile, and changes nothing. compareChanges is the
+  merge's summary, its repair included (a draft that deletes a mask's surface leaves the layer
+  without a mask inside the merge's one step). restoreState writes a saved version (a snapshot or
+  the file's content) as one exact undo step ("Restore Version") and records nothing when the image
+  already holds it; another document's state is refused. changesSince answers a receipt or why
+  not; modelReply names only the objects a reply holds by their tool ids, as the whole document's
+  tool ids name them; modelDescribe and modelBatch go through the object model. The same draft
+  rules hold in the replica bridge (kdm-model drafts and containers).
+layer: gate
+dimension: collab
+source:
+  kind: synthetic
+  from: bindings/wasm/src/collab.rs, crates/kdm/kdm-model/tests/drafts.rs, crates/kdm/kdm-model/tests/containers.rs
+  license: Apache-2.0
+input: []
+steps:
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::merge_changes_keeps_two_tiles_of_one_layer_as_one_step_of_the_person" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::merge_changes_refuses_one_tile_painted_on_both_sides_naming_the_layer_and_tile" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::the_preview_and_the_merge_run_the_repair_in_one_step" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::restore_state_is_one_exact_undo_step" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::changes_since_answers_a_receipt_or_why_not" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::model_reply_names_only_the_objects_the_reply_holds" }
+  - cargo-test: { package: kition-photo-kit, filter: "collab::tests::model_describe_and_model_batch_go_through_the_object_model" }
+  - cargo-test: { package: kdm-model, test: drafts }
+  - cargo-test: { package: kdm-model, test: containers }
+expected:
+  - actual: out:exit
+    compare: exit
+since: "2026-11-26"

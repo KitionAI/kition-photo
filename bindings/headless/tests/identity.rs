@@ -1,10 +1,10 @@
 //! `document.identity` and `document.fork` (Kit Process Protocol section 5.6, KitModel M7a)
-//! through the real `kition-photo` process. A `.kphoto` bundle embeds its replica (`kdm.bin`, its
+//! through the real `kition-photo` process. A `.kphoto` bundle embeds its replica's content (`content.json`, its
 //! blobs among the bundle's content-addressed `tiles/` and `blobs/` entries), and the kit opens the document from it, so a byte copy
 //! of a bundle is the same document. A host reads the identity a file carries without opening it,
 //! and forks a file into a new document: a new docId, the same layers, ids and pixels, and every
 //! other entry of the bundle as it was. Neither file holds history (deleted content, blobs only an
-//! undo step kept): a `.kphoto` holds its replica's content snapshot. A PSD or PSB embeds no
+//! undo step kept): a `.kphoto` holds its replica's content. A PSD or PSB embeds no
 //! replica: it carries no identity and forks unchanged.
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::indexing_slicing)]
@@ -65,13 +65,12 @@ fn replica_blobs(bytes: &[u8]) -> BTreeSet<String> {
 /// deleted, saved as a `.kphoto`, with an entry another program wrote.
 fn picture() -> Vec<u8> {
     let mut doc = PhotoDocument::create("Plan.kphoto", 256, 256).unwrap();
-    doc.version().unwrap();
+    let began = doc.version().unwrap();
     filled(&mut doc, "Kept", "#d02020", 0);
     filled(&mut doc, "Also kept", "#2020d0", 96);
     filled(&mut doc, SECRET, "#20d020", 160);
     doc.execute("layer.delete", json!({})).unwrap();
-    assert!(holds(&doc.snapshot().unwrap(), SECRET), "the control: the session's history holds the deleted layer");
-    doc.prepare_save().unwrap();
+    assert!(holds(&doc.export_changes(&began).unwrap(), SECRET), "the control: the session's changes hold the deleted layer");
     let saved = doc.save(Some("Plan.kphoto")).unwrap();
     assert!(kition_photo_format::read_kdm(&saved).unwrap().is_some(), "the bundle embeds the replica");
     let mut out = ZipWriter::new();
@@ -148,14 +147,15 @@ async fn a_kphoto_tells_its_identity_and_forks_into_a_new_document_without_histo
     let (source_bytes, fork_bytes) = (std::fs::read(dir.join("Plan.kphoto")).unwrap(), std::fs::read(dir.join("Fork.kphoto")).unwrap());
     let (source_blobs, fork_blobs) = (replica_blobs(&source_bytes), replica_blobs(&fork_bytes));
     assert!(!fork_blobs.is_empty() && fork_blobs.is_subset(&source_blobs), "the fork's blobs are the source's state's: {source_blobs:?} {fork_blobs:?}");
-    let others =
-        |bytes: &[u8]| -> Vec<(String, Vec<u8>)> { entries(bytes).into_iter().filter(|(name, _)| name != "kdm.bin" && !content_addressed(name)).collect() };
+    let others = |bytes: &[u8]| -> Vec<(String, Vec<u8>)> {
+        entries(bytes).into_iter().filter(|(name, _)| name != "content.json" && !content_addressed(name)).collect()
+    };
     assert_eq!(others(&fork_bytes), others(&source_bytes), "everything but the replica is kept");
 
     // The fork edits, saves and opens again as any picture, under its own id.
     let mut opened = PhotoDocument::open("Fork.kphoto", &fork_bytes).unwrap();
     filled(&mut opened, "New", "#808080", 32);
-    std::fs::write(dir.join("Edited.kphoto"), opened.save_sealed(Some("Edited.kphoto")).unwrap()).unwrap();
+    std::fs::write(dir.join("Edited.kphoto"), opened.save(Some("Edited.kphoto")).unwrap()).unwrap();
     assert_eq!(kit.identity("Edited.kphoto", LIMIT).await.unwrap().doc_id.as_deref(), Some(fork_id.as_str()), "an edit of the fork is the fork");
 
     // No history: the deleted layer's name is in neither file (a `.kphoto` holds content only).

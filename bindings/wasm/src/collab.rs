@@ -11,12 +11,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use kition_kit::kdm::Schema;
+use kition_kit::kdm::tool_ids::ToolIds;
 use kition_kit::session::KitModel;
-use kition_kit::session::model::ReplicaPort;
+use kition_kit::session::model::{Exchange, ReplicaPort};
 use kition_kit::{KitCommand, KitDocument};
 use kition_photo_engine::kdm_model::PhotoModel;
-use kition_photo_engine::{Damage, MemoryBlobs, Origin, Version};
-use serde_json::Value;
+use kition_photo_engine::{Damage, MemoryBlobs, Origin, UndoScope, Version};
+use serde_json::{Value, json};
 
 use crate::PhotoDocument;
 
@@ -121,6 +122,87 @@ impl PhotoDocument {
     /// is this with the local person.
     pub fn execute_as(&mut self, command: &str, params: Value, origin: &Origin) -> Result<Value, String> {
         self.run(command, params, Some(origin))
+    }
+
+    /// Takes an agent's draft (its changes since it was made from [`PhotoDocument::snapshot`]) in
+    /// as one undo step of the person who accepts it (`mergeChanges`, as `export_kit_session!`
+    /// answers it; KitModel M12a: the person's step even for an agent's `origin`, which is what the
+    /// host passes): the image follows, the person's one Undo takes the whole draft back and keeps
+    /// what they did meanwhile, and the History panel lists the step as "Merge Draft". Edits on
+    /// different tiles of one layer both stay; one tile painted on both sides is refused, naming
+    /// the layer and the tile. Add the draft's blobs first ([`PhotoDocument::add_blobs`]). Answers
+    /// `{"damage", "summary", "scope"}`: `summary` what the merge and its repair changed
+    /// (`StateDiff`, read only at the objects they wrote, `Replica::diff_since`), `scope` the undo
+    /// scope of its step (`"person"`, `null` when it changed nothing). A refused merge changes
+    /// nothing and fails with the KDM's message.
+    pub fn merge_changes(&mut self, bytes: &[u8], origin: &Origin) -> Result<Value, String> {
+        let since = self.session.version().map_err(|error| error.to_string())?;
+        let scope = self.session.merge_changes(bytes, origin).map_err(|error| error.to_string())?;
+        let replica = self.state()?.kdm().ok_or("the document left its replica")?.replica();
+        let summary = replica.diff_since(&since).map_err(|error| error.to_string())?;
+        let damage = if replica.version() == since { Damage::None } else { Damage::Full };
+        Ok(json!({ "damage": damage, "summary": summary.to_json(), "scope": scope.map(UndoScope::as_str) }))
+    }
+
+    /// What merging a draft's changes would change in the image now, as `StateDiff` JSON, the
+    /// repair included as [`PhotoDocument::merge_changes`] runs it (the draft's preview is what
+    /// accepting it gives); nothing changes. Refuses what the merge refuses.
+    pub fn compare_changes(&self, bytes: &[u8]) -> Result<Value, String> {
+        let kdm = self.state()?.kdm().ok_or("the image has no replica, so no draft of it")?;
+        Ok(kdm.compare_changes(bytes).map_err(|error| error.to_string())?.to_json())
+    }
+
+    /// Writes the state a saved version holds (`snapshot`: a KDM snapshot or this document's
+    /// content, as a host's checkpoint keeps it; the Kit UI protocol's `replica/restore`) over the
+    /// image as one undo step of `origin`'s scope, labelled "Restore Version", whose Undo gives back
+    /// the exact image before. Nothing changes when the image already holds it. Add the snapshot's
+    /// blobs first. Another document's snapshot is refused. Answers the damage.
+    pub fn restore_state(&mut self, snapshot: &[u8], origin: &Origin) -> Result<Damage, String> {
+        let since = self.session.version().map_err(|error| error.to_string())?;
+        self.session.restore_state(snapshot, origin).map_err(|error| error.to_string())?;
+        let changed = self.session.version().map_err(|error| error.to_string())? != since;
+        Ok(if changed { Damage::Full } else { Damage::None })
+    }
+
+    /// What changed since the version `since` (empty bytes: since the replica began), a receipt as
+    /// `export_kit_session!`'s `changesSince` answers it: `{"changes": StateDiff}`, or `{"changes":
+    /// null, "unavailable": "<why>"}` when the replica's log does not hold `since` (or the image has
+    /// no replica yet), never an empty change set in its place.
+    pub fn changes_since(&self, since: &[u8]) -> Value {
+        let Some(kdm) = self.state().ok().and_then(|state| state.kdm()) else {
+            return json!({ "changes": null, "unavailable": "the image has no replica yet" });
+        };
+        let replica = kdm.replica();
+        let since = if since.is_empty() { Ok(Version::empty()) } else { Version::decode(since) };
+        match since.and_then(|since| replica.changes_since(&since)) {
+            Ok(changes) => json!({ "changes": changes.to_recorded_json(replica.schema()) }),
+            Err(error) => json!({ "changes": null, "unavailable": error.to_string() }),
+        }
+    }
+
+    /// An agent's reply (JSON text) with every object id it holds as a value or a key named as
+    /// the tool interface names it (a layer's number, KitObjectModel OM9); unchanged without a
+    /// replica or when it names no object. Only the objects the reply names are read
+    /// (`ToolIds::show_reply`), never the whole image's tool ids: the editor sends every
+    /// `ai/inspect`, `document/check` and `ai/run` reply through it.
+    pub fn model_reply(&self, value: &str) -> Result<String, String> {
+        let value: Value = serde_json::from_str(value).map_err(|error| format!("the reply is not JSON: {error}"))?;
+        let Some(kdm) = self.state().ok().and_then(|state| state.kdm()) else { return Ok(value.to_string()) };
+        Ok(ToolIds::show_reply(kdm.replica(), &value).to_string())
+    }
+
+    /// `model/describe` (KitObjectModel 1.0) as JSON, through the change exchange the headless kit
+    /// serves it with. A failure's message is the error's JSON (`{"code", "index", "message"}`).
+    pub fn model_describe(&mut self) -> Result<Value, String> {
+        Exchange::new().describe(self).map_err(|failure| failure.to_json().to_string())
+    }
+
+    /// `model/batch`: the request and the answer as JSON; a failure's message is the error's JSON
+    /// (`{"code", "index", "message"}`).
+    pub fn model_batch(&mut self, request: &str) -> Result<Value, String> {
+        let request: Value = serde_json::from_str(request)
+            .map_err(|failure| json!({ "code": "invalid-op", "index": null, "message": format!("the batch is not JSON: {failure}") }).to_string())?;
+        Exchange::new().batch(self, &request, false).map_err(|failure| failure.to_json().to_string())
     }
 
     /// Every blob the active document's replica references or can still bring back, as one
@@ -400,21 +482,19 @@ mod tests {
         assert!(PhotoDocument::open_with_replica("art.psd", b"not a psd", b"not a snapshot", &[]).is_err());
     }
 
-    /// A saves a `.kphoto`; B opens it, so both start from the same replica. A paints some more;
-    /// `B.importChanges(A.exportChanges(B.version()))`, with the blobs the change needs
-    /// transferred through [`PhotoDocument::blobs`]/[`PhotoDocument::add_blobs`], converges B to
-    /// the same replicated state as A.
+    /// B opens A's `.kphoto` with the replica A's host stored for it (`openWithReplica`), so both
+    /// are on one line of changes. A paints some more; `B.importChanges(A.exportChanges(B.version()))`,
+    /// with the blobs the change needs transferred through [`PhotoDocument::blobs`] /
+    /// [`PhotoDocument::add_blobs`], brings B to A's state.
     #[test]
-    fn two_documents_converge_through_export_and_import_changes() {
+    fn a_document_takes_changes_through_export_and_import_changes() {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
-        // As a host saves: sealed first, so the file holds a's own content snapshot.
-        a.prepare_save().unwrap();
         let bytes = a.save(None).unwrap();
         assert!(!a.version().unwrap().is_empty(), "painting made a replica");
 
-        let mut b = PhotoDocument::open("shared.kphoto", &bytes).unwrap();
+        let mut b = PhotoDocument::open_with_replica("shared.kphoto", &bytes, &a.snapshot().unwrap(), &a.blobs().unwrap()).unwrap();
         assert_eq!(b.version().unwrap(), a.version().unwrap(), "b starts from a's own replica");
 
         a.execute("paint.stroke", json!({"points": [[30, 5, 1], [40, 25, 1]], "size": 5, "color": "#0000ff"})).unwrap();
@@ -429,17 +509,15 @@ mod tests {
     }
 
     /// `blobsSince` ships only a change's own blobs (fewer than the whole `blobs()` store, which
-    /// also holds undo history), and that alone is still enough for a peer to converge.
+    /// also holds undo history), and that alone is enough for the document behind to take them.
     #[test]
-    fn two_documents_converge_through_blobs_since() {
+    fn blobs_since_ships_only_what_the_changes_need() {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
-        // As a host saves: sealed first, so the file holds a's own content snapshot.
-        a.prepare_save().unwrap();
         let bytes = a.save(None).unwrap();
 
-        let mut b = PhotoDocument::open("shared.kphoto", &bytes).unwrap();
+        let mut b = PhotoDocument::open_with_replica("shared.kphoto", &bytes, &a.snapshot().unwrap(), &a.blobs_since(&[]).unwrap()).unwrap();
         assert_eq!(b.version().unwrap(), a.version().unwrap());
 
         for (x, color) in [(5, "#ff0000"), (10, "#00ff00"), (15, "#0000ff")] {
@@ -465,7 +543,6 @@ mod tests {
         let mut a = PhotoDocument::create("shared.kphoto", 48, 32).unwrap();
         a.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
         stroke(&mut a);
-        a.prepare_save().unwrap();
         let snapshot = a.snapshot().unwrap();
         let blobs = a.blobs_since(&[]).unwrap();
 
@@ -489,5 +566,281 @@ mod tests {
 
         let b = PhotoDocument::open_with_replica("fixture.psd", &fixture(), &a.snapshot().unwrap(), &a.blobs().unwrap()).unwrap();
         assert_eq!(b.doc_id(), id, "a peer of the same KDM document shares its identity");
+    }
+
+    // The draft and restore members (engine contract K3a): `mergeChanges`, `compareChanges`,
+    // `restoreState`, `changesSince`, `modelReply`, `modelDescribe`, `modelBatch`.
+
+    use kition_kit::kdm::{ActorId, ObjectId, Replica};
+
+    fn agent() -> Origin {
+        Origin::agent("agent:test")
+    }
+
+    fn hash(doc: &mut PhotoDocument) -> String {
+        doc.session.state_hash().unwrap()
+    }
+
+    fn history(doc: &PhotoDocument) -> Vec<String> {
+        doc.inspect().unwrap()["history"].as_array().unwrap().iter().map(|label| label.as_str().unwrap().to_owned()).collect()
+    }
+
+    /// The colour the image shows at `(x, y)`: `'r'`, `'g'` or `'b'` where one channel leads,
+    /// `'w'` for white, else `'?'`.
+    fn pixel(doc: &PhotoDocument, x: i32, y: i32) -> char {
+        let p = doc.render_area(x, y, x + 1, y + 1, 1, 1).unwrap();
+        match (p[0] > 200, p[1] > 200, p[2] > 200) {
+            (true, true, true) => 'w',
+            (true, false, false) => 'r',
+            (false, true, false) => 'g',
+            (false, false, true) => 'b',
+            _ => '?',
+        }
+    }
+
+    /// An image wider than one 256-pixel tile with a layer "Ink" on top of a white background.
+    fn wide() -> PhotoDocument {
+        let mut doc = PhotoDocument::create("art.kphoto", 600, 300).unwrap();
+        doc.execute("layer.new.layer", json!({"name": "Ink"})).unwrap();
+        doc
+    }
+
+    /// An agent's draft of `doc` as it is now (a document opened from its snapshot, as the editor
+    /// makes one), and the version it was made at.
+    fn draft_of(doc: &mut PhotoDocument) -> (PhotoDocument, Vec<u8>) {
+        let since = doc.version().unwrap();
+        let draft = <PhotoDocument as ReplicaPort>::model_open_replica("art.kphoto", &doc.snapshot().unwrap(), &doc.blobs().unwrap()).unwrap();
+        (draft, since)
+    }
+
+    /// The draft's changes since `since`, its blobs added to `doc` first.
+    fn changes_of(doc: &mut PhotoDocument, draft: &mut PhotoDocument, since: &[u8]) -> Vec<u8> {
+        doc.add_blobs(&draft.blobs_since(since).unwrap()).unwrap();
+        draft.export_changes(since).unwrap()
+    }
+
+    fn paint(doc: &mut PhotoDocument, origin: &Origin, from: [i32; 2], color: &str) {
+        let [x, y] = from;
+        doc.execute_as("paint.stroke", json!({"points": [[x, y, 1], [x + 40, y + 40, 1]], "size": 8, "color": color}), origin).unwrap();
+    }
+
+    /// The person paints one tile of Ink while the agent's draft paints another tile of the same
+    /// layer; the person accepts the draft: both strokes show, the merge is one step of the
+    /// person's ("Merge Draft"), the agent's undo does not take it, and one Undo gives back the
+    /// exact image before (the person's stroke stays), one Redo the merge.
+    #[test]
+    fn merge_changes_keeps_two_tiles_of_one_layer_as_one_step_of_the_person() {
+        let mut doc = wide();
+        let (mut draft, since) = draft_of(&mut doc);
+        paint(&mut draft, &agent(), [400, 200], "#0000ff");
+        paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [20, 20], "#ff0000");
+        let (before, before_pixels, before_history) = (hash(&mut doc), doc.render(0.0, 0.0, 1.0, 600, 300).unwrap(), history(&doc));
+        let changes = changes_of(&mut doc, &mut draft, &since);
+        let preview = doc.compare_changes(&changes).unwrap();
+
+        let answer = doc.merge_changes(&changes, &agent()).unwrap();
+        assert_eq!(answer["scope"], "person", "{answer}");
+        assert_eq!(answer["summary"], preview, "the preview is what the merge changed");
+        assert_eq!(pixel(&doc, 420, 220), 'b', "the draft's stroke");
+        assert_eq!(pixel(&doc, 40, 40), 'r', "the person's stroke");
+        assert_eq!(history(&doc).last().map(String::as_str), Some("Merge Draft"));
+        assert_eq!(history(&doc).len(), before_history.len() + 1);
+        assert!(!doc.session.undo_in(Some(UndoScope::Agent)), "the agent's undo does not take the person's merge");
+        let after = hash(&mut doc);
+
+        assert!(doc.undo().unwrap().0);
+        assert_eq!(hash(&mut doc), before, "one Undo gives back the exact state before the merge");
+        assert_eq!(doc.render(0.0, 0.0, 1.0, 600, 300).unwrap(), before_pixels, "and the image");
+        assert_eq!(history(&doc), before_history);
+        assert!(doc.redo().unwrap().0);
+        assert_eq!(hash(&mut doc), after, "one Redo the merge");
+        assert_eq!(pixel(&doc, 420, 220), 'b');
+    }
+
+    /// One tile painted in the draft and by the person with different pixels: the merge is refused,
+    /// naming the layer and the tile, and changes nothing.
+    #[test]
+    fn merge_changes_refuses_one_tile_painted_on_both_sides_naming_the_layer_and_tile() {
+        let mut doc = wide();
+        let (mut draft, since) = draft_of(&mut doc);
+        paint(&mut draft, &agent(), [20, 20], "#0000ff");
+        paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [30, 30], "#ff0000");
+        let (before, version, labels) = (hash(&mut doc), doc.version().unwrap(), history(&doc));
+        let changes = changes_of(&mut doc, &mut draft, &since);
+        let ink = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap().to_string();
+        let object = doc.layer_object_ids()[&ink].as_str().unwrap().to_owned();
+
+        let refused = doc.merge_changes(&changes, &agent()).unwrap_err();
+        assert!(refused.contains(&format!("{object}.tiles[\"0,0\"]")), "the refusal names the layer and the tile: {refused}");
+        assert!(doc.compare_changes(&changes).is_err(), "the preview refuses what the merge refuses");
+        assert_eq!(hash(&mut doc), before, "a refused merge changes nothing");
+        assert_eq!(doc.version().unwrap(), version);
+        assert_eq!(history(&doc), labels);
+        assert_eq!(pixel(&doc, 50, 50), 'r', "the person's stroke stays");
+    }
+
+    /// The object id of the mask of the layer whose engine id is `layer`.
+    fn mask_of(doc: &PhotoDocument, layer: u64) -> Option<String> {
+        let object = doc.layer_object_ids()[&layer.to_string()].as_str()?.to_owned();
+        let replica = doc.state().unwrap().kdm().unwrap().replica();
+        replica.get(&ObjectId::from_string(object), "mask").unwrap().as_str().map(str::to_owned)
+    }
+
+    /// A draft written straight to a replica of `doc` (as the object model writes one), by the agent.
+    fn raw_draft(doc: &mut PhotoDocument, write: impl FnOnce(&mut kition_kit::kdm::Tx<'_>) -> Result<(), kition_kit::kdm::KdmError>) -> Vec<u8> {
+        let mut replica = Replica::load(PhotoModel::schema(), &doc.snapshot().unwrap(), ActorId::random()).unwrap();
+        let since = replica.version();
+        replica.transact(&agent(), write).unwrap();
+        replica.export_changes(&since).unwrap()
+    }
+
+    /// The draft deletes a mask's surface and leaves the layer naming it: the repair inside the
+    /// merge clears the layer's mask; the preview (`compareChanges`, and the merged state) is what
+    /// the merge gives, the image reads a layer without a mask, and one Undo gives back the mask.
+    #[test]
+    fn the_preview_and_the_merge_run_the_repair_in_one_step() {
+        let mut doc = wide();
+        doc.execute("layer.layerMask.revealAll", json!({})).unwrap();
+        let ink = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap();
+        let surface = mask_of(&doc, ink).expect("Ink has a mask");
+        let changes = raw_draft(&mut doc, |tx| tx.delete(&ObjectId::from_string(surface.clone())));
+        let before = hash(&mut doc);
+        let preview = doc.compare_changes(&changes).unwrap();
+        let merged = doc.session.merged_state(&changes).unwrap();
+
+        let answer = doc.merge_changes(&changes, &agent()).unwrap();
+        assert_eq!(answer["scope"], "person");
+        assert_eq!(mask_of(&doc, ink), None, "the repair cleared the layer's mask inside the merge");
+        assert_eq!(merged, doc.state().unwrap().kdm().unwrap().replica().state_json().unwrap(), "the preview's state is the merged one");
+        assert_eq!(answer["summary"], preview);
+        assert!(doc.inspect().unwrap()["layers"].to_string().contains("Ink"));
+        let after = hash(&mut doc);
+        assert!(doc.undo().unwrap().0);
+        assert_eq!(hash(&mut doc), before, "one Undo gives back the exact state, mask and all");
+        assert_eq!(mask_of(&doc, ink).as_deref(), Some(surface.as_str()));
+        assert!(doc.redo().unwrap().0);
+        assert_eq!(hash(&mut doc), after);
+    }
+
+    /// The person deletes a layer's mask (a named step); the agent's draft gave another layer that
+    /// mask meanwhile: merged, the repair clears the reference again, so the merge changes nothing.
+    /// Nothing is recorded: the state, the version, the replica's undo depth and the history stay,
+    /// and the next Undo takes back the person's delete, exactly.
+    #[test]
+    fn a_merge_the_repair_cancels_records_nothing() {
+        let mut doc = wide();
+        let ink = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap();
+        doc.execute("layer.layerMask.revealAll", json!({})).unwrap();
+        doc.execute("layer.new.layer", json!({"name": "Other"})).unwrap();
+        let other = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap();
+        let surface = mask_of(&doc, ink).expect("Ink has a mask");
+        let other_object = doc.layer_object_ids()[&other.to_string()].as_str().unwrap().to_owned();
+        let changes = raw_draft(&mut doc, |tx| tx.set(&ObjectId::from_string(other_object.clone()), "mask", json!(surface)));
+        let before_delete = hash(&mut doc);
+        doc.execute("layer.layerMask.delete", json!({"layer": ink})).unwrap();
+        assert_eq!(mask_of(&doc, ink), None);
+        let (before, version, labels) = (hash(&mut doc), doc.version().unwrap(), history(&doc));
+        let depth = doc.state().unwrap().kdm().unwrap().replica().undo_depth(UndoScope::Person);
+
+        let answer = doc.merge_changes(&changes, &agent()).unwrap();
+        assert_eq!(answer["scope"], Value::Null, "no step: {answer}");
+        assert_eq!(answer["damage"], json!(Damage::None));
+        assert_eq!(hash(&mut doc), before);
+        assert_eq!(doc.version().unwrap(), version, "the version stays");
+        assert_eq!(doc.state().unwrap().kdm().unwrap().replica().undo_depth(UndoScope::Person), depth);
+        assert_eq!(history(&doc), labels, "the history has no step for it");
+        assert_eq!(mask_of(&doc, other), None);
+        assert!(doc.undo().unwrap().0);
+        assert_eq!(hash(&mut doc), before_delete, "the next Undo takes back the person's delete");
+        assert_eq!(mask_of(&doc, ink).as_deref(), Some(surface.as_str()));
+    }
+
+    /// A version restored over a later edit is one step ("Restore Version") whose Undo gives back
+    /// the exact state before and whose Redo the restored one; the file's content restores the same
+    /// way; restoring what the image already holds records nothing.
+    #[test]
+    fn restore_state_is_one_exact_undo_step() {
+        let mut doc = wide();
+        paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [20, 20], "#ff0000");
+        let (saved, saved_hash) = (doc.snapshot().unwrap(), hash(&mut doc));
+        let content = kition_photo_format::read_kdm_content(&doc.save(None).unwrap()).unwrap().unwrap();
+        paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [400, 200], "#0000ff");
+        let before = hash(&mut doc);
+
+        let damage = doc.restore_state(&saved, &kition_photo_engine::kdm_bridge::local_person()).unwrap();
+        assert_ne!(damage, Damage::None);
+        assert_eq!(hash(&mut doc), saved_hash, "the saved version's state");
+        assert_eq!(pixel(&doc, 420, 220), 'w', "the later stroke is gone");
+        assert_eq!(history(&doc).last().map(String::as_str), Some("Restore Version"));
+        assert!(doc.undo().unwrap().0);
+        assert_eq!(hash(&mut doc), before, "one Undo gives back the exact state before the restore");
+        assert_eq!(pixel(&doc, 420, 220), 'b');
+        assert!(doc.redo().unwrap().0);
+        assert_eq!(hash(&mut doc), saved_hash);
+
+        let labels = history(&doc);
+        assert_eq!(doc.restore_state(&content, &kition_photo_engine::kdm_bridge::local_person()).unwrap(), Damage::None, "already there");
+        assert_eq!(history(&doc), labels, "nothing recorded");
+        assert!(doc.undo().unwrap().0);
+        assert_eq!(doc.restore_state(&content, &kition_photo_engine::kdm_bridge::local_person()).unwrap(), Damage::Full, "the file's content restores too");
+        assert_eq!(hash(&mut doc), saved_hash);
+
+        let other = PhotoDocument::create("other.kphoto", 8, 8).unwrap().snapshot().unwrap();
+        assert!(doc.restore_state(&other, &kition_photo_engine::kdm_bridge::local_person()).is_err(), "another document's state is refused");
+    }
+
+    #[test]
+    fn changes_since_answers_a_receipt_or_why_not() {
+        let mut doc = wide();
+        assert_eq!(doc.changes_since(&[])["changes"], Value::Null, "no replica yet");
+        let since = doc.version().unwrap();
+        paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [20, 20], "#ff0000");
+        let receipt = doc.changes_since(&since);
+        assert!(receipt["changes"].is_object(), "{receipt}");
+        assert!(receipt["changes"].to_string().contains("tiles"), "the stroke's tiles: {receipt}");
+        let now = doc.version().unwrap();
+        let unchanged = doc.changes_since(&now);
+        assert!(unchanged["changes"].is_object(), "{unchanged}");
+        let elsewhere = PhotoDocument::create("other.kphoto", 8, 8).unwrap().version().unwrap();
+        let refused = doc.changes_since(&elsewhere);
+        assert_eq!(refused["changes"], Value::Null, "{refused}");
+        assert!(refused["unavailable"].is_string());
+    }
+
+    /// `modelReply` names the one layer a reply holds by its tool id (its number), as the whole
+    /// document's tool ids name it, and leaves a reply naming no object as it was.
+    #[test]
+    fn model_reply_names_only_the_objects_the_reply_holds() {
+        let mut doc = wide();
+        for n in 0..40 {
+            doc.execute("layer.new.layer", json!({"name": format!("L{n}")})).unwrap();
+        }
+        doc.version().unwrap();
+        let layer = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap();
+        let object = doc.layer_object_ids()[&layer.to_string()].as_str().unwrap().to_owned();
+        let replica = doc.state().unwrap().kdm().unwrap().replica();
+        let full = ToolIds::of_replica(replica);
+        let want = full.show(&ObjectId::from_string(object.clone()));
+        let reply = doc.model_reply(&json!({"target": object, "note": "kept"}).to_string()).unwrap();
+        let reply: Value = serde_json::from_str(&reply).unwrap();
+        assert_eq!(reply["target"], json!(want), "the same id as the full read");
+        assert_eq!(reply["target"], json!(layer.to_string()));
+        assert_eq!(reply["note"], "kept");
+        let plain = json!({"answer": 42, "text": "no ids here"});
+        assert_eq!(serde_json::from_str::<Value>(&doc.model_reply(&plain.to_string()).unwrap()).unwrap(), plain);
+        assert!(doc.model_reply("not json").is_err());
+    }
+
+    #[test]
+    fn model_describe_and_model_batch_go_through_the_object_model() {
+        let mut doc = wide();
+        let described = doc.model_describe().unwrap();
+        assert!(described.to_string().contains("Layer"), "{described}");
+        let layer = doc.inspect().unwrap()["activeLayer"].as_u64().unwrap();
+        let answer = doc.model_batch(&json!({"ops": [{"op": "set", "target": layer.to_string(), "field": "name", "value": "Batched"}]}).to_string()).unwrap();
+        assert!(answer.is_object(), "{answer}");
+        assert!(doc.inspect().unwrap()["layers"].to_string().contains("Batched"), "the batch renamed the layer");
+        let refused = doc.model_batch("not json").unwrap_err();
+        assert!(refused.contains("invalid-op"), "{refused}");
     }
 }

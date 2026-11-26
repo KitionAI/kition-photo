@@ -1,7 +1,8 @@
 //! Minimal ZIP container: we write STORE entries (the payloads are already
-//! zstd-compressed) and read STORE or DEFLATE entries (so a bundle that was
-//! unzipped and re-zipped by another tool still loads). No ZIP64, no
-//! encryption, no multi-disk archives.
+//! zstd-compressed) and one DEFLATE entry, the document's `content.json` (at a fixed level, so
+//! the same content gives the same bytes), and read STORE or DEFLATE entries (so a bundle that
+//! was unzipped and re-zipped by another tool still loads). No ZIP64, no encryption, no
+//! multi-disk archives.
 
 use std::io::Read;
 
@@ -32,7 +33,11 @@ pub fn crc32(data: &[u8]) -> u32 {
     !c
 }
 
-/// Streaming writer for STORE entries.
+/// The DEFLATE level of the entries [`ZipWriter::add_deflated`] writes: fixed, so one content
+/// always deflates to the same bytes with this build.
+pub const DEFLATE_LEVEL: u32 = 6;
+
+/// Streaming writer for STORE entries and DEFLATE ones ([`ZipWriter::add_deflated`]).
 pub struct ZipWriter {
     out: Vec<u8>,
     central: Vec<u8>,
@@ -50,11 +55,29 @@ impl ZipWriter {
         ZipWriter { out: Vec::new(), central: Vec::new(), count: 0 }
     }
 
+    /// Adds a STORE entry.
     pub fn add(&mut self, name: &str, data: &[u8]) -> Result<(), FormatError> {
+        self.add_entry(name, data, None)
+    }
+
+    /// Adds a DEFLATE entry, compressed at [`DEFLATE_LEVEL`].
+    pub fn add_deflated(&mut self, name: &str, data: &[u8]) -> Result<(), FormatError> {
+        use std::io::Write;
+        let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::new(DEFLATE_LEVEL));
+        encoder.write_all(data)?;
+        let deflated = encoder.finish()?;
+        self.add_entry(name, data, Some(&deflated))
+    }
+
+    /// Adds `data` under `name`: stored, or as `deflated` (its DEFLATE stream).
+    fn add_entry(&mut self, name: &str, data: &[u8], deflated: Option<&[u8]>) -> Result<(), FormatError> {
         if self.count == u16::MAX {
             return Err(FormatError::Unsupported("more than 65535 zip entries (ZIP64 not supported)".into()));
         }
         let size = u32::try_from(data.len()).map_err(|_| FormatError::Unsupported("zip entry over 4 GiB".into()))?;
+        let payload = deflated.unwrap_or(data);
+        let stored = u32::try_from(payload.len()).map_err(|_| FormatError::Unsupported("zip entry over 4 GiB".into()))?;
+        let method: u16 = if deflated.is_some() { 8 } else { 0 };
         let offset = u32::try_from(self.out.len()).map_err(|_| FormatError::Unsupported("zip over 4 GiB".into()))?;
         let crc = crc32(data);
         let name_b = name.as_bytes();
@@ -63,27 +86,27 @@ impl ZipWriter {
         o.extend_from_slice(&LOCAL_SIG.to_le_bytes());
         o.extend_from_slice(&20u16.to_le_bytes()); // version needed
         o.extend_from_slice(&0x0800u16.to_le_bytes()); // flags: UTF-8 names
-        o.extend_from_slice(&0u16.to_le_bytes()); // method: store
+        o.extend_from_slice(&method.to_le_bytes()); // method: store or deflate
         o.extend_from_slice(&0u16.to_le_bytes()); // time
         o.extend_from_slice(&0x21u16.to_le_bytes()); // date: 1980-01-01
         o.extend_from_slice(&crc.to_le_bytes());
-        o.extend_from_slice(&size.to_le_bytes());
+        o.extend_from_slice(&stored.to_le_bytes());
         o.extend_from_slice(&size.to_le_bytes());
         o.extend_from_slice(&(name_b.len() as u16).to_le_bytes());
         o.extend_from_slice(&0u16.to_le_bytes());
         o.extend_from_slice(name_b);
-        o.extend_from_slice(data);
+        o.extend_from_slice(payload);
         // Central directory entry.
         let c = &mut self.central;
         c.extend_from_slice(&CENTRAL_SIG.to_le_bytes());
         c.extend_from_slice(&20u16.to_le_bytes()); // made by
         c.extend_from_slice(&20u16.to_le_bytes()); // needed
         c.extend_from_slice(&0x0800u16.to_le_bytes());
-        c.extend_from_slice(&0u16.to_le_bytes());
+        c.extend_from_slice(&method.to_le_bytes());
         c.extend_from_slice(&0u16.to_le_bytes());
         c.extend_from_slice(&0x21u16.to_le_bytes());
         c.extend_from_slice(&crc.to_le_bytes());
-        c.extend_from_slice(&size.to_le_bytes());
+        c.extend_from_slice(&stored.to_le_bytes());
         c.extend_from_slice(&size.to_le_bytes());
         c.extend_from_slice(&(name_b.len() as u16).to_le_bytes());
         c.extend_from_slice(&[0; 8]); // extra len, comment len, disk, internal attrs
@@ -261,6 +284,25 @@ mod tests {
         assert_eq!(r.read_by_name("dir/b.bin", 100).unwrap(), [0, 1, 2, 3]);
         assert!(r.read_by_name("empty", 0).unwrap().is_empty());
         assert!(matches!(r.read_by_name("a.txt", 3), Err(FormatError::LimitExceeded(_))));
+    }
+
+    /// A DEFLATE entry reads back as its data, and the same data always deflates to the same
+    /// archive bytes (the level is fixed).
+    #[test]
+    fn deflated_entries_round_trip_and_repeat_their_bytes() {
+        let content = br#"{"kdm":1,"kit":"kit.photo","objects":{}}"#.repeat(40);
+        let archive = |content: &[u8]| {
+            let mut w = ZipWriter::new();
+            w.add("manifest.json", b"{}").unwrap();
+            w.add_deflated("content.json", content).unwrap();
+            w.finish().unwrap()
+        };
+        let bytes = archive(&content);
+        assert_eq!(bytes, archive(&content), "the same content, the same bytes");
+        let r = ZipReader::new(&bytes).unwrap();
+        assert_eq!(r.read_by_name("content.json", content.len()).unwrap(), content);
+        assert!(bytes.len() < content.len(), "the entry is compressed: {} of {}", bytes.len(), content.len());
+        assert_eq!(r.find("content.json").map(|e| e.method), Some(8));
     }
 
     #[test]

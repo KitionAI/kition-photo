@@ -12,7 +12,7 @@
 //! linked object layer's source only through the host, never outside the workspace.
 //!
 //! The identity a file carries (`document.identity`, `document.fork`): a `.kphoto` bundle embeds
-//! its replica (`kdm.bin`), so a byte copy is the same document and a fork holds a copy under a new
+//! its replica's content (`content.json`), so a byte copy is the same document and a fork holds a copy under a new
 //! id ([`PhotoFiles`]); a PSD or PSB embeds none.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -24,7 +24,7 @@ use kition_photo_engine::kdm_model::kition_kit::kdm::Schema;
 use kition_photo_engine::kdm_model::kition_kit::session::KitModel;
 
 /// Where this kit's files keep the document's replica (Kit Process Protocol section 5.6): a
-/// `.kphoto` bundle's `kdm.bin` and the tiles and blobs it names
+/// `.kphoto` bundle's `content.json` and the tiles and blobs it names
 /// (`kition_photo_engine::kition_photo_bridge::embedded_replica` and `replace_replica`).
 struct PhotoFiles;
 

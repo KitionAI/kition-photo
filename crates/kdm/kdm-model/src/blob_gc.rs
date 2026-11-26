@@ -195,16 +195,28 @@ impl BlobIndex {
         steps.redo.clear();
     }
 
-    pub fn undone(&mut self, scope: UndoScope, moved: Moved) {
+    /// An undo of `scope` took `taken` steps off the replica's stack (those it passed over, with
+    /// nothing left to change, and the one it took back, `done`): one redo step brings them back
+    /// together (`UndoOutcome`).
+    pub fn undone(&mut self, scope: UndoScope, taken: usize, done: bool, moved: Moved) {
         let steps = self.scope(scope);
-        steps.undo.pop_back();
-        steps.redo.push(moved.all());
+        for _ in 0..taken {
+            steps.undo.pop_back();
+        }
+        if done {
+            steps.redo.push(moved.all());
+        }
     }
 
-    pub fn redone(&mut self, scope: UndoScope, moved: Moved) {
+    /// The mirror of [`BlobIndex::undone`] for a redo.
+    pub fn redone(&mut self, scope: UndoScope, taken: usize, done: bool, moved: Moved) {
         let steps = self.scope(scope);
-        steps.redo.pop();
-        steps.undo.push_back(moved.all());
+        for _ in 0..taken {
+            steps.redo.pop();
+        }
+        if done {
+            steps.undo.push_back(moved.all());
+        }
     }
 
     pub fn undo_steps(&self, scope: UndoScope) -> usize {

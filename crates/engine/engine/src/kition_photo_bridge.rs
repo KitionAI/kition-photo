@@ -1,9 +1,10 @@
 //! `.kphoto` open and save with the document's KDM replica (Kition phase 3a, Task 4).
 //!
-//! The native bundle stores the replica snapshot (`kdm.bin`) and the blobs it references next
-//! to the usual manifest and tiles (`kition_photo_format`). Opening a bundle that has one restores
-//! the replica through [`Session::open_snapshot`], so the document keeps its KDM identity and
-//! undo history across saves; a bundle without one (or any other format) opens and saves exactly
+//! The native bundle stores the replica's content (`content.json`, `Replica::content_snapshot`)
+//! and the blobs it references next to the usual manifest and tiles (`kition_photo_format`).
+//! Opening a bundle that has one opens the replica from it through [`Session::open_snapshot`], so
+//! the document keeps its KDM identity and object ids across saves (its history stays with the
+//! session and the host's store); a bundle without one (or any other format) opens and saves exactly
 //! as before, and the replica is then made lazily on the first shared edit (see [`crate::kdm_bridge`]).
 
 use std::sync::Arc;
@@ -19,8 +20,8 @@ pub fn is_kition_photo_name(name: &str) -> bool {
         .is_some_and(|(stem, ext)| !stem.is_empty() && ext.eq_ignore_ascii_case(kition_photo_format::EXTENSION))
 }
 
-/// The replica a file of this kit embeds, as a KDM snapshot (`document.identity`, KitModel M7a):
-/// a `.kphoto` bundle's `kdm.bin`, which [`Session::open_file`] opens the document from, so a byte
+/// The replica a file of this kit embeds, as its KDM content (`document.identity`, KitModel M7a):
+/// a `.kphoto` bundle's `content.json`, which [`Session::open_file`] opens the document from, so a byte
 /// copy of the bundle is the same document. `None` for a bundle saved without a replica or with
 /// a replica of another schema version (opened from its manifest as a new document), a PSD or
 /// PSB (Photoshop's format embeds none: the kit makes a replica under a new id each time it opens
@@ -33,32 +34,32 @@ pub fn embedded_replica(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
     if !kition_photo_format::is_kphoto(bytes) {
         return Err(EngineError::Other("not a Kition Photo document (.kphoto) or a Photoshop document (.psd, .psb)".into()));
     }
-    Ok(kition_photo_format::read_kdm_snapshot(bytes).map_err(kdm_error)?.filter(|snapshot| kdm_model::replica_matches(snapshot)))
+    Ok(kition_photo_format::read_kdm_content(bytes).map_err(kdm_error)?.filter(|content| kdm_model::replica_matches(content)))
 }
 
-/// A `.kphoto` bundle's replica entry (its content snapshot) and the blobs it references, when it
+/// A `.kphoto` bundle's replica entry (its content) and the blobs it references, when it
 /// has one of this schema version; `None` for any other bytes.
 pub fn embedded_bundle(bytes: &[u8]) -> Result<Option<(Vec<u8>, MemoryBlobs)>> {
     if !kition_photo_format::is_kphoto(bytes) {
         return Ok(None);
     }
     let Some(bundle) = kition_photo_format::read_kdm(bytes).map_err(kdm_error)? else { return Ok(None) };
-    if !kdm_model::replica_matches(&bundle.snapshot) {
+    if !kdm_model::replica_matches(&bundle.content) {
         return Ok(None);
     }
     let blobs = MemoryBlobs(bundle.blobs.into_iter().map(|(hash, data)| (hash, Arc::<[u8]>::from(data))).collect());
-    Ok(Some((bundle.snapshot, blobs)))
+    Ok(Some((bundle.content, blobs)))
 }
 
 /// `bytes` (a `.kphoto` bundle with a replica) holding the document `snapshot` instead of its own
-/// (`document.fork`, KitModel M7a): `kdm.bin` is that document's content snapshot (no history),
+/// (`document.fork`, KitModel M7a): `content.json` is that document's content (no history),
 /// and the replica's blobs are only the ones its current state references, so no earlier identity
 /// or history (a deleted layer's tiles, what an undo step kept) stays in the file. The manifest,
 /// tiles, previews and entries this build does not know are kept: they hold the same image.
 pub fn replace_replica(bytes: &[u8], snapshot: &[u8]) -> Result<Vec<u8>> {
     use kdm_model::kition_kit::kdm::{ActorId, Replica};
     use kdm_model::kition_kit::session::KitModel;
-    let mut replica = Replica::load(kdm_model::PhotoModel::schema(), snapshot, ActorId::random()).map_err(kdm_error)?;
+    let replica = Replica::load(kdm_model::PhotoModel::schema(), snapshot, ActorId::random()).map_err(kdm_error)?;
     let content = replica.content_snapshot().map_err(kdm_error)?;
     let keep = kdm_model::state_blobs(&replica);
     kition_photo_format::replace_kdm(bytes, &content, &|hash| keep.contains(hash)).map_err(kdm_error)
@@ -67,17 +68,17 @@ pub fn replace_replica(bytes: &[u8], snapshot: &[u8]) -> Result<Vec<u8>> {
 impl Session {
     /// Opens any file `kition_photo_io::import` supports as a new document; a `.kphoto` whose
     /// bundle holds a KDM replica of this schema version opens it with [`Session::open_snapshot`]
-    /// instead (the file's content snapshot: the document's identity and object ids, no history).
+    /// instead (the file's content: the document's identity and object ids, no history).
     /// A replica of another schema
     /// version is not read: the document is rebuilt from the bundle's manifest, as one saved
     /// without a replica. Answers the new document's index (made active).
     pub fn open_file(&mut self, name: &str, bytes: &[u8]) -> Result<usize> {
         if (is_kition_photo_name(name) || kition_photo_format::is_kphoto(bytes))
             && let Some(bundle) = kition_photo_format::read_kdm(bytes).map_err(kdm_error)?
-            && kdm_model::replica_matches(&bundle.snapshot)
+            && kdm_model::replica_matches(&bundle.content)
         {
             let blobs = MemoryBlobs(bundle.blobs.into_iter().map(|(hash, data)| (hash, Arc::<[u8]>::from(data))).collect());
-            return self.open_snapshot(&bundle.snapshot, blobs, name);
+            return self.open_snapshot(&bundle.content, blobs, name);
         }
         let mut imported = kition_photo_io::import(name, bytes).map_err(|error| EngineError::Other(error.to_string()))?;
         // A native bundle without a replica may omit rendered previews too. Resolve only
@@ -93,16 +94,15 @@ impl DocState {
     /// Saves this document as a `.kphoto` bundle, with its KDM replica if it has made one yet
     /// (see [`DocState::kdm`]); one that hasn't saves without it (and gets one lazily on its first
     /// shared edit). The bundle holds the replica's content, not its history (kition-sdk data
-    /// model 7.3, rule M16b): `kdm.bin` is its content snapshot, of the history only the seal, and
-    /// of its blobs only those the current state references. The history (undo steps, deleted
-    /// layers' tiles) stays in the session and with the host. A replica must be sealed first
-    /// ([`DocState::seal`], which hosts call as `prepareSave`); an unsealed one is refused.
+    /// model 7.4): `content.json` is the state alone, the same bytes for the same state, and of
+    /// its blobs only those the current state references. The history (undo steps, deleted
+    /// layers' tiles) stays in the session and with the host.
     pub fn save_kphoto(&self) -> Result<Vec<u8>> {
         let doc = &self.doc;
         let kdm = match self.kdm() {
             Some(kdm) => {
                 let content = kdm.content().map_err(kdm_error)?;
-                Some(kition_photo_format::KdmSave { snapshot: content.snapshot, blobs: content.blobs })
+                Some(kition_photo_format::KdmSave { content: content.content, blobs: content.blobs })
             }
             None => None,
         };
@@ -126,15 +126,6 @@ impl DocState {
             kdm.set_view(doc.clone());
         }
         self.doc = Arc::new(doc);
-        Ok(())
-    }
-
-    /// Seals the document's replica before a save (`KitDocument::prepare_save`), so the file holds
-    /// its own content snapshot: no edit, no undo step.
-    pub fn seal(&mut self) -> Result<()> {
-        if let Some(kdm) = self.kdm.as_mut() {
-            kdm.seal().map_err(kdm_error)?;
-        }
         Ok(())
     }
 }
@@ -163,30 +154,29 @@ mod tests {
         assert_eq!(b.active().unwrap().doc.size, a.active().unwrap().doc.size);
     }
 
-    /// Edit, seal, save, load: the reopened document keeps the replica's identity (same version
-    /// and `state_hash`), though the file holds its content and not its history. Undo is this person's own editing session (`DocState::history`'s
-    /// snapshots, which steps the replica back as collaborators' edits arrive); it is not part
-    /// of the replica bytes (KDM's own undo manager, loro's, is rebuilt fresh from a loaded
-    /// snapshot too), so a freshly reopened document starts with none of its own, cleanly: it is
-    /// not stuck, it can take new edits (and undo those) right away. The document that saved it
-    /// keeps its own undo history untouched by the save.
+    /// Edit, save, load: the reopened document is the same document (its `docId` and state), though
+    /// the file holds its content and not its history or version (a reopen starts a new line of
+    /// changes). Undo is this person's own editing session (`DocState::history`'s snapshots, which
+    /// step the replica back); it is not part of the file, so a freshly reopened document starts
+    /// with none of its own, cleanly: it is not stuck, it can take new edits (and undo those) right
+    /// away. The document that saved it keeps its own undo history untouched by the save, and an
+    /// unchanged document saves the same bytes again.
     #[test]
     fn a_kition_photo_with_a_replica_keeps_its_identity_across_a_reload() {
         let mut a = Session::new();
         a.execute("file.new", json!({"width": 64, "height": 40, "background": "white"})).unwrap();
         painted(&mut a);
-        // As a host saves: sealed first (`prepare_save`).
-        a.active_mut().unwrap().seal().unwrap();
-        let version_before = a.version().unwrap();
         let hash_before = a.state_hash().unwrap();
         let bytes = a.active().unwrap().save_kphoto().unwrap();
         assert!(kition_photo_format::read_kdm(&bytes).unwrap().is_some());
+        assert_eq!(a.active().unwrap().save_kphoto().unwrap(), bytes, "saved again unchanged: the same bytes");
 
         let mut b = Session::new();
         let index = b.open_file("round.kphoto", &bytes).unwrap();
         assert!(b.set_active(index));
-        assert_eq!(b.version().unwrap(), version_before, "the replica's version survived the round trip");
+        assert_eq!(b.doc_id(), a.doc_id(), "the same document");
         assert_eq!(b.state_hash().unwrap(), hash_before);
+        assert_eq!(b.active().unwrap().save_kphoto().unwrap(), bytes, "the reopened document saves the file's own bytes");
 
         assert!(!b.undo(), "history restarts cleanly: nothing of b's own to undo yet");
         painted(&mut b);
@@ -195,32 +185,7 @@ mod tests {
         assert!(a.undo(), "saving did not disturb a's own undo history");
     }
 
-    /// A saves a `.kphoto`; B opens it (so both start from the same replica); A paints some more;
-    /// B imports A's changes (with blob transfer) and converges to the same state.
-    #[test]
-    fn two_documents_exchange_changes_through_a_kition_photo_round_trip() {
-        let mut a = Session::new();
-        a.execute("file.new", json!({"width": 64, "height": 40, "background": "white"})).unwrap();
-        painted(&mut a);
-        a.active_mut().unwrap().seal().unwrap();
-        let bytes = a.active().unwrap().save_kphoto().unwrap();
-
-        let mut b = Session::new();
-        let index = b.open_file("shared.kphoto", &bytes).unwrap();
-        assert!(b.set_active(index));
-
-        a.execute("paint.stroke", json!({"points": [[10, 10, 1], [40, 25, 1]], "size": 8, "color": "#00ff00"})).unwrap();
-
-        let since = b.version().unwrap();
-        let changes = a.export_changes(&since).unwrap();
-        b.add_blobs(a.blobs().unwrap()).unwrap();
-        b.import_changes(&changes).unwrap();
-
-        assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-        assert_eq!(a.active().unwrap().doc.layers.len(), b.active().unwrap().doc.layers.len());
-    }
-
-    /// A `.kphoto` whose `kdm.bin` was written with another schema version (an older build's)
+    /// A `.kphoto` whose `content.json` was written with another schema version (an older build's)
     /// is not read as a replica: the document opens from the bundle's manifest, as a new
     /// replica, and the old one is not its identity.
     #[test]
@@ -240,7 +205,7 @@ mod tests {
         })
         .unwrap();
         let kdm = kition_photo_format::KdmSave {
-            snapshot: old.snapshot().unwrap(),
+            content: old.content_snapshot().unwrap(),
             blobs: blobs.0.iter().map(|(hash, data)| (hash.clone(), data.clone())).collect(),
         };
         let bytes = kition_photo_format::save_to_bytes(&doc, &kition_photo_format::SaveOptions { kdm: Some(kdm) }).unwrap();

@@ -102,13 +102,6 @@ impl PhotoDocument {
         Self { session, name: name.to_owned(), kept: Default::default(), pick_snapshots: Default::default(), strokes: Default::default() }
     }
 
-    /// The file as every host saves it: [`KitDocument::prepare_save`] (which seals the replica),
-    /// then [`KitDocument::save`]. For tools and tests that play the host.
-    pub fn save_sealed(&mut self, name: Option<&str>) -> Result<Vec<u8>, String> {
-        self.prepare_save()?;
-        self.save(name)
-    }
-
     fn state(&self) -> Result<&kition_photo_engine::DocState, String> {
         self.session.active().ok_or_else(|| "no document is open".to_owned())
     }
@@ -494,8 +487,8 @@ impl KitDocument for PhotoDocument {
     }
 
     fn fork_for_premises(&self) -> Result<Self, String> {
-        // A `.kphoto` holds content, not history: a fork for planning is the live replica's own
-        // (its full snapshot), whose history reaches every version the plan compares with.
+        // A `.kphoto` holds content, not its line of changes: a fork for planning is the live
+        // replica's own (its snapshot, on the same line and at the same version).
         let state = self.state()?;
         let mut fork = match state.kdm() {
             Some(kdm) if kition_photo_engine::kition_photo_bridge::is_kition_photo_name(&self.name) => {
@@ -627,21 +620,10 @@ impl KitDocument for PhotoDocument {
         command_specs().iter().filter(|spec| self.admitted(spec.id) && !self.session.is_enabled(spec.id)).map(|spec| spec.id.to_owned()).collect()
     }
 
-    /// Seals the replica (kition-sdk data model 7.3) so a `.kphoto` save writes its content
-    /// snapshot, and the seal is in the replica the host stores and syncs: a `system` change, no
-    /// edit, no undo step.
-    fn prepare_save(&mut self) -> Result<(), String> {
-        match self.session.active_mut() {
-            Some(state) => state.seal().map_err(|error| error.to_string()),
-            None => Ok(()),
-        }
-    }
-
     /// The image as a file in the format of `name`'s extension (PSD by default). Saving a
     /// `.kphoto` embeds the document's content as its KDM replica holds it, if it has made one yet:
-    /// the content snapshot, no history (rule M16b), so reopening it keeps the same document
-    /// identity and object ids. Hosts call [`KitDocument::prepare_save`] first, which seals the
-    /// replica; a save of edits nobody sealed is refused.
+    /// `content.json`, the state alone (kition-sdk data model 7.4), so reopening it keeps the same
+    /// document identity and object ids, and an unchanged document saves the same bytes.
     fn save(&self, name: Option<&str>) -> Result<Vec<u8>, String> {
         let target = name.unwrap_or(&self.name);
         let state = self.state()?;
@@ -766,6 +748,11 @@ pub mod web {
 
     fn error(message: String) -> JsError {
         JsError::new(&message)
+    }
+
+    /// An origin in the KDM's commit form, the JSON array `[kind, principal, label]`.
+    fn origin_of(origin: &str) -> Result<kition_photo_engine::Origin, JsError> {
+        kition_photo_engine::Origin::decode(origin).ok_or_else(|| error(format!("origin is not [kind, principal, label]: {origin}")))
     }
 
     #[wasm_bindgen(js_class = "PhotoDocument", wasm_bindgen = kition_kit::wasm_bindgen)]
@@ -925,6 +912,54 @@ pub mod web {
             let params = kition_kit::parse_params(params).map_err(error)?;
             let origin = kition_photo_engine::Origin::decode(origin).ok_or_else(|| error(format!("origin is not [kind, principal, label]: {origin}")))?;
             self.0.execute_as(command, params, &origin).map(|value| value.to_string()).map_err(error)
+        }
+
+        /// A draft's changes taken in as one undo step of the person, recorded with `origin`
+        /// (`[kind, principal, label]`): `{"damage", "summary", "scope"}`. A refusal fails with
+        /// the KDM's message.
+        #[wasm_bindgen(js_name = mergeChanges)]
+        pub fn merge_changes(&mut self, changes: &[u8], origin: &str) -> Result<String, JsError> {
+            let origin = origin_of(origin)?;
+            self.0.merge_changes(changes, &origin).map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// What merging a draft's changes would change now, as `StateDiff` JSON; changes nothing.
+        #[wasm_bindgen(js_name = compareChanges)]
+        pub fn compare_changes(&self, changes: &[u8]) -> Result<String, JsError> {
+            self.0.compare_changes(changes).map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// `origin` is the KDM's commit form, `[kind, principal, label]`; answers the damage JSON
+        /// (Kit UI protocol `replica/restore`).
+        #[wasm_bindgen(js_name = restoreState)]
+        pub fn restore_state(&mut self, snapshot: &[u8], origin: &str) -> Result<String, JsError> {
+            let origin = origin_of(origin)?;
+            self.0.restore_state(snapshot, &origin).map(|damage| serde_json::to_string(&damage).unwrap_or_else(|_| "null".to_owned())).map_err(error)
+        }
+
+        /// What changed since the version `since` (a receipt): `{"changes": StateDiff}`, or
+        /// `{"changes": null, "unavailable"}` when the replica's log does not hold it.
+        #[wasm_bindgen(js_name = changesSince)]
+        pub fn changes_since(&self, since: &[u8]) -> String {
+            self.0.changes_since(since).to_string()
+        }
+
+        /// An agent's reply (JSON text) with its object ids named as the tool interface names them.
+        #[wasm_bindgen(js_name = modelReply)]
+        pub fn model_reply(&self, value: &str) -> Result<String, JsError> {
+            self.0.model_reply(value).map_err(error)
+        }
+
+        /// `model/describe` (the object model) as JSON text.
+        #[wasm_bindgen(js_name = modelDescribe)]
+        pub fn model_describe(&mut self) -> Result<String, JsError> {
+            self.0.model_describe().map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// `model/batch`: the request and the answer as JSON text.
+        #[wasm_bindgen(js_name = modelBatch)]
+        pub fn model_batch(&mut self, request: &str) -> Result<String, JsError> {
+            self.0.model_batch(request).map(|answer| answer.to_string()).map_err(error)
         }
 
         /// Every blob the replica references or can still bring back, for a peer's `addBlobs`.

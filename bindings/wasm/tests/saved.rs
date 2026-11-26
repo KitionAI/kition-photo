@@ -42,7 +42,7 @@ fn leaves(path: &str, a: &Value, b: &Value, out: &mut Vec<String>) {
 
 /// The mismatches between `doc` and its saved file (as `name`) opened again.
 fn mismatches(doc: &mut PhotoDocument, name: &str) -> Vec<String> {
-    let bytes = doc.save_sealed(Some(name)).unwrap();
+    let bytes = doc.save(Some(name)).unwrap();
     let mut again = PhotoDocument::open(name, &bytes).unwrap();
     let schema = kdm_model::PhotoModel::schema();
     let diff = reread::diff_paired(&schema, &state(doc), &state(&mut again)).to_json();

@@ -1,19 +1,17 @@
-//! A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.3, rule M16b;
-//! feature `photo.file.content-only`): its replica entry (`kdm.bin`) holds one change (the seal)
-//! and none of the deleted or overwritten content; an unchanged image saves to the same bytes; a
-//! file opened without a store is the same document and edits; a replica from the file and one
-//! with the whole history converge; undo after a save takes back the last edit; and a file opens
-//! on top of a stored replica. Hosts seal before saving (`prepare_save`); a save of edits nobody
-//! sealed is refused.
+//! A `.kphoto` holds the image's content, not its history (kition-sdk data model 7.4; feature
+//! `photo.file.content-only`): its replica entry (`content.json`) is the state alone, with no
+//! version, origin or author, and none of the deleted or overwritten content; an unchanged image
+//! saves to the same bytes, also once opened again; a file opened without a store is the same
+//! document with the same object ids and edits; undo after a save takes back the last edit; and a
+//! file opens on top of a stored replica.
 //!
 //! The needles below are written once each and share no run of four characters with anything else
-//! in the image, so the engine's compression keeps each literal in the bytes that hold it: every
-//! test checks the session's full snapshot holds them (the control) before it checks the file does
-//! not.
+//! in the image, so each literal is in the bytes that hold it: the test checks the session's
+//! changes hold them (the control) before it checks the file does not.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic)]
 
 use kition_kit::KitDocument;
-use kition_kit::kdm::{ActorId, Origin, Replica, Version};
+use kition_kit::kdm::{ActorId, Replica, Version};
 use kition_kit::session::KitModel;
 use kition_photo_kit::PhotoDocument;
 use serde_json::{Value, json};
@@ -31,7 +29,7 @@ fn contains(bytes: &[u8], needle: &str) -> bool {
 
 /// The replica entry of a `.kphoto`.
 fn content(file: &[u8]) -> Vec<u8> {
-    kition_photo_format::read_kdm_snapshot(file).unwrap().expect("the file holds the replica's content")
+    kition_photo_format::read_kdm_content(file).unwrap().expect("the file holds the replica's content")
 }
 
 /// What a `.kphoto` holds, decompressed: its replica entry and its manifest.
@@ -42,17 +40,12 @@ fn held(file: &[u8]) -> Vec<u8> {
     out
 }
 
-fn version_of(file: &[u8]) -> Version {
-    Replica::load(kition_photo_engine::kdm_model::PhotoModel::schema(), &content(file), ActorId::random()).unwrap().version()
-}
-
 fn version(doc: &mut PhotoDocument) -> Version {
     Version::decode(&doc.version().unwrap()).unwrap()
 }
 
-/// The file as a host saves it: sealed first (`prepare_save`), then the bytes.
-fn host_save(doc: &mut PhotoDocument) -> Vec<u8> {
-    doc.prepare_save().unwrap();
+/// The file as a host saves it.
+fn host_save(doc: &PhotoDocument) -> Vec<u8> {
     doc.save(Some(FILE)).unwrap()
 }
 
@@ -61,9 +54,10 @@ fn layer(answer: &Value) -> u64 {
 }
 
 /// An image whose history holds typed-then-deleted text, a deleted layer and an overwritten layer
-/// name; answers it and its type layer.
-fn image_with_history() -> (PhotoDocument, u64) {
+/// name; answers it, its type layer and the version its replica began at.
+fn image_with_history() -> (PhotoDocument, u64, Vec<u8>) {
     let mut doc = PhotoDocument::create(FILE, 96, 64).unwrap();
+    let began = doc.version().unwrap();
     let title = layer(&doc.execute("text.add", json!({ "x": 4, "y": 20, "text": "Kept", "size": 12 })).unwrap());
     doc.execute("text.edit", json!({ "layer": title, "text": format!("Kept{TYPED_THEN_DELETED}") })).unwrap();
     doc.execute("text.edit", json!({ "layer": title, "text": "Kept" })).unwrap();
@@ -71,7 +65,7 @@ fn image_with_history() -> (PhotoDocument, u64) {
     doc.execute("layer.delete", json!({ "layer": gone })).unwrap();
     let renamed = layer(&doc.execute("layer.new.layer", json!({ "name": OVERWRITTEN })).unwrap());
     doc.execute("layer.setProps", json!({ "layer": renamed, "name": "Paint" })).unwrap();
-    (doc, title)
+    (doc, title, began)
 }
 
 fn state(doc: &mut PhotoDocument) -> Value {
@@ -86,53 +80,56 @@ fn names(doc: &PhotoDocument) -> Vec<String> {
 }
 
 #[test]
-fn the_file_holds_the_content_and_of_the_history_only_the_seal() {
-    let (mut doc, _) = image_with_history();
-    let full = doc.snapshot().unwrap();
+fn the_file_holds_the_content_and_none_of_the_history() {
+    let (mut doc, _, began) = image_with_history();
+    let changes = doc.export_changes(&began).unwrap();
     for needle in NEEDLES {
-        assert!(contains(&full, needle), "the control: the session's history holds {needle}");
+        assert!(contains(&changes, needle), "the control: the session's changes hold {needle}");
     }
-    assert!(Replica::snapshot_origins(&full).unwrap().len() > 1, "the control: the history holds every change");
-    let bytes = host_save(&mut doc);
+    let bytes = host_save(&doc);
     let inside = held(&bytes);
     for needle in NEEDLES {
         assert!(!contains(&inside, needle), "the file holds {needle}");
     }
-    assert_eq!(Replica::snapshot_origins(&content(&bytes)).unwrap(), vec![Some(Origin::system("content-seal"))], "of the history, one change: the seal");
-    // The direct path: the seal is the session's own.
-    assert_eq!(version(&mut doc), version_of(&bytes));
+    let entry: Value = serde_json::from_slice(&content(&bytes)).unwrap();
+    let mut keys: Vec<&str> = entry.as_object().unwrap().keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    assert_eq!(keys, ["docId", "kdm", "kit", "objects", "schemaVersion"], "the state alone: no version, no line of changes");
+    assert!(!contains(&content(&bytes), "\"lineage\""), "the content names no line of changes");
+    assert_eq!(entry["docId"], json!(doc.doc_id().unwrap()));
     let mut back = PhotoDocument::open(FILE, &bytes).unwrap();
     assert_eq!(state(&mut back), state(&mut doc), "the state is all there");
 }
 
 #[test]
 fn an_unchanged_image_saves_to_the_same_bytes() {
-    let (mut doc, _) = image_with_history();
-    let first = host_save(&mut doc);
+    let (mut doc, _, _) = image_with_history();
+    let first = host_save(&doc);
     let at = version(&mut doc);
-    assert_eq!(host_save(&mut doc), first, "two saves with nothing between");
-    assert_eq!(version(&mut doc), at, "a sealed image seals nothing more");
+    assert_eq!(host_save(&doc), first, "two saves with nothing between");
+    assert_eq!(version(&mut doc), at, "a save writes no change");
     doc.mark_saved();
-    assert_eq!(host_save(&mut doc), first, "and after the host stored the first");
-    // Opened again, the replica entry is the same bytes (the manifest names the session's own
-    // document handle, `document.id`, which a new session numbers anew).
-    let mut opened = PhotoDocument::open(FILE, &first).unwrap();
-    assert_eq!(content(&host_save(&mut opened)), content(&first), "and from the file opened again");
+    assert_eq!(host_save(&doc), first, "and after the host stored the first");
+    // Opened again, the file saves to its own bytes, and the layers keep their object ids.
+    let opened = PhotoDocument::open(FILE, &first).unwrap();
+    assert_eq!(content(&host_save(&opened)), content(&first), "the replica entry, from the file opened again");
+    assert_eq!(host_save(&opened), first, "the whole file, from the file opened again");
+    assert_eq!(opened.layer_object_ids(), doc.layer_object_ids(), "the same object ids");
 }
 
 #[test]
 fn a_file_opened_without_a_store_is_the_same_document_and_edits() {
-    let (mut doc, title) = image_with_history();
-    let bytes = host_save(&mut doc);
+    let (mut doc, title, _) = image_with_history();
+    let bytes = host_save(&doc);
     doc.mark_saved();
     let mut back = PhotoDocument::open(FILE, &bytes).unwrap();
     assert!(back.has_replica());
     assert_eq!(back.doc_id(), doc.doc_id());
     assert_eq!(back.layer_object_ids(), doc.layer_object_ids(), "the same object ids");
-    assert_eq!(version(&mut back), version(&mut doc), "the same version: the seal is the session's");
+    assert_eq!(state(&mut back), state(&mut doc), "the same state");
     back.execute("text.edit", json!({ "layer": title, "text": "Edited" })).unwrap();
     back.execute("layer.new.layer", json!({ "name": "New" })).unwrap();
-    let saved = host_save(&mut back);
+    let saved = host_save(&back);
     let again = PhotoDocument::open(FILE, &saved).unwrap();
     assert_eq!(again.doc_id(), doc.doc_id());
     assert!(names(&again).contains(&"New".to_owned()), "{:?}", names(&again));
@@ -140,39 +137,13 @@ fn a_file_opened_without_a_store_is_the_same_document_and_edits() {
 }
 
 #[test]
-fn a_replica_from_the_file_and_one_with_the_whole_history_converge() {
-    let (mut full, title) = image_with_history();
-    let bytes = host_save(&mut full);
-    full.mark_saved();
-    let mut file = PhotoDocument::open(FILE, &bytes).unwrap();
-    full.execute("layer.new.layer", json!({ "name": "Full" })).unwrap();
-    file.execute("text.edit", json!({ "layer": title, "text": "From the file" })).unwrap();
-    for _ in 0..4 {
-        let (to_file, to_full) = (full.export_changes(&file.version().unwrap()).unwrap(), file.export_changes(&full.version().unwrap()).unwrap());
-        let (blobs_full, blobs_file) = (full.blobs().unwrap(), file.blobs().unwrap());
-        full.add_blobs(&blobs_file).unwrap();
-        file.add_blobs(&blobs_full).unwrap();
-        full.import_changes(&to_full).unwrap();
-        file.import_changes(&to_file).unwrap();
-        if full.version().unwrap() == file.version().unwrap() {
-            break;
-        }
-    }
-    assert_eq!(full.version().unwrap(), file.version().unwrap());
-    assert_eq!(state(&mut full), state(&mut file), "both replicas hold the same document");
-    assert!(names(&full).contains(&"Full".to_owned()));
-    let text = full.inspect().unwrap()["layers"].as_array().unwrap().iter().find(|l| l["id"] == title).unwrap()["text"]["text"].clone();
-    assert_eq!(text, "From the file", "both edits survive");
-}
-
-#[test]
 fn undo_after_a_save_takes_back_the_last_edit() {
     let mut doc = PhotoDocument::create(FILE, 96, 64).unwrap();
     doc.execute("layer.new.layer", json!({ "name": "A" })).unwrap();
     let b = layer(&doc.execute("layer.new.layer", json!({ "name": "B" })).unwrap());
-    host_save(&mut doc);
+    host_save(&doc);
     doc.mark_saved();
-    assert!(doc.inspect().unwrap()["canUndo"].as_bool().unwrap(), "the seal is no undo step and clears none");
+    assert!(doc.inspect().unwrap()["canUndo"].as_bool().unwrap(), "a save is no undo step and clears none");
     doc.execute("edit.undo", json!({})).unwrap();
     assert!(!names(&doc).contains(&"B".to_owned()), "the undo took back the last layer: {:?}", names(&doc));
     assert!(doc.inspect().unwrap()["layers"].as_array().unwrap().iter().all(|l| l["id"] != b));
@@ -184,32 +155,30 @@ fn undo_after_a_save_takes_back_the_last_edit() {
 
 #[test]
 fn a_file_opens_on_the_stored_replica_that_holds_its_version() {
-    let (mut doc, _) = image_with_history();
-    let bytes = host_save(&mut doc);
+    let (mut doc, _, _) = image_with_history();
+    let bytes = host_save(&doc);
     doc.mark_saved();
     let stored = doc.snapshot().unwrap();
     let blobs = doc.blobs().unwrap();
     let mut opened = PhotoDocument::open_with_replica(FILE, &bytes, &stored, &blobs).unwrap();
-    assert_eq!(version(&mut opened), version(&mut doc), "the stored replica, as it was");
-    let history = opened.snapshot().unwrap();
-    for needle in NEEDLES {
-        assert!(contains(&history, needle), "the history keeps {needle}");
-    }
-    assert_eq!(version_of(&host_save(&mut opened)), version_of(&bytes), "and saves the document it opened, sealing nothing new");
+    assert_eq!(version(&mut opened), version(&mut doc), "the stored replica, as it was: the file holds its state");
+    assert_eq!(host_save(&opened), bytes, "and saves the document it opened, to the same bytes");
+    assert_eq!(version(&mut opened), version(&mut doc), "writing nothing");
 }
 
 #[test]
 fn a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state() {
-    let (mut doc, title) = image_with_history();
+    let (mut doc, title, _) = image_with_history();
     let stored = doc.snapshot().unwrap();
+    let stored_at = version(&mut doc);
     let blobs = doc.blobs().unwrap();
-    let bytes = host_save(&mut doc);
+    let bytes = host_save(&doc);
     doc.mark_saved();
     // Elsewhere, from the file alone: an edit, a new layer, a save.
     let mut elsewhere = PhotoDocument::open(FILE, &bytes).unwrap();
     elsewhere.execute("text.edit", json!({ "layer": title, "text": "Elsewhere" })).unwrap();
     elsewhere.execute("layer.new.layer", json!({ "name": "New" })).unwrap();
-    let edited = host_save(&mut elsewhere);
+    let edited = host_save(&elsewhere);
     let mut opened = PhotoDocument::open_with_replica(FILE, &edited, &stored, &blobs).unwrap();
     assert_eq!(opened.doc_id(), doc.doc_id());
     // The file's state, by object id: the whole canonical state, the deleted layer's tree node
@@ -217,22 +186,8 @@ fn a_file_saved_elsewhere_opens_on_the_stored_replica_by_its_state() {
     assert_eq!(state(&mut opened), state(&mut elsewhere), "the file's state, by object id");
     assert_eq!(opened.layer_object_ids(), elsewhere.layer_object_ids(), "the same layers, by object id");
     assert_eq!(opened.inspect().unwrap()["layers"], elsewhere.inspect().unwrap()["layers"], "the file's state");
-    assert!(contains(&opened.snapshot().unwrap(), DELETED_LAYER), "on top of the stored history, which it keeps");
-}
-
-/// Every host seals before it saves (`prepare_save`): a save of edits nobody sealed is refused,
-/// and changes nothing; sealed, the same image saves.
-#[test]
-fn a_save_nobody_sealed_for_is_refused() {
-    let (mut doc, _) = image_with_history();
-    let at = version(&mut doc);
-    let refused = doc.save(Some(FILE)).unwrap_err();
-    assert!(refused.contains("prepare_save"), "{refused}");
-    assert_eq!(version(&mut doc), at, "a refused save seals nothing");
-    let saved = host_save(&mut doc);
-    assert_eq!(Replica::snapshot_origins(&content(&saved)).unwrap(), vec![Some(Origin::system("content-seal"))]);
-    doc.execute("layer.new.layer", json!({ "name": "After" })).unwrap();
-    assert!(doc.save(Some(FILE)).is_err(), "an edit after the seal needs another");
+    let at = version(&mut opened);
+    assert!(at.includes(&stored_at) && at != stored_at, "on top of the stored replica, its line of changes going on");
 }
 
 /// Every hash a manifest's JSON names (any string of 64 lowercase hex digits).
@@ -256,7 +211,7 @@ fn a_file_with_n_distinct_tiles_holds_n_pixel_entries_that_the_manifest_and_the_
     // 3 × 2 tiles of clouds, each tile its own pixels.
     let mut doc = PhotoDocument::create(FILE, 768, 512).unwrap();
     doc.execute("filter.render.clouds", json!({ "seed": 5 })).unwrap();
-    let bytes = host_save(&mut doc);
+    let bytes = host_save(&doc);
     let zip = kition_photo_format::zip::ZipReader::new(&bytes).unwrap();
     let names: Vec<String> = zip.entries.iter().map(|entry| entry.name.clone()).collect();
     let tiles: BTreeSet<String> = names.iter().filter_map(|name| name.strip_prefix("tiles/")).map(str::to_owned).collect();
@@ -264,7 +219,7 @@ fn a_file_with_n_distinct_tiles_holds_n_pixel_entries_that_the_manifest_and_the_
     let blobs: BTreeSet<String> =
         names.iter().filter_map(|name| name.strip_prefix("blobs/").and_then(|rest| rest.strip_suffix(".zst"))).map(str::to_owned).collect();
     for name in &names {
-        assert!(name == "manifest.json" || name == "kdm.bin" || name.starts_with("tiles/") || name.starts_with("blobs/"), "{name}");
+        assert!(name == "manifest.json" || name == "content.json" || name.starts_with("tiles/") || name.starts_with("blobs/"), "{name}");
     }
 
     let manifest: Value = serde_json::from_slice(&zip.read_by_name("manifest.json", 64 << 20).unwrap()).unwrap();
@@ -281,7 +236,7 @@ fn a_file_with_n_distinct_tiles_holds_n_pixel_entries_that_the_manifest_and_the_
 
     // A copy of a layer adds no pixels: its tiles are the same entries.
     doc.execute("layer.duplicate", json!({})).unwrap();
-    let copied = host_save(&mut doc);
+    let copied = host_save(&doc);
     let copied_tiles = kition_photo_format::zip::ZipReader::new(&copied).unwrap().entries.iter().filter(|entry| entry.name.starts_with("tiles/")).count();
     assert_eq!(copied_tiles, 6, "a duplicated layer shares its tiles");
 }

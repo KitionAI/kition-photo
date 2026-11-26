@@ -57,7 +57,7 @@ async fn precision(class: &str) {
                 },
             ),
         };
-        let f = Fixture::from_bytes("Precision.kphoto", &doc.save_sealed(None).unwrap(), CallOptions::default());
+        let f = Fixture::from_bytes("Precision.kphoto", &doc.save(None).unwrap(), CallOptions::default());
         let (_, basis) = f.inspect().await;
         f.colleague(&change);
         let before = std::fs::read(f.file()).unwrap();
@@ -79,7 +79,7 @@ async fn precision(class: &str) {
                 reference.execute("layer.select", json!({"layer":other,"mode":"add"})).unwrap();
             }
             reference.execute(command, params).unwrap();
-            assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save_sealed(None).unwrap()), "{class}: complete saved merge");
+            assert_eq!(saved(&std::fs::read(f.file()).unwrap()), saved(&reference.save(None).unwrap()), "{class}: complete saved merge");
         }
         f.shutdown().await;
     }

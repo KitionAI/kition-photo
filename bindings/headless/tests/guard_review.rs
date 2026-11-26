@@ -16,8 +16,8 @@ fn fixture_doc() -> PhotoDocument {
     image_doc(FILE, 3)
 }
 
-fn fixture(mut doc: PhotoDocument) -> Fixture {
-    Fixture::from_bytes(FILE, &doc.save_sealed(Some(FILE)).unwrap(), CallOptions::default())
+fn fixture(doc: PhotoDocument) -> Fixture {
+    Fixture::from_bytes(FILE, &doc.save(Some(FILE)).unwrap(), CallOptions::default())
 }
 
 fn step(command: &str, params: Value) -> Value {

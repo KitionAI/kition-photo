@@ -1,10 +1,12 @@
-//! Two-replica merges, through `KitSession<PhotoModel>`: concurrent edits that touch different
-//! state both survive; edits to the same register resolve to one winner, and both replicas agree
-//! on which.
+//! A draft's merge (kition-sdk data model 6.6, rules D1 to D9) through `KitSession<PhotoModel>`:
+//! an agent works on a draft made at version v while the person edits the document; accepting the
+//! draft keeps both where they touch different state (two tiles of one layer, two fields of one
+//! layer, a move and a delete, two moves into one group), and refuses it where both changed the
+//! same state (one tile painted on both sides), naming the layer and the tile. The merge is one
+//! undo step of the person: one undo gives back the exact state before it, one redo the merge.
 //!
 //! Blobs live outside the replica (D6: a workspace asset store), so these tests share one blob
-//! store between a session and its peers (`SharedBlobs`) rather than giving each its own, empty
-//! one — closer to how two copies of a real document would see the same tile bytes.
+//! store between the document and its draft (`SharedBlobs`).
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -66,20 +68,30 @@ fn first(blobs: &SharedBlobs) -> Session {
     KitSession::from_replica(replica, Box::new(blobs.clone())).unwrap_or_else(|error| panic!("attach: {error}"))
 }
 
-fn peer(of: &Session, value: u64, blobs: &SharedBlobs) -> Session {
-    let snapshot = of.snapshot().unwrap_or_else(|error| panic!("snapshot: {error}"));
-    KitSession::open_snapshot(&snapshot, Box::new(blobs.clone()), actor(value)).unwrap_or_else(|error| panic!("open_snapshot: {error}"))
+/// The agent's draft of `of` as it is now: a session on a copy of its replica (`KitSession::fork`).
+fn draft(of: &Session, value: u64, blobs: &SharedBlobs) -> Session {
+    of.fork(actor(value), Box::new(blobs.clone())).unwrap_or_else(|error| panic!("fork: {error}"))
 }
 
-fn sync(a: &mut Session, b: &mut Session) {
-    for _ in 0..8 {
-        a.import_changes(&b.export_changes(&a.version()).unwrap_or_else(|error| panic!("export: {error}"))).unwrap_or_else(|error| panic!("import: {error}"));
-        b.import_changes(&a.export_changes(&b.version()).unwrap_or_else(|error| panic!("export: {error}"))).unwrap_or_else(|error| panic!("import: {error}"));
-        if a.version() == b.version() {
-            return;
-        }
-    }
-    panic!("the replicas did not converge");
+fn agent() -> Origin {
+    Origin::agent("agent:test")
+}
+
+/// The draft's changes since it was made, taken into `document` as the person accepts them (the
+/// host passes the agent's origin): answers the merge's undo scope.
+fn merge(document: &mut Session, draft: &Session, since: &kition_kit::kdm::Version) -> KResult<Option<UndoScope>> {
+    let changes = draft.export_changes(since).unwrap_or_else(|error| panic!("export: {error}"));
+    document.merge_changes(&changes, &agent()).map(|(scope, _)| scope)
+}
+
+/// One undo of the person gives back `before` exactly, one redo `after`; the agent's undo has
+/// nothing to take (the merge is the person's step, KitModel M12a).
+fn one_step(document: &mut Session, before: &str, after: &str) {
+    assert!(!document.can_undo_in(UndoScope::Agent), "the agent's undo does not take the merge");
+    assert!(document.undo_in(UndoScope::Person).unwrap_or_else(|error| panic!("undo: {error}")).0);
+    assert_eq!(document.state_hash().unwrap(), before, "one undo gives back the exact state before the merge");
+    assert!(document.redo_in(UndoScope::Person).unwrap_or_else(|error| panic!("redo: {error}")).0);
+    assert_eq!(document.state_hash().unwrap(), after, "one redo gives back the merge");
 }
 
 fn image_object(session: &Session) -> ObjectId {
@@ -128,47 +140,57 @@ fn paint(session: &mut Session, layer: &ObjectId, origin: &Origin, key: &str, by
 }
 
 #[test]
-fn concurrent_strokes_in_different_tiles_both_survive() {
+fn a_draft_and_the_person_painting_different_tiles_of_one_layer_both_stay() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
-    let mut b = peer(&a, 2, &blobs);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
     let layer = layer_named(&a, "Layer 1");
 
+    let (key_b, bytes_b) = ("5,5".to_owned(), tile_blob(20).1);
+    paint(&mut b, &layer, &agent(), &key_b, &bytes_b);
     let (key_a, bytes_a) = tile_blob(10);
     paint(&mut a, &layer, &person("a"), &key_a, &bytes_a);
-    let (key_b, bytes_b) = ("5,5".to_owned(), tile_blob(20).1);
-    paint(&mut b, &layer, &person("b"), &key_b, &bytes_b);
+    let before = a.state_hash().unwrap();
 
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-    assert_eq!(a.replica().map_entries(&layer, "tiles").unwrap().len(), 2, "both tiles kept");
-    assert_eq!(a.model(), b.model());
+    assert_eq!(merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}")), Some(UndoScope::Person));
+    let tiles: Vec<String> = a.replica().map_entries(&layer, "tiles").unwrap().into_iter().map(|(key, _)| key).collect();
+    assert_eq!(tiles, vec!["0,0".to_owned(), "5,5".to_owned()], "both tiles kept");
+    assert_eq!(a.replica().map_get(&layer, "tiles", "0,0").unwrap()["hash"], serde_json::json!(sha256_hex(&bytes_a)), "the person's tile");
+    assert_eq!(a.replica().map_get(&layer, "tiles", "5,5").unwrap()["hash"], serde_json::json!(sha256_hex(&bytes_b)), "the draft's tile");
+    let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
+    assert_eq!(a.model(), &fresh, "the view follows the merge");
+    let after = a.state_hash().unwrap();
+    one_step(&mut a, &before, &after);
 }
 
 #[test]
-fn concurrent_strokes_in_the_same_tile_pick_one_winner_on_both_replicas() {
+fn the_same_tile_painted_in_the_draft_and_by_the_person_refuses_the_merge_naming_the_layer_and_tile() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
-    let mut b = peer(&a, 2, &blobs);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
     let layer = layer_named(&a, "Layer 1");
 
     let (key, bytes_a) = tile_blob(10);
     let (_, bytes_b) = tile_blob(20);
+    paint(&mut b, &layer, &agent(), &key, &bytes_b);
     paint(&mut a, &layer, &person("a"), &key, &bytes_a);
-    paint(&mut b, &layer, &person("b"), &key, &bytes_b);
+    let (before, version) = (a.state_hash().unwrap(), a.version());
 
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-    let tiles = a.replica().map_entries(&layer, "tiles").unwrap();
-    assert_eq!(tiles.len(), 1, "one register, one winner");
-    assert_eq!(tiles, b.replica().map_entries(&layer, "tiles").unwrap(), "both replicas agree on the winner");
+    let refused = merge(&mut a, &b, &since).expect_err("the same tile changed on both sides").to_string();
+    assert!(refused.contains(&format!("{layer}.tiles[\"0,0\"]")), "the conflict names the layer and the tile: {refused}");
+    assert_eq!(a.state_hash().unwrap(), before, "a refused merge changes nothing");
+    assert_eq!(a.version(), version);
+    assert_eq!(a.replica().map_get(&layer, "tiles", "0,0").unwrap()["hash"], serde_json::json!(sha256_hex(&bytes_a)), "the person's tile stays");
 }
 
 #[test]
-fn concurrent_property_edits_of_one_layer_both_survive() {
+fn a_draft_and_the_person_editing_different_fields_of_one_layer_both_stay() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
-    let mut b = peer(&a, 2, &blobs);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
     let layer = layer_named(&a, "Layer 1");
 
     let for_a = layer.clone();
@@ -178,52 +200,58 @@ fn concurrent_property_edits_of_one_layer_both_survive() {
     })
     .unwrap_or_else(|error| panic!("a: {error}"));
     let for_b = layer.clone();
-    b.execute(&person("b"), move |_, tx| -> KResult<()> {
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
         tx.set(&for_b, "name", serde_json::json!("Renamed"))?;
         Ok(())
     })
     .unwrap_or_else(|error| panic!("b: {error}"));
+    let before = a.state_hash().unwrap();
 
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-    assert_eq!(a.replica().get(&layer, "opacity").unwrap().as_f64(), Some(0.5), "a's edit kept");
-    assert_eq!(a.replica().get(&layer, "name").unwrap(), serde_json::json!("Renamed"), "b's edit kept");
+    merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
+    assert_eq!(a.replica().get(&layer, "opacity").unwrap().as_f64(), Some(0.5), "the person's edit kept");
+    assert_eq!(a.replica().get(&layer, "name").unwrap(), serde_json::json!("Renamed"), "the draft's edit kept");
+    assert!(a.model().document.layers.iter().any(|layer| layer.name == "Renamed" && layer.opacity == 0.5), "the view holds both");
+    let after = a.state_hash().unwrap();
+    one_step(&mut a, &before, &after);
 }
 
 #[test]
-fn concurrent_reorder_and_delete_both_survive() {
+fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
-    let mut b = peer(&a, 2, &blobs);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
     let layer1 = layer_named(&a, "Layer 1");
     let layer2 = layer_named(&a, "Layer 2");
     let image = image_object(&a);
 
-    let entries = a.replica().tree(&image, "layers").unwrap_or_else(|error| panic!("tree: {error}"));
-    let node2 = entries.iter().find(|entry| entry.object == layer2).unwrap_or_else(|| panic!("node for layer 2")).node.clone();
-    let for_a_image = image.clone();
-    a.execute(&person("a"), move |_, tx| -> KResult<()> {
-        tx.tree_move(&for_a_image, "layers", &node2, None)?;
-        Ok(())
-    })
-    .unwrap_or_else(|error| panic!("a: {error}"));
-
-    let for_b = layer1.clone();
-    b.execute(&person("b"), move |_, tx| -> KResult<()> {
-        tx.delete(&for_b)?;
+    let node2 = node_of(&b, &image, &layer2);
+    let for_b_image = image.clone();
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
+        tx.tree_move(&for_b_image, "layers", &node2, None)?;
         Ok(())
     })
     .unwrap_or_else(|error| panic!("b: {error}"));
 
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-    assert!(!a.replica().exists(&layer1), "the delete survives");
+    let for_a = layer1.clone();
+    a.execute(&person("a"), move |_, tx| -> KResult<()> {
+        tx.delete(&for_a)?;
+        Ok(())
+    })
+    .unwrap_or_else(|error| panic!("a: {error}"));
+    let before = a.state_hash().unwrap();
+
+    merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
+    assert!(!a.replica().exists(&layer1), "the delete stays");
     let names: Vec<String> = a.model().document.layers.iter().map(|layer| layer.name.clone()).collect();
-    assert_eq!(names, vec!["Layer 2".to_owned()], "the reorder survives and the deleted layer is gone, once each");
-    assert_eq!(a.model(), b.model());
+    assert_eq!(names, vec!["Layer 2".to_owned()], "the reorder is taken and the deleted layer is gone, once each");
+    let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
+    assert_eq!(a.model(), &fresh);
+    let after = a.state_hash().unwrap();
+    one_step(&mut a, &before, &after);
 }
 
-/// `group`'s current tree node, as `session` itself sees it.
+/// `object`'s current tree node, as `session` itself sees it.
 fn node_of(session: &Session, image: &ObjectId, object: &ObjectId) -> kition_kit::kdm::NodeRef {
     session
         .replica()
@@ -236,7 +264,7 @@ fn node_of(session: &Session, image: &ObjectId, object: &ObjectId) -> kition_kit
 }
 
 #[test]
-fn concurrent_moves_of_different_layers_into_the_same_group_converge() {
+fn a_draft_and_the_person_moving_different_layers_into_one_group_both_land() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
     let image = image_object(&a);
@@ -257,9 +285,16 @@ fn concurrent_moves_of_different_layers_into_the_same_group_converge() {
         .unwrap_or_else(|error| panic!("setup: {error}"))
         .0;
 
-    // `b` forks only now, so both replicas start from the same committed tree and each can read
-    // its own `NodeRef`s for the group and for the layer it is about to move.
-    let mut b = peer(&a, 2, &blobs);
+    // The draft is made only now, so both start from the same tree.
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
+
+    let (image_b, group_node_b, layer2_node_b) = (image.clone(), node_of(&b, &image, &group), node_of(&b, &image, &layer2));
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
+        tx.tree_move(&image_b, "layers", &layer2_node_b, Some(&group_node_b))?;
+        Ok(())
+    })
+    .unwrap_or_else(|error| panic!("b: {error}"));
 
     let (image_a, group_node_a, layer1_node_a) = (image.clone(), node_of(&a, &image, &group), node_of(&a, &image, &layer1));
     a.execute(&person("a"), move |_, tx| -> KResult<()> {
@@ -267,28 +302,25 @@ fn concurrent_moves_of_different_layers_into_the_same_group_converge() {
         Ok(())
     })
     .unwrap_or_else(|error| panic!("a: {error}"));
+    let before = a.state_hash().unwrap();
 
-    let (image_b, group_node_b, layer2_node_b) = (image.clone(), node_of(&b, &image, &group), node_of(&b, &image, &layer2));
-    b.execute(&person("b"), move |_, tx| -> KResult<()> {
-        tx.tree_move(&image_b, "layers", &layer2_node_b, Some(&group_node_b))?;
-        Ok(())
-    })
-    .unwrap_or_else(|error| panic!("b: {error}"));
-
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
-    assert_eq!(a.model(), b.model());
-
+    merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
     let group_layer = a.model().document.layers.iter().find(|layer| layer.name == "Group").unwrap_or_else(|| panic!("group layer"));
     let children: std::collections::BTreeSet<&str> = match &group_layer.content {
         kition_photo_doc::LayerContent::Group(group) => group.children.iter().map(|layer| layer.name.as_str()).collect(),
         _ => Default::default(),
     };
-    assert_eq!(children, std::collections::BTreeSet::from(["Layer 1", "Layer 2"]), "both concurrent moves landed in the group");
+    assert_eq!(children, std::collections::BTreeSet::from(["Layer 1", "Layer 2"]), "both moves landed in the group");
+    let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
+    assert_eq!(a.model(), &fresh);
+    let after = a.state_hash().unwrap();
+    one_step(&mut a, &before, &after);
 }
 
+/// The person deletes a layer while the agent's draft paints its mask: the draft's tiles land on
+/// a surface nothing references any more, which a fresh read never reads, so the merge is clean.
 #[test]
-fn deleting_a_layer_whose_mask_a_peer_edits_merges_without_crashing() {
+fn deleting_a_layer_whose_mask_a_draft_paints_merges_without_crashing() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
     let layer1 = layer_named(&a, "Layer 1");
@@ -303,7 +335,8 @@ fn deleting_a_layer_whose_mask_a_peer_edits_merges_without_crashing() {
         .unwrap_or_else(|error| panic!("setup: {error}"));
     assert!(a.model().document.layers[0].mask.is_some());
 
-    let mut b = peer(&a, 2, &blobs);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
 
     let for_a = layer1.clone();
     a.execute(&person("a"), move |_, tx| -> KResult<()> {
@@ -315,20 +348,57 @@ fn deleting_a_layer_whose_mask_a_peer_edits_merges_without_crashing() {
     let (key, bytes) = mask_tile_blob(42);
     let blob = b.blobs_mut().put(&bytes, "application/x-kition-photo-tile+zstd");
     let for_b = surface.clone();
-    b.execute(&person("b"), move |_, tx| -> KResult<()> {
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
         tx.map_set(&for_b, "tiles", &key, serde_json::to_value(&blob).map_err(|error| kition_kit::session::KitError::new(error.to_string()))?)?;
         Ok(())
     })
     .unwrap_or_else(|error| panic!("b: {error}"));
 
-    sync(&mut a, &mut b);
-    assert_eq!(a.state_hash().unwrap(), b.state_hash().unwrap());
+    merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
     assert!(!a.replica().exists(&layer1), "the layer stays deleted");
     assert!(a.model().document.layers.iter().all(|layer| layer.name != "Layer 1"), "the view has no trace of it");
-    // Loading fresh from the merged replica is just as clean: the orphaned mask surface (nothing
-    // references it any more) never gets read, so it is harmless, not a dangling reference error.
     let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
     assert_eq!(a.model(), &fresh);
+}
+
+/// The draft deletes a mask's surface outright (the object model allows it) and leaves the layer
+/// naming it: the repair inside the merge's step clears the layer's `mask`, so the view reads
+/// a layer without a mask, the draft's preview is that state, and one undo gives back the exact
+/// state before the merge.
+#[test]
+fn a_draft_that_deletes_a_masks_surface_is_repaired_inside_the_merge() {
+    let blobs = SharedBlobs::default();
+    let mut a = first(&blobs);
+    let layer1 = layer_named(&a, "Layer 1");
+    let for_setup = layer1.clone();
+    let (surface, _) = a
+        .execute(&person("setup"), move |_, tx| -> KResult<ObjectId> {
+            let surface = tx.create("Surface", serde_json::Map::new())?;
+            tx.set(&for_setup, "mask", serde_json::json!(surface.as_str()))?;
+            Ok(surface)
+        })
+        .unwrap_or_else(|error| panic!("setup: {error}"));
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
+    let for_b = surface.clone();
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
+        tx.delete(&for_b)?;
+        Ok(())
+    })
+    .unwrap_or_else(|error| panic!("b: {error}"));
+    let changes = b.export_changes(&since).unwrap();
+    let before = a.state_hash().unwrap();
+    let preview = a.merged_state(&changes).unwrap_or_else(|error| panic!("preview: {error}"));
+
+    a.merge_changes(&changes, &agent()).unwrap_or_else(|error| panic!("merge: {error}"));
+    assert!(!a.replica().exists(&surface));
+    assert_eq!(a.replica().get(&layer1, "mask").unwrap(), serde_json::Value::Null, "the repair cleared the mask");
+    assert!(a.model().document.layers.iter().all(|layer| layer.mask.is_none()));
+    assert_eq!(preview, a.replica().state_json().unwrap(), "the preview is what accepting the draft gives");
+    assert_eq!(a.replica().undo_depth(UndoScope::Person), 2, "the setup and the merge with its repair: one step each");
+    let after = a.state_hash().unwrap();
+    one_step(&mut a, &before, &after);
+    assert!(a.model().document.layers[0].mask.is_none());
 }
 
 #[test]

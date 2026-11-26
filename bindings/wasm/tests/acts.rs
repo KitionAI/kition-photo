@@ -253,7 +253,7 @@ fn fixture() -> (Vec<u8>, Vec<[u64; 2]>) {
     };
     // Converting gives the object layer an id of its own.
     let (o1, o2) = (ids_by_name(&doc, "O1"), ids_by_name(&doc, "O2"));
-    (doc.save_sealed(Some(FILE)).unwrap(), vec![[a, b], [t1, t2], [s1, s2], [o1, o2]])
+    (doc.save(Some(FILE)).unwrap(), vec![[a, b], [t1, t2], [s1, s2], [o1, o2]])
 }
 
 /// An editor state the probe runs a command in.

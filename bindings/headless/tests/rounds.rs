@@ -112,7 +112,7 @@ fn layer(doc: &PhotoDocument, id: u64) -> Option<Value> {
 
 /// The stored pixels the fill replaces, before display opacity, masks or blending.
 fn pixels(doc: &mut PhotoDocument, id: u64, rect: [i32; 4]) -> Option<Value> {
-    let raw = kition_photo_format::load_from_bytes(&doc.save_sealed(Some(FILE)).unwrap()).unwrap();
+    let raw = kition_photo_format::load_from_bytes(&doc.save(Some(FILE)).unwrap()).unwrap();
     let surface = raw.layer(kition_photo_engine::doc::LayerId(id))?.surface()?;
     let area = kition_photo_engine::doc::Rect::from_xywh(rect[0], rect[1], rect[2] as u32, rect[3] as u32);
     Some(json!({ "format": surface.format(), "pixels": surface.to_interleaved(area) }))

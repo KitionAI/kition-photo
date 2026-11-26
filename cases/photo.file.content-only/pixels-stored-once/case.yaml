@@ -3,7 +3,7 @@ id: photo.file.content-only/pixels-stored-once
 feature: photo.file.content-only
 intent: >-
   A .kphoto stores each tile once: every tile and blob is named by the SHA-256 of the bytes it holds,
-  as the KDM replica names its blobs, so the manifest and the replica (kdm.bin) refer to the same
+  as the KDM replica names its blobs, so the manifest and the replica (content.json) refer to the same
   entries. An image of N distinct tiles is a file of N tile entries; the file holds what the
   manifest or the replica names and nothing else, no hash twice; a duplicated layer adds no tile.
 layer: gate

@@ -120,11 +120,11 @@ KITION_FONTS_DIR="$PWD/../kition-fonts" cargo test --workspace
 
 ## Native format
 
-`crates/formats/format` defines the lossless native bundle. It is either a ZIP of STORE entries or a
-directory with the same layout:
+`crates/formats/format` defines the lossless native bundle. It is either a ZIP of STORE entries
+(`content.json` DEFLATE at a fixed level) or a directory with the same layout:
 
 - `manifest.json`: the versioned description of the image's content (no one's view of it).
-- `kdm.bin`: the document's KDM replica as its sealed content snapshot, when it has one.
+- `content.json`: the document's KDM content (the state alone, no version), when it has a replica.
 - `tiles/<sha256>` (a tile's zstd-encoded samples, `encode_tile`) and `blobs/<sha256>.zst`:
   content-addressed by the SHA-256 of the bytes they hold, which is how the replica names its blobs
   too: each tile is stored once, for the manifest and the replica alike.

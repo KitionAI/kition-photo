@@ -316,16 +316,18 @@ psd/src/
 
 ## 9. Native file format (`kition-photo-format`)
 
-- **Format:** a `.kphoto` file is a zip (store mode) or directory bundle. Its `kdm.bin` is the
-  document's KDM replica as a content snapshot: the state and, of the history, only the seal (no
-  deleted or overwritten content, no authors), with only the replica blobs that state references.
-  The history (undo steps) stays in the session and the host's store, never in the file.
+- **Format:** a `.kphoto` file is a zip (store mode, but `content.json` DEFLATE at a fixed level)
+  or directory bundle. Its `content.json` is the document's KDM content (`Replica::content_snapshot`,
+  kition-sdk data model 7.4): the state alone, one object per line, no version, no deleted or
+  overwritten content, no authors, with only the replica blobs that state references; the same
+  state is the same bytes. The history (undo steps) stays in the session and the host's store,
+  never in the file.
   - `manifest.json`: a versioned description of the image's content with serde, including
     `format_version`; what opens the file without the replica model (the PSD exporter, the
     importer, a document that has made no replica yet).
   - `tiles/<sha256>` (a tile's zstd-encoded samples) and `blobs/<sha256>.zst`: content-addressed
     by the SHA-256 of the bytes they hold, the same names the replica gives its blobs, so the
-    manifest and `kdm.bin` refer to one copy of every tile.
+    manifest and `content.json` refer to one copy of every tile.
   - No thumbnail or preview: the bundle is not a picture another program opens.
 - **Content only.** Neither the manifest nor the replica holds a person's view (the selection, the
   quick mask, collapsed groups, open notes, the timeline's playhead, the last applied layer comp)

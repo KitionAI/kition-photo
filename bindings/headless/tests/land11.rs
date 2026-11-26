@@ -35,7 +35,7 @@ async fn batch_group_delete_matches_command_and_receipt() {
         let group = doc.execute("layer.new.group", json!({"name":"Group"})).unwrap()["layer"].as_u64().unwrap();
         let child = doc.execute("layer.new.layer", json!({"name":"Child"})).unwrap()["layer"].as_u64().unwrap();
         doc.execute("layer.layerMask.revealAll", json!({"layer":child})).unwrap();
-        let bytes = doc.save_sealed(None).unwrap();
+        let bytes = doc.save(None).unwrap();
         let f = Fixture::from_bytes(name, &bytes, Default::default());
         let refused = f.refused("batch", json!({"ops":[{"op":"delete","target":group.to_string()}]})).await;
         assert_eq!(refused["error"]["code"], "invalid-value", "{refused}");
@@ -68,7 +68,7 @@ async fn stored_path_name_is_held_even_without_a_model_object() {
     let mut doc = PhotoDocument::create("art.kphoto", 32, 24).unwrap();
     doc.execute("path.set", json!({"name":"Clip","path":{"subpaths":[{"closed":true,"knots":[{"anchor":[1,1]},{"anchor":[10,1]},{"anchor":[10,10]}]}]}}))
         .unwrap();
-    let f = Fixture::from_bytes("art.kphoto", &doc.save_sealed(None).unwrap(), Default::default());
+    let f = Fixture::from_bytes("art.kphoto", &doc.save(None).unwrap(), Default::default());
     let (_, basis) = f.inspect().await;
     f.colleague(&[("path.rename", json!({"name":"Clip","to":"Away"}))]);
     let refused = f.refused("run", json!({"basis":basis,"steps":[{"command":"path.rename","params":{"name":"Clip","to":"Final"}}]})).await;
@@ -93,7 +93,7 @@ async fn channel_names_are_scoped_and_hold_their_resource() {
         let mut doc = PhotoDocument::create("art.kphoto", 32, 24).unwrap();
         doc.execute("layer.setProps", json!({"layer":1,"name":"Shared"})).unwrap();
         doc.execute("channel.new", json!({"name":"Shared"})).unwrap();
-        let f = Fixture::from_bytes("art.kphoto", &doc.save_sealed(None).unwrap(), Default::default());
+        let f = Fixture::from_bytes("art.kphoto", &doc.save(None).unwrap(), Default::default());
         let (_, basis) = f.inspect().await;
         f.colleague(&[("layer.setProps", json!({"layer":1,"name":"Other"}))]);
         f.ok("run", json!({"basis":basis,"steps":[{"command":"channel.rename","params":{"channel":"Shared","name":"Alpha"}}]})).await;

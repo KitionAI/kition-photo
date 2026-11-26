@@ -5,10 +5,11 @@ dimension: collab
 intent: >-
   Every layer stores its id in the replica (Layer.number), so a reopen, a replica-only open and an
   exported replica give the ids the session had, an undone delete brings a layer back under its id,
-  and a layer made through the object model gets the next free id, stored by the repair. Two
-  replicas that each add a layer with the same id converge to identical, distinct ids in both merge
-  orders (the smaller object id keeps it, the other takes the next free one), the merge writes
-  nothing, and the next edit stores the new number.
+  and a layer made through the object model gets the next free id, stored by the repair (inside the
+  merge's one undo step when an agent's draft made it). An agent's draft and the document that each
+  add a layer with the same id end, once the draft is merged, with distinct ids (the smaller object
+  id keeps it, the other takes the next free one), the merge stores no number of its own, and the
+  next edit stores the new number.
 layer: gate
 source:
   kind: synthetic

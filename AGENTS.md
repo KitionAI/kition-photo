@@ -175,11 +175,13 @@ nothing is silently dropped from `.kphoto` saves. When you add a doc field, add 
 `crates/formats/format/src/manifest.rs` and `convert.rs` with `#[serde(default)]` so older files still load.
 If the field has a PSD equivalent, map it in `crates/formats/io` too, and keep unknown PSD blocks verbatim.
 
-A `.kphoto` holds content, never history (kition-sdk data model 7.3, rule M16b): its `kdm.bin` is
-the replica's content snapshot (`PhotoSession::content`), sealed by `prepare_save` before every
-save, with only the replica blobs its state references. Do not write a full snapshot, a change log,
-undo steps or blobs only history needs into the file; tests call `prepare_save` before `save` where
-a host would (`bindings/wasm/tests/content_file.rs`), or `PhotoDocument::save_sealed`. Tiles and
+A `.kphoto` holds content, never history (kition-sdk data model 7.4): its `content.json` is the
+replica's content (`PhotoSession::content`, `Replica::content_snapshot`: the state alone, no
+version), DEFLATE at a fixed level in the ZIP form and plain in the folder form, with only the
+replica blobs its state references; an unchanged image saves the same bytes. Do not write a
+snapshot, a change log, undo steps or blobs only history needs into the file
+(`bindings/wasm/tests/content_file.rs`). Every committed `.kphoto` loads and saves to its own bytes
+(`bindings/wasm/tests/samples.rs`). Tiles and
 blobs are named by the SHA-256 of their bytes, as the replica names its blobs, so each is stored
 once. Nor does the file hold anyone's view (selection, quick mask, expanded groups, open notes,
 playhead, last applied comp), the session's document handle or title, or a preview: a person's view
