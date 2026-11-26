@@ -47,6 +47,39 @@ try {
   await shot('stage8-focus')
   await workspace.focus()
 
+  // ---------------------------------------------------------------- 4. Use Shift Key for Tool Switch
+  // Off (the default, as upstream): the key again cycles. On (Preferences › General): the key again
+  // keeps the tool and Shift with it cycles; the engine's tool keys follow at once.
+  await choose('Move')
+  await pressFor('b', 'Brush')
+  const cycles = (await pressFor('b', 'Pencil')) === 'Pencil'
+  const prefsDialog = kit.getByTestId('photo-dialog')
+  await page.keyboard.press(`${e.primary}+k`)
+  await until(async () => (await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').count()) === 1, 40)
+  const offAtFirst = !(await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked())
+  await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').check()
+  await page.keyboard.press('Enter')
+  await until(async () => (await prefsDialog.count()) === 0, 40)
+  await choose('Move')
+  await pressFor('b', 'Brush')
+  const kept = await until(async () => {
+    await page.keyboard.press('b')
+    await page.waitForTimeout(100)
+    return (await tool()) === 'Brush'
+  }, 10)
+  const shifted = (await pressFor('Shift+B', 'Pencil')) === 'Pencil'
+  step('Preferences › General’s Use Shift Key for Tool Switch: off by default (B B cycles); on, B keeps the Brush and Shift+B cycles', cycles && offAtFirst && kept && shifted, JSON.stringify({ cycles, offAtFirst, kept, shifted }))
+  await page.keyboard.press(`${e.primary}+k`)
+  await until(async () => (await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').count()) === 1, 40)
+  const shownOn = await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked()
+  await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').uncheck()
+  await page.keyboard.press('Enter')
+  await until(async () => (await prefsDialog.count()) === 0, 40)
+  await choose('Move')
+  await pressFor('b', 'Brush')
+  step('the preference shows as set when Preferences opens again, and off again B cycles', shownOn && (await pressFor('b', 'Pencil')) === 'Pencil', `${shownOn} ${await tool()}`)
+  await workspace.focus()
+
   await e.finish()
 } catch (error) {
   await e.fail(error)

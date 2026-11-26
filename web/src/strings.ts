@@ -570,6 +570,7 @@ const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['prefs.brushCursor.precise', 'Precise crosshair (Caps Lock: outline)', '精确十字（Caps Lock：轮廓）'],
   ['prefs.zoomWithWheel', 'Zoom with scroll wheel', '用滚轮缩放'],
   ['prefs.showTransform', 'Show Transform Controls with the Move tool', '移动工具显示变换控件'],
+  ['prefs.shiftToolSwitch', 'Use Shift key for tool switch (a tool’s key again keeps the tool)', '使用 Shift 键切换工具（再按一次工具键不换工具）'],
 ]
 
 /** Plan 2026-11-24, stage 5: the Color Picker, the brush picker and Brush Settings, Layer Style, Properties' Masks, the gradient editor. [key, English, Chinese] */

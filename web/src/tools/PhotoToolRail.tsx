@@ -1,12 +1,10 @@
 import { useLayoutEffect, useMemo, type KeyboardEvent, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import { ToolRail, useEngineQuery, useKitEditor, useKitStore, useUi } from '@kition/sdk/editor'
 import { RAIL_TOOLS, isToolKey, toolFor, toolForKey, type PhotoToolId } from './catalog'
+import { SHIFT_SWITCH } from '../prefs'
 
 /** A key handler the editor calls before the shell's own: true when it took the key. */
 export type ToolKeys = (event: KeyboardEvent<HTMLDivElement>) => boolean
-
-/** Upstream's Preferences › Tools › Use Shift Key for Tool Switch, in the engine's preferences. */
-const SHIFT_SWITCH = 'tools.useShiftKeyForToolSwitch'
 
 /** Upstream's long press that opens a slot's flyout (`panels.rs`: 0.35 s). */
 const FLYOUT_PRESS_MS = 350

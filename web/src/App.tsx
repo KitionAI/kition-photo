@@ -41,7 +41,7 @@ import { previewEngine, useFreeTransform } from './tools/useFreeTransform'
 import { Nudges, digitTarget } from './tools/canvasKeys'
 import { toBitmap } from './panels/thumbnails'
 import { liveStroke } from './tools/canvas/stroke'
-import { usePhotoPrefs, type PhotoPrefs } from './prefs'
+import { SHIFT_SWITCH, usePhotoPrefs, type PhotoPrefs } from './prefs'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
 import { optionsFor, toolFields, toolParams, type ToolOptions } from './tools/options'
@@ -198,13 +198,21 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [optionsState, setToolOptions] = useToolOptions()
   // Preferences › General (Cmd+K): saved, Show Transform Controls goes to the Move tool at once.
   const [prefs, setPrefs] = usePhotoPrefs()
+  // Use Shift Key for Tool Switch is the engine's preference (the tool keys read it): saved, it goes
+  // to the engine at once, and to each document's engine opened while it is on.
+  const prefsRun = useRef(editor.run)
+  prefsRun.current = editor.run
   const savePrefs = useCallback(
     (next: PhotoPrefs) => {
       setPrefs(next)
       setToolOptions('Move', { showTransform: next.showTransform })
+      void prefsRun.current('prefs.set', { path: SHIFT_SWITCH, value: next.shiftToolSwitch })
     },
     [setPrefs, setToolOptions],
   )
+  useEffect(() => {
+    if (doc && prefs.shiftToolSwitch) void prefsRun.current('prefs.set', { path: SHIFT_SWITCH, value: true })
+  }, [doc, prefs.shiftToolSwitch])
   // The Crop tool's frame (plan 2026-11-24, stage 2): the whole canvas when the tool is chosen.
   const [crop, setCrop] = useState<CropFrame | null>(null)
   const cropNow = useRef<CropFrame | null>(null)

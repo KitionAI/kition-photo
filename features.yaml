@@ -711,11 +711,11 @@ features:
     cases: [photo.editor.brush-keys/brush-keys]
     since: "2026-11-24"
   - id: photo.editor.preferences
-    title: "Edit › Preferences › General… (Cmd+K): the editor's own settings that take effect, kept across sessions: the painting cursor (brush outline or precise crosshair, Caps Lock the other), Zoom with Scroll Wheel (the plain wheel zooms about the pointer), and the Move tool's Show Transform Controls"
+    title: "Edit › Preferences › General… (Cmd+K): the editor's own settings that take effect, kept across sessions: the painting cursor (brush outline or precise crosshair, Caps Lock the other), Zoom with Scroll Wheel (the plain wheel zooms about the pointer), Use Shift Key for Tool Switch (off by default, as upstream: on, a tool's key again keeps the tool and Shift with the key cycles the slot; the engine's preference, given to each document opened), and the Move tool's Show Transform Controls"
     dimension: [function]
     priority: P1
     status: has
-    paths: [web/src/prefs.ts, web/src/dialogs/PreferencesDialog.tsx, web/src/dialogs/routes.ts, web/src/menus/hidden.ts, web/tests/dialogs.mjs]
+    paths: [web/src/prefs.ts, web/src/dialogs/PreferencesDialog.tsx, web/src/dialogs/routes.ts, web/src/menus/hidden.ts, web/src/tools/PhotoToolRail.tsx, web/tests/dialogs.mjs, web/tests/polish.mjs]
     target: "Photoshop 2026"
     gap: "Only these three settings; the other Preferences pages stay out of the menus until they have settings that work."
     cases: [photo.editor.preferences/general]
