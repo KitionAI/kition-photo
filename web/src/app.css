@@ -179,9 +179,34 @@
   transform-origin: left bottom;
 }
 
-/* The dock beside the canvas (upstream's right dock, 290 px in its Photoshop theme). */
+/* The dock beside the canvas (upstream's right dock, 290 px in its Photoshop theme; the person
+   may drag its left edge: plan 2026-11-24, stage 8). */
 .photo-dock {
+  position: relative;
   width: 290px;
+}
+
+.photo-dock-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.photo-dock-edge:hover,
+.photo-dock-edge:focus-visible {
+  background: var(--kit-primary-soft);
+  outline: none;
+}
+
+/* The divider under a panel group: kit-editor hangs it half below the group, where the group's own
+   clipping and the next group take the pointer; inside the group's bottom edge it can be grabbed. */
+.photo-dock .kui-dock-handle {
+  bottom: 0;
+  z-index: 2;
 }
 
 .photo-props {

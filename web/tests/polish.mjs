@@ -193,10 +193,34 @@ try {
   step('Backspace with a selection clears the pixels as before, and keeps the layer', cleared && (await details()).layers.length === layersNow, (await details()).history.at(-1))
   await page.keyboard.press(`${e.primary}+d`)
 
+  // ---------------------------------------------------------------- 10. the dock resizes
+  // The divider under a panel group drags its height (the filler below gives way), the column's
+  // left edge drags its width; both are kept (checked after the reload below).
+  const groupHeight = async (group) => Number(await kit.getByTestId(`photo-dock-area-group-${group}-group`).getAttribute('data-height'))
+  const colorBefore = await groupHeight('color')
+  const divider = await kit.getByTestId('photo-dock-area-handle-color-group').boundingBox()
+  await page.mouse.move(divider.x + divider.width / 2, divider.y + divider.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(divider.x + divider.width / 2, divider.y + divider.height / 2 + 50, { steps: 6 })
+  await page.mouse.up()
+  const colorAfter = await groupHeight('color')
+  const dockBefore = (await kit.getByTestId('photo-dock').boundingBox()).width
+  const edge = await kit.getByTestId('photo-dock-edge').boundingBox()
+  await page.mouse.move(edge.x + edge.width / 2, edge.y + 300)
+  await page.mouse.down()
+  await page.mouse.move(edge.x + edge.width / 2 - 80, edge.y + 300, { steps: 6 })
+  await page.mouse.up()
+  const dockAfter = (await kit.getByTestId('photo-dock').boundingBox()).width
+  await shot('stage8-dock')
+  step('the divider under the Color group drags its height, the dock’s edge its width', Math.abs(colorAfter - colorBefore - 50) <= 2 && Math.abs(dockAfter - dockBefore - 80) <= 2, JSON.stringify({ colorBefore, colorAfter, dockBefore, dockAfter }))
+
   // A placed (object) layer's kind is in the interface's language: Chinese here.
   await page.goto(page.url().replace('locale=en-US', 'locale=zh-CN'))
   await page.waitForFunction(() => document.getElementById('status')?.textContent?.includes(' open in '), null, { timeout: 60_000 })
   await page.waitForTimeout(800)
+  const keptHeight = await groupHeight('color')
+  const keptWidth = (await kit.getByTestId('photo-dock').boundingBox()).width
+  step('the group’s height and the column’s width are kept when the editor opens again', Math.abs(keptHeight - colorAfter) <= 1 && Math.abs(keptWidth - dockAfter) <= 1, JSON.stringify({ keptHeight, keptWidth }))
   const object = (await details()).layers.find((layer) => layer.kind === 'Shape') ?? (await details()).layers[0]
   await e.query('layer.select', { layer: object.id, mode: 'replace' })
   await e.query('layer.objectLayers.convertToObjectLayer', {})

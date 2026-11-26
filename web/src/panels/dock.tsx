@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode, type RefObject } from 'react'
-import { DockArea, useKitEditor, type DockAreaHandle, type DockGroup, type KitCanvasHandle, type KitCanvasView, type KitUiItem } from '@kition/sdk/editor'
+import { useMemo, useRef, type KeyboardEvent, type PointerEvent, type ReactNode, type RefObject } from 'react'
+import { DockArea, useKitEditor, useKitStore, type DockAreaHandle, type DockGroup, type KitCanvasHandle, type KitCanvasView, type KitUiItem } from '@kition/sdk/editor'
 import type { PhotoInfo } from '../photo'
 import type { PhotoColorStore } from '../colors'
 import type { ToolOptions } from '../tools/options'
@@ -232,6 +232,55 @@ function Later({ tab }: { tab: string }) {
   )
 }
 
+/** The dock column's width (CSS pixels): upstream's 290 until the person drags its edge (plan 2026-11-24, stage 8). */
+export const DOCK_WIDTH = { initial: 290, min: 240, max: 640 }
+const dockWidthOf = (raw: unknown) => (typeof raw === 'number' && Number.isFinite(raw) ? Math.round(Math.min(DOCK_WIDTH.max, Math.max(DOCK_WIDTH.min, raw))) : undefined)
+
+/**
+ * The dock column's left edge: dragged (or Left and Right, Shift for bigger steps) it makes the
+ * column wider or narrower; the width is kept in the kit store, so it lasts and every Photo tab follows.
+ */
+function useDockWidth() {
+  const [width, setWidth] = useKitStore<number>('kit.photo', 'dockWidth', { initial: DOCK_WIDTH.initial, validate: dockWidthOf })
+  const drag = useRef<{ pointer: number; from: number; width: number } | null>(null)
+  const aside = useRef<HTMLElement | null>(null)
+  const show = (next: number) => {
+    const clamped = dockWidthOf(next) ?? DOCK_WIDTH.initial
+    if (aside.current) aside.current.style.width = `${clamped}px`
+    return clamped
+  }
+  const edge = {
+    onPointerDown: (event: PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return
+      event.preventDefault()
+      event.currentTarget.setPointerCapture?.(event.pointerId)
+      drag.current = { pointer: event.pointerId, from: event.clientX, width: aside.current?.getBoundingClientRect().width ?? width }
+    },
+    onPointerMove: (event: PointerEvent<HTMLDivElement>) => {
+      const current = drag.current
+      if (current && current.pointer === event.pointerId) show(current.width + current.from - event.clientX)
+    },
+    onPointerUp: (event: PointerEvent<HTMLDivElement>) => {
+      const current = drag.current
+      if (!current || current.pointer !== event.pointerId) return
+      drag.current = null
+      void setWidth(show(current.width + current.from - event.clientX))
+    },
+    onPointerCancel: () => {
+      drag.current = null
+      show(width)
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      event.preventDefault()
+      event.stopPropagation()
+      const step = event.shiftKey ? 64 : 16
+      void setWidth(show(width + (event.key === 'ArrowLeft' ? step : -step)))
+    },
+  }
+  return { width, aside, edge }
+}
+
 /** The dock beside the canvas: the groups the Window menu shows, their panels drawn from the editor state; `dock` receives its handle (the Window menu brings tabs forward through it). */
 export function PhotoDock({ state, windows, dock }: { state: DockState; windows: WindowState; dock: RefObject<DockAreaHandle | null> }) {
   const { phrase } = useKitEditor()
@@ -269,9 +318,11 @@ export function PhotoDock({ state, windows, dock }: { state: DockState; windows:
     tabs: tabs.map((tab) => ({ id: tab.id, label: phrase(tab.label), render: content[tab.id] ?? (() => <Later tab={tab.id} />) })),
   }))
   const shown = useMemo(() => new Set<string>(DOCK_GROUPS.filter((group) => windows.panels[group]).map(dockGroupId)), [windows.panels])
+  const column = useDockWidth()
   if (shown.size === 0) return null
   return (
-    <aside className="kui-panel photo-dock" data-side="right" data-testid="photo-dock">
+    <aside ref={column.aside} className="kui-panel photo-dock" data-side="right" data-testid="photo-dock" style={{ width: column.width }}>
+      <div className="photo-dock-edge" role="separator" aria-orientation="vertical" aria-label={phrase('Panels')} aria-valuenow={column.width} aria-valuemin={DOCK_WIDTH.min} aria-valuemax={DOCK_WIDTH.max} tabIndex={0} data-testid="photo-dock-edge" {...column.edge} />
       <DockArea kit="kit.photo" groups={groups} shown={shown} handle={dock} testId="photo-dock-area" />
     </aside>
   )
