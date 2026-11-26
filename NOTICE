@@ -14,6 +14,22 @@ Third-party material
   License 1.1 (text below).
 - JetBrains Mono (assets/fonts/JetBrainsMono-Regular.ttf): Copyright 2020 The JetBrains Mono Project
   Authors, SIL Open Font License 1.1 (text below).
+- Fonts the web editor serves from web/public/fonts/ (not in this repository: web/scripts/build-engine.sh
+  copies them unmodified from KitionAI/kition-fonts, each with its licence file beside it):
+  - Droid Sans Fallback: Copyright Google Corporation 2006 and The Android Open Source Project
+    2005-2008, Apache License 2.0 (its NOTICE beside it, DroidSansFallback-NOTICE.txt).
+  - Arimo, Tinos, Cousine: Copyright 2026 The Arimo, Tinos and Cousine Project Authors (Steve Matteson).
+  - Carlito: Copyright 2013 The Carlito Project Authors, Reserved Font Name "Carlito".
+  - Caladea: Copyright 2012 The Caladea Project Authors (Huerta Tipografica).
+  - Lora: Copyright 2011 The Lora Project Authors, Reserved Font Name "Lora".
+  - Bricolage Grotesque: Copyright 2022 The Bricolage Grotesque Project Authors.
+  - Ma Shan Zheng: Copyright 2018 The Ma Shan Zheng Project Authors.
+  - Shippori Mincho: Copyright 2021 The Shippori Mincho Project Authors (FONTDASU).
+  - BIZ UDMincho and BIZ UDPGothic: Copyright 2022 The BIZ UDMincho and BIZ UDGothic Project
+    Authors (Type Bank Co., Morisawa Inc.).
+  - NanumGothic: Copyright (c) 2010 NHN Corporation, Reserved Font Names "Nanum" and "NanumGothic".
+  - Noto Sans Arabic: Copyright 2022 The Noto Project Authors.
+  All but Droid Sans Fallback: SIL Open Font License 1.1 (text below; each font's own OFL.txt beside it).
 - SCOWL English word list (assets/dict/en_US-scowl-50.txt.gz): Copyright 2000-2018 by Kevin
   Atkinson, SCOWL licence (assets/dict/LICENSE-SCOWL.txt).
 - Loro (https://github.com/loro-dev/loro): Copyright (c) 2023 Zixuan Chen, MIT License.
@@ -63,7 +79,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-SIL Open Font License 1.1 (Inter, JetBrains Mono)
+SIL Open Font License 1.1 (Inter, JetBrains Mono, and the web editor's served fonts above but Droid Sans Fallback)
 
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
 -----------------------------------------------------------

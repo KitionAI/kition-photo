@@ -5,6 +5,7 @@ import { styleForFamily, useTypeLayer } from '../options/typeLayer'
 import { TOOL_FIELDS, shownSize, typeEdit, typeValuesOf, type ToolField, type TypeEdit, type TypeLayer, type TypeValues } from '../options/typeStyle'
 import { useGestures } from './gesture'
 import { useTypeEditingTarget } from '../type/context'
+import { ensureFamily, type FontEngine } from '../fonts/served'
 
 /** What a type style is for: the active type layer, else new type (the Type tool's options and the foreground). */
 export type TypeTarget = {
@@ -88,7 +89,10 @@ export function useTypeStyle(target: TypeTarget) {
       fontRequests.set(open, requests)
     }
     const key = layer?.layer ?? 'tool'
-    const request = styleForFamily(query, font, values.fontStyle).then((fontStyle) => fontStyle === null ? null : { font, fontStyle })
+    // A served family is fetched and given to the engine first (plan 2026-11-24, stage 9).
+    const request = ensureFamily(open as FontEngine, font)
+      .then(() => styleForFamily(query, font, values.fontStyle))
+      .then((fontStyle) => (fontStyle === null ? null : { font, fontStyle }))
     requests.set(key, request)
     try {
       const choice = await request

@@ -1,0 +1,22 @@
+format: 1
+id: photo.editor.fonts/binding
+feature: photo.editor.fonts
+intent: >-
+  The binding's addFace (plan 2026-11-24, stage 9): bytes that are not a font add nothing; a font file adds its family,
+  which text.fonts then lists, without becoming a script's fallback; a type layer that names it is drawn again with
+  no history step, and one that names another family is left alone.
+layer: gate
+source:
+  kind: probe
+  from: bindings/wasm/src/lib.rs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [cargo, test, -p, kition-photo-kit, --lib, takes_a_face_to_choose_by_name_without_a_fallback]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 600
+since: "2026-11-25"

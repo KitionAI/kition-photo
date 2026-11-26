@@ -252,3 +252,86 @@ fn a_drag_leaves_its_layer_out_until_the_document_changes() {
     assert_ne!(moved, full);
     assert!(doc.omit_layer(Some(9999)).is_err());
 }
+
+/// Plan 2026-11-24, stage 9: the editor commits a Brush or Pencil stroke by running its command
+/// with every point and the seed; run on the document the stroke was drawn on, the commit takes
+/// the stroke's pixels (no second painting) and is otherwise the same: one step, the pixels the
+/// command paints, the stroke gone.
+fn commit_takes_the_preview(command: &str, params: Value, setup: impl Fn(&mut PhotoDocument, u64)) {
+    let (mut live, paint, _) = image();
+    let (mut direct, ..) = image();
+    setup(&mut live, paint);
+    setup(&mut direct, paint);
+    let history = steps(&live);
+    let mut begin = params.clone();
+    begin["points"] = json!([FIRST]);
+    let answer = live.stroke_begin(command, begin).unwrap_or_else(|e| panic!("{command}: {e}"));
+    let stroke = u32::try_from(answer["stroke"].as_u64().unwrap()).unwrap();
+    for batch in REST.chunks(2) {
+        live.stroke_push(stroke, &flat(batch)).unwrap();
+    }
+    let mut run = params;
+    run["points"] = all_points();
+    if !answer["seed"].is_null() {
+        run["seed"] = answer["seed"].clone();
+    }
+    let adopted = kition_photo_engine::brush_cmds::adopted_strokes();
+    live.execute(command, run.clone()).unwrap();
+    assert_eq!(kition_photo_engine::brush_cmds::adopted_strokes(), adopted + 1, "{command} {run}: the commit took the stroke's pixels");
+    assert_eq!(steps(&live), history + 1, "{command}: one history step");
+    direct.execute(command, run.clone()).unwrap();
+    assert_eq!(pixels(&live), pixels(&direct), "{command} {run}: the pixels the command paints");
+    assert_eq!(live.inspect().unwrap()["history"], direct.inspect().unwrap()["history"], "{command}: the step's name");
+    // The stroke ended; the area its preview covered is still answered once.
+    assert!(live.stroke_push(stroke, &flat(&REST[..1])).is_err());
+    assert_ne!(live.stroke_cancel(stroke), [0; 4]);
+    // Undo takes it back as any stroke.
+    live.execute("edit.undo", json!({})).unwrap();
+    direct.execute("edit.undo", json!({})).unwrap();
+    assert_eq!(pixels(&live), pixels(&direct), "{command}: undone");
+}
+
+#[test]
+fn the_commit_of_a_live_brush_or_pencil_takes_its_pixels() {
+    let none = |_: &mut PhotoDocument, _: u64| {};
+    commit_takes_the_preview("paint.stroke", json!({ "size": 14, "color": "#ff0000" }), none);
+    commit_takes_the_preview("paint.stroke", json!({ "size": 20, "hardness": 0.2, "opacity": 0.6, "smoothing": 0.4, "color": "#0000ff" }), none);
+    commit_takes_the_preview("paint.stroke", json!({ "size": 16, "preset": "Spatter", "color": "#00aa00" }), none);
+    commit_takes_the_preview("paint.pencil", json!({ "size": 6, "color": "#112233" }), none);
+    // The Eraser on a layer with pixels, inside a selection.
+    commit_takes_the_preview("paint.stroke", json!({ "size": 18, "erase": true }), |doc, paint| {
+        doc.execute("layer.select", json!({ "layer": paint })).unwrap();
+        doc.execute("select.rect", json!({ "x": 20, "y": 10, "width": 100, "height": 60 })).unwrap();
+    });
+    // On a layer mask (the mask target).
+    commit_takes_the_preview("paint.stroke", json!({ "size": 18, "color": "#000000", "target": "mask" }), |doc, paint| {
+        doc.execute("layer.select", json!({ "layer": paint })).unwrap();
+        doc.execute("layer.layerMask.revealAll", json!({})).unwrap();
+    });
+}
+
+#[test]
+fn a_commit_unlike_its_stroke_paints_it_and_keeps_the_preview() {
+    let (mut live, ..) = image();
+    let (mut direct, ..) = image();
+    let params = json!({ "size": 14, "color": "#ff0000" });
+    let mut begin = params.clone();
+    begin["points"] = json!([FIRST]);
+    let answer = live.stroke_begin("paint.stroke", begin).unwrap();
+    let stroke = u32::try_from(answer["stroke"].as_u64().unwrap()).unwrap();
+    live.stroke_push(stroke, &flat(&REST)).unwrap();
+    // One point fewer than the stroke drew, and another colour: painted as any command.
+    for run in [
+        json!({ "size": 14, "color": "#ff0000", "points": [FIRST, REST[0]], "seed": answer["seed"] }),
+        json!({ "size": 14, "color": "#00ff00", "points": all_points(), "seed": answer["seed"] }),
+    ] {
+        let adopted = kition_photo_engine::brush_cmds::adopted_strokes();
+        live.execute("paint.stroke", run.clone()).unwrap();
+        direct.execute("paint.stroke", run.clone()).unwrap();
+        assert_eq!(kition_photo_engine::brush_cmds::adopted_strokes(), adopted, "{run}: not taken");
+        assert_eq!(live.inspect().unwrap()["history"], direct.inspect().unwrap()["history"]);
+    }
+    // The document changed under the preview: the stroke is gone, its area answered on cancel.
+    assert_ne!(live.stroke_cancel(stroke), [0; 4]);
+    assert_eq!(pixels(&live), pixels(&direct));
+}

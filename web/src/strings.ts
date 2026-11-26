@@ -685,6 +685,13 @@ const STAGE6_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
 ]
 
 /** Plan 2026-11-24, stage 7: the canvas's menu, rulers and guides, snapping, the path tools and the five tools added. [key, English, Chinese] */
+/** Plan 2026-11-24, stage 9: the Type tool's served fonts. [key, English, Chinese] */
+const STAGE9_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
+  ['font.loading', 'Loading {family}…', '正在载入 {family}…'],
+  ['font.loadingName', '{family} (loading…)', '{family}（正在载入…）'],
+  ['font.substituted', '{family} (substituted)', '{family}（已替换）'],
+]
+
 const STAGE7_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['ruler.top', 'Ruler (drag down for a guide)', '标尺（向下拖出参考线）'],
   ['ruler.left', 'Ruler (drag right for a guide)', '标尺（向右拖出参考线）'],
@@ -770,6 +777,7 @@ const enUS: Catalog = {
   ...words(STAGE5_STRINGS, '', 1),
   ...words(STAGE6_STRINGS, '', 1),
   ...words(STAGE7_STRINGS, '', 1),
+  ...words(STAGE9_STRINGS, '', 1),
   ...words(PARAM_WORDS, 'param', 1),
   ...words(OPTION_WORDS, 'option', 1),
 }
@@ -852,6 +860,7 @@ const zhCN: Catalog = {
   ...words(STAGE5_STRINGS, '', 2),
   ...words(STAGE6_STRINGS, '', 2),
   ...words(STAGE7_STRINGS, '', 2),
+  ...words(STAGE9_STRINGS, '', 2),
   ...words(PARAM_WORDS, 'param', 2),
   ...words(OPTION_WORDS, 'option', 2),
 }

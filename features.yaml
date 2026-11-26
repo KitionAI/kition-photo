@@ -721,13 +721,13 @@ features:
     cases: [photo.editor.preferences/general]
     since: "2026-11-25"
   - id: photo.editor.live-stroke
-    title: "Brush strokes show their real pixels while they are drawn: the Brush, Pencil, Eraser, Clone Stamp, Healing Brush (its texture; the blend on release), History Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge paint through the engine's live stroke as the pointer moves (a frame's moves in one call, only the changed area drawn again); the release leaves one history step with the same pixels as the command; Escape mid-stroke puts the picture back and changes nothing; the Move tool's drag leaves the layer out of its old place"
+    title: "Brush strokes show their real pixels while they are drawn: the Brush, Pencil, Eraser, Clone Stamp, Healing Brush (its texture; the blend on release), History Brush, Dodge, Burn, Sponge, Blur, Sharpen and Smudge paint through the engine's live stroke as the pointer moves (a frame's moves in one call, only the changed area drawn again); the release leaves one history step with the same pixels as the command, and a Brush or Pencil release takes the stroke's pixels instead of painting it again (stage 9); Escape mid-stroke puts the picture back and changes nothing; the Move tool's drag leaves the layer out of its old place"
     dimension: [function, performance]
     priority: P0
     status: has
-    paths: [bindings/wasm/src/stroke.rs, bindings/wasm/src/lib.rs, bindings/wasm/tests/live_stroke.rs, crates/engine/engine/src/jobs.rs, web/src/tools/canvas/stroke.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/move.ts, web/src/tools/canvas/common.ts, web/src/panels/useMaskTarget.ts, web/src/App.tsx, web/tests/live-stroke.mjs]
+    paths: [bindings/wasm/src/stroke.rs, bindings/wasm/src/lib.rs, bindings/wasm/tests/live_stroke.rs, crates/engine/engine/src/brush_cmds.rs, crates/engine/engine/src/jobs.rs, web/src/tools/canvas/stroke.ts, web/src/tools/canvas/paint.ts, web/src/tools/canvas/move.ts, web/src/tools/canvas/common.ts, web/src/panels/useMaskTarget.ts, web/src/App.tsx, web/tests/live-stroke.mjs]
     target: "Photoshop 2026"
-    gap: "Spot Healing, the Mixer Brush and the Background Eraser have no live preview in the engine and still paint on release (with the line of the brush's width meanwhile), as do Blur, Sharpen and Smudge with Sample All Layers; the release paints the whole stroke again in the engine (the preview is not handed over); layer effects outside the stroke's area show on release; on a 6000 px picture a 500 px brush stays behind the pointer (see kition-plan kit-docs/photo/walkthrough/measurements.md)."
+    gap: "Spot Healing, the Mixer Brush and the Background Eraser have no live preview in the engine and still paint on release (with the line of the brush's width meanwhile), as do Blur, Sharpen and Smudge with Sample All Layers; the release of the retouching and dab tools (and of a stroke with painting symmetry) paints the whole stroke again in the engine; layer effects outside the stroke's area show on release; on a 6000 px picture a 500 px brush stays behind the pointer (see kition-plan kit-docs/photo/walkthrough/measurements.md)."
     cases: [photo.editor.live-stroke/live-stroke, photo.editor.live-stroke/traffic, photo.editor.live-stroke/binding]
     since: "2026-11-25"
   - id: photo.editor.type-on-canvas
@@ -859,4 +859,14 @@ features:
     target: "Photoshop 2026"
     gap: "Space on a focused dialog button still presses that button (the platform's way); Enter never does."
     cases: [photo.editor.polish/polish]
+    since: "2026-11-25"
+  - id: photo.editor.fonts
+    title: "The Type tool's fonts (plan 2026-11-24, stage 9): besides the engine's Inter, JetBrains Mono and Droid Sans Fallback, the editor serves 13 more families from kition-fonts (Arimo, Carlito, Bricolage Grotesque, Lora, Tinos, Caladea, Cousine, Ma Shan Zheng, Shippori Mincho, BIZ UDMincho, BIZ UDPGothic, NanumGothic, Noto Sans Arabic), listed by name in the options bar and the Character section; a family's files are fetched and given to the engine when a person chooses it (the field says it is loading) or when the document's type names it (its type layers are drawn again in it, no history step); the field shows the family in its own face; a family nothing has is listed as substituted"
+    dimension: [function]
+    priority: P1
+    status: has
+    paths: [web/src/fonts/catalog.ts, web/src/fonts/served.ts, web/src/fonts/fonts.test.mjs, web/src/options/typeLayer.ts, web/src/options/otherBars.tsx, web/src/panels/useTypeStyle.ts, web/src/photo.ts, web/src/App.tsx, web/src/app.css, web/src/strings.ts, web/scripts/build-engine.sh, bindings/wasm/src/lib.rs, web/tests/fonts.mjs, NOTICE]
+    target: "Photoshop 2026"
+    gap: "No Simplified Chinese Song (宋体) face meets kition-fonts' rules (nothing from or derived from Adobe's designs, so no Noto Serif SC or Source Han Serif): the serif for Chinese is Shippori Mincho, a Japanese Mincho whose kanji cover most Chinese text (simplified-only characters fall back to Droid Sans Fallback); Ma Shan Zheng is the Chinese Kai. The list draws each name in the editor's face (only the field shows its family's own); no font preview menu, recent fonts or font search; text drawn before its family arrived on another engine (another tab) is drawn again only there when that engine gets it."
+    cases: [photo.editor.fonts/fonts, photo.editor.fonts/catalog, photo.editor.fonts/binding]
     since: "2026-11-25"

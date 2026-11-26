@@ -6,7 +6,7 @@ import { useTypeStyle } from '../panels/useTypeStyle'
 import { antiAliasChoices } from '../panels/TypeSections'
 import { ColorSwatch } from '../panels/PropsParts'
 import { ColorWell } from '../color/ColorWell'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useGradientEditor } from '../gradient/GradientEditorHost'
 import { bakeMidpoints, cssGradient, fromEngine, type EngineGradient } from '../gradient/gradient'
 import { Act, BlendMode, Check, Choice, FillSampling, Hint, Icon, Icons, Num, Opt, Sep, Toggle, bare, fill, useBar } from './fields'
@@ -241,12 +241,20 @@ export function TypeBar() {
   // Text edited on the canvas owns the bar: its selected range (or all its text) takes the changes.
   const style = useTypeStyle({ layer: text.layer ?? (layer?.kind === 'Type' && !text.editing ? layer.id : undefined), options: o, setOptions: set, foreground, setForeground })
   const { layer: target, values, apply } = style
-  const { fonts: fontChoices, styles: styleChoices } = useFontChoices(values.font, values.fontStyle)
+  const { fonts: fontChoices, styles: styleChoices, loading: fontLoading } = useFontChoices(values.font, values.fontStyle)
   return (
     <>
       <Icon field="orientation" icon={TextCursor} label={phrase('Toggle text orientation')} disabled={!target} onClick={() => target && style.setOrientation(!target.vertical)} />
       <Opt field="font" option="font">
-        <KitChoice label={phrase('Font')} quiet value={values.font} choices={fontChoices} onChange={style.setFont} testId="photo-option-font" />
+        {/* The field shows its family in its own face once the page has it (plan 2026-11-24, stage 9). */}
+        <span className="photo-font-choice" style={{ '--photo-font': JSON.stringify(values.font) } as CSSProperties}>
+          <KitChoice label={phrase('Font')} quiet value={values.font} choices={fontChoices} onChange={style.setFont} testId="photo-option-font" />
+        </span>
+        {fontLoading ? (
+          <span className="photo-font-loading" role="status" data-testid="photo-font-loading">
+            {t('font.loading', { family: fontLoading })}
+          </span>
+        ) : null}
       </Opt>
       <Opt field="fontStyle" option="fontStyle">
         <KitChoice label={t('options.fontStyle')} quiet value={values.fontStyle} choices={styleChoices} onChange={(fontStyle) => apply({ fontStyle }, 'fontStyle')} testId="photo-option-fontStyle" />

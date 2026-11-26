@@ -108,6 +108,20 @@ pub(crate) struct LiveState {
     live: Option<Live>,
     last: u32,
     omitted: Option<(LayerId, Stamp)>,
+    /// The Brush or Pencil stroke offered to the command running now (see [`PhotoDocument::offer_live_stroke`]).
+    offered: Option<Offered>,
+    /// The last stroke a commit took the pixels of, and the area its preview covered (for `strokeCancel`).
+    adopted: Option<(u32, [i32; 4])>,
+}
+
+/// A live stroke whose engine preview is offered to the commit, kept to put it back.
+struct Offered {
+    id: u32,
+    command: String,
+    params: Value,
+    points: Vec<Value>,
+    stamp: Stamp,
+    area: [i32; 4],
 }
 
 /// `[x0, y0, x1, y1]`, the empty rectangle as `[0, 0, 0, 0]`.
@@ -250,8 +264,56 @@ impl PhotoDocument {
             Some(live) if live.id == stroke => corners(live.paint.bounds()),
             other => {
                 self.strokes.live = other;
-                [0; 4]
+                match self.strokes.adopted.take() {
+                    Some((id, area)) if id == stroke => area,
+                    _ => [0; 4],
+                }
             }
+        }
+    }
+
+    /// Before a person's command runs: offers the Brush or Pencil stroke under way, when it is a
+    /// stroke of `command` on the document as it is, to the engine, so that its commit takes the
+    /// stroke's pixels instead of painting it again (plan 2026-11-24, stage 9; the engine's
+    /// `brush_cmds::LiveStroke::offer`). The command still runs as any other: its checks, history
+    /// step, journal and answer are the same. True when offered; [`Self::withdraw_live_stroke`]
+    /// follows the run.
+    pub(crate) fn offer_live_stroke(&mut self, command: &str) -> bool {
+        let stamp = self.stamp();
+        let Some(live) = self.strokes.live.take() else { return false };
+        if live.command != command || Some(live.stamp) != stamp {
+            self.strokes.live = Some(live);
+            return false;
+        }
+        let Live { id, command, params, points, stamp, paint } = live;
+        let area = corners(paint.bounds());
+        let stroke = match paint {
+            Paint::Brush(stroke) => stroke,
+            other => {
+                self.strokes.live = Some(Live { id, command, params, points, stamp, paint: other });
+                return false;
+            }
+        };
+        match stroke.offer(&self.session, &points) {
+            Ok(()) => {
+                self.strokes.offered = Some(Offered { id, command, params, points, stamp, area });
+                true
+            }
+            Err(stroke) => {
+                self.strokes.live = Some(Live { id, command, params, points, stamp, paint: Paint::Brush(stroke) });
+                false
+            }
+        }
+    }
+
+    /// After the command an offer went to: a stroke it did not take is the live stroke again (its
+    /// preview still shows, `strokeCancel` takes it away); a stroke it took is gone, and
+    /// `strokeCancel` still answers the area its preview covered.
+    pub(crate) fn withdraw_live_stroke(&mut self) {
+        let Some(Offered { id, command, params, points, stamp, area }) = self.strokes.offered.take() else { return };
+        match kition_photo_engine::brush_cmds::withdraw_offer() {
+            Some(stroke) => self.strokes.live = Some(Live { id, command, params, points, stamp, paint: Paint::Brush(Box::new(stroke)) }),
+            None => self.strokes.adopted = Some((id, area)),
         }
     }
 

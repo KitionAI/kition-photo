@@ -2357,3 +2357,15 @@ select.kui-field.photo-kerning-presets {
   height: calc(100% - 18px);
   cursor: col-resize;
 }
+
+/* The Type tool's font field shows its family in its own face once the page has it (plan
+   2026-11-24, stage 9); until then the editor's face. */
+.photo-font-choice select {
+  font-family: var(--photo-font), var(--kit-font, system-ui), sans-serif;
+}
+
+.photo-font-loading {
+  color: var(--kit-text-muted);
+  white-space: nowrap;
+  margin-left: 4px;
+}

@@ -111,7 +111,11 @@ KITION_FONTS_DIR="$PWD/../kition-fonts" cargo test --workspace
   an error with `KITION_FONTS_REQUIRED=1`.
 - **Web:** the wasm32 build never embeds these fonts, even with `KITION_FONTS_DIR` set (size
   budget). It loads fonts served next to it, on demand, in the same manifest format
-  (`crates/support/text/src/served.rs`).
+  (`crates/support/text/src/served.rs`). `web/scripts/build-engine.sh` copies Droid Sans Fallback
+  (given to the engine before a document opens) and the Type tool's other families (whole
+  kition-fonts folders, licences beside the fonts, listed in `public/fonts/manifest.txt`) into
+  `web/public/fonts/`; the editor fetches a family when a person picks it or a document's type
+  names it and gives it to the engine's `addFace` (`web/src/fonts/`). NOTICE names them.
 - Tests that need the fonts skip with a message when the directory is unset.
 
 ## Native format

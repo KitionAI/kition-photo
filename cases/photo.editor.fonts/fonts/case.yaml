@@ -1,0 +1,27 @@
+format: 1
+id: photo.editor.fonts/fonts
+feature: photo.editor.fonts
+intent: >-
+  The Type tool's fonts in a real browser (plan 2026-11-24, stage 9): the options bar's font list names the 16
+  families (Latin sans, serif, mono and display; Chinese Hei, Kai and a Mincho; Japanese, Korean, Arabic), and a served
+  family is not loaded before it is used; choosing Lora for a type layer says it is loading, loads it and draws the
+  layer in it (the glyphs change) and the field shows it; Chinese in Shippori Mincho draws four different characters,
+  not boxes, in another face than Droid Sans Fallback's; type that names Tinos loads it without being chosen; a family
+  nothing has shows as substituted.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/fonts.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/fonts.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"

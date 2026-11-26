@@ -5,7 +5,8 @@
  * only the area each step changed. Pointer moves are gathered and sent once per animation frame,
  * one call at a time: a fast pointer never queues up work in the engine. The release commits the
  * stroke as before, by running the tool's command with every point (and the seed the preview drew
- * its jitter with); Escape drops it, and the canvas draws the area again from the document.
+ * its jitter with), once the engine has every point: the Brush's and the Pencil's commit then takes
+ * the preview's pixels (stage 9); Escape drops it, and the canvas draws the area again from the document.
  */
 import type { RasterRect } from '@kition/sdk/editor'
 
@@ -129,6 +130,13 @@ export function liveStroke(engine: StrokeEngine, command: string, params: Record
     await begun.catch(fail)
     while (busy) await busy
   }
+  // The points of the frame not sent yet go now: the commit then runs with exactly the points the
+  // preview drew, and the engine takes the preview's pixels instead of painting it again (stage 9).
+  const flush = async () => {
+    await settle()
+    pump()
+    while (busy) await busy
+  }
   return {
     add(point) {
       if (broken || closed) return
@@ -139,7 +147,10 @@ export function liveStroke(engine: StrokeEngine, command: string, params: Record
       return broken
     },
     get settled() {
-      return begun.then(() => (broken || stroke == null ? null : seed == null ? {} : { seed }))
+      return begun.then(async () => {
+        await flush()
+        return broken || stroke == null ? null : seed == null ? {} : { seed }
+      })
     },
     async close(committed) {
       closed = true

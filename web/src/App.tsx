@@ -42,6 +42,7 @@ import { Nudges, digitTarget } from './tools/canvasKeys'
 import { toBitmap } from './panels/thumbnails'
 import { liveStroke } from './tools/canvas/stroke'
 import { SHIFT_SWITCH, usePhotoPrefs, type PhotoPrefs } from './prefs'
+import { ensureFamily, loadCatalog, type FontEngine } from './fonts/served'
 import { paintsPixels, rasterizeNeeded, rasterizeThenPaint, withRasterizePrompt, type RasterizeAsk } from './tools/rasterize'
 import { RasterizePrompt } from './tools/RasterizePrompt'
 import { optionsFor, toolFields, toolParams, type ToolOptions } from './tools/options'
@@ -230,6 +231,15 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   useEffect(() => {
     if (doc && !prefs.shiftToolSwitch) void prefsRun.current('prefs.set', { path: SHIFT_SWITCH, value: false })
   }, [doc, prefs.shiftToolSwitch])
+  // The served families the document's type names load with it (plan 2026-11-24, stage 9): its type
+  // layers are drawn again in them as each arrives (the binding's `addFace`).
+  const typeFonts = [...new Set((state?.layers ?? []).flatMap((layer) => (layer.kind === 'Type' && layer.font ? [layer.font] : [])))].sort().join('\n')
+  useEffect(() => {
+    if (!doc || !typeFonts) return
+    void loadCatalog().then((catalog) => {
+      for (const family of typeFonts.split('\n')) if (catalog.has(family)) void ensureFamily(doc as unknown as FontEngine, family)
+    })
+  }, [doc, typeFonts])
   // The Crop tool's frame (plan 2026-11-24, stage 2): the whole canvas when the tool is chosen.
   const [crop, setCrop] = useState<CropFrame | null>(null)
   const cropNow = useRef<CropFrame | null>(null)

@@ -11,7 +11,7 @@
 //! `layerThumbnail`, `maskThumbnail`, `channelThumbnails`, `maskTargetCommands`, `histogram`,
 //! `navigatorImage`, `viewState`, the person's view for the host's `view-state` store, and the
 //! canvas's live strokes `strokeBegin`, `strokePush`, `strokeEnd`, `strokeCancel` and `omitLayer`,
-//! see [`stroke`]) sit in [`web`].
+//! see [`stroke`], and `addFace`, the Type tool's fonts loaded on demand) sit in [`web`].
 #![forbid(unsafe_code)]
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
@@ -150,10 +150,16 @@ impl PhotoDocument {
         let agent = self.is_agent() || origin.is_some_and(|origin| origin.kind == kition_kit::kdm::OriginKind::Agent);
         let engine = move |doc: &mut Self, params: Value| {
             let was_open = doc.session.active().is_some();
+            // A person's Brush or Pencil commit takes the live stroke's pixels (`stroke.rs`).
+            let offered = !agent && doc.offer_live_stroke(command);
             let result = match origin {
                 Some(origin) => doc.session.execute_as(command, params, origin).map_err(engine_error),
                 None => doc.session.execute(command, params).map_err(engine_error),
-            }?;
+            };
+            if offered {
+                doc.withdraw_live_stroke();
+            }
+            let result = result?;
             Ok(if was_open && doc.session.active().is_none() { json!({"closed":true}) } else { result })
         };
         // The engine reads a command's `layer` as an id only, and takes any other value for the
@@ -709,6 +715,41 @@ pub fn add_font(bytes: &[u8]) -> usize {
     families.len()
 }
 
+/// Adds a font file's faces for type to choose by name (the editor's served fonts, loaded when a
+/// person picks a family or a document uses it: plan 2026-11-24, stage 9), unlike [`add_font`]
+/// without making it a script's fallback. Every open document of this engine can use them at
+/// once. Returns the families added (none for bytes that are not a font).
+pub fn add_face(bytes: &[u8]) -> Vec<String> {
+    let mut text = kition_photo_text::shared().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    text.fonts.register_font_data(bytes.to_vec())
+}
+
+impl PhotoDocument {
+    /// Draws again the type layers of the open image that name one of `families` (fonts that
+    /// arrived after they were drawn, `add_face`): no history step, and a clean image stays clean
+    /// (the engine's `refresh_type_layers`). Answers how many layers it drew.
+    pub fn refresh_type_in(&mut self, families: &[String]) -> usize {
+        let Some(st) = self.session.active() else { return 0 };
+        let doc_id = st.doc.id;
+        let names =
+            |t: &kition_photo_engine::doc::TextLayer| families.contains(&t.font_family) || t.runs.iter().any(|run| families.contains(&run.style.font_family));
+        let layers: Vec<_> = st
+            .doc
+            .walk()
+            .into_iter()
+            .filter_map(|(_, _, layer)| match &layer.content {
+                kition_photo_engine::doc::LayerContent::Text(t) if names(t) => Some((doc_id, layer.id)),
+                _ => None,
+            })
+            .collect();
+        if layers.is_empty() {
+            return 0;
+        }
+        let busy = self.session.refresh_type_layers(&layers);
+        layers.len().saturating_sub(busy.len())
+    }
+}
+
 /// Photo's own additions to the exported class.
 #[cfg(target_arch = "wasm32")]
 pub mod web {
@@ -772,6 +813,16 @@ pub mod web {
         /// The document's guides `{horizontal, vertical}` (JSON) ([`crate::PhotoDocument::guides`]).
         pub fn guides(&self) -> Result<String, JsError> {
             self.0.guides().map(|answer| answer.to_string()).map_err(error)
+        }
+
+        /// Adds a font file's faces for type to choose by name ([`crate::add_face`]), and draws again
+        /// the open image's type layers that name them ([`crate::PhotoDocument::refresh_type_in`]):
+        /// answers `{families, refreshed}` as JSON (no families for bytes that are not a font).
+        #[wasm_bindgen(js_name = addFace)]
+        pub fn add_face(&mut self, bytes: &[u8]) -> String {
+            let families = crate::add_face(bytes);
+            let refreshed = self.0.refresh_type_in(&families);
+            json!({ "families": families, "refreshed": refreshed }).to_string()
         }
 
         #[wasm_bindgen(js_name = omitLayer)]
@@ -989,6 +1040,24 @@ mod tests {
         let Ok(bytes) = std::fs::read(font) else { return };
         assert!(add_font(&bytes) > 0);
         assert!(kition_photo_text::served::script_fallback_families().iter().any(|family| family == "Droid Sans Fallback"));
+    }
+
+    #[test]
+    fn takes_a_face_to_choose_by_name_without_a_fallback() {
+        assert!(add_face(b"not a font").is_empty());
+        let font = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../kition-fonts/fonts/lora/Lora-Variable.ttf");
+        let Ok(bytes) = std::fs::read(font) else { return };
+        assert_eq!(add_face(&bytes), ["Lora"]);
+        assert!(!kition_photo_text::served::script_fallback_families().iter().any(|family| family == "Lora"));
+        let mut doc = PhotoDocument::create("new.psd", 200, 80).unwrap();
+        let families = doc.execute("text.fonts", json!({})).unwrap();
+        assert!(families["families"].as_array().unwrap().iter().any(|family| family == "Lora"), "{families}");
+        // A type layer that names it is drawn again with it, with no history step.
+        doc.execute("text.add", json!({ "x": 10, "y": 50, "text": "Lora", "size": 30, "font": "Lora" })).unwrap();
+        let steps = doc.inspect().unwrap()["history"].as_array().unwrap().len();
+        assert_eq!(doc.refresh_type_in(&["Lora".to_owned()]), 1);
+        assert_eq!(doc.refresh_type_in(&["Tinos".to_owned()]), 0);
+        assert_eq!(doc.inspect().unwrap()["history"].as_array().unwrap().len(), steps);
     }
 
     #[test]

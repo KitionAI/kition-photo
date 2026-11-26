@@ -1,0 +1,23 @@
+format: 1
+id: photo.editor.fonts/catalog
+feature: photo.editor.fonts
+intent: >-
+  The served fonts' catalog (plan 2026-11-24, stage 9): the manifest in kition-fonts' format gives each family its
+  files and nothing outside the editor's folder; the font list has the engine's and the served families by name with
+  their state (loaded, served, loading, missing) and keeps a missing current family first; a document loads the served
+  families its type names that the engine lacks, once each.
+layer: gate
+source:
+  kind: probe
+  from: web/src/fonts/fonts.test.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, --test, src/fonts/fonts.test.mjs]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+timeout_s: 120
+since: "2026-11-25"

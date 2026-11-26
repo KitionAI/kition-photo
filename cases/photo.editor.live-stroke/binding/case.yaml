@@ -9,6 +9,9 @@ intent: >-
   and scattered); cancelling leaves the pixels, revision, history and dirty state as they were; a change of the
   document drops the preview; not-a-number, off-range, too many or malformed points, unknown keys, commands without
   a preview and hidden layers are errors, never a panic; a render can leave one layer out until the document changes.
+  The editor's commit of a Brush or Pencil stroke (its command with every point and the seed) takes the stroke's
+  pixels instead of painting it again, with the same step, name, pixels and undo (plain, smoothed, scattered, the
+  Eraser in a selection, a layer mask); a commit unlike its stroke paints as any command (plan 2026-11-24, stage 9).
 layer: gate
 source:
   kind: probe

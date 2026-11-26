@@ -43,6 +43,8 @@ export type PhotoLayer = {
   adjustment: { kind: string; params: Record<string, unknown>; lookup: string | null } | null
   /** Whether the layer is an artboard (a group with a canvas of its own). */
   artboard: boolean
+  /** A type layer's font family (its first run's), for the Type tool's served fonts; undefined for other layers. */
+  font?: string
 }
 
 /** A channel as the Channels panel lists it. */
@@ -107,6 +109,7 @@ type InspectedLayer = {
   adjustmentKind?: string
   adjustmentParams?: Record<string, unknown>
   artboard?: unknown
+  text?: { font?: string }
   children?: InspectedLayer[]
 }
 
@@ -162,6 +165,7 @@ function flatten(layers: readonly InspectedLayer[] | undefined, depth: number, f
       bounds: layer.bounds ?? null,
       adjustment: layer.adjustmentKind ? adjustmentOf(layer) : null,
       artboard: layer.artboard != null,
+      font: layer.text?.font,
     })
     flatten(layer.children, depth + 1, folded || layer.expanded === false, out)
   }

@@ -328,6 +328,9 @@ pub fn paint_stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let pts = parse_points(p, "paint.stroke")?;
     let brush = with_blend_mode(resolve_brush(s, p, "paint.stroke")?, p);
     let label = if brush.erase { "Eraser" } else { "Brush Tool" };
+    if let Some(live) = take_offer(s, "paint.stroke", p, &pts) {
+        return adopt(s, p, label, live);
+    }
     stroke_with(s, p, label, brush, pts, false)
 }
 
@@ -483,7 +486,92 @@ fn pencil(s: &mut Session, p: &Value) -> Result<Value> {
     let pts = parse_points(p, "paint.pencil")?;
     let brush = pencil_brush(s, p)?;
     let label = if brush.erase { "Eraser" } else { "Pencil" };
+    if let Some(live) = take_offer(s, "paint.pencil", p, &pts) {
+        return adopt(s, p, label, live);
+    }
     stroke_with(s, p, label, brush, pts, flag(p, "autoErase", false))
+}
+
+/// A live stroke offered to the commit that follows it (plan 2026-11-24, stage 9): the editor
+/// draws a stroke with a [`LiveStroke`] and commits it by running its command with every point, which
+/// painted the whole stroke a second time (half a second for a large brush on a large image). Run
+/// on the same document state with exactly the stroke's params and points, the command takes the
+/// pixels the live stroke painted instead; the history step, its name and the answer are the same.
+struct Offer {
+    cmd: String,
+    params: Value,
+    points: Vec<StrokePoint>,
+    doc: kition_photo_doc::DocId,
+    revision: u64,
+    live: LiveStroke,
+}
+
+thread_local! {
+    static OFFER: std::cell::RefCell<Option<Offer>> = const { std::cell::RefCell::new(None) };
+    static ADOPTED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+impl LiveStroke {
+    /// Offers this stroke's pixels to the next run of its command (see [`Offer`]), with every
+    /// `points` the stroke was given (with their times: a stroke given only points, never time
+    /// alone, shows what its commit paints, smoothing's catch-up included). A stroke with painting
+    /// symmetry (its mirrored passes merge on commit) or no open document comes back as `Err`.
+    /// Replaces an offer not taken.
+    pub fn offer(self, s: &Session, points: &[Value]) -> std::result::Result<(), Box<LiveStroke>> {
+        let Some(st) = s.active() else { return Err(Box::new(self)) };
+        if self.symmetry.is_some() {
+            return Err(Box::new(self));
+        }
+        let Ok(points) = parse_points(&json!({ "points": points }), &self.cmd) else { return Err(Box::new(self)) };
+        let (doc, revision) = (st.doc.id, st.revision);
+        OFFER.with(|offer| *offer.borrow_mut() = Some(Offer { cmd: self.cmd.clone(), params: self.params.clone(), points, doc, revision, live: self }));
+        Ok(())
+    }
+}
+
+/// Takes back an offered stroke the command did not take (see [`LiveStroke::offer`]).
+pub fn withdraw_offer() -> Option<LiveStroke> {
+    OFFER.with(|offer| offer.borrow_mut().take()).map(|offer| offer.live)
+}
+
+/// How many commits took a live stroke's pixels instead of painting the stroke again.
+pub fn adopted_strokes() -> u64 {
+    ADOPTED.with(std::cell::Cell::get)
+}
+
+/// The offered stroke, when `cmd` runs with exactly its params (every one but `points` alike) and
+/// points on the document state it began on; any other run leaves the offer where it is.
+fn take_offer(s: &Session, cmd: &str, p: &Value, pts: &[StrokePoint]) -> Option<LiveStroke> {
+    let st = s.active()?;
+    let same_params = |a: &Value, b: &Value| match (a.as_object(), b.as_object()) {
+        (Some(a), Some(b)) => {
+            a.iter().filter(|(k, _)| *k != "points").count() == b.iter().filter(|(k, _)| *k != "points").count()
+                && a.iter().all(|(k, v)| k == "points" || b.get(k) == Some(v))
+        }
+        _ => false,
+    };
+    OFFER.with(|offer| {
+        let mut offer = offer.borrow_mut();
+        let matches =
+            offer.as_ref().is_some_and(|o| o.cmd == cmd && o.doc == st.doc.id && o.revision == st.revision && o.points == pts && same_params(&o.params, p));
+        if matches { offer.take().map(|o| o.live) } else { None }
+    })
+}
+
+/// Commits a live stroke by its pixels: the target's pixels where the stroke painted, in one step
+/// named as the painted commit's.
+fn adopt(s: &mut Session, p: &Value, label: &str, mut live: LiveStroke) -> Result<Value> {
+    let area = live.bounds();
+    let (layer, params) = (live.layer, live.params.clone());
+    let (surf, _) = crate::channel_cmds::target_surface(std::sync::Arc::make_mut(&mut live.doc), layer, &params)?;
+    let painted = surf.read_region(area);
+    let dmg = s.edit(label, |doc, _| {
+        let (surf, _) = crate::channel_cmds::target_surface(doc, layer, p)?;
+        surf.write_region(area, &painted);
+        Ok(area)
+    })?;
+    ADOPTED.with(|count| count.set(count.get().saturating_add(1)));
+    Ok(damage_json(s, dmg))
 }
 
 fn pct(p: &Value, k: &str, d: f32) -> f32 {
