@@ -1,14 +1,16 @@
 import { dragRect, type KitPointer, type KitTool } from '@kition/sdk/editor'
 import { cropRatioSize, marqueeEnd, pixelArea } from '../options'
 import { rectDrag, type CropFrame, type KitGesture, type PhotoToolEnv } from './common'
-import { cropQuad, dragCrop, handleAt, handleCursor, type Handle, type Point, type Quad } from './geometry'
+import { cropQuad, dragCrop, edgeAt, handleAt, handleCursor, type Handle, type Point, type Quad } from './geometry'
 
 type KitToolContext = Parameters<KitTool['begin']>[1]
 
-/** The frame's handle under the pointer: one of eight, inside, or outside (turn). */
+/** The frame's handle under the pointer: one of eight, an edge anywhere along it (as its middle handle), inside, or outside (turn). */
 function handleOf(frame: CropFrame, pointer: KitPointer, toScreen: (x: number, y: number) => Point): Handle | null {
   const screen = cropQuad(frame).map((p) => toScreen(p.x, p.y)) as Quad
-  return handleAt(screen, null, { x: pointer.canvasX, y: pointer.canvasY })
+  const at = { x: pointer.canvasX, y: pointer.canvasY }
+  const handle = handleAt(screen, null, at)
+  return handle === 'inside' || handle === 'rotate' ? (edgeAt(screen, at) ?? handle) : handle
 }
 
 /** The options bar's ratio for the frame (a preset or typed W : H), or null when free. */

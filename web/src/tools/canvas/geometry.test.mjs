@@ -14,6 +14,7 @@ import {
   digitPercent,
   dragCrop,
   dragTransform,
+  edgeAt,
   handleAt,
   hardnessStep,
   insideOutline,
@@ -127,6 +128,17 @@ test('transform handles: eight, the reference point, inside, and outside to rota
   assert.equal(handleAt(screen, { x: 200, y: 150 }, { x: 150, y: 130 }), 'inside')
   assert.equal(handleAt(screen, { x: 200, y: 150 }, { x: 350, y: 250 }), 'rotate')
   assert.equal(handleAt(screen, null, { x: 350, y: 250 }, false), null)
+})
+
+test('crop edges: grabbed along their whole length within reach, the nearest one; beyond reach none (plan 2026-11-24, stage 8)', () => {
+  const screen = rectQuad(100, 100, 300, 200)
+  assert.equal(edgeAt(screen, { x: 147, y: 97 }), 'n')
+  assert.equal(edgeAt(screen, { x: 147, y: 104 }), 'n')
+  assert.equal(edgeAt(screen, { x: 303, y: 120 }), 'e')
+  assert.equal(edgeAt(screen, { x: 260, y: 199 }), 's')
+  assert.equal(edgeAt(screen, { x: 96, y: 180 }), 'w')
+  assert.equal(edgeAt(screen, { x: 147, y: 90 }), null)
+  assert.equal(edgeAt(screen, { x: 200, y: 150 }), null)
 })
 
 test('transform drags: scale, Shift proportional, Alt about the centre, rotate (Shift 15°), move, distort and skew', () => {

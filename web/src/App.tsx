@@ -217,6 +217,10 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const [crop, setCrop] = useState<CropFrame | null>(null)
   const cropNow = useRef<CropFrame | null>(null)
   cropNow.current = crop
+  // The frame's own steps while it is open (plan 2026-11-24, stage 8): Cmd+Z takes back its last
+  // adjustment, the frame before each settled change (null: there was none).
+  const cropSteps = useRef<(CropFrame | null)[]>([])
+  const cropSettled = useRef<CropFrame | null>(null)
   const [textDraft, setTextDraft] = useState<TextDraft | null>(null)
   const [textPending, setTextPending] = useState(false)
   const [textDirty, setTextDirty] = useState(false)
@@ -265,6 +269,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     setToolGeneration(++toolGenerationNow.current)
     pending.current?.cancel()
     setCrop(null)
+    cropSteps.current = []
+    cropSettled.current = null
     setRasterize(null)
     rasterizeOpen.current = false
   }, [])
@@ -516,13 +522,23 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   useLayoutEffect(syncMarks)
   /** A crop frame from a drag: drawn at once, and kept (for the options bar) when `settled`. */
   const updateCrop = useCallback(
-    (frame: CropFrame | null, settled: boolean) => {
+    (frame: CropFrame | null, settled: boolean, undoing = false) => {
       cropNow.current = frame
       syncMarks()
-      if (settled) setCrop(frame)
+      if (!settled) return
+      if (!frame || frame.initial) cropSteps.current = []
+      else if (!undoing && JSON.stringify(frame) !== JSON.stringify(cropSettled.current)) cropSteps.current.push(cropSettled.current)
+      cropSettled.current = frame
+      setCrop(frame)
     },
     [syncMarks],
   )
+  /** Cmd+Z while a frame is open: its last adjustment back, or with none the frame dropped. */
+  const undoCrop = () => {
+    const steps = cropSteps.current
+    if (!steps.length) return updateCrop(null, true)
+    updateCrop(steps.pop() ?? null, true, true)
+  }
   const applyCropNow = useRef<() => void>(() => undefined)
 
   // The Type tools' presses and the Move tool's double click on type (defined below, read when they act).
@@ -1327,6 +1343,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     if (box && key === 'enter') void transformNow.current.commit()
     else if (box && key === 'escape') void transformNow.current.cancel()
     else if (command && !event.altKey && !event.shiftKey && key === 't') startTransform()
+    else if (frame && !frame.initial && command && !event.altKey && !event.shiftKey && key === 'z') undoCrop()
     else if (menuKeys.current?.(event)) return true
     else if (frame && !frame.initial && key === 'enter') void applyCrop()
     else if (frame && !frame.initial && key === 'escape') cancelCrop()

@@ -204,6 +204,30 @@ export function handleAt(screen: Quad, centre: Point | null, p: Point, rotates =
   return rotates ? 'rotate' : null
 }
 
+/**
+ * The edge of the box drawn at screen corners `screen` within `reach` screen pixels of `p`, along its
+ * whole length (plan 2026-11-24, stage 8: the crop frame's edges are grabbed anywhere, not only at
+ * their middle handle), the nearest one; null when none is that near.
+ */
+export function edgeAt(screen: Quad, p: Point, reach = HANDLE_REACH): (typeof EDGES)[number] | null {
+  let best: (typeof EDGES)[number] | null = null
+  let nearest = reach
+  EDGES.forEach((edge, index) => {
+    const a = screen[index]
+    const b = screen[(index + 1) % 4]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const length = dx * dx + dy * dy
+    const along = length > 0 ? Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / length)) : 0
+    const distance = Math.hypot(a.x + dx * along - p.x, a.y + dy * along - p.y)
+    if (distance <= nearest) {
+      nearest = distance
+      best = edge
+    }
+  })
+  return best
+}
+
 /** The cursor for a handle of a box turned by `angle` radians (the resize arrows turn with it). */
 export function handleCursor(handle: Handle, angle: number): string {
   if (handle === 'inside') return 'move'
