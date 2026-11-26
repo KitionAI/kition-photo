@@ -66,6 +66,9 @@ test("the engine's errors become the editor's sentences, without command ids, th
     ['6000 x 6000 px is 36 megapixels; resampling at this bit depth is limited to 25 megapixels', 'error.tooLarge'],
     ['no active layer', 'error.noLayer'],
     ['the selection is empty', 'error.noSelection'],
+    // Plan 2026-11-24, stage 8: Layer via Copy / Cut on empty pixels, Image › Crop without a selection.
+    ['step 0 (`layer.new.layerViaCopy`) failed: Could not complete the command: the selected area is empty', 'error.emptyArea'],
+    ['nothing to crop: pass x/y/width/height or make a selection', 'error.noSelection'],
     ['the active layer has no pixels', 'error.notPixels'],
     ['not available on the web (no file system)', 'error.noFileSystem'],
     ['cancelled', 'error.cancelled'],

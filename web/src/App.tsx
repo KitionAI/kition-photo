@@ -97,6 +97,18 @@ import { installFocusGuard } from './focusGuard'
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
 
+/** A command's answer as an object (the session answers JSON text), or null. */
+function answerOf(answer: unknown): Record<string, unknown> | null {
+  if (answer && typeof answer === 'object') return answer as Record<string, unknown>
+  if (typeof answer !== 'string') return null
+  try {
+    const parsed: unknown = JSON.parse(answer)
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
 /** Tools whose Cmd (Ctrl) is their own, so holding it does not turn a press into the Move tool's (upstream's list). */
 const CMD_IS_OWN: ReadonlySet<PhotoToolId> = new Set<PhotoToolId>(['Move', 'Type', 'VerticalType', 'Hand', 'Zoom', 'Crop', 'Slice', 'SliceSelect', 'Pen', 'PathSelection', 'DirectSelection', 'Rectangle', 'EllipseShape', 'Triangle', 'Polygon', 'Line', 'CustomShape'])
 /** Tools whose arrow keys nudge the selection's outline while there is one. */
@@ -108,6 +120,8 @@ const OWN_KEYS = 'input, select, textarea, [role="menu"], [role="menubar"], [rol
 const PATH_EDIT_TOOLS: ReadonlySet<string> = new Set(['Pen', 'PathSelection', 'DirectSelection', 'ConvertPoint'])
 /** The menu rows View answers itself, with their keys (Cmd+R Rulers, Cmd+; Guides, Cmd+' Grid…). */
 const VIEW_KEY_ROWS = PHOTO_MENUS.filter((row) => row.shortcut && VIEW_SETTING_ROWS.has(row.command))
+/** Select › Find Layers' key (the engine's row). */
+const FIND_LAYERS_KEY = PHOTO_MENUS.find((row) => row.command === 'select.findLayers')?.shortcut ?? 'Cmd+Alt+Shift+F'
 const RotateCcw = TesseraIcons.RotateCcwIcon
 const SquareDashed = TesseraIcons.SquareDashedIcon
 
@@ -886,6 +900,14 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     () => ({
       invoke: (command) => {
         if (VIEW_SETTING_ROWS.has(command)) return viewRowNow.current(command)
+        // Select › Find Layers: the Layers panel's name search, as Photoshop's (plan 2026-11-24, stage 8).
+        if (command === 'select.findLayers') return findLayersNow.current()
+        // Select › Subject says so when it finds none (the selection goes, as the engine's replace does).
+        if (command === 'select.subject') {
+          return void runNow.current(command).then((answer) => {
+            if (answerOf(answer)?.selected === false) sayNow.current('select.noSubject')
+          })
+        }
         const io = fileIo.current
         if (io && command === 'file.placeEmbedded') return void io.place()
         if (io && (command === 'edit.copy' || command === 'edit.copyMerged')) return io.copy(command)
@@ -898,6 +920,23 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     }),
     [],
   )
+  const sayNow = useRef(say)
+  sayNow.current = say
+  const findLayersNow = useRef(() => undefined as void)
+  findLayersNow.current = () => {
+    // The Layers panel shown and in front (its group may be hidden: it shows on the next render).
+    if (!windows.panels.layers) setWindows({ ...windows, panels: { ...windows.panels, layers: true } })
+    let tries = 0
+    const reveal = () => {
+      dock.current?.showTab('layers')
+      const search = document.querySelector<HTMLInputElement>('[data-testid="photo-layers-search"]')
+      if (search) {
+        search.focus()
+        search.select()
+      } else if ((tries += 1) < 20) requestAnimationFrame(reveal)
+    }
+    requestAnimationFrame(reveal)
+  }
   // File › New… (the engine's row is the host's): Kition's own action, at the top of the File menu.
   // Edit › Free Transform (Cmd+T): Kition's own row at the top of Edit (the engine's transform takes the box the canvas draws).
   const startTransformNow = useRef(startTransform)
@@ -1333,6 +1372,11 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
       return true
     }
     // View's own rows' keys: Cmd+R Rulers, Cmd+; Guides, Cmd+' Grid, Cmd+H Extras, Cmd+Shift+; Snap, Cmd+Alt+; Lock Guides.
+    // Select › Find Layers' key goes to the Layers panel's name search, as its row does.
+    if (shortcutMatches(FIND_LAYERS_KEY, event, undefined, true)) {
+      findLayersNow.current()
+      return true
+    }
     const viewKey = VIEW_KEY_ROWS.find((row) => shortcutMatches(row.shortcut!, event, undefined, true))
     if (viewKey) {
       viewRowNow.current(viewKey.command)
@@ -1383,7 +1427,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const closeFloating = useCallback((id: string) => setFloating((open) => open.filter((item) => item !== id)), [])
   // View's own rows (Rulers, Show, Snap…) have no engine command: the editor answers them, so they are live.
   const editorEnabled = editor.enabled
-  const photoEnabled = useCallback((command: string) => VIEW_SETTING_ROWS.has(command) || editorEnabled(command), [editorEnabled])
+  // Image › Crop crops to the selection: without one it is greyed out rather than failing (plan 2026-11-24, stage 8).
+  const hasSelection = state?.hasSelection ?? false
+  const photoEnabled = useCallback((command: string) => VIEW_SETTING_ROWS.has(command) || (editorEnabled(command) && (command !== 'image.crop' || hasSelection)), [editorEnabled, hasSelection])
   const surfaceBox = useCallback(() => workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')?.getBoundingClientRect() ?? null, [])
   const dropGuide = useCallback((orientation: 'horizontal' | 'vertical', position: number) => void typeRun.current('view.newGuide', { orientation, position }), [])
   const rulerLabel = useCallback((side: 'top' | 'left') => t(side === 'top' ? 'ruler.top' : 'ruler.left'), [t])

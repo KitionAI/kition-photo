@@ -26,7 +26,11 @@ function strokeExtras(id: string, env: PhotoToolEnv, start: KitPointer): Record<
     env.setCloneSource({ x: start.x, y: start.y })
     return null
   }
-  if (!env.cloneSource) return null
+  if (!env.cloneSource) {
+    // Nothing to copy from yet: say how to set the source, instead of painting nothing in silence.
+    env.say?.('clone.noSource')
+    return null
+  }
   // The source keeps its offset from the brush's first point.
   return { offset: [Math.round(env.cloneSource.x - start.x), Math.round(env.cloneSource.y - start.y)] }
 }

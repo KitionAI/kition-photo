@@ -851,11 +851,11 @@ features:
     cases: [photo.editor.added-tools/added-tools]
     since: "2026-11-25"
   - id: photo.editor.polish
-    title: "What the final walkthrough found (plan 2026-11-24, stage 8): the keyboard never falls to the page when a control under the focus goes away or turns disabled (Layers' Add Mask, Free Transform's ✓ and ⊘, the brush picker closed with Escape), and the editor's keys work at once; Photo's dialogs are modal: Enter is OK from anywhere in them (right after opening, after Tab), Escape is Cancel, a press or drag outside them neither cancels nor paints, and the Enter that closed one reaches nothing else"
+    title: "What the final walkthrough found (plan 2026-11-24, stage 8): the keyboard never falls to the page when a control under the focus goes away or turns disabled (Layers' Add Mask, Free Transform's ✓ and ⊘, the brush picker closed with Escape), and the editor's keys work at once; Photo's dialogs are modal: Enter is OK from anywhere in them (right after opening, after Tab), Escape is Cancel, a press or drag outside them neither cancels nor paints, and the Enter that closed one reaches nothing else; messages that name the cause: Layer via Copy or Cut on empty pixels, the Clone Stamp and Healing Brush without a source (Alt-click one first), Select › Subject finding none; Image › Crop greyed out without a selection; Select › Find Layers (and its key) goes to the Layers panel's name search"
     dimension: [function]
     priority: P1
     status: has
-    paths: [web/src/focusGuard.ts, web/src/App.tsx, web/tests/polish.mjs, web/tests/dialogs.mjs]
+    paths: [web/src/focusGuard.ts, web/src/App.tsx, web/src/io/errors.ts, web/src/tools/canvas/paint.ts, web/src/strings.ts, web/tests/polish.mjs, web/tests/dialogs.mjs]
     target: "Photoshop 2026"
     gap: "Space on a focused dialog button still presses that button (the platform's way); Enter never does."
     cases: [photo.editor.polish/polish]

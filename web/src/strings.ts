@@ -570,6 +570,8 @@ const CANVAS_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['prefs.brushCursor.precise', 'Precise crosshair (Caps Lock: outline)', '精确十字（Caps Lock：轮廓）'],
   ['prefs.zoomWithWheel', 'Zoom with scroll wheel', '用滚轮缩放'],
   ['prefs.showTransform', 'Show Transform Controls with the Move tool', '移动工具显示变换控件'],
+  ['clone.noSource', 'Alt-click (Option-click) where to copy from first, then paint.', '请先按住 Alt（Option）单击要复制的来源位置，然后再绘画。'],
+  ['select.noSubject', 'No subject was found in this image.', '在这张图像中没有找到主体。'],
   ['prefs.shiftToolSwitch', 'Use Shift key for tool switch (a tool’s key again keeps the tool)', '使用 Shift 键切换工具（再按一次工具键不换工具）'],
 ]
 
@@ -664,6 +666,7 @@ const STAGE6_STRINGS: ReadonlyArray<readonly [string, string, string]> = [
   ['error.noDocument', 'No image is open.', '没有打开的图像。'],
   ['error.busy', 'The image is still busy with an earlier operation. Try again when it has finished.', '图像仍在处理之前的操作，请在完成后重试。'],
   ['error.locked', 'The layer is locked. Unlock it in the Layers panel first.', '该图层已锁定，请先在“图层”面板中解锁。'],
+  ['error.emptyArea', 'There are no pixels in the selected area of this layer. Choose a layer with pixels there, or select where it has some.', '当前图层在选区内没有像素。请选择在该处有像素的图层，或改选有像素的区域。'],
   ['error.noSelection', 'This needs a selection. Select an area first.', '此操作需要选区，请先选择一个区域。'],
   ['error.tooLarge', 'The image would be too large. Choose a smaller size.', '图像会过大，请选择较小的尺寸。'],
   ['error.unreadableImage', 'This file is not an image Kition Photo can read.', '此文件不是 Kition Photo 能读取的图像。'],

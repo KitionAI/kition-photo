@@ -80,6 +80,48 @@ try {
   step('the preference shows as set when Preferences opens again, and off again B cycles', shownOn && (await pressFor('b', 'Pencil')) === 'Pencil', `${shownOn} ${await tool()}`)
   await workspace.focus()
 
+  // ---------------------------------------------------------------- 6. messages that name the cause
+  // What the page shows (its visible text: the engine's own words stay folded under Details).
+  const shown = () => kit.locator('body').evaluate(() => [...document.querySelectorAll('[role="alert"], [role="status"]')].map((element) => element.innerText.replace(/\s+/g, ' ')).join(' | '))
+  const says = (text) => until(async () => (await shown()).includes(text), 40)
+  const menuRow = async (menu, command) => {
+    await kit.getByTestId(`photo-menu-${menu}`).click()
+    const row = kit.getByTestId(`photo-cmd-${command}`)
+    await row.waitFor()
+    return row
+  }
+  // The sample's Layer 1 has no pixels (its mask, added above, changes nothing about that).
+  await selectLayer(pixel.id)
+  await page.keyboard.press(`${e.primary}+a`)
+  const layersBefore = (await details()).layers.length
+  await page.keyboard.press(`${e.primary}+j`)
+  const emptyCopy = await says('There are no pixels in the selected area')
+  step('Layer via Copy on empty pixels says the selected area of the layer has none (no “image engine” message)', emptyCopy && !(await shown()).includes('image engine') && (await details()).layers.length === layersBefore, await shown())
+  await shot('stage8-empty-copy')
+  await page.keyboard.press(`${e.primary}+d`)
+  await until(async () => !(await details()).hasSelection, 30)
+  const crop = await menuRow('Image', 'image.crop')
+  const cropDisabled = (await crop.isDisabled()) || (await crop.getAttribute('aria-disabled')) === 'true'
+  await page.keyboard.press('Escape')
+  step('Image › Crop is greyed out without a selection', cropDisabled)
+  await (await menuRow('Select', 'select.findLayers')).click()
+  const searching = await until(async () => (await focused()) === 'photo-layers-search', 30)
+  await kit.getByTestId('photo-layers-search').fill('')
+  await workspace.focus()
+  await page.keyboard.press(`${e.primary}+Alt+Shift+KeyF`)
+  const byKey = await until(async () => (await focused()) === 'photo-layers-search', 30)
+  step('Select › Find Layers (and its key) puts the keyboard in the Layers panel’s name search', searching && byKey && !(await shown()).includes('out of range'), `${searching} ${byKey} ${await focused()}`)
+  await workspace.focus()
+  await choose('CloneStamp')
+  await e.drag([300, 300], [400, 300])
+  step('the Clone Stamp without a source says to Alt-click a source first', await says('Alt-click'), await shown())
+  await shot('stage8-clone-no-source')
+  for (const layer of (await details()).layers) await e.query('layer.setProps', { layer: layer.id, visible: false })
+  await (await menuRow('Select', 'select.subject')).click()
+  step('Select › Subject on a picture with nothing in it says no subject was found', await says('No subject was found'), await shown())
+  for (const layer of (await details()).layers) await e.query('layer.setProps', { layer: layer.id, visible: true })
+  await workspace.focus()
+
   await e.finish()
 } catch (error) {
   await e.fail(error)
