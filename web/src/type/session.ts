@@ -168,6 +168,12 @@ export class TypeSession {
   private state: State | null = null
   private chain: Promise<void> = Promise.resolve()
   private queued = 0
+  /**
+   * Text typed while steps ahead of it are still running, not yet started: the next keys join it,
+   * so fast typing becomes one engine edit per round trip instead of one per key (plan 2026-11-24,
+   * stage 8: 70 keys 15 ms apart kept up with, in order).
+   */
+  private waitingInsert: { text: string } | null = null
   /** The revision the session's own last command left; anything else means another edit came between. */
   private ours = 0
   private editing = 0
@@ -202,6 +208,8 @@ export class TypeSession {
 
   /** Runs `step` after every step before it; the canvas's marks follow once the queue is empty. */
   private enqueue(step: () => Promise<void> | void): Promise<void> {
+    // A new step closes the waiting insert: later keys go after it, in order.
+    this.waitingInsert = null
     this.queued += 1
     const go = async () => {
       try {
@@ -376,13 +384,23 @@ export class TypeSession {
 
   /** Types `text` over the selection (a key, a paste). */
   insert(text: string): void {
+    const waiting = this.waitingInsert
+    if (waiting) {
+      waiting.text += text
+      return
+    }
+    const job = { text }
+    const behind = this.queued > 0
     this.enqueue(async () => {
+      if (this.waitingInsert === job) this.waitingInsert = null
       const s = this.state
-      if (!s || !text) return
+      if (!s || !job.text) return
       const [a, b] = ordered(s.selection)
-      await this.replace(a, b, text)
+      await this.replace(a, b, job.text)
       this.publishTarget()
     })
+    // Only behind other steps: a key typed with nothing under way goes to the engine at once.
+    if (behind) this.waitingInsert = job
   }
 
   /** The selected text, for Copy and Cut. */

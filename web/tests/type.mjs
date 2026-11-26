@@ -149,6 +149,28 @@ try {
     step('new point text: Enter starts a second line, Cmd+Enter commits, in one history step', going && text.text === 'Hello\nWorld' && text.lines.length === 2 && (await history()) === before + 1 && !(await editing()), JSON.stringify({ going, text: text.text, lines: text.lines.length, history: (await history()) - before }))
   }
 
+  // Plan 2026-11-24, stage 8: fast typing keeps up: 70 keys 15 ms apart all arrive, in order, within
+  // a second and a half of the last one (keys typed while an edit is under way go in together).
+  {
+    const before = await history()
+    const fast = 'The quick brown fox jumps over the lazy dog and keeps running far away'
+    await click(60, 700)
+    await field.waitFor()
+    await page.keyboard.type('Q')
+    await press('Enter')
+    await until(editing, 50)
+    await page.keyboard.type(fast, { delay: 15 })
+    const typedAt = Date.now()
+    const kept = await until(async () => (await info((await details()).activeLayer)).text === `Q\n${fast}`, 15)
+    const waited = Date.now() - typedAt
+    await command('Enter')
+    await until(async () => !(await editing()), 30)
+    const text = (await info((await details()).activeLayer)).text
+    step('70 keys typed 15 ms apart all arrive, in order, in one history step', kept && text === `Q\n${fast}` && (await history()) === before + 1, JSON.stringify({ kept, waited, got: text.length - 2 }))
+    await command('z')
+    await until(async () => (await history()) === before, 30)
+  }
+
   // Clicking existing type edits it at the character clicked; typing goes in there; one step.
   {
     const before = await history()
