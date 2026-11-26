@@ -15,6 +15,8 @@ export type PhotoPrefs = {
   /**
    * Use Shift Key for Tool Switch (plan 2026-11-24, stage 8): the engine's preference, which the
    * tool keys read; kept here too so it lasts, and given to the engine of each document opened.
+   * On by default, as Photoshop's (stage 9: the coordinator's decision): a tool's key again keeps
+   * the tool, Shift with it cycles the slot.
    */
   shiftToolSwitch: boolean
 }
@@ -22,7 +24,7 @@ export type PhotoPrefs = {
 /** The engine's preference behind Use Shift Key for Tool Switch (upstream's Preferences › Tools). */
 export const SHIFT_SWITCH = 'tools.useShiftKeyForToolSwitch'
 
-export const DEFAULT_PREFS: PhotoPrefs = { brushCursor: 'outline', zoomWithWheel: false, showTransform: false, shiftToolSwitch: false }
+export const DEFAULT_PREFS: PhotoPrefs = { brushCursor: 'outline', zoomWithWheel: false, showTransform: false, shiftToolSwitch: true }
 
 /** A stored value as preferences: each known field of the right kind, the default for the rest. */
 export function validPrefs(raw: unknown): PhotoPrefs | undefined {
@@ -32,7 +34,7 @@ export function validPrefs(raw: unknown): PhotoPrefs | undefined {
     brushCursor: value.brushCursor === 'precise' ? 'precise' : 'outline',
     zoomWithWheel: value.zoomWithWheel === true,
     showTransform: value.showTransform === true,
-    shiftToolSwitch: value.shiftToolSwitch === true,
+    shiftToolSwitch: value.shiftToolSwitch !== false,
   }
 }
 

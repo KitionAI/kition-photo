@@ -173,18 +173,26 @@ try {
   step('selects each of the 49 tools from its slot or flyout, and the options bar names it', unnamed.length === 0, unnamed.slice(0, 4).join('; '))
   step("each tool's bar draws exactly its listed options (TOOL_FIELDS)", misdrawn.length === 0, misdrawn.slice(0, 4).join('; '))
 
-  // Tool keys as upstream: by default the slot's key again cycles, Shift or not; with Preferences ›
-  // Tools › Use Shift Key for Tool Switch, only Shift and the key cycles.
+  // Tool keys as upstream: with Preferences › Tools › Use Shift Key for Tool Switch off, the slot's
+  // key again cycles, Shift or not; with it on (the default since plan 2026-11-24, stage 9, as
+  // Photoshop's), only Shift and the key cycles. This part sets the preference off first.
   const shiftSwitch = (value) => page.evaluate((on) => window.devHost.connection().ai.run([{ command: 'prefs.set', params: { path: 'tools.useShiftKeyForToolSwitch', value: on } }], false), value)
   const press = async (key, expected) => {
     await page.keyboard.press(key)
     await until(async () => (await activeTool()) === expected, 10)
     return activeTool()
   }
+  await shiftSwitch(false)
+  // The editor reads the preference again after the change; until it has, B B keeps the Brush.
+  await until(async () => {
+    await choose('Move')
+    await press('b', 'Brush')
+    return (await press('b', 'Pencil')) === 'Pencil'
+  }, 20)
   await choose('Move')
   await press('b', 'Brush')
-  step('B selects the Brush and B again cycles to the Pencil (the default)', (await press('b', 'Pencil')) === 'Pencil', await activeTool())
-  step('Shift+B cycles as B does by default', (await press('Shift+B', 'MixerBrush')) === 'MixerBrush', await activeTool())
+  step('B selects the Brush and B again cycles to the Pencil (the preference off)', (await press('b', 'Pencil')) === 'Pencil', await activeTool())
+  step('Shift+B cycles as B does with the preference off', (await press('Shift+B', 'MixerBrush')) === 'MixerBrush', await activeTool())
   await shiftSwitch(true)
   // The editor reads the preference again after the change; until it has, B B still cycles.
   const keeps = await until(async () => {
@@ -195,7 +203,6 @@ try {
     return (await activeTool()) === 'Brush'
   }, 20)
   step('with Use Shift Key for Tool Switch, B keeps the tool and Shift+B cycles', keeps && (await press('Shift+B', 'Pencil')) === 'Pencil', await activeTool())
-  await shiftSwitch(false)
 
   // Painting tools work on the painted pixel layer, over the brush stroke above.
   const pixel = (await details()).layers.find((layer) => layer.kind === 'Pixel')

@@ -22,9 +22,10 @@ export type ViewSettings = {
 }
 
 /**
- * Photoshop's defaults, except that Snap To Layers and Document Bounds and Smart Guides start off:
- * on, every existing drag near a layer's edge would land somewhere else than it was dragged to,
- * which the editor's gesture cases pin. A person turns them on in View › Snap To and View › Show.
+ * Photoshop's defaults: Snap on, to guides, the grid, layers and the document's bounds, and Smart
+ * Guides shown (plan 2026-11-24, stage 9: the coordinator's decision; stage 7 had started layers,
+ * bounds and Smart Guides off). Ctrl held while dragging suspends snapping. Scripted gesture tests
+ * set them off first (`tests/snap-off.mjs`).
  */
 export const DEFAULT_VIEW: ViewSettings = {
   rulers: false,
@@ -32,12 +33,12 @@ export const DEFAULT_VIEW: ViewSettings = {
   guides: true,
   grid: false,
   pixelGrid: true,
-  smartGuides: false,
+  smartGuides: true,
   selectionEdges: true,
   targetPath: true,
   layerEdges: false,
   snap: true,
-  snapTo: { guides: true, grid: true, layers: false, documentBounds: false },
+  snapTo: { guides: true, grid: true, layers: true, documentBounds: true },
   lockGuides: false,
 }
 

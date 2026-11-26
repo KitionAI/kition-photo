@@ -1,5 +1,5 @@
 import type { KitPointer, KitTool } from '@kition/sdk/editor'
-import { NO_REPAINT, accent, type KitGesture, type PhotoToolEnv } from './common'
+import { NO_REPAINT, accent, type KitGesture, type PhotoToolEnv, type TransformBox } from './common'
 import { constrainEight, dragTransform, handleAt, handleCursor, quadAngle, quadCentre, rectQuad, type Handle, type Point, type Quad } from './geometry'
 
 /** How far (screen pixels) an Alt-drag runs before it copies the layer (a plain Alt-click copies nothing). */
@@ -213,15 +213,19 @@ export function moveTool(env: PhotoToolEnv): KitTool {
  * point; Cmd moves a corner alone or slides an edge), inside moves, outside rotates (Shift: 15°),
  * the reference point moves itself. The layer follows live (the editor previews `edit.transform`).
  */
-export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPointer, zoom = 1): KitGesture | void {
+export function transformGesture(env: PhotoToolEnv, grabbed: Handle, start: KitPointer, zoom = 1): KitGesture | void {
   const box = env.transform.box
   if (!box) return
+  // Edit › Transform's modes (plan 2026-11-24, stage 9): Rotate turns from any handle, Scale never turns.
+  const handle = modeHandle(box.mode, grabbed)
+  if (!handle) return
   const from = { x: start.x, y: start.y }
   const startQuad = box.quad
   const startReference = box.reference
   // A reference point left at the centre stays at the centre of the box.
   const centred = Math.hypot(startReference.x - quadCentre(startQuad).x, startReference.y - quadCentre(startQuad).y) < 1e-6
-  const modeKeys = box.mode !== 'free'
+  // Distort moves a corner or an edge alone, Skew slides an edge (its corners scale as Free Transform's), as Cmd does.
+  const modeKeys = box.mode === 'distort' || (box.mode === 'skew' && EDGE_HANDLES.has(handle))
   let quad = startQuad
   let reference = startReference
   const bbox = { x0: Math.min(...startQuad.map((p) => p.x)), y0: Math.min(...startQuad.map((p) => p.y)), x1: Math.max(...startQuad.map((p) => p.x)), y1: Math.max(...startQuad.map((p) => p.y)) }
@@ -262,6 +266,15 @@ export function transformGesture(env: PhotoToolEnv, handle: Handle, start: KitPo
   }
 }
 
+const EDGE_HANDLES: ReadonlySet<Handle> = new Set(['n', 'e', 's', 'w'])
+
+/** What a grab on `handle` does in a box's `mode`: Rotate turns from every handle but the reference point; Scale has no turning zone (null: nothing). */
+export function modeHandle(mode: TransformBox['mode'], handle: Handle): Handle | null {
+  if (mode === 'rotate') return handle === 'centre' ? handle : 'rotate'
+  if (mode === 'scale' && handle === 'rotate') return null
+  return handle
+}
+
 /**
  * The canvas while Free Transform's box is open: drags on it (see `transformGesture`), the
  * handles' cursors, and a double click inside commits (as Enter does).
@@ -283,7 +296,8 @@ export function transformTool(env: PhotoToolEnv, commit: () => void): KitTool {
     hover: (pointer, { viewport }) => {
       const handle = handleOf(pointer, (x, y) => viewport.toScreen(x, y))
       const box = env.transform.box
-      env.setCursor(handle && box ? handleCursor(handle, quadAngle(box.quad)) : null)
+      const acts = handle && box ? modeHandle(box.mode, handle) : null
+      env.setCursor(acts && box ? handleCursor(acts, quadAngle(box.quad)) : null)
     },
     leave: () => env.setCursor(null),
     doubleClick: (pointer, { viewport }) => {

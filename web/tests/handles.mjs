@@ -5,6 +5,7 @@
 import { mkdirSync } from 'node:fs'
 import { chromium, webkit } from 'playwright'
 import { createServer } from 'vite'
+import { snapOff } from './snap-off.mjs'
 
 const which = process.argv[2] ?? 'chromium'
 const shots = process.env.KITION_SHOTS ?? null
@@ -35,6 +36,8 @@ const shot = async (name) => {
 const primaryKey = async () => ((await page.evaluate(() => /Mac|iPhone|iPad/i.test(navigator.platform))) ? 'Meta' : 'Control')
 
 try {
+  // The drags below were written without snapping to layers and the document's bounds (on by default since stage 9).
+  await snapOff(page)
   await page.goto(`http://127.0.0.1:${server.httpServer.address().port}/dev.html?locale=en-US`)
   await page.waitForFunction(() => document.getElementById('status')?.textContent?.includes(' open in '), null, { timeout: 60_000 })
   await page.waitForTimeout(800)
@@ -279,7 +282,7 @@ try {
   step('Escape cancels Free Transform: the layer and the history are as before', JSON.stringify((await layerById(ellipse.id)).bounds) === JSON.stringify(committed) && (await history()) === escHistory, `${JSON.stringify(committed)} -> ${JSON.stringify((await layerById(ellipse.id)).bounds)}`)
   // The bar's W field scales the box; Edit › Free Transform opens it from the menu.
   await kit.getByTestId('photo-menu-Edit').click()
-  await kit.getByTestId('photo-edit-free-transform').click()
+  await kit.getByTestId('photo-control-edit.freeTransform').click()
   await until(async () => (await tool()) === 'FreeTransform', 20)
   const field = kit.getByTestId('photo-transform-w').locator('input')
   await field.fill('50')
@@ -327,6 +330,103 @@ try {
   await kit.getByTestId('photo-undo').click()
   await until(async () => JSON.stringify((await layerById(ellipse.id)).bounds) === JSON.stringify(halved), 40)
   await workspace.focus()
+
+  // Plan 2026-11-24, stage 9: Edit › Free Transform sits right above Edit › Transform, whose Scale,
+  // Rotate, Skew and Distort open the same box in that mode; Help › Keyboard Shortcuts lists Cmd+T.
+  {
+    await kit.getByTestId('photo-menu-Edit').click()
+    const editRows = await kit.locator('[role="menu"] [data-kit-ui-id]').evaluateAll((rows) => rows.map((row) => row.getAttribute('data-kit-ui-id')))
+    const placed = editRows.indexOf('control:edit.freeTransform') >= 0 && editRows[editRows.indexOf('control:edit.freeTransform') + 1] === 'menu:Edit/Transform'
+    await page.keyboard.press('Escape')
+    step('Edit › Free Transform sits right above the Transform submenu', placed, editRows.slice(Math.max(0, editRows.indexOf('control:edit.freeTransform') - 1), editRows.indexOf('control:edit.freeTransform') + 2).join(', '))
+    const openMode = async (command) => {
+      await workspace.focus()
+      await kit.getByTestId('photo-menu-Edit').click()
+      await kit.locator('[data-kit-ui-id="menu:Edit/Transform"]').first().hover()
+      await kit.getByTestId(`photo-cmd-${command}`).click()
+      return until(async () => (await tool()) === 'FreeTransform', 20)
+    }
+    const field = async (name) => Number(await kit.getByTestId(`photo-transform-${name}`).locator('input').inputValue())
+    const cancel = async () => {
+      await page.keyboard.press('Escape')
+      await until(async () => (await tool()) === 'Move', 20)
+      await settle()
+    }
+    const right = halved[0] + halved[2], bottom = halved[1] + halved[3]
+    // Scale: no turning zone outside the box.
+    const scaleOpen = await openMode('edit.transform.scale')
+    await drag([right + 40, halved[1] + halved[3] / 2], [halved[0] + halved[2] / 2 + 10, bottom + 120])
+    await settle()
+    const scaleAngle = await field('angle')
+    await cancel()
+    step('Edit › Transform › Scale opens the box; outside it does not turn', scaleOpen && Math.abs(scaleAngle) < 0.5, `open ${scaleOpen}, angle ${scaleAngle}`)
+    // Rotate: a corner handle turns the box instead of scaling it.
+    const rotateOpen = await openMode('edit.transform.rotate')
+    await drag([right, bottom], [right - 40, bottom + 60])
+    await settle()
+    const rotateAngle = await field('angle')
+    const rotateW = await field('w')
+    await shot('transform-rotate-mode')
+    await cancel()
+    step('Edit › Transform › Rotate: a corner handle turns the box (W stays 100 %)', rotateOpen && Math.abs(rotateAngle) > 10 && Math.abs(rotateW - 100) < 1, `angle ${rotateAngle}, W ${rotateW}`)
+    // Skew: the right edge's handle slides the edge down (the layer grows taller, not wider).
+    await openMode('edit.transform.skew')
+    await drag([right, halved[1] + halved[3] / 2], [right, halved[1] + halved[3] / 2 + 60])
+    await settle()
+    const skewed = (await layerById(ellipse.id)).bounds
+    await shot('transform-skew-mode')
+    await cancel()
+    // The ellipse sheared by 60 px over its width is as wide and 2·√((h/2)² + 30²) tall (Free Transform's edge would only widen it).
+    const sheared = 2 * Math.hypot(halved[3] / 2, 30)
+    step('Edit › Transform › Skew: an edge handle slides its edge along itself', Math.abs(skewed[3] - sheared) <= 4 && Math.abs(skewed[2] - halved[2]) <= 3, `${JSON.stringify(halved)} -> ${JSON.stringify(skewed)}, height expected ${sheared.toFixed(1)}`)
+    // Distort: a corner moves alone. It needs pixels (a shape is rasterized first, as Photoshop's), so on
+    // a pixel layer: a corner dragged 40 px in leaves the box as wide and tall as its other corners keep
+    // it (a scale would take 40 px off each), and Enter keeps it as one step.
+    const distortRow = async () => {
+      await kit.getByTestId('photo-menu-Edit').click()
+      await kit.locator('[data-kit-ui-id="menu:Edit/Transform"]').first().hover()
+      const enabled = await kit.getByTestId('photo-cmd-edit.transform.distort').isEnabled()
+      await page.keyboard.press('Escape')
+      await page.keyboard.press('Escape')
+      return enabled
+    }
+    const shapeRefused = !(await distortRow())
+    const historyBeforePixels = await history()
+    // A pixel layer of its own, away from the ellipse (taken back below).
+    const made = await runAgent('shape.add', { kind: 'rect', rect: [300, 200, 300, 200], fill: '#2a9d8f' })
+    const pixelsId = made.completed[0].result.layer
+    await runAgent('layer.rasterize.shape', { layer: pixelsId })
+    await until(async () => (await layerById(pixelsId))?.kind === 'Pixel', 40)
+    await selectLayer(pixelsId)
+    const pb = (await layerById(pixelsId)).bounds
+    const distortHistory = await history()
+    await openMode('edit.transform.distort')
+    await drag([pb[0] + pb[2], pb[1] + pb[3]], [pb[0] + pb[2] - 40, pb[1] + pb[3] - 40])
+    await settle()
+    await shot('transform-distort-mode')
+    await page.keyboard.press('Enter')
+    await until(async () => (await tool()) === 'Move', 20)
+    await settle()
+    const distorted = (await layerById(pixelsId)).bounds
+    const kept = (await history()) === distortHistory + 1
+    step('Edit › Transform › Distort: greyed on a shape layer; on pixels a corner handle moves that corner alone (one step)', shapeRefused && kept && pb[2] - distorted[2] < 30 && pb[3] - distorted[3] < 30, `shape refused ${shapeRefused}, ${JSON.stringify(pb)} -> ${JSON.stringify(distorted)}, history +${(await history()) - distortHistory}`)
+    // Undo takes the distortion back; the helper layer goes (an agent's edits are not the person's history).
+    await kit.getByTestId('photo-undo').click()
+    await until(async () => (await history()) === distortHistory, 40)
+    const undone = JSON.stringify((await layerById(pixelsId)).bounds) === JSON.stringify(pb)
+    await runAgent('layer.delete', { layer: pixelsId })
+    await until(async () => (await layerById(pixelsId)) == null, 40)
+    await selectLayer(ellipse.id)
+    step('Undo takes the distortion back; the transform modes leave the ellipse and the history as before', undone && JSON.stringify((await layerById(ellipse.id)).bounds) === JSON.stringify(halved) && (await history()) === historyBeforePixels, `undone ${undone}, history ${(await history()) - historyBeforePixels}, ellipse ${JSON.stringify((await layerById(ellipse.id)).bounds)} vs ${JSON.stringify(halved)}`)
+    // Help › Keyboard Shortcuts lists Edit › Free Transform's Cmd+T.
+    await kit.getByTestId('photo-menu-Help').click()
+    await kit.getByTestId('photo-control-help.shortcuts').click()
+    await until(async () => (await kit.getByTestId('photo-shortcuts').count()) === 1, 20)
+    const listed = await kit.getByTestId('photo-shortcuts').locator('div').evaluateAll((rows) => rows.map((row) => row.textContent ?? ''))
+    step('Help › Keyboard Shortcuts lists Edit › Free Transform with Cmd+T', listed.some((row) => row.includes('Free Transform') && row.includes('Cmd+T')), listed.filter((row) => row.includes('Transform')).join(' | '))
+    await kit.getByTestId('photo-help-close').click()
+    await workspace.focus()
+  }
 
   // Show Transform Controls: a handle of the Move tool's box starts Free Transform.
   await kit.getByTestId('photo-option-showTransform').check()

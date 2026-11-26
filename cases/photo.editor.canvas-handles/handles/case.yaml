@@ -9,7 +9,10 @@ intent: >-
   nothing and leaves nothing drawn; the selected layer is marked; with a selection Move floats the selected pixels.
   Cmd+T opens Free Transform with its bar; a corner handle scales the layer live during the drag; Shift keeps the
   proportions; outside the box rotates; Enter commits one step; Escape restores the layer and history; the bar's W
-  scales; Edit › Free Transform and Show Transform Controls' handles open it. The Crop tool's first frame covers the
+  scales; Edit › Free Transform and Show Transform Controls' handles open it. Edit › Free Transform sits right above
+  Edit › Transform, whose Scale (no turning), Rotate (a corner turns), Skew (an edge slides) and Distort (a corner
+  moves alone, greyed on a shape) open the same box in that mode, and Help › Keyboard Shortcuts lists its Cmd+T
+  (plan 2026-11-24, stage 9; the drags run with snapping to layers and the document's bounds off). The Crop tool's first frame covers the
   canvas; a handle resizes it and Enter crops; a drag outside turns it and a double click crops. A selection tool
   drags and nudges the selection's outline; Alt after the press draws the marquee from its centre; Backspace takes
   a Polygonal Lasso point back; Quick Selection selects during the drag. Cmd lends the Move tool to the Brush; Space

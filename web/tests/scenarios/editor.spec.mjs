@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test'
 import { createFixture, sdk, inspect as engineInspect, execute as engineExecute, structure, loadFont } from './engine.mjs'
+import { snapOff } from '../snap-off.mjs'
 
 // Every test gets a new browser context and document. Agent calls only set up fixtures or read
 // state; the actions under test are real editor clicks, typing and pointer gestures.
@@ -47,6 +48,9 @@ function makeEditor(page) {
     await expect(zoom).toHaveValue('100')
   }
   const open = async (name = 'Scenario.psd', commands = [], locale = 'en-US', mode) => {
+    // The cases' gestures were written without snapping to layers and the document's bounds and
+    // without Smart Guides, which are on by default since plan 2026-11-24, stage 9 (Photoshop's).
+    await snapOff(page)
     await page.goto(`/dev.html?locale=${locale}${mode ? `&modes=${mode}` : ''}`)
     await ready('Sample.psd')
     const bytes = createFixture(name, commands)

@@ -48,37 +48,46 @@ try {
   await workspace.focus()
 
   // ---------------------------------------------------------------- 4. Use Shift Key for Tool Switch
-  // Off (the default, as upstream): the key again cycles. On (Preferences › General): the key again
-  // keeps the tool and Shift with it cycles; the engine's tool keys follow at once.
-  await choose('Move')
-  await pressFor('b', 'Brush')
-  const cycles = (await pressFor('b', 'Pencil')) === 'Pencil'
+  // On (the default since stage 9, as Photoshop's): the key again keeps the tool and Shift with it
+  // cycles. Off (Preferences › General): the key again cycles, as upstream; the engine's tool keys follow at once.
+  const keepsBrush = async () => {
+    await choose('Move')
+    await pressFor('b', 'Brush')
+    return until(async () => {
+      await page.keyboard.press('b')
+      await page.waitForTimeout(100)
+      return (await tool()) === 'Brush'
+    }, 10)
+  }
+  const keptAtFirst = await keepsBrush()
+  const shiftedAtFirst = (await pressFor('Shift+B', 'Pencil')) === 'Pencil'
   const prefsDialog = kit.getByTestId('photo-dialog')
   await page.keyboard.press(`${e.primary}+k`)
   await until(async () => (await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').count()) === 1, 40)
-  const offAtFirst = !(await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked())
-  await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').check()
-  await page.keyboard.press('Enter')
-  await until(async () => (await prefsDialog.count()) === 0, 40)
-  await choose('Move')
-  await pressFor('b', 'Brush')
-  const kept = await until(async () => {
-    await page.keyboard.press('b')
-    await page.waitForTimeout(100)
-    return (await tool()) === 'Brush'
-  }, 10)
-  const shifted = (await pressFor('Shift+B', 'Pencil')) === 'Pencil'
-  step('Preferences › General’s Use Shift Key for Tool Switch: off by default (B B cycles); on, B keeps the Brush and Shift+B cycles', cycles && offAtFirst && kept && shifted, JSON.stringify({ cycles, offAtFirst, kept, shifted }))
-  await page.keyboard.press(`${e.primary}+k`)
-  await until(async () => (await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').count()) === 1, 40)
-  const shownOn = await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked()
+  const onAtFirst = await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked()
   await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').uncheck()
   await page.keyboard.press('Enter')
   await until(async () => (await prefsDialog.count()) === 0, 40)
   await choose('Move')
   await pressFor('b', 'Brush')
-  step('the preference shows as set when Preferences opens again, and off again B cycles', shownOn && (await pressFor('b', 'Pencil')) === 'Pencil', `${shownOn} ${await tool()}`)
+  const cycles = (await pressFor('b', 'Pencil')) === 'Pencil'
+  step('Preferences › General’s Use Shift Key for Tool Switch: on by default (B keeps the Brush, Shift+B cycles); off, B B cycles', keptAtFirst && shiftedAtFirst && onAtFirst && cycles, JSON.stringify({ keptAtFirst, shiftedAtFirst, onAtFirst, cycles }))
+  await page.keyboard.press(`${e.primary}+k`)
+  await until(async () => (await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').count()) === 1, 40)
+  const shownOff = !(await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').isChecked())
+  await kit.getByTestId('photo-dialog-pref-shiftToolSwitch').check()
+  await page.keyboard.press('Enter')
+  await until(async () => (await prefsDialog.count()) === 0, 40)
+  step('the preference shows as set when Preferences opens again, and on again B keeps the Brush', shownOff && (await keepsBrush()), `${shownOff} ${await tool()}`)
   await workspace.focus()
+
+  // Plan 2026-11-24, stage 9: the Window menu has no greyed-out rows for panels that do not exist.
+  await kit.getByTestId('photo-menu-Window').click()
+  const windowRows = await kit.locator('[role="menu"] [data-kit-ui-id^="command:window.panel."], [role="menu"] [data-testid^="photo-cmd-window.panel."]').count()
+  const disabledPanels = await kit.locator('[role="menu"] [aria-disabled="true"]').evaluateAll((rows) => rows.map((row) => row.textContent?.trim() ?? '').filter(Boolean))
+  await page.keyboard.press('Escape')
+  await workspace.focus()
+  step('the Window menu lists no panel Kition Photo does not have, and nothing in it is greyed out', windowRows === 0 && disabledPanels.length === 0, JSON.stringify({ windowRows, disabledPanels }))
 
   // ---------------------------------------------------------------- 6. messages that name the cause
   // What the page shows (its visible text: the engine's own words stay folded under Details).

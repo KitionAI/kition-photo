@@ -2,8 +2,8 @@ import type { MenuRow } from '@kition/sdk/editor'
 
 /**
  * Kition's own menu rows (`kit:` commands, Kit UI ids `control:<name>`): the Window toggles, Type ›
- * Panels, View's zoom rows, and Help. Their names start with `window.`, `type.panels.`, `view.`, or
- * `help.`, so they never collide with Photo's declared controls (`control:options`,
+ * Panels, View's zoom rows, Edit › Free Transform, and Help. Their names start with `window.`,
+ * `type.panels.`, `view.`, `edit.`, or `help.`, so they never collide with Photo's declared controls (`control:options`,
  * `control:colors`, `control:status`).
  */
 
@@ -34,7 +34,8 @@ export const VIEW_ROWS = ['view.zoomIn', 'view.zoomOut', 'view.fitOnScreen', 'vi
 /**
  * Upstream's rows that Kition's own take over in place, keeping upstream's label and key (F7
  * Layers, Cmd+1 100%): upstream command → Kition command. Window › <panel> for every tab with a
- * panel, the toolbar, and the options bar; Type › Panels › Character and Paragraph; View's zoom rows.
+ * panel, the toolbar, and the options bar; Type › Panels › Character and Paragraph; View's zoom rows;
+ * Edit › Free Transform (Cmd+T).
  */
 export const KIT_TAKEOVERS: Readonly<Record<string, string>> = {
   ...Object.fromEntries(Object.values(DOCK_TABS).flatMap((tabs) => tabs.map((tab) => [`window.panel.${tab}`, `kit:window.panel.${tab}`]))),
@@ -42,6 +43,8 @@ export const KIT_TAKEOVERS: Readonly<Record<string, string>> = {
   'window.panel.tools': 'kit:window.toolbar',
   ...Object.fromEntries(TYPE_PANELS.map((tab) => [`type.panels.${tab}`, `kit:type.panels.${tab}`])),
   ...Object.fromEntries(VIEW_ROWS.map((command) => [command, `kit:${command}`])),
+  // Edit › Free Transform (Cmd+T) opens the box the canvas draws; the engine has no such command (plan 2026-11-24, stage 9).
+  'edit.freeTransform': 'kit:edit.freeTransform',
 }
 
 /** The status bar's toggle, right after the toolbar's (upstream has no such row). */

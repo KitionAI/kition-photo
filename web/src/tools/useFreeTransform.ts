@@ -29,7 +29,8 @@ export function previewEngine(command: string, run: Run, revision: () => number)
 }
 
 /**
- * Free Transform (plan 2026-11-24, stage 2): Cmd+T or Edit › Free Transform opens a box on the
+ * Free Transform (plan 2026-11-24, stage 2): Cmd+T or Edit › Free Transform (or Edit › Transform's
+ * Scale, Rotate, Skew and Distort, the same box in that mode: stage 9) opens a box on the
  * active layer (its selected part when there is a selection) with eight handles, a rotation zone
  * outside and a reference point. Every drag previews `edit.transform` on the canvas, one history
  * step for the whole box; Enter (or a double click inside, or choosing another tool) commits it,
@@ -59,8 +60,12 @@ export function useFreeTransform({ info, run, revision, say, redraw }: { info: (
     [redraw],
   )
   const start = useCallback(
-    (mode: TransformBox['mode'] = 'free') => {
-      if (boxNow.current) return true
+    (mode?: TransformBox['mode']) => {
+      // Edit › Transform › Skew on an open box switches its handles' mode (Photoshop's).
+      if (boxNow.current) {
+        if (mode && mode !== boxNow.current.mode) set({ ...boxNow.current, mode }, true)
+        return true
+      }
       const now = info()
       const active = now?.layers.find((layer) => layer.id === now.activeLayer)
       if (!now || !active || active.id == null) return false
@@ -79,7 +84,7 @@ export function useFreeTransform({ info, run, revision, say, redraw }: { info: (
       const quad = rectQuad(...rect)
       ours.current = null
       live.current = livePreview(previewEngine('edit.transform', tracked, revision), () => say('transform.failed'))
-      set({ layer: active.id, rect, quad, reference: quadCentre(quad), mode }, true)
+      set({ layer: active.id, rect, quad, reference: quadCentre(quad), mode: mode ?? 'free' }, true)
       return true
     },
     [info, revision, tracked, say, set],

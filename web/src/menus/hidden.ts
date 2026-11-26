@@ -149,15 +149,34 @@ const NOT_BUILT: Readonly<Record<string, string>> = {
   'layer.layerContentOptions': "Needs the fill layer's own dialog, not built yet; Properties edits a fill layer meanwhile.",
   'image.trap': 'Needs a trap-width dialog, not built yet.',
   'layer.new.artboardFromGroup': 'Needs the artboard dialog, not built yet.',
+  // Window rows of panels Kition Photo does not have (plan 2026-11-24, stage 9: cut for the launch),
+  // left out so that nothing greyed out promises a panel. They come back with their panel.
+  ...Object.fromEntries(
+    [
+      ['actions', 'Actions are cut for the launch (plan 2026-11-24, section 1).'],
+      ['characterStyles', 'Type styles are cut for the launch (plan 2026-11-24, section 1).'],
+      ['paragraphStyles', 'Type styles are cut for the launch (plan 2026-11-24, section 1).'],
+      ['cloneSource', 'The Clone Source panel is not built; the Clone Stamp takes its source with Alt+click.'],
+      ['glyphs', 'Glyphs are cut for the launch (plan 2026-11-24, section 1).'],
+      ['gradients', 'The Gradients panel is not built; the gradient editor holds the presets.'],
+      ['layerComps', 'Layer comps are cut for the launch (plan 2026-11-24, section 1).'],
+      ['measurementLog', MEASUREMENT],
+      ['modifierKeys', 'The Modifier Keys panel is for touch screens, which the editor does not target yet.'],
+      ['notes', 'The Notes panel is not built yet.'],
+      ['patterns', 'The Patterns panel is not built yet.'],
+      ['shapes', 'The Shapes panel is not built yet.'],
+      ['styles', 'The Styles panel (saved layer styles) is not built yet.'],
+      ['timeline', 'The Timeline is cut for the launch (plan 2026-11-24, section 1).'],
+      ['toolPresets', 'Tool presets are not built yet.'],
+    ].map(([panel, why]) => [`window.panel.${panel}`, why]),
+  ),
 }
 
 /**
- * Upstream rows a Kition row of its own stands for, with why: Edit › Free Transform is Kition's
- * action at the top of the Edit menu (the engine's `edit.transform` takes the box the canvas draws,
- * plan 2026-11-24, stage 2), so upstream's row, which the engine lacks, is not drawn twice.
+ * Upstream rows a Kition row of its own stands for, with why, so a row the engine lacks is not
+ * drawn twice. (Edit › Free Transform is a takeover in place since stage 9: `kitMenus.ts`.)
  */
 const KIT_OWN: Readonly<Record<string, string>> = {
-  'edit.freeTransform': "Kition's own Edit › Free Transform row (Cmd+T) opens the box on the canvas.",
   // Plan 2026-11-24, stage 5: floating windows of Kition's own (the dock's groups are upstream's).
   'window.panel.brushSettings': "Kition's own Window › Brush Settings row (F5) opens the Brush Settings window.",
   'window.panel.brushes': "Kition's own Window › Brushes row opens the Brushes window.",

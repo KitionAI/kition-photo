@@ -27,13 +27,20 @@ export type KitGesture = Exclude<ReturnType<KitTool['begin']>, void>
 export type PendingClicks = { tool: string; finish: () => void; cancel: () => void; back?: () => void; close?: () => void }
 
 /** Free Transform's box (plan 2026-11-24, stage 2): the source rectangle [x0, y0, x1, y1], where its corners go, and the reference point. */
-export type TransformBox = { layer: number; rect: [number, number, number, number]; quad: Quad; reference: Point; mode: 'free' | 'skew' | 'distort' }
+export type TransformBox = { layer: number; rect: [number, number, number, number]; quad: Quad; reference: Point; mode: TransformMode }
+
+/**
+ * How the box's handles act: Free Transform's (`free`), or one of Edit › Transform's modes (plan
+ * 2026-11-24, stage 9): `scale` only scales and moves (no turning outside), `rotate` turns from any
+ * handle, `skew` slides an edge along itself, `distort` moves a corner or an edge alone.
+ */
+export type TransformMode = 'free' | 'scale' | 'rotate' | 'skew' | 'distort'
 
 /** Free Transform as the tools reach it: the open box (null when none), a drag's new box, and how to open one. */
 export type TransformControl = {
   readonly box: TransformBox | null
-  /** Opens the box on the active layer (or its selected part); false, saying why, when it cannot. */
-  start: () => boolean
+  /** Opens the box on the active layer (or its selected part); false, saying why, when it cannot. A `mode` also sets an open box's. */
+  start: (mode?: TransformMode) => boolean
   /** The box during a drag: drawn and previewed at once; `settled` on release (the options bar follows). */
   update: (quad: Quad, reference: Point, settled: boolean) => void
 }

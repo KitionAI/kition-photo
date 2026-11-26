@@ -53,21 +53,23 @@ test('every tool runs an engine command or moves the view, and its status says s
   }
 })
 
-const DEFAULT = false
+// Use Shift Key for Tool Switch: on by default, as Photoshop's (plan 2026-11-24, stage 9); the
+// tests below give the mode explicitly.
+const KEY_CYCLES = false
 const SHIFT_SWITCH = true
 
-test('by default the key cycles within the active slot, with or without Shift, as upstream', () => {
+test('with Use Shift Key for Tool Switch off, the key cycles within the active slot, with or without Shift, as upstream', () => {
   for (const shift of [false, true]) {
-    assert.equal(toolForKey('b', shift, DEFAULT, 'Move', anything), 'Brush')
-    assert.equal(toolForKey('b', shift, DEFAULT, 'Brush', anything), 'Pencil')
-    assert.equal(toolForKey('b', shift, DEFAULT, 'Pencil', anything), 'MixerBrush')
-    assert.equal(toolForKey('b', shift, DEFAULT, 'MixerBrush', anything), 'Brush')
+    assert.equal(toolForKey('b', shift, KEY_CYCLES, 'Move', anything), 'Brush')
+    assert.equal(toolForKey('b', shift, KEY_CYCLES, 'Brush', anything), 'Pencil')
+    assert.equal(toolForKey('b', shift, KEY_CYCLES, 'Pencil', anything), 'MixerBrush')
+    assert.equal(toolForKey('b', shift, KEY_CYCLES, 'MixerBrush', anything), 'Brush')
   }
-  assert.equal(toolForKey('q', false, DEFAULT, 'Move', anything), null)
+  assert.equal(toolForKey('q', false, KEY_CYCLES, 'Move', anything), null)
 })
 
 test("from another slot the key selects the slot's first tool, not the last used one", () => {
-  assert.equal(toolForKey('m', false, DEFAULT, 'Move', anything), 'RectMarquee')
+  assert.equal(toolForKey('m', false, KEY_CYCLES, 'Move', anything), 'RectMarquee')
   assert.equal(toolForKey('m', false, SHIFT_SWITCH, 'Move', anything), 'RectMarquee')
   assert.equal(toolForKey('m', true, SHIFT_SWITCH, 'Move', anything), 'RectMarquee')
 })
@@ -80,7 +82,7 @@ test('with Use Shift Key for Tool Switch, Shift and the key cycles and the key k
 
 test('a key never chooses a tool the host denies, in either mode', () => {
   for (const [shift, mode] of [
-    [false, DEFAULT],
+    [false, KEY_CYCLES],
     [true, SHIFT_SWITCH],
   ]) {
     // Cycling passes over it.

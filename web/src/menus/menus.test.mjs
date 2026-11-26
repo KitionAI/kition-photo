@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { KIT_ROWS, PHOTO_MENUS, enginePaths } from './catalog.ts'
-import { hiddenReason, isHiddenOnWeb } from './hidden.ts'
+import { hiddenReason, isHiddenInMenus, isHiddenOnWeb } from './hidden.ts'
 import { DEFAULT_WINDOWS, DOCK_GROUPS, DOCK_TABS, VIEW_ROWS, windowCommand, windowShown, zoomStep } from './kitMenus.ts'
 
 const upstream = JSON.parse(readFileSync(new URL('../../parity/photo-upstream.json', import.meta.url), 'utf8'))
@@ -45,7 +45,7 @@ test('Kition rows replace upstream Window rows in place, keeping their labels an
   assert.equal(commands.indexOf('kit:window.options') < commands.indexOf('kit:window.toolbar'), true)
 })
 
-test('declares Kition rows for every dock tab with a panel, the bars, Type › Panels, the View zoom rows, and Help', () => {
+test('declares Kition rows for every dock tab with a panel, the bars, Type › Panels, the View zoom rows, Edit › Free Transform, and Help', () => {
   assert.deepEqual(
     DOCK_GROUPS.slice(),
     upstream.dock.map((group) => group.group),
@@ -64,6 +64,7 @@ test('declares Kition rows for every dock tab with a panel, the bars, Type › P
       'kit:type.panels.character',
       'kit:type.panels.paragraph',
       ...VIEW_ROWS.map((command) => `kit:${command}`),
+      'kit:edit.freeTransform',
       'kit:window.toolbar',
       'kit:window.options',
       'kit:window.status',
@@ -75,6 +76,11 @@ test('declares Kition rows for every dock tab with a panel, the bars, Type › P
   assert.deepEqual([at('kit:window.panel.info')[0].label, at('kit:window.panel.info')[0].shortcut], ['Info', 'F8'])
   assert.deepEqual([at('kit:view.actualPixels')[0].label, at('kit:view.actualPixels')[0].shortcut], ['100%', 'Cmd+1'])
   assert.deepEqual(at('kit:type.panels.character')[0].path, ['Type', 'Panels'])
+  // Edit › Free Transform keeps upstream's place, right above the Transform submenu, and Cmd+T.
+  const freeTransform = PHOTO_MENUS.findIndex((item) => item.command === 'kit:edit.freeTransform')
+  assert.deepEqual([PHOTO_MENUS[freeTransform].path, PHOTO_MENUS[freeTransform].label, PHOTO_MENUS[freeTransform].shortcut], [['Edit'], 'Free Transform', 'Cmd+T'])
+  assert.deepEqual(PHOTO_MENUS[freeTransform + 1].path, ['Edit', 'Transform'])
+  assert.equal(at('edit.freeTransform').length, 0)
   // Window rows of panels to come stay upstream's (drawn disabled).
   assert.equal(at('window.panel.gradients').length, 1)
   const help = PHOTO_MENUS.filter((item) => item.path[0] === 'Help')
@@ -83,6 +89,15 @@ test('declares Kition rows for every dock tab with a panel, the bars, Type › P
     help.filter((item) => item.command !== '---').map((item) => item.command),
     ['kit:help.shortcuts', 'kit:help.about'],
   )
+})
+
+test('the Window menu leaves out the panels Kition Photo does not have, each with why', () => {
+  // Plan 2026-11-24, stage 9: nothing greyed out promises a panel; every panel row left is Kition's own.
+  const panels = PHOTO_MENUS.filter((item) => item.path.join('/') === 'Window' && item.command.startsWith('window.panel.'))
+  const cut = ['actions', 'characterStyles', 'cloneSource', 'glyphs', 'gradients', 'layerComps', 'measurementLog', 'modifierKeys', 'notes', 'paragraphStyles', 'patterns', 'shapes', 'styles', 'timeline', 'toolPresets']
+  assert.deepEqual(panels.filter((item) => !isHiddenInMenus(item)).map((item) => item.command), [])
+  for (const panel of cut) assert.equal(isHiddenInMenus(row(`window.panel.${panel}`, ['Window'])), true, panel)
+  assert.equal(isHiddenInMenus(row('kit:window.panel.layers', ['Window'])), false)
 })
 
 test("kit rows' ids never collide with Photo's declared controls", () => {

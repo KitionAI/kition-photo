@@ -227,11 +227,23 @@ try {
   await until(async () => (await layerNamed('Ellipse 1')).bounds[0] !== ex, 40)
   step('a Move drag snaps the layer’s edge to a guide', (await layerNamed('Ellipse 1')).bounds[0] === Math.round(guideX), JSON.stringify((await layerNamed('Ellipse 1')).bounds))
 
-  // Smart guides: the layer's centre to the document's, with a magenta line during the drag.
-  await kit.getByTestId('photo-menu-View').click()
-  await kit.getByText('Show', { exact: true }).hover()
-  await kit.getByTestId('photo-cmd-view.show.smartGuides').click()
-  await workspace.focus()
+  // Smart guides: the layer's centre to the document's, with a magenta line during the drag. Smart
+  // Guides and View › Snap To › Layers and Document Bounds are on by default, as Photoshop's (stage 9).
+  const viewRow = async (submenu, command, click = false) => {
+    await kit.getByTestId('photo-menu-View').click()
+    await kit.getByText(submenu, { exact: true }).hover()
+    const row = kit.getByTestId(`photo-cmd-${command}`)
+    const checked = (await row.getAttribute('aria-checked')) === 'true'
+    if (click) await row.click()
+    else await page.keyboard.press('Escape')
+    await page.keyboard.press('Escape')
+    await workspace.focus()
+    return checked
+  }
+  const smartOn = await viewRow('Show', 'view.show.smartGuides')
+  const layersOn = await viewRow('Snap To', 'view.snapTo.layers')
+  const boundsOn = await viewRow('Snap To', 'view.snapTo.documentBounds')
+  step('Smart Guides and View › Snap To › Layers and Document Bounds are on by default', smartOn && layersOn && boundsOn, JSON.stringify({ smartOn, layersOn, boundsOn }))
   {
     const [bx, by, bw, bh] = (await layerNamed('Ellipse 1')).bounds
     const from = await at(bx + bw / 2, by + bh / 2)
@@ -252,6 +264,22 @@ try {
   {
     const [bx, , bw] = (await layerNamed('Ellipse 1')).bounds
     step('with Smart Guides the layer’s centre snaps to the document’s', Math.abs(bx + bw / 2 - 600) <= 0.5, JSON.stringify((await layerNamed('Ellipse 1')).bounds))
+  }
+  // Turned off in the View menu, the same drag lands where it was dragged.
+  await viewRow('Show', 'view.show.smartGuides', true)
+  await viewRow('Snap To', 'view.snapTo.layers', true)
+  await viewRow('Snap To', 'view.snapTo.documentBounds', true)
+  {
+    const [bx, by, bw, bh] = (await layerNamed('Ellipse 1')).bounds
+    const from = await at(bx + bw / 2, by + bh / 2)
+    const to = await at(bx + bw / 2 + 4, by + bh / 2 + 30)
+    await page.mouse.move(from.x, from.y)
+    await page.mouse.down()
+    await page.mouse.move(to.x, to.y, { steps: 14 })
+    await page.mouse.up()
+    await e.settle()
+    const [ax] = (await layerNamed('Ellipse 1')).bounds
+    step('with Smart Guides and snapping to layers and the document off, a drag lands where it was dragged', Math.abs(ax - (bx + 4)) <= 1, `${bx} -> ${ax}`)
   }
 
   // ---------------------------------------------------------------- View › New Guide…, Clear Guides

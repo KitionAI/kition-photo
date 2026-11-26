@@ -32,7 +32,7 @@ import { engineManifest } from './engine'
 import { CATALOGS } from './strings'
 import { describe, pictureArea, picturePanBounds } from './photo'
 import { CanvasScrollbars } from './CanvasScrollbars'
-import { dashed, forgetStrokeEnd, photoCanvasTool, transformTool, ALT_PICKS, type CropFrame, type PendingClicks, type PhotoToolEnv } from './tools/canvas'
+import { dashed, forgetStrokeEnd, photoCanvasTool, transformTool, ALT_PICKS, type CropFrame, type PendingClicks, type PhotoToolEnv, type TransformMode } from './tools/canvas'
 import { brushSizeStep, cropParams, digitPercent, hardnessStep, nudgeStep, type DigitEntry } from './tools/canvas/geometry'
 import { livePreview } from './tools/canvas/live'
 import { createHeldKeys } from './tools/held'
@@ -119,6 +119,8 @@ const OWN_KEYS = 'input, select, textarea, [role="menu"], [role="menubar"], [rol
 /** The tools whose arrow keys and Delete act on the selected anchors of a path (plan 2026-11-24, stage 7). */
 const PATH_EDIT_TOOLS: ReadonlySet<string> = new Set(['Pen', 'PathSelection', 'DirectSelection', 'ConvertPoint'])
 /** The menu rows View answers itself, with their keys (Cmd+R Rulers, Cmd+; Guides, Cmd+' Grid…). */
+/** Edit › Transform's rows the editor answers with Free Transform's box in that mode (the engine has no command for them: plan 2026-11-24, stage 9). */
+const TRANSFORM_MODE_ROWS: Readonly<Record<string, TransformMode>> = { 'edit.transform.scale': 'scale', 'edit.transform.rotate': 'rotate', 'edit.transform.skew': 'skew', 'edit.transform.distort': 'distort' }
 const VIEW_KEY_ROWS = PHOTO_MENUS.filter((row) => row.shortcut && VIEW_SETTING_ROWS.has(row.command))
 /** Select › Find Layers' key (the engine's row). */
 const FIND_LAYERS_KEY = PHOTO_MENUS.find((row) => row.command === 'select.findLayers')?.shortcut ?? 'Cmd+Alt+Shift+F'
@@ -213,7 +215,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // Preferences › General (Cmd+K): saved, Show Transform Controls goes to the Move tool at once.
   const [prefs, setPrefs] = usePhotoPrefs()
   // Use Shift Key for Tool Switch is the engine's preference (the tool keys read it): saved, it goes
-  // to the engine at once, and to each document's engine opened while it is on.
+  // to the engine at once, and to each document's engine opened while it differs from the engine's
+  // default (on, as Photoshop's: plan 2026-11-24, stage 9).
   const prefsRun = useRef(editor.run)
   prefsRun.current = editor.run
   const savePrefs = useCallback(
@@ -225,7 +228,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     [setPrefs, setToolOptions],
   )
   useEffect(() => {
-    if (doc && prefs.shiftToolSwitch) void prefsRun.current('prefs.set', { path: SHIFT_SWITCH, value: true })
+    if (doc && !prefs.shiftToolSwitch) void prefsRun.current('prefs.set', { path: SHIFT_SWITCH, value: false })
   }, [doc, prefs.shiftToolSwitch])
   // The Crop tool's frame (plan 2026-11-24, stage 2): the whole canvas when the tool is chosen.
   const [crop, setCrop] = useState<CropFrame | null>(null)
@@ -669,7 +672,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           get box() {
             return transformNow.current.boxNow.current
           },
-          start: () => transformNow.current.start(),
+          start: (mode) => transformNow.current.start(mode),
           update: (quad, reference, settled) => transformNow.current.update(quad, reference, settled),
         },
         preview: (command) => livePreview(previewEngine(command, (name, params) => sessionRunNow.current(name, params), revisionNow), () => toast('error', t('commandFailed'))),
@@ -852,9 +855,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     workspace.current?.focus()
     updateCrop(null, true)
   }
-  /** Edit › Free Transform (Cmd+T). */
-  const startTransform = () => {
-    if (!transformNow.current.start()) return
+  /** Edit › Free Transform (Cmd+T), and Edit › Transform's Scale, Rotate, Skew and Distort (`mode`). */
+  const startTransform = (mode?: TransformMode) => {
+    if (!transformNow.current.start(mode)) return
     workspace.current?.focus({ preventScroll: true })
   }
   // View's zoom rows, as upstream's (`menus.rs`, `view_cmds.rs`); Print Size assumes a 72 ppi screen.
@@ -873,7 +876,8 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   // Kition's own menu rows: Help's dialogs, View's zoom rows, and the Window and Type › Panels rows
   // (a panel row may bring its tab forward, expanding its group).
   const kitCommand = (command: string) => {
-    if (command === 'kit:help.about') setHelp('about')
+    if (command === 'kit:edit.freeTransform') startTransform()
+    else if (command === 'kit:help.about') setHelp('about')
     else if (command === 'kit:help.shortcuts') setHelp('shortcuts')
     else if (command.startsWith('kit:view.')) viewCommand(command)
     else {
@@ -901,6 +905,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     () => ({
       invoke: (command) => {
         if (VIEW_SETTING_ROWS.has(command)) return viewRowNow.current(command)
+        // Edit › Transform › Scale, Rotate, Skew, Distort: Free Transform's box in that mode (plan 2026-11-24, stage 9).
+        const mode = TRANSFORM_MODE_ROWS[command]
+        if (mode) return startTransformNow.current(mode)
         // Select › Find Layers: the Layers panel's name search, as Photoshop's (plan 2026-11-24, stage 8).
         if (command === 'select.findLayers') return findLayersNow.current()
         // Select › Subject says so when it finds none (the selection goes, as the engine's replace does).
@@ -939,7 +946,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     requestAnimationFrame(reveal)
   }
   // File › New… (the engine's row is the host's): Kition's own action, at the top of the File menu.
-  // Edit › Free Transform (Cmd+T): Kition's own row at the top of Edit (the engine's transform takes the box the canvas draws).
+  // Edit › Free Transform (Cmd+T) is Kition's own row in upstream's place (`kit:edit.freeTransform`, plan 2026-11-24, stage 9).
   const startTransformNow = useRef(startTransform)
   startTransformNow.current = startTransform
   // File's own rows (plan 2026-11-24, stage 6): what the host can do, and nothing it cannot.
@@ -959,7 +966,6 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
             ]
           : []),
       ],
-      Edit: [{ label: phrase('Free Transform'), onSelect: () => startTransformNow.current(), testId: 'photo-edit-free-transform' }],
       // Window › Brush Settings (F5) and Brushes: Kition's own floating windows (plan 2026-11-24, stage 5).
       Window: [
         { label: phrase('Brush Settings'), onSelect: () => toggleFloating('brushSettings'), testId: 'photo-window-brush-settings' },
@@ -1436,7 +1442,13 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
   const editorEnabled = editor.enabled
   // Image › Crop crops to the selection: without one it is greyed out rather than failing (plan 2026-11-24, stage 8).
   const hasSelection = state?.hasSelection ?? false
-  const photoEnabled = useCallback((command: string) => VIEW_SETTING_ROWS.has(command) || (editorEnabled(command) && (command !== 'image.crop' || hasSelection)), [editorEnabled, hasSelection])
+  // Edit › Transform › Distort moves corners alone, which type and shapes take only rasterized (the engine's rule, Photoshop's greyed row).
+  const photoEnabled = useCallback(
+    (command: string) =>
+      VIEW_SETTING_ROWS.has(command) ||
+      (command in TRANSFORM_MODE_ROWS ? command !== 'edit.transform.distort' || (activeKind !== 'Shape' && activeKind !== 'Type') : editorEnabled(command) && (command !== 'image.crop' || hasSelection)),
+    [editorEnabled, hasSelection, activeKind],
+  )
   const surfaceBox = useCallback(() => workspace.current?.querySelector('[data-testid="kit-canvas-surface"]')?.getBoundingClientRect() ?? null, [])
   const dropGuide = useCallback((orientation: 'horizontal' | 'vertical', position: number) => void typeRun.current('view.newGuide', { orientation, position }), [])
   const rulerLabel = useCallback((side: 'top' | 'left') => t(side === 'top' ? 'ruler.top' : 'ruler.left'), [t])
