@@ -92,6 +92,7 @@ import { NO_PATHS, createPathStore, partAt as partAtPoint, prunedSelection } fro
 import type { PathData } from './paths/bezier'
 import { deleteSelectedAnchors, editPointAt, nudgeAnchors } from './tools/canvas/pathTools'
 import { PHOTO_MENUS } from './menus/catalog'
+import { installFocusGuard } from './focusGuard'
 
 
 const ArrowLeftRight = TesseraIcons.ArrowLeftRightIcon
@@ -302,6 +303,9 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     window.focus()
     workspace.current?.focus({ preventScroll: true })
   }, [state])
+  // The keyboard never falls to the page's body, and Photo's dialogs take Enter and outside presses
+  // as modal dialogs do (plan 2026-11-24, stage 8: `focusGuard.ts`).
+  useEffect(() => installFocusGuard(() => workspace.current), [])
   // The foreground and background colours live in the engine (`usePhotoColors`).
   const sayLocalSwatches = useCallback(() => toast('info', t('swatches.local')), [t])
   const colors = usePhotoColors(doc, change.revision, query, sayLocalSwatches)

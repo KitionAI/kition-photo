@@ -189,6 +189,58 @@ try {
   await until(async () => (await dialog.count()) === 0, 20)
   step('Add Noise… gets the generic dialog with Chinese labels', noiseLabels.length === 3 && noiseLabels.every((text) => /[\u4e00-\u9fff]/.test(text)), JSON.stringify(noiseLabels))
 
+  // Plan 2026-11-24, stage 8: Enter is OK from anywhere in a dialog (right after it opens, after Tab
+  // took the focus off the field), the Enter that closed it reaches nothing else, and a press or a
+  // drag on the canvas outside the dialog neither cancels it nor paints.
+  const addedOne = (was, now) => (now.length === was.length + 1 ? now.slice(0, -1).join('|') === was.join('|') : now.slice(0, -1).join('|') === was.slice(1).join('|'))
+  await kit.getByTestId('photo-workspace').focus()
+  const enterFrom = (await details()).history
+  await page.keyboard.press(`${await primaryKey()}+KeyL`)
+  await until(async () => (await dialog.count()) === 1 && (await count('photo-dialog-levels')) === 1, 40)
+  await previewIdle()
+  await page.keyboard.press('Enter')
+  const levelsClosed = await until(async () => (await dialog.count()) === 0, 40)
+  const levelsStates = (await details()).history
+  step('Enter right after Cmd+L confirms Levels with one history step', levelsClosed && addedOne(enterFrom, levelsStates), JSON.stringify({ levelsClosed, last: levelsStates.at(-1) }))
+  await openRow('Filter', 'Blur', 'filter.blur.gaussianBlur')
+  await until(async () => (await dialog.count()) === 1, 40)
+  await kit.getByTestId('photo-dialog-param-radius-value-value').click()
+  await kit.getByTestId('photo-dialog-param-radius-value-input').fill('4')
+  await page.keyboard.press('Tab')
+  const tabbedTo = await kit.locator('body').evaluate(() => document.activeElement?.getAttribute('data-testid') ?? document.activeElement?.tagName)
+  await previewIdle()
+  await page.keyboard.press('Enter')
+  const blurClosed = await until(async () => (await dialog.count()) === 0, 40)
+  const blurStates = (await details()).history
+  step('after Tab moved the focus off the Radius field, Enter is still OK (one step), not Cancel', blurClosed && addedOne(levelsStates, blurStates), JSON.stringify({ tabbedTo, blurClosed, last: blurStates.at(-1) }))
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(800)
+  const second = await details()
+  const menusOpen = await kit.locator('[role="menu"]').count()
+  const focusHome = await kit.locator('body').evaluate(() => document.activeElement?.getAttribute('data-testid'))
+  step('a second Enter after the dialog closed runs nothing and opens no menu; the keys are the canvas’s', second.history.join('|') === blurStates.join('|') && (await dialog.count()) === 0 && menusOpen === 0 && focusHome === 'photo-workspace', JSON.stringify({ last: second.history.at(-1), menusOpen, focusHome }))
+  await page.keyboard.press('b')
+  await until(async () => (await kit.getByTestId('photo-options-tool').getAttribute('data-tool')) === 'Brush', 20)
+  await openRow('Filter', 'Blur', 'filter.blur.gaussianBlur')
+  await until(async () => (await dialog.count()) === 1, 40)
+  const radiusKept = Number(await kit.getByTestId('photo-dialog-param-radius-track').getAttribute('aria-valuenow'))
+  step('the Radius typed before Tab and Enter is the one applied (the dialog opens again at 4)', radiusKept === 4, `radius ${radiusKept}`)
+  await previewIdle()
+  const surface = await kit.getByTestId('kit-canvas-surface').boundingBox()
+  await page.mouse.click(surface.x + surface.width * 0.3, surface.y + surface.height * 0.7)
+  await page.mouse.move(surface.x + surface.width * 0.3, surface.y + surface.height * 0.75)
+  await page.mouse.down()
+  await page.mouse.move(surface.x + surface.width * 0.5, surface.y + surface.height * 0.75, { steps: 8 })
+  await page.mouse.up()
+  await page.waitForTimeout(600)
+  const stillOpen = (await dialog.count()) === 1
+  await kit.getByTestId('photo-dialog-cancel').click()
+  await until(async () => (await dialog.count()) === 0, 20)
+  await until(async () => (await details()).history.join('|') === blurStates.join('|'), 40)
+  const unpainted = (await details()).history
+  step('a click and a drag on the canvas leave the dialog open and paint nothing', stillOpen && unpainted.join('|') === blurStates.join('|'), JSON.stringify({ stillOpen, last: unpainted.at(-1) }))
+  await shot('stage8-dialog-modal')
+
   // A Levels adjustment layer: Properties shows the same Levels editor (histogram and handles); a value is one step.
   await kit.getByTestId('photo-dock-area-tab-adjustments').click()
   const layerCount = (await details()).layers.length

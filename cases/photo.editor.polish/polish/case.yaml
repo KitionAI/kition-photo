@@ -1,0 +1,23 @@
+format: 1
+id: photo.editor.polish/polish
+feature: photo.editor.polish
+intent: >-
+  The fixes after the final walkthrough (plan 2026-11-24, stage 8), with real clicks, drags and keys: after Layers'
+  Add Mask, Free Transform's ✓ and the brush picker closed with Escape, the next tool key or brush key works at once.
+layer: gate
+source:
+  kind: probe
+  from: web/tests/polish.mjs
+  license: owned
+input: []
+steps:
+  - exec:
+      cmd: [pnpm, --dir, web, exec, node, tests/polish.mjs, chromium]
+expected:
+  - actual: out:exec
+    compare: exit
+    value: 0
+tags: [browser]
+requires: [chromium]
+timeout_s: 300
+since: "2026-11-25"
