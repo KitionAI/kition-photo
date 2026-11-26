@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, KeyboardEvent } from 'react'
 import { BarSeparator, IconButton, KitElement, NumberField, TesseraIcons, useKitEditor } from '@kition/sdk/editor'
 import { toolFor, type PhotoToolId } from '../tools/catalog'
 import type { BarProps } from './bar'
@@ -110,9 +110,24 @@ export function OptionsBar(props: BarProps) {
   const tool = toolFor(props.tool)
   const Bar = BARS[props.tool]
   if (props.transform) {
+    const transform = props.transform
+    // A field's Enter applies it and gives the keyboard back to the canvas, so the next Enter commits
+    // the box; Escape reverts a field being typed in, and with nothing to revert cancels the box (plan
+    // 2026-11-24, stage 8). The field's own handler has run first (it takes the value, or reverts).
+    const fieldKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!(event.target instanceof HTMLInputElement) || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey) return
+      if (event.key === 'Enter') transform.release()
+      else if (event.key === 'Escape') {
+        // The field marks an Escape that put its text back.
+        const reverted = event.defaultPrevented
+        event.preventDefault()
+        if (!reverted) transform.cancel()
+        transform.release()
+      }
+    }
     return (
       <KitElement id="control:options">
-        <div className="photo-options" data-testid="photo-options-bar" data-transform="">
+        <div className="photo-options" data-testid="photo-options-bar" data-transform="" onKeyDown={fieldKeys}>
           <strong className="photo-options-tool" data-testid="photo-options-tool" data-tool="FreeTransform">
             {phrase('Free Transform')}
           </strong>

@@ -23,7 +23,8 @@ export type BarProps = {
   /** The view: fit the image on screen, or show it at 100 %. */
   view: { fit: () => void; actual: () => void }
   /** Free Transform's open box, as the bar's numbers (its reference point, W and H in %, the angle), or null. */
-  transform?: { fields: TransformFields; set: (patch: Partial<TransformFields>) => void; commit: () => void; cancel: () => void } | null
+  /** Free Transform's box, while it is open; `release` gives the keyboard back to the canvas (after a field took Enter or Escape). */
+  transform?: { fields: TransformFields; set: (patch: Partial<TransformFields>) => void; commit: () => void; cancel: () => void; release: () => void } | null
   /** Opens the brush preset picker under a point (the brush chip's), plan 2026-11-24, stage 5. */
   brushPicker?: (at: { x: number; y: number }) => void
 }

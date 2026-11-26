@@ -1383,7 +1383,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
                 setForeground={(value) => colors.set({ foreground: value })}
                 layer={activeLayer ? { id: activeLayer.id, kind: activeLayer.kind } : null}
                 crop={{ proposed: crop != null && !crop.initial, commit: () => void applyCrop(), cancel: cancelCrop }}
-                transform={transform.fields ? { fields: transform.fields, set: transform.setFields, commit: () => void transform.commit(), cancel: () => void transform.cancel() } : null}
+                transform={transform.fields ? { fields: transform.fields, set: transform.setFields, commit: () => void transform.commit(), cancel: () => void transform.cancel(), release: () => workspace.current?.focus({ preventScroll: true }) } : null}
                 text={{
                   editing: textDraft != null || typeEditing,
                   submitting: textPending,

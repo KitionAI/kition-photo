@@ -291,6 +291,43 @@ try {
   const halved = (await layerById(ellipse.id)).bounds
   step('Edit › Free Transform opens the box and its W field scales the layer', Math.abs(halved[2] - committed[2] / 2) <= 3, `${committed[2]} -> ${halved[2]}`)
 
+  // Plan 2026-11-24, stage 8: after a field of the bar, Enter applies it and the next Enter commits;
+  // Escape puts a field being typed in back, and the next Escape cancels the box.
+  const fieldHistory = await history()
+  await workspace.focus()
+  await page.keyboard.press(`${await primaryKey()}+t`)
+  await until(async () => (await tool()) === 'FreeTransform', 20)
+  await kit.getByTestId('photo-transform-w').locator('input').fill('80')
+  await page.keyboard.press('Enter')
+  await settle()
+  const stillOpen = (await tool()) === 'FreeTransform'
+  await page.keyboard.press('Enter')
+  await until(async () => (await tool()) === 'Move', 20)
+  await settle()
+  const fieldCommitted = (await layerById(ellipse.id)).bounds
+  step('a W typed in the bar: the first Enter applies it, the second commits the box (one step)', stillOpen && (await tool()) === 'Move' && Math.abs(fieldCommitted[2] - halved[2] * 0.8) <= 3 && (await history()) === fieldHistory + 1, `${halved[2]} -> ${fieldCommitted[2]}, open after one Enter ${stillOpen}, history +${(await history()) - fieldHistory}`)
+  await page.keyboard.press(`${await primaryKey()}+t`)
+  await until(async () => (await tool()) === 'FreeTransform', 20)
+  const wField = kit.getByTestId('photo-transform-w').locator('input')
+  await wField.fill('50')
+  await page.keyboard.press('Escape')
+  const reverted = (await tool()) === 'FreeTransform' && Number(await wField.inputValue()) === 100
+  await page.keyboard.press('Escape')
+  await until(async () => (await tool()) === 'Move', 20)
+  await page.keyboard.press(`${await primaryKey()}+t`)
+  await until(async () => (await tool()) === 'FreeTransform', 20)
+  await kit.getByTestId('photo-transform-w').locator('input').fill('50')
+  await page.keyboard.press('Tab')
+  await settle()
+  await page.keyboard.press('Escape')
+  await until(async () => (await tool()) === 'Move', 20)
+  await settle()
+  step('Escape in a field puts it back, the next Escape cancels; after Tab one Escape cancels', reverted && (await tool()) === 'Move' && JSON.stringify((await layerById(ellipse.id)).bounds) === JSON.stringify(fieldCommitted) && (await history()) === fieldHistory + 1, `${reverted} ${JSON.stringify((await layerById(ellipse.id)).bounds)}`)
+  // Back to the halved layer the next steps start from.
+  await kit.getByTestId('photo-undo').click()
+  await until(async () => JSON.stringify((await layerById(ellipse.id)).bounds) === JSON.stringify(halved), 40)
+  await workspace.focus()
+
   // Show Transform Controls: a handle of the Move tool's box starts Free Transform.
   await kit.getByTestId('photo-option-showTransform').check()
   await workspace.focus()
