@@ -57,7 +57,11 @@ fn two_layer_document() -> Document {
 }
 
 fn first(blobs: &SharedBlobs) -> Session {
-    let document = two_layer_document();
+    first_with(blobs, two_layer_document())
+}
+
+/// A session holding `document`, made in its creating transaction (no undo step).
+fn first_with(blobs: &SharedBlobs, document: Document) -> Session {
     let mut ids = IdMap::default();
     let mut nodes = Nodes::default();
     let mut sink = blobs.clone();
@@ -215,8 +219,24 @@ fn a_draft_and_the_person_editing_different_fields_of_one_layer_both_stay() {
     one_step(&mut a, &before, &after);
 }
 
+/// The layer objects of the root of the layer tree, in the tree's order.
+fn roots(session: &Session, image: &ObjectId) -> Vec<ObjectId> {
+    session
+        .replica()
+        .tree(image, "layers")
+        .unwrap_or_else(|error| panic!("tree: {error}"))
+        .into_iter()
+        .filter(|entry| entry.parent.is_none())
+        .map(|entry| entry.object)
+        .collect()
+}
+
+/// The draft moves Layer 2 to the end of the roots, where it already is, so the draft changes
+/// nothing; the person deletes Layer 1 meanwhile. The merged state is the person's own, so the
+/// merge records nothing (rule D9): no scope, the state and the version stay, and one Undo of the
+/// person takes back the delete exactly, one Redo brings it back.
 #[test]
-fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
+fn a_draft_moving_a_root_where_it_is_while_the_person_deletes_the_other_records_nothing() {
     let blobs = SharedBlobs::default();
     let mut a = first(&blobs);
     let since = a.version();
@@ -224,6 +244,7 @@ fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
     let layer1 = layer_named(&a, "Layer 1");
     let layer2 = layer_named(&a, "Layer 2");
     let image = image_object(&a);
+    assert_eq!(roots(&a, &image), vec![layer1.clone(), layer2.clone()], "Layer 2 is the last root");
 
     let node2 = node_of(&b, &image, &layer2);
     let for_b_image = image.clone();
@@ -233,19 +254,78 @@ fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
     })
     .unwrap_or_else(|error| panic!("b: {error}"));
 
+    let before_delete = a.state_hash().unwrap();
     let for_a = layer1.clone();
     a.execute(&person("a"), move |_, tx| -> KResult<()> {
         tx.delete(&for_a)?;
         Ok(())
     })
     .unwrap_or_else(|error| panic!("a: {error}"));
+    let (deleted, version, depth) = (a.state_hash().unwrap(), a.version(), a.replica().undo_depth(UndoScope::Person));
 
-    merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
+    assert_eq!(merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}")), None, "the merge changes nothing");
+    assert_eq!((a.state_hash().unwrap(), a.version(), a.replica().undo_depth(UndoScope::Person)), (deleted.clone(), version, depth), "nothing recorded");
     assert!(!a.replica().exists(&layer1), "the delete stays");
     let names: Vec<String> = a.model().document.layers.iter().map(|layer| layer.name.clone()).collect();
-    assert_eq!(names, vec!["Layer 2".to_owned()], "the reorder is taken and the deleted layer is gone, once each");
+    assert_eq!(names, vec!["Layer 2".to_owned()], "the deleted layer is gone, once");
     let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
     assert_eq!(a.model(), &fresh);
+
+    assert!(a.undo_in(UndoScope::Person).unwrap_or_else(|error| panic!("undo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), before_delete, "one Undo takes back the person's delete, exactly");
+    assert!(a.redo_in(UndoScope::Person).unwrap_or_else(|error| panic!("redo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), deleted, "one Redo brings it back");
+}
+
+/// A real reorder: the draft moves Layer 1 to the end of the roots while the person deletes Layer
+/// 2. The merge is one step of the person: one Undo gives back exactly the state after the delete,
+/// the next the state before it, and Redo goes back up through both.
+#[test]
+fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
+    let blobs = SharedBlobs::default();
+    let mut document = two_layer_document();
+    document.layers.push(Layer::raster("Layer 3", PixelFormat::RGBA8));
+    let mut a = first_with(&blobs, document);
+    let since = a.version();
+    let mut b = draft(&a, 2, &blobs);
+    let (layer1, layer2, layer3) = (layer_named(&a, "Layer 1"), layer_named(&a, "Layer 2"), layer_named(&a, "Layer 3"));
+    let image = image_object(&a);
+    assert_eq!(roots(&a, &image), vec![layer1.clone(), layer2.clone(), layer3.clone()]);
+
+    let node1 = node_of(&b, &image, &layer1);
+    let for_b_image = image.clone();
+    b.execute(&agent(), move |_, tx| -> KResult<()> {
+        tx.tree_move(&for_b_image, "layers", &node1, None)?;
+        Ok(())
+    })
+    .unwrap_or_else(|error| panic!("b: {error}"));
+    assert_eq!(roots(&b, &image), vec![layer2.clone(), layer3.clone(), layer1.clone()], "the draft moved Layer 1 last");
+
+    let before_delete = a.state_hash().unwrap();
+    let for_a = layer2.clone();
+    a.execute(&person("a"), move |_, tx| -> KResult<()> {
+        tx.delete(&for_a)?;
+        Ok(())
+    })
+    .unwrap_or_else(|error| panic!("a: {error}"));
+    let deleted = a.state_hash().unwrap();
+
+    assert_eq!(merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}")), Some(UndoScope::Person), "one step of the person");
+    assert!(!a.replica().exists(&layer2), "the delete stays");
+    assert_eq!(roots(&a, &image), vec![layer3.clone(), layer1.clone()], "the reorder is taken");
+    let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
+    assert_eq!(a.model(), &fresh);
+    let merged = a.state_hash().unwrap();
+
+    assert!(!a.can_undo_in(UndoScope::Agent), "the agent's undo does not take the merge");
+    assert!(a.undo_in(UndoScope::Person).unwrap_or_else(|error| panic!("undo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), deleted, "one Undo gives back exactly the state after the delete");
+    assert!(a.undo_in(UndoScope::Person).unwrap_or_else(|error| panic!("undo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), before_delete, "the next Undo the state before it");
+    assert!(a.redo_in(UndoScope::Person).unwrap_or_else(|error| panic!("redo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), deleted);
+    assert!(a.redo_in(UndoScope::Person).unwrap_or_else(|error| panic!("redo: {error}")).0);
+    assert_eq!(a.state_hash().unwrap(), merged, "Redo goes back up to the merge");
 }
 
 /// `object`'s current tree node, as `session` itself sees it.
