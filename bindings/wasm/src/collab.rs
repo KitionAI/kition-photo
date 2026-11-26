@@ -791,8 +791,9 @@ mod tests {
 
     #[test]
     fn changes_since_answers_a_receipt_or_why_not() {
+        let fresh = PhotoDocument::create("art.kphoto", 600, 300).unwrap();
+        assert_eq!(fresh.changes_since(&[])["changes"], Value::Null, "no replica yet");
         let mut doc = wide();
-        assert_eq!(doc.changes_since(&[])["changes"], Value::Null, "no replica yet");
         let since = doc.version().unwrap();
         paint(&mut doc, &kition_photo_engine::kdm_bridge::local_person(), [20, 20], "#ff0000");
         let receipt = doc.changes_since(&since);

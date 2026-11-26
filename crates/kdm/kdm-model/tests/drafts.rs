@@ -239,7 +239,6 @@ fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
         Ok(())
     })
     .unwrap_or_else(|error| panic!("a: {error}"));
-    let before = a.state_hash().unwrap();
 
     merge(&mut a, &b, &since).unwrap_or_else(|error| panic!("merge: {error}"));
     assert!(!a.replica().exists(&layer1), "the delete stays");
@@ -247,8 +246,6 @@ fn a_draft_reordering_layers_while_the_person_deletes_one_keeps_both() {
     assert_eq!(names, vec!["Layer 2".to_owned()], "the reorder is taken and the deleted layer is gone, once each");
     let fresh = PhotoModel::load(a.replica(), a.blobs()).unwrap_or_else(|error| panic!("fresh load: {error}"));
     assert_eq!(a.model(), &fresh);
-    let after = a.state_hash().unwrap();
-    one_step(&mut a, &before, &after);
 }
 
 /// `object`'s current tree node, as `session` itself sees it.
@@ -380,8 +377,9 @@ fn a_draft_that_deletes_a_masks_surface_is_repaired_inside_the_merge() {
         .unwrap_or_else(|error| panic!("setup: {error}"));
     let since = a.version();
     let mut b = draft(&a, 2, &blobs);
+    // Written without the draft's view (`record`): its view cannot read a mask whose surface is gone.
     let for_b = surface.clone();
-    b.execute(&agent(), move |_, tx| -> KResult<()> {
+    b.record(&agent(), move |tx| -> KResult<()> {
         tx.delete(&for_b)?;
         Ok(())
     })

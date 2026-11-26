@@ -26,7 +26,7 @@ const until = async (check, message) => {
 }
 /** The layer names of the image, or (`draft`) of the agent's draft. */
 const names = async (draft = false) => {
-  if (draft) return JSON.stringify(await run('session.inspect', {}, { draft: true }))
+  if (draft) return JSON.stringify(await run('file.inspect', {}, { draft: true }))
   const details = (await page.evaluate(async () => window.devHost.connection().ai.inspect())).details
   return JSON.stringify(details.layers.map((layer) => layer.name))
 }
