@@ -24,18 +24,19 @@ const until = async (check, message) => {
   }
   assert.fail(message)
 }
-/** The layer names of the image, or (`draft`) of the agent's draft. */
+/** The layers of the image (every field, children included), or (`draft`) of the agent's draft, as JSON text. */
 const names = async (draft = false) => {
   if (draft) return JSON.stringify(await run('file.inspect', {}, { draft: true }))
   const details = (await page.evaluate(async () => window.devHost.connection().ai.inspect())).details
-  return JSON.stringify(details.layers.map((layer) => layer.name))
+  return JSON.stringify(details.layers)
 }
-const groups = async () => (await names()).match(/"Group \d+"/g)?.length ?? 0
+/** How many groups the image holds, at any depth (a group made while a group is active goes into it). */
+const groups = async () => (await names()).match(/"name":"Group \d+"/g)?.length ?? 0
 /** The person makes a group with the Layers panel's button. */
 const groupByHand = async () => {
   const before = await groups()
   await kit.getByTestId('photo-layers-group').click()
-  await until(async () => (await groups()) === before + 1, 'the person\'s group shows')
+  await until(async () => (await groups()) === before + 1, `the person's group shows (${before} before: ${await names()})`)
 }
 const undo = async () => {
   await until(() => kit.getByTestId('photo-undo').isEnabled(), 'Undo is enabled')
@@ -75,6 +76,9 @@ try {
   await kit.getByTestId('photo-file-save').click()
   await until(async () => (await version()) > saved, 'saved')
   await until(() => page.evaluate((name) => window.devHost.history.replica(name) !== null, file), 'the replica is stored with the save')
+  // Whatever the save left open (the menu, a note) closes, so the next click reaches the panel.
+  await kit.locator('body').press('Escape')
+  await page.waitForTimeout(300)
   const checkpoint = await page.evaluate(() => window.devHost.recordCheckpoint({ origin: 'save' }))
   assert.ok(checkpoint?.id, 'a checkpoint is recorded')
   await groupByHand()
