@@ -122,6 +122,39 @@ try {
   for (const layer of (await details()).layers) await e.query('layer.setProps', { layer: layer.id, visible: true })
   await workspace.focus()
 
+  // ---------------------------------------------------------------- 7. Quick Selection's outline stays
+  // The ants (the workspace's data-ants while the canvas draws them) show from the drag through the
+  // release without a gap, while the stroke's last step runs again with every point.
+  await page.keyboard.press(`${e.primary}+d`)
+  await until(async () => !(await details()).hasSelection, 30)
+  // The error cards above sit over the Layers panel's last rows: closed first.
+  while (await kit.getByTestId('photo-error-close').count()) await kit.getByTestId('photo-error-close').first().click()
+  await selectLayer(doc.layers.find((layer) => layer.name === 'Background').id)
+  await choose('QuickSelection')
+  // A brush as the walkthrough's (the shared size grew with ] above).
+  await kit.getByTestId('photo-option-size').locator('input').fill('30')
+  await kit.getByTestId('photo-option-size').locator('input').press('Enter')
+  await workspace.focus()
+  const quickFrom = (await details()).history.length
+  const a = await e.at(870, 240)
+  const b = await e.at(980, 330)
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down()
+  await page.mouse.move(b.x, b.y, { steps: 25 })
+  await shot('stage8-quick-mid')
+  const antsMid = await until(async () => (await workspace.getAttribute('data-ants')) !== null, 60)
+  await page.mouse.up()
+  const gaps = []
+  const started = Date.now()
+  while (Date.now() - started < 2500) {
+    if ((await workspace.getAttribute('data-ants')) === null) gaps.push(Date.now() - started)
+    await page.waitForTimeout(40)
+  }
+  const quick = await details()
+  step('Quick Selection’s outline shows during the drag and stays through the release (no gap)', antsMid && gaps.length === 0 && quick.hasSelection && quick.history.length === quickFrom + 1, JSON.stringify({ antsMid, gaps: gaps.slice(0, 5), last: quick.history.at(-1) }))
+  await page.keyboard.press(`${e.primary}+d`)
+  await workspace.focus()
+
   await e.finish()
 } catch (error) {
   await e.fail(error)

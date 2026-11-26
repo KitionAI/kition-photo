@@ -83,6 +83,12 @@ export type PhotoToolEnv = {
   selectionOutline: Int32Array | null
   /** Hides the selection's marching ants while a gesture draws them moved. */
   hideSelection: (hidden: boolean) => void
+  /**
+   * Keeps the selection's ants drawn as they are while a gesture replaces the selection step by
+   * step (the step taken away, then run again: plan 2026-11-24, stage 8), until the answer is
+   * called; they follow each new selection meanwhile but never blink out between two.
+   */
+  holdSelection?: () => () => void
   /** Tells the person something (Photo's string `key`), as a toast. */
   say: (key: string) => void
   /** Redraws the canvas's marks (the transform box, the crop frame) after a change to them. */

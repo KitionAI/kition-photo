@@ -52,11 +52,24 @@ export function usePhotoOverlays(doc: KitEngine | null, change: KitChange, hasSe
   const [segments, setSegments] = useState<Int32Array | null>(null)
   const outline = useRef<Int32Array | null>(null)
   outline.current = segments
+  // Holds (Quick Selection's stroke): the ants stay while the selection is between two of its steps.
+  const held = useRef(0)
+  const [released, setReleased] = useState(0)
+  const hold = useCallback(() => {
+    held.current += 1
+    let done = false
+    return () => {
+      if (done) return
+      done = true
+      held.current -= 1
+      if (!held.current) setReleased((count) => count + 1)
+    }
+  }, [])
   // Trace at display resolution: one sample per screen pixel when zoomed out.
   const step = zoom && zoom < 1 ? Math.max(1, Math.floor(1 / zoom)) : 1
   useEffect(() => {
     if (!doc || !hasSelection) {
-      setSegments(null)
+      if (!held.current) setSegments(null)
       return undefined
     }
     let current = true
@@ -69,7 +82,7 @@ export function usePhotoOverlays(doc: KitEngine | null, change: KitChange, hasSe
     return () => {
       current = false
     }
-  }, [change.revision, doc, hasSelection, step])
+  }, [change.revision, doc, hasSelection, step, released])
   const decorate = useCallback<RasterDecoration>(
     (context, toScreen) => {
       const now = marks.current ?? NO_MARKS
@@ -100,5 +113,5 @@ export function usePhotoOverlays(doc: KitEngine | null, change: KitChange, hasSe
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` stands for what `extras` holds
     [doc, marks, extras, segments, version],
   )
-  return { decorate, animated: Boolean(segments), outline }
+  return { decorate, animated: Boolean(segments), outline, hold }
 }

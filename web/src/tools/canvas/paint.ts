@@ -173,6 +173,9 @@ export function quickSelectionTool(env: PhotoToolEnv): KitTool {
       const params = () => ({ points: points.map((point) => [...point]), ...toolParams('QuickSelection', env.options), mode })
       let live: LivePreview | null = null
       let shownAt = 0
+      // The ants stay on screen from the press until the stroke's last step has run (each step
+      // takes the one before away first, which would blink them out for a moment).
+      const release = env.holdSelection?.() ?? (() => undefined)
       const draw = () =>
         overlay.draw((context, toScreen) => {
           clipToDocument(context, toScreen, env.documentSize)
@@ -194,13 +197,13 @@ export function quickSelectionTool(env: PhotoToolEnv): KitTool {
           live ??= env.preview('select.quick')
           live.push(params())
         },
-        cancel: () => void live?.cancel(),
+        cancel: () => void (live ? live.cancel() : Promise.resolve()).finally(release),
         end: (pointer) => {
           const x = Math.round(pointer.x), y = Math.round(pointer.y)
           const last = points[points.length - 1]
           if (x !== last[0] || y !== last[1]) points.push([x, y])
-          if (live) void live.finish(params()).then(() => overlay.clear())
-          else void env.run('select.quick', params(), NO_REPAINT)
+          if (live) void live.finish(params()).then(() => overlay.clear()).finally(release)
+          else void env.run('select.quick', params(), NO_REPAINT).finally(release)
         },
       }
     },

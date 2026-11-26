@@ -7,7 +7,7 @@ intent: >-
   Preferences › General's Use Shift Key for Tool Switch (off by default) makes a tool's key keep the tool and Shift
   with it cycle; Layer via Copy on empty pixels, the Clone Stamp without a source and Select › Subject finding none
   say why in the person's words; Image › Crop is greyed out without a selection; Select › Find Layers goes to the
-  Layers panel's search.
+  Layers panel's search; Quick Selection's outline shows during the drag and stays through the release.
 layer: gate
 source:
   kind: probe

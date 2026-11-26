@@ -677,6 +677,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
         get selectionOutline() {
           return overlays.outline.current
         },
+        holdSelection: () => overlays.hold(),
         hideSelection: (hidden) => {
           marks.current = { ...marks.current, hideAnts: hidden }
           redraw()
@@ -732,7 +733,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
     }),
     // The getters read refs; what is passed by value is in the list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline, aim, paths, snapper],
+    [cloneSource, query, runTool, toolGeneration, updateCrop, revisionNow, say, redraw, t, overlays.outline, overlays.hold, aim, paths, snapper],
   )
   const transformOpen = transform.box != null
   // While Free Transform's box is open the canvas is the box's: asked on every press, so a box a
@@ -1533,7 +1534,7 @@ export function App({ host, phrase }: { host: HostConnection; phrase: Phrases })
           <PhotoFileIo api={fileIo} workspace={workspace} canvas={canvas} size={state ? { width: state.width, height: state.height } : null} busy={busy} editing={() => typeSession.active || textDraft != null} />
           <GradientEditorOutlet />
           <ColorPickerOutlet />
-          <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace" data-rulers={viewSettings.rulers ? '' : undefined} data-guides={JSON.stringify(guides)}>
+          <div className="kui-row photo-workspace" ref={workspace} tabIndex={-1} data-testid="photo-workspace" data-rulers={viewSettings.rulers ? '' : undefined} data-guides={JSON.stringify(guides)} data-ants={overlays.animated ? '' : undefined}>
             {viewSettings.rulers ? <Rulers view={view} pointer={canvasPointer} surface={surfaceBox} onDraft={setGuideDraft} onDrop={dropGuide} label={rulerLabel} /> : null}
             <PhotoCanvas
               activeTool={tool}
