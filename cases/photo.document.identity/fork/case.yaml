@@ -2,8 +2,8 @@ format: 1
 id: photo.document.identity/fork
 feature: photo.document.identity
 intent: >-
-  Through the real kition-photo process: document.identity answers the docId a .kphoto's embedded
-  replica (content.json) carries, and a byte copy answers the same one; document.fork writes a new
+  Through the real kition-photo process: file.identity answers the docId a .kphoto's embedded
+  replica (content.json) carries, and a byte copy answers the same one; file.fork writes a new
   document to a new file: a new docId, the same objects, ids and values (model.batch), a draft of
   it opens, only the replica blobs its state references, every other bundle entry (manifest,
   tiles, previews, an unknown entry) as it was; the name of a layer deleted before the fork is in

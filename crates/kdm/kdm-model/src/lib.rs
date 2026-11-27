@@ -88,7 +88,7 @@ pub fn replica_matches(snapshot: &[u8]) -> bool {
 
 /// The blobs `replica`'s current state references (tiles, ICC profiles, effects, the document
 /// state), and none that only its history or an undo step does: what a file holding the replica
-/// as a new document keeps (`document.fork`).
+/// as a new document keeps (`file.fork`).
 pub fn state_blobs(replica: &Replica) -> BTreeSet<String> {
     blob_gc::BlobIndex::build(replica).referenced().into_iter().collect()
 }

@@ -20,7 +20,7 @@ pub fn is_kition_photo_name(name: &str) -> bool {
         .is_some_and(|(stem, ext)| !stem.is_empty() && ext.eq_ignore_ascii_case(kition_photo_format::EXTENSION))
 }
 
-/// The replica a file of this kit embeds, as its KDM content (`document.identity`, KitModel M7a):
+/// The replica a file of this kit embeds, as its KDM content (`file.identity`, KitModel M7a):
 /// a `.kphoto` bundle's `content.json`, which [`Session::open_file`] opens the document from, so a byte
 /// copy of the bundle is the same document. `None` for a bundle saved without a replica or with
 /// a replica of another schema version (opened from its manifest as a new document), a PSD or
@@ -52,7 +52,7 @@ pub fn embedded_bundle(bytes: &[u8]) -> Result<Option<(Vec<u8>, MemoryBlobs)>> {
 }
 
 /// `bytes` (a `.kphoto` bundle with a replica) holding the document `snapshot` instead of its own
-/// (`document.fork`, KitModel M7a): `content.json` is that document's content (no history),
+/// (`file.fork`, KitModel M7a): `content.json` is that document's content (no history),
 /// and the replica's blobs are only the ones its current state references, so no earlier identity
 /// or history (a deleted layer's tiles, what an undo step kept) stays in the file. The manifest,
 /// tiles, previews and entries this build does not know are kept: they hold the same image.

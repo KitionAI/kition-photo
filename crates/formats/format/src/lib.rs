@@ -191,13 +191,13 @@ pub fn read_kdm(bytes: &[u8]) -> Result<Option<KdmBundle>> {
 }
 
 /// The bundle's KDM content (`content.json`) without its blobs, or `None` for a bundle saved
-/// without a replica: what a `.kphoto` carries as its document's identity (`document.identity`).
+/// without a replica: what a `.kphoto` carries as its document's identity (`file.identity`).
 pub fn read_kdm_content(bytes: &[u8]) -> Result<Option<Vec<u8>>> {
     store::read_kdm_content(bytes, &LoadOptions::default())
 }
 
 /// `bytes` (a bundle with a replica) holding the replica `content` instead of its own
-/// (`document.fork`): `content.json` is `content`, and of the tiles and blobs only those the manifest
+/// (`file.fork`): `content.json` is `content`, and of the tiles and blobs only those the manifest
 /// or `keep` names stay; the manifest and entries this build does not know are kept as they were.
 /// A bundle without a replica is an error.
 pub fn replace_kdm(bytes: &[u8], content: &[u8], keep: &dyn Fn(&str) -> bool) -> Result<Vec<u8>> {

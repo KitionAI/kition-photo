@@ -5,8 +5,8 @@ intent: >-
   Through the real kition-photo process: a PSD (Photoshop's format embeds no replica; the kit
   makes one under a new id each time it opens one), a .kphoto saved without a replica and an
   empty file carry no identity, and each forks as the same bytes with no docId; bytes that are no
-  picture of this kit are refused as unsupported_format by both document.identity and
-  document.fork, never answered with no identity, and the fork writes nothing.
+  picture of this kit are refused as unsupported_format by both file.identity and
+  file.fork, never answered with no identity, and the fork writes nothing.
 layer: gate
 tags: [headless]
 source:

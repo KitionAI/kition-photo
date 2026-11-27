@@ -11,7 +11,7 @@
 //! engine reads and writes no file by path, starts no program and scans no font folder, and reads a
 //! linked object layer's source only through the host, never outside the workspace.
 //!
-//! The identity a file carries (`document.identity`, `document.fork`): a `.kphoto` bundle embeds
+//! The identity a file carries (`file.identity`, `file.fork`): a `.kphoto` bundle embeds
 //! its replica's content (`content.json`), so a byte copy is the same document and a fork holds a copy under a new
 //! id ([`PhotoFiles`]); a PSD or PSB embeds none.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]

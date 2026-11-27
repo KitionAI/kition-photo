@@ -1,4 +1,4 @@
-//! `document.identity` and `document.fork` (Kit Process Protocol section 5.6, KitModel M7a)
+//! `file.identity` and `file.fork` (Kit Process Protocol section 5.6, KitModel M7a)
 //! through the real `kition-photo` process. A `.kphoto` bundle embeds its replica's content (`content.json`, its
 //! blobs among the bundle's content-addressed `tiles/` and `blobs/` entries), and the kit opens the document from it, so a byte copy
 //! of a bundle is the same document. A host reads the identity a file carries without opening it,
@@ -95,7 +95,7 @@ async fn objects(kit: &HeadlessKit, path: &str) -> Value {
     assert!(ids.len() >= 3, "the image and two layers: {inventory}");
     let load: Vec<Value> = ids.iter().map(|id| json!({ "target": id })).collect();
     let loaded = batch(json!({ "ops": [], "load": load })).await.unwrap();
-    kit.request("document.close", json!({ "documentId": document }), LIMIT).await.unwrap();
+    kit.request("file.close", json!({ "documentId": document }), LIMIT).await.unwrap();
     json!({ "objects": inventory["objects"], "loaded": loaded["loaded"] })
 }
 
@@ -113,7 +113,7 @@ async fn a_kphoto_tells_its_identity_and_forks_into_a_new_document_without_histo
     let dir = workspace("embedded");
     std::fs::write(dir.join("Plan.kphoto"), picture()).unwrap();
     let kit = launch(&dir).await;
-    assert!(kit.serves("document.identity"), "{}", kit.capabilities());
+    assert!(kit.serves("file.identity"), "{}", kit.capabilities());
 
     // The identity the file carries, read without opening it, and the same for a byte copy.
     let source_id = kit.identity("Plan.kphoto", LIMIT).await.unwrap().doc_id.expect("a .kphoto with a replica has an identity");
@@ -140,7 +140,7 @@ async fn a_kphoto_tells_its_identity_and_forks_into_a_new_document_without_histo
     }
     let draft = kit.request("model.open", open, LIMIT).await.unwrap();
     assert_ne!(draft["documentId"], state["documentId"], "{draft}");
-    kit.request("document.close", json!({ "documentId": state["documentId"] }), LIMIT).await.unwrap();
+    kit.request("file.close", json!({ "documentId": state["documentId"] }), LIMIT).await.unwrap();
 
     // The fork's file: the tiles and blobs the manifest and the fork's state name and no others;
     // every other entry (the manifest, the unknown entry) as it was.

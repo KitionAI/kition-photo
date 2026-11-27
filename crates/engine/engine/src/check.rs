@@ -1,4 +1,4 @@
-//! What a Photo kit's `check` (`KitDocument::check`, `document.check`) reports on an image (KHP
+//! What a Photo kit's `check` (`KitDocument::check`, `file.check`) reports on an image (KHP
 //! A21): object layers whose source is missing or only linked, layers that lie entirely outside
 //! the canvas, pixel layers without pixels, hidden layers that hold content, empty type layers, and
 //! fonts drawn with a substitute or characters no font can draw. Layers are named as `layer:<id>` (the ids the engine's commands
