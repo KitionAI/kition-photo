@@ -57,6 +57,9 @@ export function moveTool(env: PhotoToolEnv): KitTool {
       })
       let refused = false
       let judged = false
+      // Released: a snapshot of the layer that arrives after the release is dropped, or it would
+      // leave the moved layer out of the canvas and draw its outline at the drag's last place.
+      let ended = false
       let image: { bitmap: ImageBitmap; opacity: number; layer: number } | null = null
       let bounds = env.layer?.bounds ?? null
       // The layer the canvas leaves out while its pixels follow the pointer (plan 2026-11-24,
@@ -89,7 +92,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
         }
         const layer = active.id
         void env.layerImage(layer).then((bitmap) => {
-          if (bitmap && !refused) image = { bitmap, opacity: active.opacity, layer }
+          if (bitmap && !refused && !ended) image = { bitmap, opacity: active.opacity, layer }
           else bitmap?.close()
           if (image && moved) draw()
         })
@@ -166,6 +169,7 @@ export function moveTool(env: PhotoToolEnv): KitTool {
           image = null
         },
         end: async (pointer) => {
+          ended = true
           // A release may come with no move before it (sparse input): its own position counts.
           moved ||= Math.hypot(pointer.clientX - start.clientX, pointer.clientY - start.clientY) >= COPY_AFTER_PX
           if (moved) delta = offsetOf(pointer)
