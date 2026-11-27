@@ -59,10 +59,15 @@ function makeEditor(page) {
     await actualSize()
     await shortcut(page, '')
   }
+  // The view the canvas reports (the workspace's data-view: zoom and the document point at the
+  // canvas's top-left). The canvas draws the document there, on a whole device pixel, so a document
+  // centred in a canvas of odd size sits half a pixel off its exact centre.
+  const view = async () => (await kit.getByTestId('photo-workspace').getAttribute('data-view')).split(' ').map(Number)
+  // The screen point of a document point, where the canvas draws it.
   const point = async (x, y) => {
     const box = await kit.getByTestId('kit-canvas-surface').boundingBox()
-    const doc = await state()
-    return { x: box.x + box.width / 2 + x - doc.width / 2, y: box.y + box.height / 2 + y - doc.height / 2 }
+    const [zoom, left, top] = await view()
+    return { x: box.x + (x - left) * zoom, y: box.y + (y - top) * zoom }
   }
   const drag = async (from, to) => {
     const a = await point(...from), b = await point(...to)
@@ -78,15 +83,15 @@ function makeEditor(page) {
     const start = await point(...from)
     await page.mouse.move(start.x, start.y)
     await page.mouse.down()
-    const doc = await state()
-    await kit.getByTestId('kit-canvas-surface').evaluate((canvas, { to, width, height }) => {
+    const [zoom, left, top] = await view()
+    await kit.getByTestId('kit-canvas-surface').evaluate((canvas, { to, zoom, left, top }) => {
       const box = canvas.getBoundingClientRect()
       canvas.dispatchEvent(new PointerEvent('pointerup', {
         bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, buttons: 0,
-        clientX: box.left + box.width / 2 + to[0] - width / 2,
-        clientY: box.top + box.height / 2 + to[1] - height / 2,
+        clientX: box.left + (to[0] - left) * zoom,
+        clientY: box.top + (to[1] - top) * zoom,
       }))
-    }, { to, width: doc.width, height: doc.height })
+    }, { to, zoom, left, top })
     await page.mouse.up()
   }
   const sample = async (x, y) => (await run('file.sampleColor', { x, y, size: 'point', sampleLayer: 'all' })).map((value) => Math.round(value * 255))
@@ -123,7 +128,7 @@ function makeEditor(page) {
   }
   const undo = async () => page.keyboard.press(await shortcut(page, 'ControlOrMeta+z'))
   const redo = async () => page.keyboard.press(await shortcut(page, 'ControlOrMeta+Shift+z'))
-  return { page, kit, state, run, open, drag, sparseDrag, click, sample, color, saved, reopen, undo, redo }
+  return { page, kit, state, run, open, point, drag, sparseDrag, click, sample, color, saved, reopen, undo, redo }
 }
 
 const layer = (name = 'Artwork') => ({ command: 'layer.new.layer', params: { name } })
@@ -489,9 +494,9 @@ for (const tool of ['RectMarquee', 'EllipseMarquee']) {
       await zoom.fill('200')
       await zoom.press('Enter')
       await expect(zoom).toHaveValue('200')
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
-      // Center + one screen pixel maps to a fractional document point at 200%.
-      await e.page.mouse.click(box.x + box.width / 2 + 1, box.y + box.height / 2 + 1)
+      // Document point (64.5, 48.5): the centre and one screen pixel, a fractional point at 200%.
+      const at = await e.point(64.5, 48.5)
+      await e.page.mouse.click(at.x, at.y)
       await expect.poll(async () => (await e.state()).selectionBounds).toBeNull()
       await zoom.fill('100')
       await zoom.press('Enter')
@@ -558,8 +563,7 @@ for (const tool of ['RectMarquee', 'EllipseMarquee']) {
       await zoom.fill('200')
       await zoom.press('Enter')
       await expect(zoom).toHaveValue('200')
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
-      const x = box.x + box.width / 2 + 1, y = box.y + box.height / 2 + 1
+      const { x, y } = await e.point(64.5, 48.5)
       // This screen position is (64.5, 48.5) in the document. Size must not grow on rounding.
       await e.page.mouse.move(x, y)
       await e.page.mouse.down()
@@ -610,9 +614,8 @@ for (const tool of ['RectMarquee', 'EllipseMarquee']) {
       await zoom.fill('200')
       await zoom.press('Enter')
       await expect(zoom).toHaveValue('200')
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
       // Unequal fractional parts expose corner rounding that deforms a square or fixed ratio.
-      const x = box.x + box.width / 2 + 1, y = box.y + box.height / 2
+      const { x, y } = await e.point(64.5, 48)
       await e.page.mouse.move(x, y)
       await e.page.mouse.down()
       if (!constraint.ratio) await e.page.keyboard.down('Shift')
@@ -658,9 +661,8 @@ for (const tool of ['RectMarquee', 'EllipseMarquee', 'Lasso']) {
       await zoom.press('Enter')
       await expect(zoom).toHaveValue('200')
       const before = await e.state()
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
       // An empty gesture outside the selection at document point (100.5, 80.5).
-      const x = box.x + box.width / 2 + 73, y = box.y + box.height / 2 + 65
+      const { x, y } = await e.point(100.5, 80.5)
       await e.kit.getByTestId(`photo-option-selectionMode-${mode}`).click()
       await e.page.mouse.click(x, y)
       // Verify toolbar and modifier paths separately; modifiers override Replace.
@@ -750,8 +752,7 @@ for (const tool of ['Rectangle', 'EllipseShape', 'Crop', 'Slice', 'ObjectSelecti
         return visible
       })
       await expect.poll(previewPixels).toBe(0)
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
-      const x = box.x + box.width / 2 - 40, y = box.y + box.height / 2 - 24
+      const { x, y } = await e.point(24, 24)
       await e.page.mouse.move(x, y)
       await e.page.mouse.down()
       await e.page.mouse.move(x + 64, y + 40, { steps: 4 })
@@ -1470,13 +1471,11 @@ for (const latest of ['tool switch', 'new canvas draft']) {
     const field = e.kit.getByTestId('photo-text-field')
     await field.fill('First')
     const surface = e.kit.getByTestId('kit-canvas-surface')
-    // Read the document size before blocking the worker; the usual click helper inspects it. The
-    // canvas box is read at the click, so the point follows the canvas wherever the commit and the
-    // tool switch leave it.
-    const doc = await e.state()
+    // The canvas box and view are read at the click (from the page, not the blocked worker), so the
+    // point follows the canvas wherever the commit and the tool switch leave it.
     const clickNext = async () => {
-      const box = await surface.boundingBox()
-      await e.page.mouse.click(box.x + box.width / 2 + 90 - doc.width / 2, box.y + box.height / 2 + 80 - doc.height / 2)
+      const at = await e.point(90, 80)
+      await e.page.mouse.click(at.x, at.y)
     }
     await surface.evaluate(() => {
       const post = Worker.prototype.postMessage
@@ -1916,9 +1915,7 @@ for (const tool of ['Brush', 'RectMarquee']) {
       await e.kit.getByTestId(`photo-home-tool-${tool}`).click()
       await e.kit.getByTestId('photo-foreground').fill('#000000')
       const before = await e.state()
-      const box = await e.kit.getByTestId('kit-canvas-surface').boundingBox()
-      const point = (x, y) => ({ x: box.x + box.width / 2 + x - before.width / 2, y: box.y + box.height / 2 + y - before.height / 2 })
-      const start = point(24, 24), end = point(96, 72)
+      const start = await e.point(24, 24), end = await e.point(96, 72)
       await e.page.mouse.move(start.x, start.y)
       await e.page.mouse.down()
       try {
